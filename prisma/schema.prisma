@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  AGENT
+  ASSISTANT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  WON
+  LOST
+}
+
+enum PropertyStatus {
+  DRAFT
+  AVAILABLE
+  RESERVED
+  SOLD
+  RENTED
+}
+
+enum VisitStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELED
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  fullName      String
+  isActive      Boolean      @default(true)
+  memberships   Membership[]
+  ownedLeads    Lead[]       @relation("LeadOwner")
+  createdVisits Visit[]      @relation("VisitCreatedBy")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Organization {
+  id            String           @id @default(cuid())
+  name          String
+  slug          String           @unique
+  isActive      Boolean          @default(true)
+  memberships   Membership[]
+  leads         Lead[]
+  properties    Property[]
+  conversations Conversation[]
+  visits        Visit[]
+  automations   AutomationRule[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  role           MembershipRole
+  userId         String
+  organizationId String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+model Lead {
+  id             String       @id @default(cuid())
+  organizationId String
+  ownerId        String?
+  fullName       String
+  email          String?
+  phone          String?
+  status         LeadStatus   @default(NEW)
+  source         String?
+  notes          String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner          User?        @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  conversations  Conversation[]
+  visits         Visit[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, ownerId])
+  @@unique([id, organizationId])
+}
+
+model Property {
+  id             String         @id @default(cuid())
+  organizationId String
+  title          String
+  address        String?
+  city           String?
+  latitude       Decimal?       @db.Decimal(10, 7)
+  longitude      Decimal?       @db.Decimal(10, 7)
+  priceCents     Int?
+  currency       String?        @default("USD")
+  status         PropertyStatus @default(DRAFT)
+  publicVisible  Boolean        @default(false)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  visits         Visit[]        @relation("PropertyVisits")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, publicVisible])
+  @@unique([id, organizationId])
+}
+
+model Conversation {
+  id             String       @id @default(cuid())
+  organizationId String
+  leadId         String?
+  channel        String
+  subject        String?
+  lastMessageAt  DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead           Lead?        @relation(fields: [leadId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, channel])
+  @@index([organizationId, leadId])
+}
+
+model Visit {
+  id             String       @id @default(cuid())
+  organizationId String
+  propertyId     String
+  leadId         String?
+  createdById    String
+  status         VisitStatus  @default(PENDING)
+  scheduledAt    DateTime
+  notes          String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property       Property     @relation("PropertyVisits", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  lead           Lead?        @relation(fields: [leadId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdBy      User         @relation("VisitCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, scheduledAt])
+  @@index([organizationId, propertyId])
+  @@index([organizationId, leadId])
+}
+
+model AutomationRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  trigger        String
+  isActive       Boolean      @default(true)
+  config         Json?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, isActive])
+}
