@@ -1,15 +1,6 @@
 import "server-only";
 
-import {
-  getDemoLeadById,
-  getDemoOrganizationBySlug,
-  getDemoPropertyById,
-  getDemoUserById,
-  listDemoLeadActivities,
-  listDemoLeadsByOrganization,
-  listDemoUsersByOrganization,
-  listDemoVisitsByLead,
-} from "@/server/demo/workspace-store";
+import { prisma } from "@/server/db/prisma";
 
 import type {
   LeadDetail,
@@ -27,36 +18,34 @@ const VISIT_STAGE: LeadStage = "VISIT";
 export async function listOrganizationLeads(
   orgSlug: string,
 ): Promise<LeadListItem[]> {
-  const organization = getDemoOrganizationBySlug(orgSlug);
-
-  if (!organization) {
-    return [];
-  }
-
-  const users = listDemoUsersByOrganization(organization.id);
-
-  return listDemoLeadsByOrganization(organization.id).map((lead) => {
-    const property = lead.propertyId
-      ? getDemoPropertyById(organization.id, lead.propertyId)
-      : null;
-
-    return {
-      id: lead.id,
-      fullName: lead.fullName,
-      email: lead.email,
-      phone: lead.phone,
-      status: lead.status,
-      source: lead.source,
-      notes: lead.notes,
-      interestLabel: lead.interestLabel,
-      budgetLabel: lead.budgetLabel,
-      ownerName:
-        users.find((user) => user.id === lead.ownerId)?.fullName ?? "Unassigned",
-      propertyId: lead.propertyId,
-      propertyTitle: property?.title ?? "No property linked yet",
-      lastContactAt: lead.lastContactAt,
-    };
+  const leads = await prisma.lead.findMany({
+    where: {
+      organization: {
+        slug: orgSlug,
+      },
+    },
+    include: {
+      property: true,
+      owner: true,
+    },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
   });
+
+  return leads.map((lead) => ({
+    id: lead.id,
+    fullName: lead.fullName,
+    email: lead.email ?? "",
+    phone: lead.phone ?? "",
+    status: lead.status,
+    source: lead.source ?? "Manual entry",
+    notes: lead.notes ?? "Lead record ready for qualification.",
+    interestLabel: lead.interestLabel ?? "New inquiry",
+    budgetLabel: lead.budgetLabel ?? "Pending qualification",
+    ownerName: lead.owner?.fullName ?? "Unassigned",
+    propertyId: lead.propertyId ?? undefined,
+    propertyTitle: lead.property?.title ?? "No property linked yet",
+    lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
+  }));
 }
 
 export async function getLeadSummary(orgSlug: string): Promise<LeadSummary> {
@@ -76,52 +65,85 @@ export async function getLeadDetail(
   orgSlug: string,
   leadId: string,
 ): Promise<LeadDetail | null> {
-  const organization = getDemoOrganizationBySlug(orgSlug);
-
-  if (!organization) {
-    return null;
-  }
-
-  const lead = getDemoLeadById(organization.id, leadId);
+  const lead = await prisma.lead.findFirst({
+    where: {
+      id: leadId,
+      organization: {
+        slug: orgSlug,
+      },
+    },
+    include: {
+      property: true,
+      owner: true,
+      visits: {
+        include: {
+          property: true,
+        },
+        orderBy: {
+          scheduledAt: "asc",
+        },
+      },
+    },
+  });
 
   if (!lead) {
     return null;
   }
 
-  const property = lead.propertyId
-    ? getDemoPropertyById(organization.id, lead.propertyId)
-    : null;
-  const owner = getDemoUserById(lead.ownerId);
-  const activity = listDemoLeadActivities(organization.id, lead.id).map((item) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    happenedAt: item.happenedAt,
-  }));
-  const visits = listDemoVisitsByLead(organization.id, lead.id).map((visit) => ({
+  const activity = [
+    {
+      id: `${lead.id}_created`,
+      title: "Lead created",
+      description: lead.source
+        ? `Lead entered the CRM from ${lead.source}.`
+        : "Lead entered the CRM and is ready for qualification.",
+      happenedAt: lead.createdAt.toISOString(),
+    },
+    ...(lead.updatedAt.getTime() !== lead.createdAt.getTime()
+      ? [
+          {
+            id: `${lead.id}_updated`,
+            title: "Lead updated",
+            description: "Core lead details, stage, or property assignment were updated.",
+            happenedAt: lead.updatedAt.toISOString(),
+          },
+        ]
+      : []),
+    ...(lead.property
+      ? [
+          {
+            id: `${lead.id}_property`,
+            title: "Property linked",
+            description: `Lead is currently linked to ${lead.property.title}.`,
+            happenedAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
+          },
+        ]
+      : []),
+  ].sort((left, right) => right.happenedAt.localeCompare(left.happenedAt));
+
+  const visits = lead.visits.map((visit) => ({
     id: visit.id,
-    scheduledAt: visit.scheduledAt,
+    scheduledAt: visit.scheduledAt.toISOString(),
     status: visit.status,
-    notes: visit.notes,
-    propertyTitle:
-      getDemoPropertyById(organization.id, visit.propertyId)?.title ?? "Property unavailable",
+    notes: visit.notes ?? "Visit scheduled from the CRM workspace.",
+    propertyTitle: visit.property?.title ?? "Property unavailable",
   }));
 
   return {
     id: lead.id,
     fullName: lead.fullName,
-    email: lead.email,
-    phone: lead.phone,
+    email: lead.email ?? "",
+    phone: lead.phone ?? "",
     status: lead.status,
-    source: lead.source,
-    notes: lead.notes,
-    interestLabel: lead.interestLabel,
-    budgetLabel: lead.budgetLabel,
-    ownerName: owner?.fullName ?? "Unassigned",
-    assignedUserEmail: owner?.email ?? "No assigned user email",
-    propertyId: lead.propertyId,
-    propertyTitle: property?.title ?? "No property linked yet",
-    lastContactAt: lead.lastContactAt,
+    source: lead.source ?? "Manual entry",
+    notes: lead.notes ?? "Lead record ready for qualification.",
+    interestLabel: lead.interestLabel ?? "New inquiry",
+    budgetLabel: lead.budgetLabel ?? "Pending qualification",
+    ownerName: lead.owner?.fullName ?? "Unassigned",
+    assignedUserEmail: lead.owner?.email ?? "No assigned user email",
+    propertyId: lead.propertyId ?? undefined,
+    propertyTitle: lead.property?.title ?? "No property linked yet",
+    lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
     activity,
     visits,
   };

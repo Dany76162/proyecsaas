@@ -1,16 +1,12 @@
 "use server";
 
-import { VisitStatus } from "@prisma/client";
+import { LeadStatus, VisitStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import {
-  createDemoVisit,
-  getDemoLeadById,
-  getDemoOrganizationBySlug,
-  listDemoUsersByOrganization,
-} from "@/server/demo/workspace-store";
+import { getOrganizationBySlug } from "@/server/db/organization-context";
+import { prisma } from "@/server/db/prisma";
 
 const createVisitSchema = z.object({
   scheduledAt: z
@@ -23,13 +19,23 @@ const createVisitSchema = z.object({
 export async function createVisitAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
   const leadId = String(formData.get("leadId") ?? "");
-  const organization = getDemoOrganizationBySlug(orgSlug);
+  const organization = await getOrganizationBySlug(orgSlug);
 
   if (!organization) {
     return;
   }
 
-  const lead = getDemoLeadById(organization.id, leadId);
+  const lead = await prisma.lead.findFirst({
+    where: {
+      id: leadId,
+      organizationId: organization.id,
+    },
+    select: {
+      id: true,
+      propertyId: true,
+      ownerId: true,
+    },
+  });
 
   if (!lead?.propertyId) {
     return;
@@ -44,20 +50,63 @@ export async function createVisitAction(formData: FormData) {
     return;
   }
 
-  const owner = listDemoUsersByOrganization(organization.id)[0];
+  const property = await prisma.property.findFirst({
+    where: {
+      id: lead.propertyId,
+      organizationId: organization.id,
+    },
+    select: {
+      id: true,
+    },
+  });
 
-  const visit = createDemoVisit({
-    organizationId: organization.id,
-    leadId,
-    propertyId: lead.propertyId,
-    createdById: lead.ownerId || owner?.id || "",
-    scheduledAt: new Date(parsed.data.scheduledAt).toISOString(),
-    status: parsed.data.status,
+  if (!property) {
+    return;
+  }
+
+  const fallbackOwner = await prisma.membership.findFirst({
+    where: {
+      organizationId: organization.id,
+    },
+    select: {
+      userId: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  const ownerId = lead.ownerId || fallbackOwner?.userId;
+
+  if (!ownerId) {
+    return;
+  }
+
+  const visit = await prisma.visit.create({
+    data: {
+      organizationId: organization.id,
+      leadId,
+      propertyId: lead.propertyId,
+      createdById: ownerId,
+      scheduledAt: new Date(parsed.data.scheduledAt),
+      status: parsed.data.status,
+      notes: "Visit created directly from lead detail.",
+    },
   });
 
   if (!visit) {
     return;
   }
+
+  await prisma.lead.update({
+    where: {
+      id: leadId,
+    },
+    data: {
+      status: LeadStatus.VISIT,
+      lastContactAt: new Date(),
+    },
+  });
 
   revalidatePath(`/${orgSlug}/visits`);
   revalidatePath(`/${orgSlug}/leads/${leadId}`);

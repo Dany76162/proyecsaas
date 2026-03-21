@@ -42,6 +42,7 @@ model User {
   id            String       @id @default(cuid())
   email         String       @unique
   fullName      String
+  jobTitle      String?
   isActive      Boolean      @default(true)
   memberships   Membership[]
   ownedLeads    Lead[]       @relation("LeadOwner")
@@ -54,6 +55,10 @@ model Organization {
   id            String           @id @default(cuid())
   name          String
   slug          String           @unique
+  city          String?
+  planLabel     String?
+  marketFocus   String?
+  description   String?
   isActive      Boolean          @default(true)
   memberships   Membership[]
   leads         Lead[]
@@ -89,6 +94,9 @@ model Lead {
   status         LeadStatus   @default(NEW)
   source         String?
   notes          String?
+  interestLabel  String?
+  budgetLabel    String?
+  lastContactAt  DateTime?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   owner          User?        @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   property       Property?    @relation("LeadPropertyInterest", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
@@ -109,12 +117,17 @@ model Property {
   title          String
   address        String?
   city           String?
+  neighborhood   String?
+  propertyType   String?
   latitude       Decimal?       @db.Decimal(10, 7)
   longitude      Decimal?       @db.Decimal(10, 7)
   priceCents     Int?
   currency       String?        @default("USD")
   status         PropertyStatus @default(DRAFT)
   publicVisible  Boolean        @default(false)
+  bedrooms       Int?
+  bathrooms      Int?
+  surfaceM2      Int?
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   interestedLeads Lead[]        @relation("LeadPropertyInterest")
   visits         Visit[]        @relation("PropertyVisits")

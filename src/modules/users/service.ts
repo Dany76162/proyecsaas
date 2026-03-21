@@ -1,19 +1,34 @@
 import "server-only";
 
-import { getDemoOrganizationBySlug, listDemoUsersByOrganization } from "@/server/demo/workspace-store";
+import { prisma } from "@/server/db/prisma";
 
 import type { OrganizationMember, UserRoleBreakdown } from "@/modules/users/types";
 
 export async function listOrganizationUsers(
   orgSlug: string,
 ): Promise<OrganizationMember[]> {
-  const organization = getDemoOrganizationBySlug(orgSlug);
+  const memberships = await prisma.membership.findMany({
+    where: {
+      organization: {
+        slug: orgSlug,
+      },
+    },
+    include: {
+      user: true,
+    },
+    orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+  });
 
-  if (!organization) {
-    return [];
-  }
-
-  return listDemoUsersByOrganization(organization.id);
+  return memberships
+    .map((membership) => ({
+      id: membership.user.id,
+      fullName: membership.user.fullName,
+      email: membership.user.email,
+      jobTitle: membership.user.jobTitle ?? "Team member",
+      isActive: membership.user.isActive,
+      role: membership.role,
+    }))
+    .sort((left, right) => left.fullName.localeCompare(right.fullName));
 }
 
 export async function getUserRoleBreakdown(

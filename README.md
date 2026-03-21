@@ -157,19 +157,32 @@ npm install
 Copy-Item .env.example .env
 ```
 
-3. Generate Prisma client
+3. Ensure `.env` contains valid local PostgreSQL credentials
+
+```env
+DATABASE_URL="postgresql://<user>:<password>@localhost:5432/proyecsaas"
+DIRECT_URL="postgresql://<user>:<password>@localhost:5432/proyecsaas"
+```
+
+4. Generate Prisma client
 
 ```bash
 npm run prisma:generate
 ```
 
-4. Run migrations once PostgreSQL is ready
+5. Push the schema once PostgreSQL is ready
 
 ```bash
-npm run prisma:migrate
+npm run db:push
 ```
 
-5. Start the app
+6. Seed the local database with the starter workspace
+
+```bash
+npm run db:seed
+```
+
+7. Start the app
 
 ```bash
 npm run dev
