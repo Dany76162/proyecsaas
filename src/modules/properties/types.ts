@@ -1,4 +1,4 @@
-import type { PropertyStatus } from "@prisma/client";
+import type { PropertyStatus, VisitStatus } from "@prisma/client";
 
 export type PropertyListItem = {
   id: string;
@@ -21,4 +21,26 @@ export type PropertySummary = {
   availableCount: number;
   publicCount: number;
   averageTicketCents: number;
+};
+
+export type PropertyInterestLead = {
+  id: string;
+  fullName: string;
+  status: string;
+  ownerName: string;
+};
+
+export type PropertyVisitItem = {
+  id: string;
+  scheduledAt: string;
+  status: VisitStatus;
+  leadName: string;
+};
+
+export type PropertyDetail = PropertyListItem & {
+  latitude?: number;
+  longitude?: number;
+  interestedLeads: PropertyInterestLead[];
+  visits: PropertyVisitItem[];
+  organizationSlug: string;
 };

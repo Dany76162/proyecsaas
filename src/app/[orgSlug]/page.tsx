@@ -8,7 +8,8 @@ import { getLeadSummary, listOrganizationLeads } from "@/modules/leads/service";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getPropertySummary, listOrganizationProperties } from "@/modules/properties/service";
 import { getUserRoleBreakdown, listOrganizationUsers } from "@/modules/users/service";
-import { formatCurrency } from "@/lib/utils";
+import { getVisitSummary, listOrganizationVisits } from "@/modules/visits/service";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default async function OrganizationHomePage({
   params,
@@ -16,16 +17,27 @@ export default async function OrganizationHomePage({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  const [organization, leads, leadSummary, properties, propertySummary, users, roleBreakdown] =
-    await Promise.all([
-      getOrganizationWorkspace(orgSlug),
-      listOrganizationLeads(orgSlug),
-      getLeadSummary(orgSlug),
-      listOrganizationProperties(orgSlug),
-      getPropertySummary(orgSlug),
-      listOrganizationUsers(orgSlug),
-      getUserRoleBreakdown(orgSlug),
-    ]);
+  const [
+    organization,
+    leads,
+    leadSummary,
+    properties,
+    propertySummary,
+    users,
+    roleBreakdown,
+    visits,
+    visitSummary,
+  ] = await Promise.all([
+    getOrganizationWorkspace(orgSlug),
+    listOrganizationLeads(orgSlug),
+    getLeadSummary(orgSlug),
+    listOrganizationProperties(orgSlug),
+    getPropertySummary(orgSlug),
+    listOrganizationUsers(orgSlug),
+    getUserRoleBreakdown(orgSlug),
+    listOrganizationVisits(orgSlug),
+    getVisitSummary(orgSlug),
+  ]);
 
   if (!organization) {
     notFound();
@@ -74,9 +86,9 @@ export default async function OrganizationHomePage({
               <p className="mt-2 text-2xl font-semibold text-slate-950">{leadSummary.newCount}</p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm text-slate-500">Qualified</p>
+              <p className="text-sm text-slate-500">Interested</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">
-                {leadSummary.qualifiedCount}
+                {leadSummary.interestedCount}
               </p>
             </div>
           </div>
@@ -90,15 +102,21 @@ export default async function OrganizationHomePage({
                 <div>
                   <p className="font-semibold text-slate-950">{lead.fullName}</p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {lead.interestLabel} • {lead.ownerName}
+                    {lead.interestLabel} / {lead.ownerName}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusBadge
                     label={lead.status.replaceAll("_", " ")}
-                    tone={lead.status === "QUALIFIED" ? "success" : "info"}
+                    tone={
+                      lead.status === "VISIT"
+                        ? "warning"
+                        : lead.status === "CLOSED"
+                          ? "success"
+                          : "info"
+                    }
                   />
-                  <span className="text-sm text-slate-500">{lead.budgetLabel}</span>
+                  <span className="text-sm text-slate-500">{lead.propertyTitle}</span>
                 </div>
               </div>
             ))}
@@ -112,7 +130,10 @@ export default async function OrganizationHomePage({
         >
           <div className="space-y-3">
             {roleBreakdown.map((item) => (
-              <div key={item.role} className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
+              <div
+                key={item.role}
+                className="flex items-center justify-between rounded-2xl bg-slate-50 p-4"
+              >
                 <p className="font-medium text-slate-700">{item.role}</p>
                 <p className="text-lg font-semibold text-slate-950">{item.count}</p>
               </div>
@@ -168,11 +189,59 @@ export default async function OrganizationHomePage({
                 {property.neighborhood}, {property.city}
               </p>
               <p className="mt-4 text-sm text-slate-600">
-                {property.bedrooms} bed • {property.bathrooms} bath • {property.surfaceM2} m2
+                {property.bedrooms} bed / {property.bathrooms} bath / {property.surfaceM2} m2
               </p>
               <p className="mt-4 text-lg font-semibold text-slate-950">
                 {formatCurrency(property.priceCents, property.currency)}
               </p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Visit pipeline"
+        title="Upcoming visits"
+        description="Visits now connect the selected property and active lead in a single operational flow."
+      >
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-sm text-slate-500">Scheduled</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">{visitSummary.total}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-sm text-slate-500">Pending</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">
+              {visitSummary.pendingCount}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-sm text-slate-500">Confirmed</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">
+              {visitSummary.confirmedCount}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {visits.slice(0, 3).map((visit) => (
+            <div
+              key={visit.id}
+              className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
+            >
+              <div>
+                <p className="font-semibold text-slate-950">{visit.leadName}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {visit.propertyTitle} / {visit.ownerName}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <StatusBadge
+                  label={visit.status}
+                  tone={visit.status === "CONFIRMED" ? "success" : "warning"}
+                />
+                <span className="text-sm text-slate-500">{formatDate(visit.scheduledAt)}</span>
+              </div>
             </div>
           ))}
         </div>

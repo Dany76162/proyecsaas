@@ -40,7 +40,11 @@ export default async function UsersSettingsPage({
         />
         <MetricCard
           label="Owners/Admins"
-          value={String(roleBreakdown.filter((item) => item.role !== "ASSISTANT" && item.role !== "AGENT").reduce((sum, item) => sum + item.count, 0))}
+          value={String(
+            roleBreakdown
+              .filter((item) => item.role !== "ASSISTANT" && item.role !== "AGENT")
+              .reduce((sum, item) => sum + item.count, 0),
+          )}
           hint="Leadership roles currently represented in the tenant."
         />
       </section>
@@ -59,7 +63,7 @@ export default async function UsersSettingsPage({
               <div>
                 <p className="text-lg font-semibold text-slate-950">{user.fullName}</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  {user.jobTitle} • {user.email}
+                  {user.jobTitle} / {user.email}
                 </p>
               </div>
               <div className="flex items-center gap-3">

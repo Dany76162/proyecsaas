@@ -18,9 +18,9 @@ enum MembershipRole {
 enum LeadStatus {
   NEW
   CONTACTED
-  QUALIFIED
-  WON
-  LOST
+  INTERESTED
+  VISIT
+  CLOSED
 }
 
 enum PropertyStatus {
@@ -82,6 +82,7 @@ model Lead {
   id             String       @id @default(cuid())
   organizationId String
   ownerId        String?
+  propertyId     String?
   fullName       String
   email          String?
   phone          String?
@@ -90,6 +91,7 @@ model Lead {
   notes          String?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   owner          User?        @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  property       Property?    @relation("LeadPropertyInterest", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
   conversations  Conversation[]
   visits         Visit[]
   createdAt      DateTime     @default(now())
@@ -97,6 +99,7 @@ model Lead {
 
   @@index([organizationId, status])
   @@index([organizationId, ownerId])
+  @@index([organizationId, propertyId])
   @@unique([id, organizationId])
 }
 
@@ -113,6 +116,7 @@ model Property {
   status         PropertyStatus @default(DRAFT)
   publicVisible  Boolean        @default(false)
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  interestedLeads Lead[]        @relation("LeadPropertyInterest")
   visits         Visit[]        @relation("PropertyVisits")
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt

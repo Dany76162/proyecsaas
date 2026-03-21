@@ -11,7 +11,7 @@ type WorkspaceSidebarProps = {
   organization: OrganizationSummary;
 };
 
-const primaryModuleKeys = new Set(["organizations", "users", "leads", "properties"]);
+const primaryModuleKeys = new Set(["organizations", "users", "leads", "properties", "visits"]);
 
 export function WorkspaceSidebar({
   organization,

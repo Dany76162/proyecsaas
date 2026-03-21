@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MetricCard } from "@/components/workspace/metric-card";
@@ -37,23 +38,27 @@ export default async function PropertiesPage({
         <MetricCard
           label="Available"
           value={String(summary.availableCount)}
-          hint="Ready for assignment, matching, and future visit scheduling."
+          hint="Ready for assignment, matching, and visit scheduling."
         />
         <MetricCard
           label="Public-ready"
           value={String(summary.publicCount)}
-          hint="Properties already separated for future public map visibility."
+          hint="Visible on the future public map and property discovery routes."
         />
       </section>
 
       <SectionCard
         eyebrow="Inventory"
         title="Property portfolio"
-        description="Clean separation between internal inventory and public exposure."
+        description="Every property can now act as the start of a concrete property -> lead -> visit flow."
       >
         <div className="grid gap-4 xl:grid-cols-2">
           {properties.map((property) => (
-            <article key={property.id} className="rounded-[1.5rem] border border-slate-200 p-5">
+            <Link
+              key={property.id}
+              href={`/${orgSlug}/properties/${property.id}`}
+              className="rounded-[1.5rem] border border-slate-200 p-5 transition hover:-translate-y-0.5"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-lg font-semibold text-slate-950">{property.title}</p>
@@ -63,7 +68,7 @@ export default async function PropertiesPage({
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <StatusBadge
-                    label={property.status.replaceAll("_", " ")}
+                    label={property.status}
                     tone={property.status === "AVAILABLE" ? "success" : "warning"}
                   />
                   <StatusBadge
@@ -83,7 +88,7 @@ export default async function PropertiesPage({
               <p className="mt-5 text-2xl font-semibold text-slate-950">
                 {formatCurrency(property.priceCents, property.currency)}
               </p>
-            </article>
+            </Link>
           ))}
         </div>
       </SectionCard>

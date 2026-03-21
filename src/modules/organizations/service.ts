@@ -1,6 +1,6 @@
 import "server-only";
 
-import { LeadStatus, PropertyStatus } from "@prisma/client";
+import { PropertyStatus } from "@prisma/client";
 
 import {
   getDemoOrganizationBySlug,
@@ -58,7 +58,7 @@ export async function getOrganizationWorkspace(
 
   return {
     ...summary,
-    activeLeadCount: leads.filter((lead) => lead.status !== LeadStatus.LOST).length,
+    activeLeadCount: leads.filter((lead) => lead.status !== "CLOSED").length,
     publicPropertyCount: properties.filter((property) => property.publicVisible).length,
     availablePropertyCount: properties.filter(
       (property) => property.status === PropertyStatus.AVAILABLE,

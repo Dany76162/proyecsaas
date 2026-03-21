@@ -1,10 +1,11 @@
 import "server-only";
 
 import {
-  LeadStatus,
   MembershipRole,
   PropertyStatus,
+  VisitStatus,
 } from "@prisma/client";
+import type { LeadStage } from "@/modules/leads/types";
 
 type DemoOrganization = {
   id: string;
@@ -35,15 +36,25 @@ type DemoLead = {
   id: string;
   organizationId: string;
   ownerId: string;
+  propertyId?: string;
   fullName: string;
   email: string;
   phone: string;
-  status: LeadStatus;
+  status: LeadStage;
   source: string;
   notes: string;
   interestLabel: string;
   lastContactAt: string;
   budgetLabel: string;
+};
+
+type DemoLeadActivity = {
+  id: string;
+  organizationId: string;
+  leadId: string;
+  title: string;
+  description: string;
+  happenedAt: string;
 };
 
 type DemoProperty = {
@@ -63,6 +74,17 @@ type DemoProperty = {
   surfaceM2: number;
   latitude: number;
   longitude: number;
+};
+
+type DemoVisit = {
+  id: string;
+  organizationId: string;
+  propertyId: string;
+  leadId: string;
+  createdById: string;
+  status: VisitStatus;
+  scheduledAt: string;
+  notes: string;
 };
 
 const organizations: DemoOrganization[] = [
@@ -130,65 +152,6 @@ const memberships: DemoMembership[] = [
   { id: "m_3", organizationId: "org_north", userId: "user_3", role: MembershipRole.ASSISTANT },
   { id: "m_4", organizationId: "org_river", userId: "user_4", role: MembershipRole.OWNER },
   { id: "m_5", organizationId: "org_river", userId: "user_5", role: MembershipRole.AGENT },
-];
-
-const leads: DemoLead[] = [
-  {
-    id: "lead_1",
-    organizationId: "org_north",
-    ownerId: "user_2",
-    fullName: "Valentina Molina",
-    email: "valentina@example.com",
-    phone: "+54 11 5555 1201",
-    status: LeadStatus.NEW,
-    source: "Website form",
-    notes: "Looking for a 2-bedroom apartment near Palermo.",
-    interestLabel: "Apartment purchase",
-    lastContactAt: "2026-03-20T13:30:00.000Z",
-    budgetLabel: "USD 180k - 230k",
-  },
-  {
-    id: "lead_2",
-    organizationId: "org_north",
-    ownerId: "user_1",
-    fullName: "Diego Fernandez",
-    email: "diego@example.com",
-    phone: "+54 11 5555 1202",
-    status: LeadStatus.QUALIFIED,
-    source: "Referral",
-    notes: "Investor evaluating 3 units for medium-term rentals.",
-    interestLabel: "Investment portfolio",
-    lastContactAt: "2026-03-19T18:00:00.000Z",
-    budgetLabel: "USD 400k+",
-  },
-  {
-    id: "lead_3",
-    organizationId: "org_north",
-    ownerId: "user_2",
-    fullName: "Mariana Sucre",
-    email: "mariana@example.com",
-    phone: "+54 11 5555 1203",
-    status: LeadStatus.CONTACTED,
-    source: "Instagram campaign",
-    notes: "Needs financing guidance before scheduling visits.",
-    interestLabel: "First-home purchase",
-    lastContactAt: "2026-03-18T15:45:00.000Z",
-    budgetLabel: "USD 120k - 150k",
-  },
-  {
-    id: "lead_4",
-    organizationId: "org_river",
-    ownerId: "user_5",
-    fullName: "Agustin Quiroga",
-    email: "agustin@example.com",
-    phone: "+54 351 555 2001",
-    status: LeadStatus.NEW,
-    source: "Property portal",
-    notes: "Interested in a furnished rental close to Nueva Cordoba.",
-    interestLabel: "Apartment rental",
-    lastContactAt: "2026-03-20T09:15:00.000Z",
-    budgetLabel: "ARS 850k / month",
-  },
 ];
 
 const properties: DemoProperty[] = [
@@ -266,12 +229,155 @@ const properties: DemoProperty[] = [
   },
 ];
 
+const leads: DemoLead[] = [
+  {
+    id: "lead_1",
+    organizationId: "org_north",
+    ownerId: "user_2",
+    propertyId: "prop_1",
+    fullName: "Valentina Molina",
+    email: "valentina@example.com",
+    phone: "+54 11 5555 1201",
+    status: "INTERESTED",
+    source: "Website form",
+    notes: "Looking for a 2-bedroom apartment near Palermo.",
+    interestLabel: "Apartment purchase",
+    lastContactAt: "2026-03-20T13:30:00.000Z",
+    budgetLabel: "USD 180k - 230k",
+  },
+  {
+    id: "lead_2",
+    organizationId: "org_north",
+    ownerId: "user_1",
+    propertyId: "prop_3",
+    fullName: "Diego Fernandez",
+    email: "diego@example.com",
+    phone: "+54 11 5555 1202",
+    status: "VISIT",
+    source: "Referral",
+    notes: "Investor evaluating 3 units for medium-term rentals.",
+    interestLabel: "Investment portfolio",
+    lastContactAt: "2026-03-19T18:00:00.000Z",
+    budgetLabel: "USD 400k+",
+  },
+  {
+    id: "lead_3",
+    organizationId: "org_north",
+    ownerId: "user_2",
+    propertyId: "prop_2",
+    fullName: "Mariana Sucre",
+    email: "mariana@example.com",
+    phone: "+54 11 5555 1203",
+    status: "CONTACTED",
+    source: "Instagram campaign",
+    notes: "Needs financing guidance before scheduling visits.",
+    interestLabel: "First-home purchase",
+    lastContactAt: "2026-03-18T15:45:00.000Z",
+    budgetLabel: "USD 120k - 150k",
+  },
+  {
+    id: "lead_4",
+    organizationId: "org_river",
+    ownerId: "user_5",
+    propertyId: "prop_4",
+    fullName: "Agustin Quiroga",
+    email: "agustin@example.com",
+    phone: "+54 351 555 2001",
+    status: "NEW",
+    source: "Property portal",
+    notes: "Interested in a furnished rental close to Nueva Cordoba.",
+    interestLabel: "Apartment rental",
+    lastContactAt: "2026-03-20T09:15:00.000Z",
+    budgetLabel: "ARS 850k / month",
+  },
+];
+
+const leadActivities: DemoLeadActivity[] = [
+  {
+    id: "act_1",
+    organizationId: "org_north",
+    leadId: "lead_1",
+    title: "Inbound lead captured",
+    description: "Lead submitted a website form for the Palermo apartment.",
+    happenedAt: "2026-03-19T14:10:00.000Z",
+  },
+  {
+    id: "act_2",
+    organizationId: "org_north",
+    leadId: "lead_1",
+    title: "Broker qualification call",
+    description: "Martin confirmed budget, neighborhood preference, and timing.",
+    happenedAt: "2026-03-20T13:30:00.000Z",
+  },
+  {
+    id: "act_3",
+    organizationId: "org_north",
+    leadId: "lead_2",
+    title: "Investment brief shared",
+    description: "Lead received ROI summary for the studio listing.",
+    happenedAt: "2026-03-18T16:20:00.000Z",
+  },
+  {
+    id: "act_4",
+    organizationId: "org_north",
+    leadId: "lead_2",
+    title: "Visit requested",
+    description: "Lead asked for an in-person visit next week.",
+    happenedAt: "2026-03-19T18:00:00.000Z",
+  },
+  {
+    id: "act_5",
+    organizationId: "org_river",
+    leadId: "lead_4",
+    title: "Portal inquiry received",
+    description: "Lead wants a fast viewing for the Nueva Cordoba loft.",
+    happenedAt: "2026-03-20T09:15:00.000Z",
+  },
+];
+
+const visits: DemoVisit[] = [
+  {
+    id: "visit_1",
+    organizationId: "org_north",
+    propertyId: "prop_1",
+    leadId: "lead_1",
+    createdById: "user_2",
+    status: VisitStatus.PENDING,
+    scheduledAt: "2026-03-24T15:00:00.000Z",
+    notes: "First guided walkthrough with both decision makers attending.",
+  },
+  {
+    id: "visit_2",
+    organizationId: "org_north",
+    propertyId: "prop_3",
+    leadId: "lead_2",
+    createdById: "user_1",
+    status: VisitStatus.CONFIRMED,
+    scheduledAt: "2026-03-26T18:30:00.000Z",
+    notes: "Evening visit focused on investment assumptions and building amenities.",
+  },
+  {
+    id: "visit_3",
+    organizationId: "org_river",
+    propertyId: "prop_4",
+    leadId: "lead_4",
+    createdById: "user_5",
+    status: VisitStatus.PENDING,
+    scheduledAt: "2026-03-23T17:00:00.000Z",
+    notes: "Rental showing with same-day document checklist review.",
+  },
+];
+
 export function listDemoOrganizations() {
   return organizations;
 }
 
 export function getDemoOrganizationBySlug(orgSlug: string) {
   return organizations.find((organization) => organization.slug === orgSlug) ?? null;
+}
+
+export function getDemoOrganizationById(organizationId: string) {
+  return organizations.find((organization) => organization.id === organizationId) ?? null;
 }
 
 export function listDemoMembershipsByOrganization(organizationId: string) {
@@ -296,14 +402,56 @@ export function listDemoUsersByOrganization(organizationId: string) {
     .filter((user): user is NonNullable<typeof user> => Boolean(user));
 }
 
+export function getDemoUserById(userId: string) {
+  return users.find((user) => user.id === userId) ?? null;
+}
+
 export function listDemoLeadsByOrganization(organizationId: string) {
   return leads.filter((lead) => lead.organizationId === organizationId);
+}
+
+export function getDemoLeadById(organizationId: string, leadId: string) {
+  return leads.find(
+    (lead) => lead.organizationId === organizationId && lead.id === leadId,
+  ) ?? null;
+}
+
+export function listDemoLeadActivities(organizationId: string, leadId: string) {
+  return leadActivities.filter(
+    (activity) => activity.organizationId === organizationId && activity.leadId === leadId,
+  );
 }
 
 export function listDemoPropertiesByOrganization(organizationId: string) {
   return properties.filter((property) => property.organizationId === organizationId);
 }
 
+export function getDemoPropertyById(organizationId: string, propertyId: string) {
+  return properties.find(
+    (property) => property.organizationId === organizationId && property.id === propertyId,
+  ) ?? null;
+}
+
 export function listDemoPublicProperties() {
   return properties.filter((property) => property.publicVisible);
+}
+
+export function getDemoPublicPropertyById(propertyId: string) {
+  return properties.find((property) => property.publicVisible && property.id === propertyId) ?? null;
+}
+
+export function listDemoVisitsByOrganization(organizationId: string) {
+  return visits.filter((visit) => visit.organizationId === organizationId);
+}
+
+export function listDemoVisitsByLead(organizationId: string, leadId: string) {
+  return visits.filter(
+    (visit) => visit.organizationId === organizationId && visit.leadId === leadId,
+  );
+}
+
+export function listDemoVisitsByProperty(organizationId: string, propertyId: string) {
+  return visits.filter(
+    (visit) => visit.organizationId === organizationId && visit.propertyId === propertyId,
+  );
 }
