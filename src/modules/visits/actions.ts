@@ -50,7 +50,7 @@ export async function createVisitAction(formData: FormData) {
     return;
   }
 
-  const property = await prisma.property.findFirst({
+  const linkedProperty = await prisma.property.findFirst({
     where: {
       id: lead.propertyId,
       organizationId: organization.id,
@@ -60,7 +60,7 @@ export async function createVisitAction(formData: FormData) {
     },
   });
 
-  if (!property) {
+  if (!linkedProperty) {
     return;
   }
 
@@ -98,6 +98,25 @@ export async function createVisitAction(formData: FormData) {
     return;
   }
 
+  const [propertyDetail, leadDetail] = await Promise.all([
+    prisma.property.findUnique({
+      where: {
+        id: lead.propertyId,
+      },
+      select: {
+        title: true,
+      },
+    }),
+    prisma.lead.findUnique({
+      where: {
+        id: leadId,
+      },
+      select: {
+        fullName: true,
+      },
+    }),
+  ]);
+
   await prisma.lead.update({
     where: {
       id: leadId,
@@ -105,6 +124,23 @@ export async function createVisitAction(formData: FormData) {
     data: {
       status: LeadStatus.VISIT,
       lastContactAt: new Date(),
+    },
+  });
+
+  await prisma.notification.create({
+    data: {
+      organizationId: organization.id,
+      type: "VISIT_CREATED",
+      title: `Visit scheduled for ${leadDetail?.fullName ?? "lead"}`,
+      body: `${propertyDetail?.title ?? "Property"} booked for ${visit.scheduledAt.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })}.`,
+      link: `/${orgSlug}/visits`,
+      entityType: "visit",
+      entityId: visit.id,
     },
   });
 

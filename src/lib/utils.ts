@@ -29,3 +29,30 @@ export function formatDateTime(value: string) {
     minute: "2-digit",
   }).format(new Date(value));
 }
+
+export function formatWeekday(weekday: number) {
+  const labels = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  return labels[weekday] ?? "Unknown day";
+}
+
+export function formatMinuteRange(startMinute: number, endMinute: number) {
+  const formatSingle = (value: number) => {
+    const hours = Math.floor(value / 60)
+      .toString()
+      .padStart(2, "0");
+    const minutes = (value % 60).toString().padStart(2, "0");
+
+    return `${hours}:${minutes}`;
+  };
+
+  return `${formatSingle(startMinute)} - ${formatSingle(endMinute)}`;
+}

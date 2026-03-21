@@ -16,3 +16,12 @@ export type OrganizationWorkspace = OrganizationSummary & {
   publicPropertyCount: number;
   availablePropertyCount: number;
 };
+
+export type WorkspaceNotification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  link?: string;
+  createdAt: string;
+};

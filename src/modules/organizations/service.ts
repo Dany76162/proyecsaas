@@ -4,7 +4,11 @@ import { PropertyStatus } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
 
-import type { OrganizationSummary, OrganizationWorkspace } from "@/modules/organizations/types";
+import type {
+  OrganizationSummary,
+  OrganizationWorkspace,
+  WorkspaceNotification,
+} from "@/modules/organizations/types";
 
 function buildOrganizationSummary(organization: {
   id: string;
@@ -95,4 +99,29 @@ export async function getOrganizationWorkspace(
 
 export async function getOrganizationSwitcherItems() {
   return listOrganizations();
+}
+
+export async function listWorkspaceNotifications(
+  orgSlug: string,
+): Promise<WorkspaceNotification[]> {
+  const notifications = await prisma.notification.findMany({
+    where: {
+      organization: {
+        slug: orgSlug,
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 5,
+  });
+
+  return notifications.map((notification) => ({
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    body: notification.body,
+    link: notification.link ?? undefined,
+    createdAt: notification.createdAt.toISOString(),
+  }));
 }

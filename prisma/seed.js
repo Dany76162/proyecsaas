@@ -1,5 +1,8 @@
 const {
+  ConversationStatus,
   MembershipRole,
+  MessageDirection,
+  NotificationType,
   PrismaClient,
   PropertyStatus,
   VisitStatus,
@@ -249,7 +252,189 @@ const visits = [
   },
 ];
 
+const conversations = [
+  {
+    id: "conv_1",
+    organizationId: "org_north",
+    leadId: "lead_1",
+    propertyId: "prop_1",
+    channel: "WHATSAPP",
+    status: ConversationStatus.QUALIFIED,
+    participantName: "Valentina Molina",
+    participantPhone: "+54 11 5555 1201",
+    propertyContextNote: "Lead asked specifically about the Palermo 2BR apartment.",
+    subject: "Property inquiry",
+    lastMessageAt: new Date("2026-03-20T13:28:00.000Z"),
+  },
+  {
+    id: "conv_2",
+    organizationId: "org_north",
+    leadId: "lead_2",
+    propertyId: "prop_3",
+    channel: "WHATSAPP",
+    status: ConversationStatus.OPEN,
+    participantName: "Diego Fernandez",
+    participantPhone: "+54 11 5555 1202",
+    propertyContextNote: "Conversation references the investor-ready studio listing.",
+    subject: "Investment follow-up",
+    lastMessageAt: new Date("2026-03-19T17:55:00.000Z"),
+  },
+  {
+    id: "conv_3",
+    organizationId: "org_river",
+    leadId: "lead_4",
+    propertyId: "prop_4",
+    channel: "WHATSAPP",
+    status: ConversationStatus.OPEN,
+    participantName: "Agustin Quiroga",
+    participantPhone: "+54 351 555 2001",
+    propertyContextNote: "Rental inquiry matched to the furnished loft in Nueva Cordoba.",
+    subject: "Rental inquiry",
+    lastMessageAt: new Date("2026-03-20T09:12:00.000Z"),
+  },
+];
+
+const messages = [
+  {
+    organizationId: "org_north",
+    conversationId: "conv_1",
+    direction: MessageDirection.INBOUND,
+    body: "Hi, is the Palermo apartment still available this week?",
+    senderName: "Valentina Molina",
+    senderPhone: "+54 11 5555 1201",
+    sentAt: new Date("2026-03-20T13:18:00.000Z"),
+  },
+  {
+    organizationId: "org_north",
+    conversationId: "conv_1",
+    direction: MessageDirection.OUTBOUND,
+    body: "Yes, it is available. I can share details and schedule a visit.",
+    senderName: "Martin Vega",
+    senderPhone: "+54 11 5555 1201",
+    sentAt: new Date("2026-03-20T13:21:00.000Z"),
+  },
+  {
+    organizationId: "org_north",
+    conversationId: "conv_1",
+    direction: MessageDirection.INBOUND,
+    body: "Great, I prefer late afternoons and I am interested in the 2-bedroom layout.",
+    senderName: "Valentina Molina",
+    senderPhone: "+54 11 5555 1201",
+    sentAt: new Date("2026-03-20T13:28:00.000Z"),
+  },
+  {
+    organizationId: "org_north",
+    conversationId: "conv_2",
+    direction: MessageDirection.INBOUND,
+    body: "Can you share ROI assumptions for the studio?",
+    senderName: "Diego Fernandez",
+    senderPhone: "+54 11 5555 1202",
+    sentAt: new Date("2026-03-19T17:48:00.000Z"),
+  },
+  {
+    organizationId: "org_north",
+    conversationId: "conv_2",
+    direction: MessageDirection.OUTBOUND,
+    body: "I sent a short investment brief and can walk you through it on a visit.",
+    senderName: "Camila Ortega",
+    senderPhone: "+54 11 5555 1202",
+    sentAt: new Date("2026-03-19T17:55:00.000Z"),
+  },
+  {
+    organizationId: "org_river",
+    conversationId: "conv_3",
+    direction: MessageDirection.INBOUND,
+    body: "I saw the furnished loft and want to know if I can visit after work.",
+    senderName: "Agustin Quiroga",
+    senderPhone: "+54 351 555 2001",
+    sentAt: new Date("2026-03-20T09:12:00.000Z"),
+  },
+];
+
+const availabilitySlots = [
+  {
+    organizationId: "org_north",
+    propertyId: "prop_1",
+    userId: "user_2",
+    label: "Palermo afternoon visits",
+    weekday: 1,
+    startMinute: 900,
+    endMinute: 1080,
+    timezone: "America/Buenos_Aires",
+    isActive: true,
+  },
+  {
+    organizationId: "org_north",
+    propertyId: "prop_1",
+    userId: "user_2",
+    label: "Palermo afternoon visits",
+    weekday: 3,
+    startMinute: 900,
+    endMinute: 1080,
+    timezone: "America/Buenos_Aires",
+    isActive: true,
+  },
+  {
+    organizationId: "org_north",
+    propertyId: "prop_3",
+    userId: "user_1",
+    label: "Studio investor slot",
+    weekday: 4,
+    startMinute: 1080,
+    endMinute: 1200,
+    timezone: "America/Buenos_Aires",
+    isActive: true,
+  },
+  {
+    organizationId: "org_river",
+    propertyId: "prop_4",
+    userId: "user_5",
+    label: "Rental showing window",
+    weekday: 2,
+    startMinute: 960,
+    endMinute: 1140,
+    timezone: "America/Buenos_Aires",
+    isActive: true,
+  },
+];
+
+const notifications = [
+  {
+    organizationId: "org_north",
+    type: NotificationType.VISIT_CREATED,
+    title: "Visit scheduled for Valentina Molina",
+    body: "Bright 2BR apartment visit booked for 24 Mar at 15:00.",
+    link: "/north-hill/visits",
+    entityType: "visit",
+    entityId: "visit_1",
+    createdAt: new Date("2026-03-20T13:31:00.000Z"),
+  },
+  {
+    organizationId: "org_north",
+    type: NotificationType.VISIT_CREATED,
+    title: "Visit confirmed for Diego Fernandez",
+    body: "Investor-ready studio visit booked for 26 Mar at 18:30.",
+    link: "/north-hill/visits",
+    entityType: "visit",
+    entityId: "visit_2",
+    createdAt: new Date("2026-03-19T18:03:00.000Z"),
+  },
+  {
+    organizationId: "org_river",
+    type: NotificationType.VISIT_CREATED,
+    title: "Visit scheduled for Agustin Quiroga",
+    body: "Furnished rental loft visit booked for 23 Mar at 17:00.",
+    link: "/river-gate/visits",
+    entityType: "visit",
+    entityId: "visit_3",
+    createdAt: new Date("2026-03-20T09:16:00.000Z"),
+  },
+];
+
 async function main() {
+  await prisma.message.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.availabilitySlot.deleteMany();
   await prisma.visit.deleteMany();
   await prisma.conversation.deleteMany();
   await prisma.lead.deleteMany();
@@ -264,7 +449,11 @@ async function main() {
   await prisma.membership.createMany({ data: memberships });
   await prisma.property.createMany({ data: properties });
   await prisma.lead.createMany({ data: leads });
+  await prisma.conversation.createMany({ data: conversations });
+  await prisma.message.createMany({ data: messages });
+  await prisma.availabilitySlot.createMany({ data: availabilitySlots });
   await prisma.visit.createMany({ data: visits });
+  await prisma.notification.createMany({ data: notifications });
 }
 
 main()

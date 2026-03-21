@@ -5,11 +5,14 @@ import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getLeadSummary, listOrganizationLeads } from "@/modules/leads/service";
-import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import {
+  getOrganizationWorkspace,
+  listWorkspaceNotifications,
+} from "@/modules/organizations/service";
 import { getPropertySummary, listOrganizationProperties } from "@/modules/properties/service";
 import { getUserRoleBreakdown, listOrganizationUsers } from "@/modules/users/service";
 import { getVisitSummary, listOrganizationVisits } from "@/modules/visits/service";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 
 export default async function OrganizationHomePage({
   params,
@@ -27,6 +30,7 @@ export default async function OrganizationHomePage({
     roleBreakdown,
     visits,
     visitSummary,
+    notifications,
   ] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     listOrganizationLeads(orgSlug),
@@ -37,6 +41,7 @@ export default async function OrganizationHomePage({
     getUserRoleBreakdown(orgSlug),
     listOrganizationVisits(orgSlug),
     getVisitSummary(orgSlug),
+    listWorkspaceNotifications(orgSlug),
   ]);
 
   if (!organization) {
@@ -242,6 +247,27 @@ export default async function OrganizationHomePage({
                 />
                 <span className="text-sm text-slate-500">{formatDate(visit.scheduledAt)}</span>
               </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Notifications"
+        title="Recent internal events"
+        description="Visit creation now lands in a lightweight workspace event feed so future automations have a reliable handoff surface."
+      >
+        <div className="space-y-3">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
+            >
+              <div>
+                <p className="font-semibold text-slate-950">{notification.title}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">{notification.body}</p>
+              </div>
+              <div className="text-sm text-slate-500">{formatDateTime(notification.createdAt)}</div>
             </div>
           ))}
         </div>

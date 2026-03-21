@@ -38,12 +38,28 @@ enum VisitStatus {
   CANCELED
 }
 
+enum ConversationStatus {
+  OPEN
+  QUALIFIED
+  CLOSED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum NotificationType {
+  VISIT_CREATED
+}
+
 model User {
   id            String       @id @default(cuid())
   email         String       @unique
   fullName      String
   jobTitle      String?
   isActive      Boolean      @default(true)
+  availabilitySlots AvailabilitySlot[]
   memberships   Membership[]
   ownedLeads    Lead[]       @relation("LeadOwner")
   createdVisits Visit[]      @relation("VisitCreatedBy")
@@ -64,6 +80,8 @@ model Organization {
   leads         Lead[]
   properties    Property[]
   conversations Conversation[]
+  availability  AvailabilitySlot[]
+  notifications Notification[]
   visits        Visit[]
   automations   AutomationRule[]
   createdAt     DateTime         @default(now())
@@ -129,7 +147,9 @@ model Property {
   bathrooms      Int?
   surfaceM2      Int?
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversations  Conversation[] @relation("ConversationPropertyContext")
   interestedLeads Lead[]        @relation("LeadPropertyInterest")
+  availability   AvailabilitySlot[]
   visits         Visit[]        @relation("PropertyVisits")
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -143,16 +163,41 @@ model Conversation {
   id             String       @id @default(cuid())
   organizationId String
   leadId         String?
+  propertyId     String?
   channel        String
+  status         ConversationStatus @default(OPEN)
+  participantName String?
+  participantPhone String?
+  propertyContextNote String?
   subject        String?
   lastMessageAt  DateTime?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   lead           Lead?        @relation(fields: [leadId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  property       Property?    @relation("ConversationPropertyContext", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  messages       Message[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId, channel])
   @@index([organizationId, leadId])
+  @@index([organizationId, propertyId])
+  @@index([organizationId, status])
+  @@unique([id, organizationId])
+}
+
+model Message {
+  id             String           @id @default(cuid())
+  organizationId String
+  conversationId String
+  direction      MessageDirection
+  body           String
+  senderName     String?
+  senderPhone    String?
+  sentAt         DateTime         @default(now())
+  conversation   Conversation     @relation(fields: [conversationId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  createdAt      DateTime         @default(now())
+
+  @@index([organizationId, conversationId, sentAt])
 }
 
 model Visit {
@@ -175,6 +220,45 @@ model Visit {
   @@index([organizationId, scheduledAt])
   @@index([organizationId, propertyId])
   @@index([organizationId, leadId])
+}
+
+model AvailabilitySlot {
+  id             String       @id @default(cuid())
+  organizationId String
+  propertyId     String?
+  userId         String?
+  label          String
+  weekday        Int
+  startMinute    Int
+  endMinute      Int
+  timezone       String       @default("America/Buenos_Aires")
+  isActive       Boolean      @default(true)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property       Property?    @relation(fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, weekday, isActive])
+  @@index([organizationId, propertyId])
+  @@index([organizationId, userId])
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  organizationId String
+  type           NotificationType
+  title          String
+  body           String
+  link           String?
+  entityType     String?
+  entityId       String?
+  readAt         DateTime?
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime         @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, type])
 }
 
 model AutomationRule {
