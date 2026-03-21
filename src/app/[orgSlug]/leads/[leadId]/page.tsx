@@ -4,9 +4,20 @@ import { notFound } from "next/navigation";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
+import { updateLeadAction } from "@/modules/leads/actions";
 import { getLeadDetail } from "@/modules/leads/service";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import { listOrganizationProperties } from "@/modules/properties/service";
+import { createVisitAction } from "@/modules/visits/actions";
 import { formatDate } from "@/lib/utils";
+
+const leadStageOptions = [
+  "NEW",
+  "CONTACTED",
+  "INTERESTED",
+  "VISIT",
+  "CLOSED",
+] as const;
 
 export default async function LeadDetailPage({
   params,
@@ -14,9 +25,10 @@ export default async function LeadDetailPage({
   params: Promise<{ orgSlug: string; leadId: string }>;
 }) {
   const { orgSlug, leadId } = await params;
-  const [organization, lead] = await Promise.all([
+  const [organization, lead, properties] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     getLeadDetail(orgSlug, leadId),
+    listOrganizationProperties(orgSlug),
   ]);
 
   if (!organization || !lead) {
@@ -29,15 +41,22 @@ export default async function LeadDetailPage({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge label={lead.status} tone={lead.status === "CLOSED" ? "success" : lead.status === "VISIT" ? "warning" : "info"} />
+              <StatusBadge
+                label={lead.status}
+                tone={
+                  lead.status === "CLOSED"
+                    ? "success"
+                    : lead.status === "VISIT"
+                      ? "warning"
+                      : "info"
+                }
+              />
               <StatusBadge label={lead.interestLabel} />
             </div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
               {lead.fullName}
             </h1>
-            <p className="mt-3 text-base leading-7 text-slate-600">
-              {lead.notes}
-            </p>
+            <p className="mt-3 text-base leading-7 text-slate-600">{lead.notes}</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -61,9 +80,149 @@ export default async function LeadDetailPage({
 
       <section className="grid gap-4 md:grid-cols-4">
         <MetricCard label="Phone" value={lead.phone} hint="Primary direct contact." />
-        <MetricCard label="Source" value={lead.source} hint="Current acquisition channel." />
+        <MetricCard label="Email" value={lead.email || "No email"} hint="Primary email contact." />
         <MetricCard label="Owner" value={lead.ownerName} hint={lead.assignedUserEmail} />
         <MetricCard label="Property" value={lead.propertyTitle} hint={lead.budgetLabel} />
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <SectionCard
+          eyebrow="Edit"
+          title="Lead details"
+          description="Minimal practical controls so an agent can keep the lead moving."
+        >
+          <form action={updateLeadAction} className="grid gap-4 md:grid-cols-2">
+            <input type="hidden" name="orgSlug" value={orgSlug} />
+            <input type="hidden" name="leadId" value={leadId} />
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Name</span>
+              <input
+                name="fullName"
+                required
+                defaultValue={lead.fullName}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Phone</span>
+              <input
+                name="phone"
+                required
+                defaultValue={lead.phone}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Email</span>
+              <input
+                name="email"
+                type="email"
+                defaultValue={lead.email}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Status</span>
+              <select
+                name="status"
+                defaultValue={lead.status}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              >
+                {leadStageOptions.map((stage) => (
+                  <option key={stage} value={stage}>
+                    {stage}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
+              <span>Related property</span>
+              <select
+                name="propertyId"
+                defaultValue={lead.propertyId ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              >
+                <option value="">No property assigned</option>
+                {properties.map((property) => (
+                  <option key={property.id} value={property.id}>
+                    {property.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="md:col-span-2 flex flex-wrap gap-3">
+              <button
+                type="submit"
+                className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+              >
+                Save Lead
+              </button>
+              <a
+                href={`tel:${lead.phone}`}
+                className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Call Lead
+              </a>
+              {lead.email ? (
+                <a
+                  href={`mailto:${lead.email}`}
+                  className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Email Lead
+                </a>
+              ) : null}
+            </div>
+          </form>
+        </SectionCard>
+
+        <SectionCard
+          eyebrow="Visits"
+          title="Add visit"
+          description="Create a visit in context without leaving the lead."
+        >
+          <form action={createVisitAction} className="space-y-4">
+            <input type="hidden" name="orgSlug" value={orgSlug} />
+            <input type="hidden" name="leadId" value={leadId} />
+            <label className="space-y-2 text-sm text-slate-600 block">
+              <span>Date and time</span>
+              <input
+                name="scheduledAt"
+                type="datetime-local"
+                required
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+            <label className="space-y-2 text-sm text-slate-600 block">
+              <span>Status</span>
+              <select
+                name="status"
+                defaultValue="PENDING"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              >
+                <option value="PENDING">PENDING</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={!lead.propertyId}
+              className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              + Add Visit
+            </button>
+            {!lead.propertyId ? (
+              <p className="text-sm text-slate-500">
+                Assign a property first so the visit is linked correctly.
+              </p>
+            ) : null}
+          </form>
+        </SectionCard>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">

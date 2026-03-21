@@ -368,6 +368,26 @@ const visits: DemoVisit[] = [
   },
 ];
 
+function createDemoId(prefix: string) {
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function pushLeadActivity(
+  organizationId: string,
+  leadId: string,
+  title: string,
+  description: string,
+) {
+  leadActivities.unshift({
+    id: createDemoId("act"),
+    organizationId,
+    leadId,
+    title,
+    description,
+    happenedAt: new Date().toISOString(),
+  });
+}
+
 export function listDemoOrganizations() {
   return organizations;
 }
@@ -454,4 +474,106 @@ export function listDemoVisitsByProperty(organizationId: string, propertyId: str
   return visits.filter(
     (visit) => visit.organizationId === organizationId && visit.propertyId === propertyId,
   );
+}
+
+export function createDemoLead(input: {
+  organizationId: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+}) {
+  const defaultOwner = listDemoUsersByOrganization(input.organizationId)[0];
+  const lead: DemoLead = {
+    id: createDemoId("lead"),
+    organizationId: input.organizationId,
+    ownerId: defaultOwner?.id ?? "",
+    fullName: input.fullName,
+    email: input.email ?? "",
+    phone: input.phone,
+    status: "NEW",
+    source: "Manual entry",
+    notes: "Created manually from the CRM workspace.",
+    interestLabel: "New inquiry",
+    lastContactAt: new Date().toISOString(),
+    budgetLabel: "Pending qualification",
+  };
+
+  leads.unshift(lead);
+  pushLeadActivity(
+    input.organizationId,
+    lead.id,
+    "Lead created",
+    "Lead was added manually from the CRM workspace.",
+  );
+
+  return lead;
+}
+
+export function updateDemoLead(input: {
+  organizationId: string;
+  leadId: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  status: LeadStage;
+  propertyId?: string;
+}) {
+  const lead = getDemoLeadById(input.organizationId, input.leadId);
+
+  if (!lead) {
+    return null;
+  }
+
+  lead.fullName = input.fullName;
+  lead.phone = input.phone;
+  lead.email = input.email ?? "";
+  lead.status = input.status;
+  lead.propertyId = input.propertyId || undefined;
+  lead.lastContactAt = new Date().toISOString();
+
+  pushLeadActivity(
+    input.organizationId,
+    lead.id,
+    "Lead updated",
+    "Core lead details, stage, or property assignment were updated.",
+  );
+
+  return lead;
+}
+
+export function createDemoVisit(input: {
+  organizationId: string;
+  leadId: string;
+  propertyId: string;
+  createdById: string;
+  scheduledAt: string;
+  status: VisitStatus;
+}) {
+  const visit: DemoVisit = {
+    id: createDemoId("visit"),
+    organizationId: input.organizationId,
+    propertyId: input.propertyId,
+    leadId: input.leadId,
+    createdById: input.createdById,
+    scheduledAt: input.scheduledAt,
+    status: input.status,
+    notes: "Visit created directly from lead detail.",
+  };
+
+  visits.unshift(visit);
+  const lead = getDemoLeadById(input.organizationId, input.leadId);
+
+  if (lead) {
+    lead.status = "VISIT";
+    lead.lastContactAt = new Date().toISOString();
+  }
+
+  pushLeadActivity(
+    input.organizationId,
+    input.leadId,
+    "Visit scheduled",
+    "A visit was created directly from the lead detail screen.",
+  );
+
+  return visit;
 }
