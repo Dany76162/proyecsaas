@@ -9,7 +9,7 @@ import { getLeadDetail } from "@/modules/leads/service";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { listOrganizationProperties } from "@/modules/properties/service";
 import { createVisitAction } from "@/modules/visits/actions";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
 const leadStageOptions = [
   "NEW",
@@ -21,10 +21,13 @@ const leadStageOptions = [
 
 export default async function LeadDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgSlug: string; leadId: string }>;
+  searchParams: Promise<{ success?: string }>;
 }) {
   const { orgSlug, leadId } = await params;
+  const { success } = await searchParams;
   const [organization, lead, properties] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     getLeadDetail(orgSlug, leadId),
@@ -35,8 +38,30 @@ export default async function LeadDetailPage({
     notFound();
   }
 
+  const nextVisit = [...lead.visits]
+    .sort(
+      (left, right) =>
+        new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime(),
+    )
+    .find((visit) => new Date(visit.scheduledAt).getTime() >= Date.now());
+
+  const successMessage =
+    success === "lead-created"
+      ? "Lead created successfully."
+      : success === "lead-updated"
+        ? "Lead updated successfully."
+        : success === "visit-created"
+          ? "Visit scheduled successfully."
+          : null;
+
   return (
     <>
+      {successMessage ? (
+        <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">
+          {successMessage}
+        </section>
+      ) : null}
+
       <section className="rounded-[1.75rem] border bg-white p-6 shadow-soft">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -82,7 +107,11 @@ export default async function LeadDetailPage({
         <MetricCard label="Phone" value={lead.phone} hint="Primary direct contact." />
         <MetricCard label="Email" value={lead.email || "No email"} hint="Primary email contact." />
         <MetricCard label="Owner" value={lead.ownerName} hint={lead.assignedUserEmail} />
-        <MetricCard label="Property" value={lead.propertyTitle} hint={lead.budgetLabel} />
+        <MetricCard
+          label="Next visit"
+          value={nextVisit ? formatDateTime(nextVisit.scheduledAt) : "Not scheduled"}
+          hint={nextVisit ? nextVisit.propertyTitle : "Create a visit from this lead to plan the next step."}
+        />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
@@ -195,6 +224,8 @@ export default async function LeadDetailPage({
                 name="scheduledAt"
                 type="datetime-local"
                 required
+                min={new Date().toISOString().slice(0, 16)}
+                step={900}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
               />
             </label>
@@ -260,7 +291,9 @@ export default async function LeadDetailPage({
                       tone={visit.status === "CONFIRMED" ? "success" : "warning"}
                     />
                   </div>
-                  <p className="mt-2 text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {formatDateTime(visit.scheduledAt)}
+                  </p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{visit.notes}</p>
                 </div>
               ))

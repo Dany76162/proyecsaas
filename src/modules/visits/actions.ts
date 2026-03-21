@@ -63,5 +63,5 @@ export async function createVisitAction(formData: FormData) {
   revalidatePath(`/${orgSlug}/leads/${leadId}`);
   revalidatePath(`/${orgSlug}/properties/${lead.propertyId}`);
   revalidatePath(`/${orgSlug}`);
-  redirect(`/${orgSlug}/leads/${leadId}`);
+  redirect(`/${orgSlug}/leads/${leadId}?success=visit-created`);
 }

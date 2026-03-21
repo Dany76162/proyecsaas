@@ -37,7 +37,7 @@ export async function createLeadAction(formData: FormData) {
 
   revalidatePath(`/${orgSlug}/leads`);
   revalidatePath(`/${orgSlug}`);
-  redirect(`/${orgSlug}/leads/${lead.id}`);
+  redirect(`/${orgSlug}/leads/${lead.id}?success=lead-created`);
 }
 
 export async function updateLeadAction(formData: FormData) {
@@ -79,5 +79,5 @@ export async function updateLeadAction(formData: FormData) {
   revalidatePath(`/${orgSlug}/leads/${leadId}`);
   revalidatePath(`/${orgSlug}/properties`);
   revalidatePath(`/${orgSlug}`);
-  redirect(`/${orgSlug}/leads/${lead.id}`);
+  redirect(`/${orgSlug}/leads/${lead.id}?success=lead-updated`);
 }
