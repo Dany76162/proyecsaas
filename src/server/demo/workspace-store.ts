@@ -87,7 +87,21 @@ type DemoVisit = {
   notes: string;
 };
 
-const organizations: DemoOrganization[] = [
+type DemoWorkspaceState = {
+  organizations: DemoOrganization[];
+  users: DemoUser[];
+  memberships: DemoMembership[];
+  properties: DemoProperty[];
+  leads: DemoLead[];
+  leadActivities: DemoLeadActivity[];
+  visits: DemoVisit[];
+};
+
+declare global {
+  var demoWorkspaceState: DemoWorkspaceState | undefined;
+}
+
+const initialOrganizations: DemoOrganization[] = [
   {
     id: "org_north",
     slug: "north-hill",
@@ -108,7 +122,7 @@ const organizations: DemoOrganization[] = [
   },
 ];
 
-const users: DemoUser[] = [
+const initialUsers: DemoUser[] = [
   {
     id: "user_1",
     fullName: "Camila Ortega",
@@ -146,7 +160,7 @@ const users: DemoUser[] = [
   },
 ];
 
-const memberships: DemoMembership[] = [
+const initialMemberships: DemoMembership[] = [
   { id: "m_1", organizationId: "org_north", userId: "user_1", role: MembershipRole.OWNER },
   { id: "m_2", organizationId: "org_north", userId: "user_2", role: MembershipRole.AGENT },
   { id: "m_3", organizationId: "org_north", userId: "user_3", role: MembershipRole.ASSISTANT },
@@ -154,7 +168,7 @@ const memberships: DemoMembership[] = [
   { id: "m_5", organizationId: "org_river", userId: "user_5", role: MembershipRole.AGENT },
 ];
 
-const properties: DemoProperty[] = [
+const initialProperties: DemoProperty[] = [
   {
     id: "prop_1",
     organizationId: "org_north",
@@ -229,7 +243,7 @@ const properties: DemoProperty[] = [
   },
 ];
 
-const leads: DemoLead[] = [
+const initialLeads: DemoLead[] = [
   {
     id: "lead_1",
     organizationId: "org_north",
@@ -292,7 +306,7 @@ const leads: DemoLead[] = [
   },
 ];
 
-const leadActivities: DemoLeadActivity[] = [
+const initialLeadActivities: DemoLeadActivity[] = [
   {
     id: "act_1",
     organizationId: "org_north",
@@ -335,7 +349,7 @@ const leadActivities: DemoLeadActivity[] = [
   },
 ];
 
-const visits: DemoVisit[] = [
+const initialVisits: DemoVisit[] = [
   {
     id: "visit_1",
     organizationId: "org_north",
@@ -368,8 +382,34 @@ const visits: DemoVisit[] = [
   },
 ];
 
+const state =
+  globalThis.demoWorkspaceState ??
+  {
+    organizations: structuredClone(initialOrganizations),
+    users: structuredClone(initialUsers),
+    memberships: structuredClone(initialMemberships),
+    properties: structuredClone(initialProperties),
+    leads: structuredClone(initialLeads),
+    leadActivities: structuredClone(initialLeadActivities),
+    visits: structuredClone(initialVisits),
+  };
+
+if (!globalThis.demoWorkspaceState) {
+  globalThis.demoWorkspaceState = state;
+}
+
+const {
+  organizations,
+  users,
+  memberships,
+  properties,
+  leads,
+  leadActivities,
+  visits,
+} = state;
+
 function createDemoId(prefix: string) {
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
 }
 
 function pushLeadActivity(

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import {
   createDemoLead,
@@ -27,7 +28,7 @@ export async function createLeadAction(formData: FormData) {
     return;
   }
 
-  createDemoLead({
+  const lead = createDemoLead({
     organizationId: organization.id,
     fullName: parsed.data.fullName,
     phone: parsed.data.phone,
@@ -36,6 +37,7 @@ export async function createLeadAction(formData: FormData) {
 
   revalidatePath(`/${orgSlug}/leads`);
   revalidatePath(`/${orgSlug}`);
+  redirect(`/${orgSlug}/leads/${lead.id}`);
 }
 
 export async function updateLeadAction(formData: FormData) {
@@ -59,7 +61,7 @@ export async function updateLeadAction(formData: FormData) {
     return;
   }
 
-  updateDemoLead({
+  const lead = updateDemoLead({
     organizationId: organization.id,
     leadId,
     fullName: parsed.data.fullName,
@@ -69,8 +71,13 @@ export async function updateLeadAction(formData: FormData) {
     propertyId: parsed.data.propertyId || undefined,
   });
 
+  if (!lead) {
+    return;
+  }
+
   revalidatePath(`/${orgSlug}/leads`);
   revalidatePath(`/${orgSlug}/leads/${leadId}`);
   revalidatePath(`/${orgSlug}/properties`);
   revalidatePath(`/${orgSlug}`);
+  redirect(`/${orgSlug}/leads/${lead.id}`);
 }

@@ -2,6 +2,7 @@
 
 import { VisitStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import {
@@ -12,7 +13,10 @@ import {
 } from "@/server/demo/workspace-store";
 
 const createVisitSchema = z.object({
-  scheduledAt: z.string().min(1),
+  scheduledAt: z
+    .string()
+    .min(1)
+    .refine((value) => !Number.isNaN(new Date(value).getTime()), "Invalid date"),
   status: z.nativeEnum(VisitStatus),
 });
 
@@ -42,17 +46,22 @@ export async function createVisitAction(formData: FormData) {
 
   const owner = listDemoUsersByOrganization(organization.id)[0];
 
-  createDemoVisit({
+  const visit = createDemoVisit({
     organizationId: organization.id,
     leadId,
     propertyId: lead.propertyId,
-    createdById: owner?.id ?? "",
+    createdById: lead.ownerId || owner?.id || "",
     scheduledAt: new Date(parsed.data.scheduledAt).toISOString(),
     status: parsed.data.status,
   });
+
+  if (!visit) {
+    return;
+  }
 
   revalidatePath(`/${orgSlug}/visits`);
   revalidatePath(`/${orgSlug}/leads/${leadId}`);
   revalidatePath(`/${orgSlug}/properties/${lead.propertyId}`);
   revalidatePath(`/${orgSlug}`);
+  redirect(`/${orgSlug}/leads/${leadId}`);
 }
