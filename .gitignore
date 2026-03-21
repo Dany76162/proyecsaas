@@ -1,4 +1,6 @@
 .next
+.next-dev
+.next-prod
 node_modules
 .env
 .env.local
@@ -6,4 +8,3 @@ dist
 coverage
 *.log
 prisma/dev.db
-
