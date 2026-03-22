@@ -1,5 +1,6 @@
 import type {
   ConversationStatus,
+  LeadStatus,
   MessageDirection,
   NotificationType,
 } from "@prisma/client";
@@ -25,7 +26,7 @@ export type ConversationListItem = {
   propertyContextNote: string;
   leadId?: string;
   leadName: string;
-  leadStatus: string;
+  leadStatus: LeadStatus;
   lastMessageAt: string;
   latestMessagePreview: string;
   messages: ConversationMessageItem[];

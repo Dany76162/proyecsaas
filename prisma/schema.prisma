@@ -6,6 +6,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 enum MembershipRole {
@@ -51,6 +52,7 @@ enum MessageDirection {
 
 enum NotificationType {
   VISIT_CREATED
+  OPERATOR_ACTION_REQUIRED
 }
 
 model User {
@@ -189,6 +191,7 @@ model Message {
   id             String           @id @default(cuid())
   organizationId String
   conversationId String
+  externalId     String?          @unique
   direction      MessageDirection
   body           String
   senderName     String?

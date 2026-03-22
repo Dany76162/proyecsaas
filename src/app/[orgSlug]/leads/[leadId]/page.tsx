@@ -24,10 +24,10 @@ export default async function LeadDetailPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; leadId: string }>;
-  searchParams: Promise<{ success?: string }>;
+  searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const { orgSlug, leadId } = await params;
-  const { success } = await searchParams;
+  const { success, error } = await searchParams;
   const [organization, lead, properties] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     getLeadDetail(orgSlug, leadId),
@@ -54,11 +54,29 @@ export default async function LeadDetailPage({
           ? "Visit scheduled successfully."
           : null;
 
+  const errorMessage =
+    error === "missing-property"
+      ? "Assign a property before creating a visit."
+      : error === "invalid-visit"
+        ? "Enter a valid visit date and status."
+        : error === "property-unavailable"
+          ? "The selected property is no longer available for this lead."
+          : error === "missing-owner"
+            ? "No assigned user is available to create this visit."
+            : error === "visit-create-failed"
+              ? "The visit could not be created. Please try again."
+              : null;
+
   return (
     <>
       {successMessage ? (
         <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">
           {successMessage}
+        </section>
+      ) : null}
+      {errorMessage ? (
+        <section className="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800 shadow-soft">
+          {errorMessage}
         </section>
       ) : null}
 

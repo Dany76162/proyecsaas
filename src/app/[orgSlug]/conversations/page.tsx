@@ -132,12 +132,24 @@ export default async function ConversationsPage({
 
           <SectionCard
             eyebrow="Notifications"
-            title="Visit event feed"
-            description="A visit created from the CRM now produces a persisted internal event for the workspace."
+            title="Automation and visit feed"
+            description="The existing internal feed now highlights both visit events and automation states that require operator follow-up."
           >
             <div className="space-y-3">
               {notifications.map((notification) => (
                 <div key={notification.id} className="rounded-2xl border border-slate-200 p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge
+                      label={
+                        notification.type === "OPERATOR_ACTION_REQUIRED"
+                          ? "Action required"
+                          : "Visit event"
+                      }
+                      tone={
+                        notification.type === "OPERATOR_ACTION_REQUIRED" ? "warning" : "info"
+                      }
+                    />
+                  </div>
                   <p className="font-semibold text-slate-950">{notification.title}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{notification.body}</p>
                   <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-500">

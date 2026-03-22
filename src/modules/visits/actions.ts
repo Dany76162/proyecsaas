@@ -1,12 +1,15 @@
 "use server";
 
-import { LeadStatus, VisitStatus } from "@prisma/client";
+import { VisitStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getOrganizationBySlug } from "@/server/db/organization-context";
-import { prisma } from "@/server/db/prisma";
+import {
+  createVisitForAutomation,
+  VisitAutomationError,
+} from "@/modules/visits/service";
 
 const createVisitSchema = z.object({
   scheduledAt: z
@@ -16,29 +19,17 @@ const createVisitSchema = z.object({
   status: z.nativeEnum(VisitStatus),
 });
 
+function redirectToVisitError(orgSlug: string, leadId: string, error: string): never {
+  redirect(`/${orgSlug}/leads/${leadId}?error=${error}`);
+}
+
 export async function createVisitAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
   const leadId = String(formData.get("leadId") ?? "");
   const organization = await getOrganizationBySlug(orgSlug);
 
   if (!organization) {
-    return;
-  }
-
-  const lead = await prisma.lead.findFirst({
-    where: {
-      id: leadId,
-      organizationId: organization.id,
-    },
-    select: {
-      id: true,
-      propertyId: true,
-      ownerId: true,
-    },
-  });
-
-  if (!lead?.propertyId) {
-    return;
+    redirect("/login");
   }
 
   const parsed = createVisitSchema.safeParse({
@@ -47,106 +38,32 @@ export async function createVisitAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    return;
+    redirectToVisitError(orgSlug, leadId, "invalid-visit");
   }
 
-  const linkedProperty = await prisma.property.findFirst({
-    where: {
-      id: lead.propertyId,
-      organizationId: organization.id,
-    },
-    select: {
-      id: true,
-    },
-  });
+  let propertyId = "";
 
-  if (!linkedProperty) {
-    return;
-  }
-
-  const fallbackOwner = await prisma.membership.findFirst({
-    where: {
-      organizationId: organization.id,
-    },
-    select: {
-      userId: true,
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-  });
-
-  const ownerId = lead.ownerId || fallbackOwner?.userId;
-
-  if (!ownerId) {
-    return;
-  }
-
-  const visit = await prisma.visit.create({
-    data: {
+  try {
+    const result = await createVisitForAutomation({
       organizationId: organization.id,
       leadId,
-      propertyId: lead.propertyId,
-      createdById: ownerId,
       scheduledAt: new Date(parsed.data.scheduledAt),
       status: parsed.data.status,
       notes: "Visit created directly from lead detail.",
-    },
-  });
+    });
 
-  if (!visit) {
-    return;
+    propertyId = result.propertyId;
+  } catch (error) {
+    if (error instanceof VisitAutomationError) {
+      redirectToVisitError(orgSlug, leadId, error.code);
+    }
+
+    redirectToVisitError(orgSlug, leadId, "visit-create-failed");
   }
-
-  const [propertyDetail, leadDetail] = await Promise.all([
-    prisma.property.findUnique({
-      where: {
-        id: lead.propertyId,
-      },
-      select: {
-        title: true,
-      },
-    }),
-    prisma.lead.findUnique({
-      where: {
-        id: leadId,
-      },
-      select: {
-        fullName: true,
-      },
-    }),
-  ]);
-
-  await prisma.lead.update({
-    where: {
-      id: leadId,
-    },
-    data: {
-      status: LeadStatus.VISIT,
-      lastContactAt: new Date(),
-    },
-  });
-
-  await prisma.notification.create({
-    data: {
-      organizationId: organization.id,
-      type: "VISIT_CREATED",
-      title: `Visit scheduled for ${leadDetail?.fullName ?? "lead"}`,
-      body: `${propertyDetail?.title ?? "Property"} booked for ${visit.scheduledAt.toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })}.`,
-      link: `/${orgSlug}/visits`,
-      entityType: "visit",
-      entityId: visit.id,
-    },
-  });
 
   revalidatePath(`/${orgSlug}/visits`);
   revalidatePath(`/${orgSlug}/leads/${leadId}`);
-  revalidatePath(`/${orgSlug}/properties/${lead.propertyId}`);
+  revalidatePath(`/${orgSlug}/properties/${propertyId}`);
   revalidatePath(`/${orgSlug}`);
   redirect(`/${orgSlug}/leads/${leadId}?success=visit-created`);
 }

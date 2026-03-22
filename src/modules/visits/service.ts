@@ -1,10 +1,25 @@
 import "server-only";
 
-import { VisitStatus } from "@prisma/client";
+import { LeadStatus, NotificationType, VisitStatus } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
 
 import type { VisitListItem, VisitSummary } from "@/modules/visits/types";
+
+export type CreateVisitForAutomationParams = {
+  organizationId: string;
+  leadId: string;
+  scheduledAt: Date;
+  status?: VisitStatus;
+  notes?: string;
+};
+
+export class VisitAutomationError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message);
+    this.name = "VisitAutomationError";
+  }
+}
 
 export async function listOrganizationVisits(
   orgSlug: string,
@@ -46,5 +61,172 @@ export async function getVisitSummary(orgSlug: string): Promise<VisitSummary> {
     pendingCount: visits.filter((visit) => visit.status === VisitStatus.PENDING).length,
     confirmedCount: visits.filter((visit) => visit.status === VisitStatus.CONFIRMED).length,
     completedCount: visits.filter((visit) => visit.status === VisitStatus.COMPLETED).length,
+  };
+}
+
+export async function createVisitForAutomation(
+  params: CreateVisitForAutomationParams,
+) {
+  const organization = await prisma.organization.findUnique({
+    where: {
+      id: params.organizationId,
+    },
+    select: {
+      id: true,
+      slug: true,
+    },
+  });
+
+  if (!organization) {
+    throw new VisitAutomationError("missing-organization", "Organization not found.");
+  }
+
+  const lead = await prisma.lead.findFirst({
+    where: {
+      id: params.leadId,
+      organizationId: organization.id,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      ownerId: true,
+      propertyId: true,
+    },
+  });
+
+  if (!lead) {
+    throw new VisitAutomationError("missing-lead", "Lead not found in organization.");
+  }
+
+  if (!lead.propertyId) {
+    throw new VisitAutomationError(
+      "missing-property",
+      "Lead must be linked to a property before creating a visit.",
+    );
+  }
+
+  const [property, fallbackOwner] = await Promise.all([
+    prisma.property.findFirst({
+      where: {
+        id: lead.propertyId,
+        organizationId: organization.id,
+      },
+      select: {
+        id: true,
+        title: true,
+      },
+    }),
+    prisma.membership.findFirst({
+      where: {
+        organizationId: organization.id,
+      },
+      select: {
+        userId: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    }),
+  ]);
+
+  if (!property) {
+    throw new VisitAutomationError(
+      "property-unavailable",
+      "Property is unavailable for this organization.",
+    );
+  }
+
+  const ownerId = lead.ownerId || fallbackOwner?.userId;
+
+  if (!ownerId) {
+    throw new VisitAutomationError(
+      "missing-owner",
+      "No valid owner was found to attribute the visit.",
+    );
+  }
+
+  const scheduledAt = new Date(params.scheduledAt);
+
+  if (Number.isNaN(scheduledAt.getTime())) {
+    throw new VisitAutomationError("invalid-visit", "Visit date is invalid.");
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`
+      SELECT pg_advisory_xact_lock(hashtext(${organization.id}), hashtext(${`${lead.id}:${property.id}:${scheduledAt.toISOString()}`}))
+    `;
+
+    const existingVisit = await tx.visit.findFirst({
+      where: {
+        organizationId: organization.id,
+        leadId: lead.id,
+        propertyId: property.id,
+        scheduledAt,
+        status: {
+          not: VisitStatus.CANCELED,
+        },
+      },
+      select: {
+        id: true,
+        scheduledAt: true,
+        status: true,
+      },
+    });
+
+    if (existingVisit) {
+      return {
+        visit: existingVisit,
+        notification: null,
+        reusedExisting: true,
+      };
+    }
+
+    const visit = await tx.visit.create({
+      data: {
+        organizationId: organization.id,
+        leadId: lead.id,
+        propertyId: property.id,
+        createdById: ownerId,
+        scheduledAt,
+        status: params.status ?? VisitStatus.PENDING,
+        notes: params.notes ?? "Visit created from automation context.",
+      },
+    });
+
+    await tx.lead.update({
+      where: {
+        id: lead.id,
+      },
+      data: {
+        status: LeadStatus.VISIT,
+        lastContactAt: new Date(),
+      },
+    });
+
+    const notification = await tx.notification.create({
+      data: {
+        organizationId: organization.id,
+        type: NotificationType.VISIT_CREATED,
+        title: `Visit scheduled for ${lead.fullName}`,
+        body: `${property.title} booked for ${visit.scheduledAt.toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}.`,
+        link: `/${organization.slug}/visits`,
+        entityType: "visit",
+        entityId: visit.id,
+      },
+    });
+
+    return { visit, notification, reusedExisting: false };
+  });
+
+  return {
+    ...result,
+    organizationSlug: organization.slug,
+    propertyId: property.id,
+    reusedExisting: false,
   };
 }

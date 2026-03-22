@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MetricCard } from "@/components/workspace/metric-card";
@@ -255,7 +256,7 @@ export default async function OrganizationHomePage({
       <SectionCard
         eyebrow="Notifications"
         title="Recent internal events"
-        description="Visit creation now lands in a lightweight workspace event feed so future automations have a reliable handoff surface."
+        description="Visit events and automation follow-up signals now share the same lightweight workspace feed so operators can spot action-required states faster."
       >
         <div className="space-y-3">
           {notifications.map((notification) => (
@@ -264,6 +265,23 @@ export default async function OrganizationHomePage({
               className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
             >
               <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge
+                    label={
+                      notification.type === "OPERATOR_ACTION_REQUIRED"
+                        ? "Action required"
+                        : "Visit event"
+                    }
+                    tone={
+                      notification.type === "OPERATOR_ACTION_REQUIRED" ? "warning" : "info"
+                    }
+                  />
+                  {notification.link ? (
+                    <Link href={notification.link} className="text-sm font-medium text-brand-600">
+                      Open
+                    </Link>
+                  ) : null}
+                </div>
                 <p className="font-semibold text-slate-950">{notification.title}</p>
                 <p className="mt-1 text-sm leading-6 text-slate-600">{notification.body}</p>
               </div>

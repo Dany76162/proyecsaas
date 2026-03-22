@@ -1,5 +1,7 @@
 import "server-only";
 
+import { LeadStatus } from "@prisma/client";
+
 import { prisma } from "@/server/db/prisma";
 
 import type {
@@ -49,7 +51,7 @@ export async function listOrganizationConversations(
         conversation.propertyContextNote ?? "Property context pending resolution.",
       leadId: conversation.leadId ?? undefined,
       leadName: conversation.lead?.fullName ?? "Lead not linked yet",
-      leadStatus: conversation.lead?.status ?? "UNQUALIFIED",
+      leadStatus: conversation.lead?.status ?? LeadStatus.NEW,
       lastMessageAt: (conversation.lastMessageAt ?? conversation.updatedAt).toISOString(),
       latestMessagePreview: latestMessage?.body ?? "No messages recorded yet.",
       messages: sortedMessages.map((message) => ({
