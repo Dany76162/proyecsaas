@@ -53,6 +53,16 @@ export type AutomationDecision = {
   responseText: string;
   qualificationDecision: null | "QUALIFIED" | "DISQUALIFIED";
   visitIntent: null | { requested: boolean };
+  leadTemperature: "hot" | "warm" | "cold" | "unclear";
+  extractedPreferences: {
+    budget: string | null;
+    zones: string[];
+    rooms: number | null;
+    purpose: "living" | "investment" | null;
+  };
+  nextBestAction: string;
+  requiresFollowUp: boolean;
+  followUpReason: string | null;
   visitProposal:
     | null
     | {

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { AutomationDecision, PreparedConversationContext } from "@/modules/automations/types";
 
+const AI_REQUEST_TIMEOUT_MS = 15_000;
 const FALLBACK_VISIT_KEYWORDS = [
   "visita",
   "visitar",
@@ -14,7 +15,8 @@ const FALLBACK_VISIT_KEYWORDS = [
   "turno",
   "mostrar",
 ];
-
+const FALLBACK_BUDGET_HINTS = ["usd", "ars", "$", "dolar", "presupuesto", "millon"];
+const FALLBACK_INVESTMENT_HINTS = ["inversion", "renta", "rentabilidad", "airbnb"];
 const WEEKDAY_LABELS = [
   "domingo",
   "lunes",
@@ -34,11 +36,19 @@ const aiDecisionSchema = z.object({
     .nullable(),
   needsHumanHandoff: z.boolean(),
   confidence: z.number().min(0).max(1),
+  leadTemperature: z.enum(["hot", "warm", "cold", "unclear"]),
+  extractedPreferences: z.object({
+    budget: z.string().nullable(),
+    zones: z.array(z.string()),
+    rooms: z.number().int().positive().nullable(),
+    purpose: z.enum(["living", "investment"]).nullable(),
+  }),
+  nextBestAction: z.string().min(1),
+  requiresFollowUp: z.boolean(),
+  followUpReason: z.string().nullable(),
 });
 
 type AiDecisionPayload = z.infer<typeof aiDecisionSchema>;
-
-const AI_REQUEST_TIMEOUT_MS = 15_000;
 
 let openAiClient: OpenAI | null | undefined;
 
@@ -70,6 +80,21 @@ function getAvailabilitySummary(context: PreparedConversationContext) {
       return `${weekday} ${range}${advisor}`;
     })
     .join(", ");
+}
+
+function getDoubleOptionVisitSummary(context: PreparedConversationContext) {
+  if (context.availability.length < 2) {
+    return getAvailabilitySummary(context);
+  }
+
+  return context.availability
+    .slice(0, 2)
+    .map((slot) => {
+      const weekday = WEEKDAY_LABELS[slot.weekday] ?? "dia";
+      const range = `${formatMinute(slot.startMinute)}-${formatMinute(slot.endMinute)}`;
+      return `${weekday} ${range}`;
+    })
+    .join(" o ");
 }
 
 function getTimezoneOffsetMinutes(timeZone: string, date: Date) {
@@ -159,6 +184,47 @@ function hasVisitIntentFallback(input: string) {
   return FALLBACK_VISIT_KEYWORDS.some((keyword) => normalized.includes(keyword));
 }
 
+function extractRoomsFallback(input: string) {
+  const match = input.match(/(\d+)\s*(ambientes|ambiente|dormitorios|dormitorio|cuartos|cuarto)/i);
+  return match ? Number(match[1]) : null;
+}
+
+function extractPreferencesFallback(context: PreparedConversationContext) {
+  const latestBody = getLatestInboundMessage(context)?.body ?? "";
+  const normalized = latestBody.toLowerCase();
+
+  return {
+    budget: FALLBACK_BUDGET_HINTS.some((hint) => normalized.includes(hint)) ? latestBody : null,
+    zones: [],
+    rooms: extractRoomsFallback(latestBody),
+    purpose: FALLBACK_INVESTMENT_HINTS.some((hint) => normalized.includes(hint))
+      ? "investment"
+      : null,
+  } satisfies AutomationDecision["extractedPreferences"];
+}
+
+function buildCommercialSignalDefaults(
+  context: PreparedConversationContext,
+  overrides: Partial<
+    Pick<
+      AutomationDecision,
+      | "leadTemperature"
+      | "extractedPreferences"
+      | "nextBestAction"
+      | "requiresFollowUp"
+      | "followUpReason"
+    >
+  > = {},
+) {
+  return {
+    leadTemperature: overrides.leadTemperature ?? "unclear",
+    extractedPreferences: overrides.extractedPreferences ?? extractPreferencesFallback(context),
+    nextBestAction: overrides.nextBestAction ?? "seguir-conversacion",
+    requiresFollowUp: overrides.requiresFollowUp ?? false,
+    followUpReason: overrides.followUpReason ?? null,
+  };
+}
+
 function getOpenAiClient() {
   if (openAiClient !== undefined) {
     return openAiClient;
@@ -185,23 +251,43 @@ function getDecisionModel() {
 
 function buildPrompt(context: PreparedConversationContext) {
   const availabilitySummary = getAvailabilitySummary(context);
+  const doubleOptionSummary = getDoubleOptionVisitSummary(context);
 
   return {
     system: [
-      "Sos un asesor inmobiliario de Argentina para un SaaS de real estate.",
-      "Responde siempre en espanol de Argentina.",
-      "No inventes datos ni supongas propiedades, precios, horarios o estados que no aparezcan en el contexto.",
-      "Si falta contexto de propiedad, pedi aclaracion de forma breve y profesional.",
-      "Si propones una visita, usa solamente horarios disponibles del contexto.",
+      "Sos un asesor comercial inmobiliario de Argentina atendiendo por WhatsApp.",
+      "Escribi siempre en espanol de Argentina, con tono profesional, cercano y breve.",
+      "Las respuestas deben ser cortas, naturales y aptas para WhatsApp.",
+      "No inventes datos: solo podes usar el contexto provisto.",
+      "Comportamiento comercial esperado:",
+      "- HOT: empuja directo a coordinar visita.",
+      "- WARM: responde y ancla hacia visita.",
+      "- COLD: aporta valor y hace una pregunta de calificacion.",
+      "- UNCLEAR: aclara contexto o deriva a humano si hace falta.",
+      "Reglas comerciales:",
+      "- Si hay disponibilidad, preferi proponer dos opciones concretas.",
+      "- No presiones a leads frios.",
+      "- Si el lead es vago, intenta pedir zona, presupuesto o finalidad.",
+      "- Deriva a humano si aparecen negociacion, temas legales, friccion repetida o pedido explicito de hablar con una persona.",
       "Debes devolver SOLO JSON valido con esta forma exacta:",
-      '{',
+      "{",
       '  "message": string,',
       '  "intent": string,',
       '  "shouldScheduleVisit": boolean,',
       '  "proposedVisitDate": string | null,',
       '  "needsHumanHandoff": boolean,',
-      '  "confidence": number',
-      '}',
+      '  "confidence": number,',
+      '  "leadTemperature": "hot" | "warm" | "cold" | "unclear",',
+      '  "extractedPreferences": {',
+      '    "budget": string | null,',
+      '    "zones": string[],',
+      '    "rooms": number | null,',
+      '    "purpose": "living" | "investment" | null',
+      "  },",
+      '  "nextBestAction": string,',
+      '  "requiresFollowUp": boolean,',
+      '  "followUpReason": string | null',
+      "}",
     ].join("\n"),
     user: JSON.stringify(
       {
@@ -210,6 +296,7 @@ function buildPrompt(context: PreparedConversationContext) {
         property: context.property,
         availability: context.availability,
         availabilitySummary,
+        preferredVisitOptions: doubleOptionSummary,
         recentMessages: context.recentMessages,
       },
       null,
@@ -218,37 +305,62 @@ function buildPrompt(context: PreparedConversationContext) {
   };
 }
 
+function mapQualificationDecision(payload: AiDecisionPayload) {
+  const normalizedIntent = payload.intent.trim().toLowerCase();
+
+  if (normalizedIntent.includes("disqual") || normalizedIntent.includes("descart")) {
+    return "DISQUALIFIED" as const;
+  }
+
+  if (
+    payload.leadTemperature === "hot" ||
+    payload.shouldScheduleVisit ||
+    normalizedIntent.includes("visit") ||
+    normalizedIntent.includes("qualif")
+  ) {
+    return "QUALIFIED" as const;
+  }
+
+  return null;
+}
+
 function mapAiDecisionToAutomationDecision(
   payload: AiDecisionPayload,
   context: PreparedConversationContext,
 ): AutomationDecision {
-  const normalizedIntent = payload.intent.trim().toLowerCase();
   const hasConcreteVisitDate =
     typeof payload.proposedVisitDate === "string" &&
     !Number.isNaN(new Date(payload.proposedVisitDate).getTime());
 
-  const qualificationDecision =
-    normalizedIntent.includes("disqual") || normalizedIntent.includes("descart")
-      ? "DISQUALIFIED"
-      : payload.shouldScheduleVisit || normalizedIntent.includes("qualif")
-        ? "QUALIFIED"
-        : null;
-
   return {
     responseText: payload.message.trim(),
-    qualificationDecision,
+    qualificationDecision: mapQualificationDecision(payload),
     visitIntent: payload.shouldScheduleVisit ? { requested: true } : null,
+    leadTemperature: payload.leadTemperature,
+    extractedPreferences: {
+      budget: payload.extractedPreferences.budget,
+      zones: payload.extractedPreferences.zones,
+      rooms: payload.extractedPreferences.rooms,
+      purpose: payload.extractedPreferences.purpose,
+    },
+    nextBestAction: payload.nextBestAction.trim(),
+    requiresFollowUp: payload.requiresFollowUp,
+    followUpReason: payload.followUpReason,
     visitProposal: payload.shouldScheduleVisit
       ? {
           proposed: hasConcreteVisitDate,
-          slotSummary: getAvailabilitySummary(context) ?? undefined,
+          slotSummary: getDoubleOptionVisitSummary(context) ?? undefined,
           scheduledAt: hasConcreteVisitDate ? payload.proposedVisitDate : null,
         }
       : null,
     internalNotes: [
       `AI intent: ${payload.intent}`,
       `AI confidence: ${payload.confidence}`,
+      `Lead temperature: ${payload.leadTemperature}`,
       payload.needsHumanHandoff ? "AI marked this conversation for human handoff." : null,
+      payload.requiresFollowUp && payload.followUpReason
+        ? `Follow-up reason: ${payload.followUpReason}`
+        : null,
     ]
       .filter(Boolean)
       .join(" "),
@@ -263,14 +375,20 @@ function buildDeterministicFallback(
   const latestBody = latestInbound?.body.trim() ?? "";
   const visitRequested = latestBody ? hasVisitIntentFallback(latestBody) : false;
   const availabilitySummary = getAvailabilitySummary(context);
+  const doubleOptionSummary = getDoubleOptionVisitSummary(context);
   const concreteScheduledAt = getConcreteScheduledAt(context);
 
   if (!context.property) {
     return {
       responseText:
-        "Gracias por escribirnos. ¿Me contás qué propiedad te interesa así te ayudo más rápido?",
+        "Gracias por escribirnos. Decime que propiedad te interesa y te ayudo mas rapido.",
       qualificationDecision: null,
       visitIntent: visitRequested ? { requested: true } : null,
+      ...buildCommercialSignalDefaults(context, {
+        leadTemperature: "unclear",
+        nextBestAction: "pedir-propiedad",
+        requiresFollowUp: false,
+      }),
       visitProposal: null,
       internalNotes: `Fallback activado (${reason}). Falta contexto de propiedad.`,
     };
@@ -279,47 +397,69 @@ function buildDeterministicFallback(
   if (visitRequested) {
     if (availabilitySummary) {
       return {
-        responseText: `Gracias por tu interes en ${context.property.title}. Tenemos disponibilidad para coordinar una visita en estos horarios: ${availabilitySummary}. ¿Te sirve alguna de esas opciones?`,
+        responseText: `Gracias por tu interes en ${context.property.title}. Podemos coordinar visita. Tengo ${doubleOptionSummary ?? availabilitySummary}. Te sirve alguna?`,
         qualificationDecision: "QUALIFIED",
         visitIntent: { requested: true },
+        ...buildCommercialSignalDefaults(context, {
+          leadTemperature: "hot",
+          nextBestAction: "coordinar-visita",
+          requiresFollowUp: false,
+        }),
         visitProposal: {
           proposed: Boolean(concreteScheduledAt),
-          slotSummary: availabilitySummary,
+          slotSummary: doubleOptionSummary ?? availabilitySummary,
           scheduledAt: concreteScheduledAt,
         },
-        internalNotes: `Fallback activado (${reason}). Se detecto intencion de visita con disponibilidad.`,
+        internalNotes: `Fallback activado (${reason}). Intencion de visita detectada con disponibilidad.`,
       };
     }
 
     return {
-      responseText: `Gracias por tu interes en ${context.property.title}. Podemos coordinar una visita, pero todavía estamos confirmando disponibilidad. ¿Qué día y horario te quedan mejor?`,
+      responseText: `Gracias por tu interes en ${context.property.title}. Quiero ayudarte a coordinar visita. Que dia y horario te quedan mejor?`,
       qualificationDecision: "QUALIFIED",
       visitIntent: { requested: true },
+      ...buildCommercialSignalDefaults(context, {
+        leadTemperature: "warm",
+        nextBestAction: "pedir-horario-preferido",
+        requiresFollowUp: true,
+        followUpReason: "Falta disponibilidad concreta para cerrar la visita.",
+      }),
       visitProposal: {
         proposed: false,
         slotSummary: "Sin disponibilidad activa confirmada.",
         scheduledAt: null,
       },
-      internalNotes: `Fallback activado (${reason}). Se detecto intencion de visita sin disponibilidad activa.`,
+      internalNotes: `Fallback activado (${reason}). Intencion de visita detectada sin disponibilidad activa.`,
     };
   }
 
   if (context.lead.status === "NEW") {
     return {
-      responseText: `Gracias por tu interes en ${context.property.title}. Para orientarte mejor, ¿estás buscando mudarte pronto o por ahora estás explorando opciones?`,
+      responseText: `Gracias por tu interes en ${context.property.title}. Estas buscando para vivir o como inversion? Y en que zona te gustaria enfocarte?`,
       qualificationDecision: null,
       visitIntent: null,
+      ...buildCommercialSignalDefaults(context, {
+        leadTemperature: "cold",
+        nextBestAction: "calificar-necesidad",
+        requiresFollowUp: true,
+        followUpReason: "Faltan datos comerciales basicos del lead.",
+      }),
       visitProposal: null,
-      internalNotes: `Fallback activado (${reason}). Lead nuevo, se envia pregunta inicial de calificacion.`,
+      internalNotes: `Fallback activado (${reason}). Lead nuevo, se envia pregunta comercial de calificacion.`,
     };
   }
 
   return {
-    responseText: `Gracias por tu mensaje sobre ${context.property.title}. Ya tenemos tus datos cargados. Si querés, contame qué horario te conviene o qué duda puntual tenés sobre la propiedad.`,
+    responseText: `Gracias por tu mensaje sobre ${context.property.title}. Si queres, contame presupuesto, zona ideal o si te interesa coordinar una visita.`,
     qualificationDecision: null,
     visitIntent: null,
+    ...buildCommercialSignalDefaults(context, {
+      leadTemperature: "warm",
+      nextBestAction: "llevar-a-visita-o-calificar",
+      requiresFollowUp: false,
+    }),
     visitProposal: null,
-    internalNotes: `Fallback activado (${reason}). Seguimiento seguro con contexto de propiedad existente.`,
+    internalNotes: `Fallback activado (${reason}). Seguimiento comercial seguro con contexto de propiedad.`,
   };
 }
 
@@ -388,7 +528,7 @@ export async function generateAutomationDecision(
     return mapAiDecisionToAutomationDecision(aiDecision, context);
   } catch (error) {
     console.error(
-      "[automation-decision] Falling back to deterministic decision service",
+      "[automation-decision] Falling back to deterministic commercial decision service",
       error instanceof Error ? error.message : error,
     );
 
