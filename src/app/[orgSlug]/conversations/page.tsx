@@ -71,6 +71,9 @@ export default async function ConversationsPage({
                     label={conversation.leadTemperature}
                     tone={getTemperatureTone(conversation.leadTemperature)}
                   />
+                  {conversation.requiresFollowUp ? (
+                    <StatusBadge label="Follow-up" tone="warning" />
+                  ) : null}
                 </div>
                 <h2 className="mt-4 text-xl font-semibold text-slate-950">{conversation.subject}</h2>
                 <p className="mt-1 text-sm text-slate-500">
@@ -103,6 +106,13 @@ export default async function ConversationsPage({
                   )}
                   <span>{formatDateTime(conversation.lastMessageAt)}</span>
                 </div>
+
+                {conversation.requiresFollowUp && conversation.followUpReason ? (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <p className="font-semibold">Operator follow-up recommended</p>
+                    <p className="mt-1 leading-6">{conversation.followUpReason}</p>
+                  </div>
+                ) : null}
 
                 <div className="mt-4 space-y-3">
                   {conversation.messages.map((message) => (

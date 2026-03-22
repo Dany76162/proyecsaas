@@ -161,6 +161,8 @@ export async function getLeadDetail(
     propertyTitle: lead.property?.title ?? "No property linked yet",
     lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
     leadTemperature: signals.leadTemperature,
+    requiresFollowUp: signals.requiresFollowUp,
+    followUpReason: signals.followUpReason,
     extractedPreferences: signals.extractedPreferences,
     activity,
     visits,

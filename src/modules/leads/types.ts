@@ -52,6 +52,8 @@ export type LeadVisitItem = {
 export type LeadDetail = LeadListItem & {
   assignedUserEmail: string;
   extractedPreferences: LeadExtractedPreferences;
+  requiresFollowUp: boolean;
+  followUpReason: string | null;
   activity: LeadActivityItem[];
   visits: LeadVisitItem[];
 };

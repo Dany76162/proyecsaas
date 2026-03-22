@@ -177,6 +177,13 @@ export default async function LeadDetailPage({
         </SectionCard>
       ) : null}
 
+      {lead.requiresFollowUp && lead.followUpReason ? (
+        <section className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-soft">
+          <p className="font-semibold">Commercial follow-up recommended</p>
+          <p className="mt-1 leading-6">{lead.followUpReason}</p>
+        </section>
+      ) : null}
+
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <SectionCard
           eyebrow="Edit"
