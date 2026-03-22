@@ -1,4 +1,5 @@
 import type { VisitStatus } from "@prisma/client";
+import type { LeadExtractedPreferences, LeadTemperature } from "@/modules/leads/commercial-signals";
 
 export type LeadStage =
   | "NEW"
@@ -21,6 +22,7 @@ export type LeadListItem = {
   propertyId?: string;
   propertyTitle: string;
   lastContactAt: string;
+  leadTemperature: LeadTemperature;
 };
 
 export type LeadSummary = {
@@ -49,6 +51,7 @@ export type LeadVisitItem = {
 
 export type LeadDetail = LeadListItem & {
   assignedUserEmail: string;
+  extractedPreferences: LeadExtractedPreferences;
   activity: LeadActivityItem[];
   visits: LeadVisitItem[];
 };

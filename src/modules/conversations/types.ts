@@ -4,6 +4,7 @@ import type {
   MessageDirection,
   NotificationType,
 } from "@prisma/client";
+import type { LeadTemperature } from "@/modules/leads/commercial-signals";
 
 export type ConversationMessageItem = {
   id: string;
@@ -27,6 +28,7 @@ export type ConversationListItem = {
   leadId?: string;
   leadName: string;
   leadStatus: LeadStatus;
+  leadTemperature: LeadTemperature;
   lastMessageAt: string;
   latestMessagePreview: string;
   messages: ConversationMessageItem[];

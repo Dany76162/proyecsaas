@@ -29,6 +29,18 @@ export default async function ConversationsPage({
     notFound();
   }
 
+  const getTemperatureTone = (temperature: "hot" | "warm" | "cold" | "unclear") => {
+    if (temperature === "hot") {
+      return "warning" as const;
+    }
+
+    if (temperature === "warm") {
+      return "info" as const;
+    }
+
+    return "neutral" as const;
+  };
+
   return (
     <>
       <WorkspaceHeader organization={organization} />
@@ -55,6 +67,10 @@ export default async function ConversationsPage({
                     }
                   />
                   <StatusBadge label={conversation.leadStatus} tone="info" />
+                  <StatusBadge
+                    label={conversation.leadTemperature}
+                    tone={getTemperatureTone(conversation.leadTemperature)}
+                  />
                 </div>
                 <h2 className="mt-4 text-xl font-semibold text-slate-950">{conversation.subject}</h2>
                 <p className="mt-1 text-sm text-slate-500">

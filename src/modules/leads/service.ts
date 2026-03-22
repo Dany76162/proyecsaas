@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/server/db/prisma";
+import { readLeadCommercialSignals } from "@/modules/leads/commercial-signals";
 
 import type {
   LeadDetail,
@@ -31,21 +32,30 @@ export async function listOrganizationLeads(
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
   });
 
-  return leads.map((lead) => ({
-    id: lead.id,
-    fullName: lead.fullName,
-    email: lead.email ?? "",
-    phone: lead.phone ?? "",
-    status: lead.status,
-    source: lead.source ?? "Manual entry",
-    notes: lead.notes ?? "Lead record ready for qualification.",
-    interestLabel: lead.interestLabel ?? "New inquiry",
-    budgetLabel: lead.budgetLabel ?? "Pending qualification",
-    ownerName: lead.owner?.fullName ?? "Unassigned",
-    propertyId: lead.propertyId ?? undefined,
-    propertyTitle: lead.property?.title ?? "No property linked yet",
-    lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
-  }));
+  return leads.map((lead) => {
+    const signals = readLeadCommercialSignals({
+      notes: lead.notes,
+      interestLabel: lead.interestLabel,
+      budgetLabel: lead.budgetLabel,
+    });
+
+    return {
+      id: lead.id,
+      fullName: lead.fullName,
+      email: lead.email ?? "",
+      phone: lead.phone ?? "",
+      status: lead.status,
+      source: lead.source ?? "Manual entry",
+      notes: signals.notes || "Lead record ready for qualification.",
+      interestLabel: lead.interestLabel ?? "New inquiry",
+      budgetLabel: lead.budgetLabel ?? "Pending qualification",
+      ownerName: lead.owner?.fullName ?? "Unassigned",
+      propertyId: lead.propertyId ?? undefined,
+      propertyTitle: lead.property?.title ?? "No property linked yet",
+      lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
+      leadTemperature: signals.leadTemperature,
+    };
+  });
 }
 
 export async function getLeadSummary(orgSlug: string): Promise<LeadSummary> {
@@ -129,6 +139,12 @@ export async function getLeadDetail(
     propertyTitle: visit.property?.title ?? "Property unavailable",
   }));
 
+  const signals = readLeadCommercialSignals({
+    notes: lead.notes,
+    interestLabel: lead.interestLabel,
+    budgetLabel: lead.budgetLabel,
+  });
+
   return {
     id: lead.id,
     fullName: lead.fullName,
@@ -136,7 +152,7 @@ export async function getLeadDetail(
     phone: lead.phone ?? "",
     status: lead.status,
     source: lead.source ?? "Manual entry",
-    notes: lead.notes ?? "Lead record ready for qualification.",
+    notes: signals.notes || "Lead record ready for qualification.",
     interestLabel: lead.interestLabel ?? "New inquiry",
     budgetLabel: lead.budgetLabel ?? "Pending qualification",
     ownerName: lead.owner?.fullName ?? "Unassigned",
@@ -144,6 +160,8 @@ export async function getLeadDetail(
     propertyId: lead.propertyId ?? undefined,
     propertyTitle: lead.property?.title ?? "No property linked yet",
     lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
+    leadTemperature: signals.leadTemperature,
+    extractedPreferences: signals.extractedPreferences,
     activity,
     visits,
   };

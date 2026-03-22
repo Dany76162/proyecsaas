@@ -21,6 +21,18 @@ const stageOrder: LeadStage[] = [
   "CLOSED",
 ];
 
+function getTemperatureTone(temperature: "hot" | "warm" | "cold" | "unclear") {
+  if (temperature === "hot") {
+    return "warning" as const;
+  }
+
+  if (temperature === "warm") {
+    return "info" as const;
+  }
+
+  return "neutral" as const;
+}
+
 export default async function LeadsPage({
   params,
   searchParams,
@@ -175,6 +187,7 @@ export default async function LeadsPage({
                     href={`/${orgSlug}/leads/${lead.id}`}
                     fullName={lead.fullName}
                     interestLabel={lead.interestLabel}
+                    leadTemperature={lead.leadTemperature}
                     ownerName={lead.ownerName}
                     propertyTitle={lead.propertyTitle}
                     stageLabel={lead.status}
@@ -253,6 +266,12 @@ export default async function LeadsPage({
                             : "info"
                       }
                     />
+                    <div className="mt-2">
+                      <StatusBadge
+                        label={lead.leadTemperature}
+                        tone={getTemperatureTone(lead.leadTemperature)}
+                      />
+                    </div>
                   </td>
                   <td className="py-4 text-sm text-slate-600">
                     {formatDate(lead.lastContactAt)}

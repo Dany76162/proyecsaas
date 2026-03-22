@@ -22,6 +22,10 @@ import type {
   PreparedConversationContext,
 } from "@/modules/automations/types";
 import {
+  encodeCommercialSignalsInNotes,
+  getLeadTemperatureLabel,
+} from "@/modules/leads/commercial-signals";
+import {
   createVisitForAutomation,
   VisitAutomationError,
 } from "@/modules/visits/service";
@@ -332,6 +336,38 @@ async function persistAutomationResponse(input: {
     return {
       outboundMessageId: outboundMessage.id,
     };
+  });
+}
+
+async function persistLeadCommercialSignals(input: {
+  organizationId: string;
+  leadId: string;
+  decision: AutomationDecision;
+}) {
+  const lead = await prisma.lead.findFirst({
+    where: {
+      id: input.leadId,
+      organizationId: input.organizationId,
+    },
+    select: {
+      notes: true,
+      budgetLabel: true,
+    },
+  });
+
+  if (!lead) {
+    return;
+  }
+
+  await prisma.lead.update({
+    where: {
+      id: input.leadId,
+    },
+    data: {
+      interestLabel: getLeadTemperatureLabel(input.decision.leadTemperature),
+      budgetLabel: input.decision.extractedPreferences.budget ?? lead.budgetLabel,
+      notes: encodeCommercialSignalsInNotes(lead.notes, input.decision),
+    },
   });
 }
 
@@ -719,6 +755,11 @@ async function runAutomationPipeline(input: {
 }): Promise<Extract<WhatsAppInboundProcessResult, { operatorHandoff: AutomationOperatorHandoff }>> {
   const decision = await generateAutomationDecision(input.prepared.context);
   const handoff = getAutomationHandoff(input.prepared.context, decision);
+  await persistLeadCommercialSignals({
+    organizationId: input.prepared.organizationId,
+    leadId: input.prepared.leadId,
+    decision,
+  });
   const outboundSentAt = new Date();
   const persisted = await persistAutomationResponse({
     organizationId: input.prepared.organizationId,

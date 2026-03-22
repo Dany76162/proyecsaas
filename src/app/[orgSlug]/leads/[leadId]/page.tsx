@@ -19,6 +19,18 @@ const leadStageOptions = [
   "CLOSED",
 ] as const;
 
+function getTemperatureTone(temperature: "hot" | "warm" | "cold" | "unclear") {
+  if (temperature === "hot") {
+    return "warning" as const;
+  }
+
+  if (temperature === "warm") {
+    return "info" as const;
+  }
+
+  return "neutral" as const;
+}
+
 export default async function LeadDetailPage({
   params,
   searchParams,
@@ -94,6 +106,10 @@ export default async function LeadDetailPage({
                       : "info"
                 }
               />
+              <StatusBadge
+                label={lead.leadTemperature}
+                tone={getTemperatureTone(lead.leadTemperature)}
+              />
               <StatusBadge label={lead.interestLabel} />
             </div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
@@ -131,6 +147,35 @@ export default async function LeadDetailPage({
           hint={nextVisit ? nextVisit.propertyTitle : "Create a visit from this lead to plan the next step."}
         />
       </section>
+
+      {lead.extractedPreferences.budget ||
+      lead.extractedPreferences.zones.length ||
+      lead.extractedPreferences.rooms ||
+      lead.extractedPreferences.purpose ? (
+        <SectionCard
+          eyebrow="Commercial signals"
+          title="Detected preferences"
+          description="Lightweight AI-read context for the assigned agent. Empty values stay hidden."
+        >
+          <div className="flex flex-wrap gap-2">
+            {lead.extractedPreferences.budget ? (
+              <StatusBadge label={`Budget: ${lead.extractedPreferences.budget}`} tone="info" />
+            ) : null}
+            {lead.extractedPreferences.zones.map((zone) => (
+              <StatusBadge key={zone} label={`Zone: ${zone}`} tone="neutral" />
+            ))}
+            {lead.extractedPreferences.rooms ? (
+              <StatusBadge label={`Rooms: ${lead.extractedPreferences.rooms}`} tone="neutral" />
+            ) : null}
+            {lead.extractedPreferences.purpose ? (
+              <StatusBadge
+                label={`Purpose: ${lead.extractedPreferences.purpose}`}
+                tone="neutral"
+              />
+            ) : null}
+          </div>
+        </SectionCard>
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <SectionCard
