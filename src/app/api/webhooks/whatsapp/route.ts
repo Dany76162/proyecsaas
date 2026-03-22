@@ -1,5 +1,4 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-
 import { NextRequest, NextResponse } from "next/server";
 
 import { getWhatsAppChannels } from "@/server/config/whatsapp-channels";
@@ -29,6 +28,7 @@ type WhatsAppWebhookValue = {
 };
 
 type WhatsAppWebhookMessage = NonNullable<WhatsAppWebhookValue["messages"]>[number];
+
 const ENQUEUE_TIMEOUT_MS = 3000;
 
 function validateSignature(rawBody: string, signatureHeader: string | null) {
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    payload = JSON.parse(rawBody) as typeof payload;
+    payload = JSON.parse(rawBody);
   } catch (error) {
     console.error("Failed to parse WhatsApp webhook payload", error);
     return NextResponse.json({ ok: false, error: "invalid-payload" }, { status: 400 });
@@ -149,7 +149,11 @@ export async function POST(request: NextRequest) {
       );
     } catch (error) {
       console.error("Failed to enqueue WhatsApp webhook jobs", error);
-      return NextResponse.json({ ok: false, error: "queue-unavailable" }, { status: 503 });
+
+      return NextResponse.json(
+        { ok: true, queued: false, error: "queue-unavailable" },
+        { status: 200 },
+      );
     }
   }
 
@@ -165,7 +169,7 @@ function buildJobPayload(input: {
   message: WhatsAppWebhookMessage;
 }) {
   return {
-    source: "whatsapp",
+    source: "whatsapp" as const,
     organizationId: input.organizationId,
     channel: {
       phoneNumberId: input.phoneNumberId,
@@ -199,7 +203,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
       (error) => {
         clearTimeout(timer);
         reject(error);
-      },
+      }
     );
   });
 }

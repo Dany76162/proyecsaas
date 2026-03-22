@@ -35,6 +35,19 @@ function isRealRecipientPhone(value: string) {
   return /^\+?\d{7,20}$/.test(normalized);
 }
 
+function normalizeWhatsAppRecipientPhone(value: string) {
+  const digitsOnly = value.replace(/\D/g, "");
+
+  // Workaround sandbox Meta / Argentina:
+  // inbound suele venir como 54911...
+  // pero el sandbox allowed list muchas veces espera 5411...
+  if (digitsOnly.startsWith("549") && digitsOnly.length === 13) {
+    return "54" + digitsOnly.slice(3);
+  }
+
+  return digitsOnly;
+}
+
 export async function attemptSimulatedWhatsAppOutboundDelivery(input: {
   phoneNumberId: string;
   responseText: string;
@@ -138,6 +151,8 @@ export async function attemptWhatsAppOutboundDelivery(
     controller.abort();
   }, DELIVERY_TIMEOUT_MS);
 
+  const finalTo = normalizeWhatsAppRecipientPhone(input.recipientPhone);
+
   try {
     const response = await fetch(
       `https://graph.facebook.com/v22.0/${input.channel.phoneNumberId}/messages`,
@@ -150,7 +165,7 @@ export async function attemptWhatsAppOutboundDelivery(
         },
         body: JSON.stringify({
           messaging_product: "whatsapp",
-          to: input.recipientPhone,
+          to: finalTo,
           type: "text",
           text: {
             body: input.responseText,
@@ -161,13 +176,13 @@ export async function attemptWhatsAppOutboundDelivery(
 
     const payload = (await response.json().catch(() => null)) as
       | {
-          messages?: Array<{
-            id?: string;
-          }>;
-          error?: {
-            message?: string;
-          };
-        }
+        messages?: Array<{
+          id?: string;
+        }>;
+        error?: {
+          message?: string;
+        };
+      }
       | null;
 
     if (!response.ok) {
