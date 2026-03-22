@@ -1,38 +1,52 @@
+import OpenAI from "openai";
+import { z } from "zod";
+
 import type { AutomationDecision, PreparedConversationContext } from "@/modules/automations/types";
 
-const VISIT_KEYWORDS = [
-  "visit",
+const FALLBACK_VISIT_KEYWORDS = [
+  "visita",
   "visitar",
   "ver",
   "verlo",
-  "tour",
   "recorrido",
-  "agendar",
   "agenda",
-  "schedule",
-  "showing",
+  "agendar",
+  "turno",
+  "mostrar",
 ];
 
-function hasVisitIntent(input: string) {
-  const normalized = input.toLowerCase();
-  return VISIT_KEYWORDS.some((keyword) => normalized.includes(keyword));
-}
+const WEEKDAY_LABELS = [
+  "domingo",
+  "lunes",
+  "martes",
+  "miercoles",
+  "jueves",
+  "viernes",
+  "sabado",
+];
+
+const aiDecisionSchema = z.object({
+  message: z.string().min(1),
+  intent: z.string().min(1),
+  shouldScheduleVisit: z.boolean(),
+  proposedVisitDate: z
+    .union([z.string().datetime({ offset: true }), z.string().datetime(), z.null()])
+    .nullable(),
+  needsHumanHandoff: z.boolean(),
+  confidence: z.number().min(0).max(1),
+});
+
+type AiDecisionPayload = z.infer<typeof aiDecisionSchema>;
+
+const AI_REQUEST_TIMEOUT_MS = 15_000;
+
+let openAiClient: OpenAI | null | undefined;
 
 function getLatestInboundMessage(context: PreparedConversationContext) {
   return [...context.recentMessages]
     .reverse()
     .find((message) => message.direction === "INBOUND");
 }
-
-const WEEKDAY_LABELS = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
 
 function formatMinute(minute: number) {
   const hours = Math.floor(minute / 60);
@@ -47,12 +61,15 @@ function getAvailabilitySummary(context: PreparedConversationContext) {
   }
 
   return context.availability
-    .slice(0, 2)
-    .map(
-      (slot) =>
-        `${WEEKDAY_LABELS[slot.weekday] ?? "Weekday"} ${formatMinute(slot.startMinute)}-${formatMinute(slot.endMinute)}`,
-    )
-    .join(" or ");
+    .slice(0, 3)
+    .map((slot) => {
+      const weekday = WEEKDAY_LABELS[slot.weekday] ?? "dia";
+      const range = `${formatMinute(slot.startMinute)}-${formatMinute(slot.endMinute)}`;
+      const advisor = slot.userName ? ` con ${slot.userName}` : "";
+
+      return `${weekday} ${range}${advisor}`;
+    })
+    .join(", ");
 }
 
 function getTimezoneOffsetMinutes(timeZone: string, date: Date) {
@@ -137,72 +154,247 @@ function getConcreteScheduledAt(context: PreparedConversationContext) {
   return new Date(localAsUtc.getTime() - offsetMinutes * 60_000).toISOString();
 }
 
-export async function generateAutomationDecision(
+function hasVisitIntentFallback(input: string) {
+  const normalized = input.toLowerCase();
+  return FALLBACK_VISIT_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
+function getOpenAiClient() {
+  if (openAiClient !== undefined) {
+    return openAiClient;
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    openAiClient = null;
+    return openAiClient;
+  }
+
+  openAiClient = new OpenAI({
+    apiKey,
+    baseURL: process.env.OPENAI_BASE_URL || undefined,
+  });
+
+  return openAiClient;
+}
+
+function getDecisionModel() {
+  return process.env.OPENAI_MODEL || "gpt-4.1-mini";
+}
+
+function buildPrompt(context: PreparedConversationContext) {
+  const availabilitySummary = getAvailabilitySummary(context);
+
+  return {
+    system: [
+      "Sos un asesor inmobiliario de Argentina para un SaaS de real estate.",
+      "Responde siempre en espanol de Argentina.",
+      "No inventes datos ni supongas propiedades, precios, horarios o estados que no aparezcan en el contexto.",
+      "Si falta contexto de propiedad, pedi aclaracion de forma breve y profesional.",
+      "Si propones una visita, usa solamente horarios disponibles del contexto.",
+      "Debes devolver SOLO JSON valido con esta forma exacta:",
+      '{',
+      '  "message": string,',
+      '  "intent": string,',
+      '  "shouldScheduleVisit": boolean,',
+      '  "proposedVisitDate": string | null,',
+      '  "needsHumanHandoff": boolean,',
+      '  "confidence": number',
+      '}',
+    ].join("\n"),
+    user: JSON.stringify(
+      {
+        conversation: context.conversation,
+        lead: context.lead,
+        property: context.property,
+        availability: context.availability,
+        availabilitySummary,
+        recentMessages: context.recentMessages,
+      },
+      null,
+      2,
+    ),
+  };
+}
+
+function mapAiDecisionToAutomationDecision(
+  payload: AiDecisionPayload,
   context: PreparedConversationContext,
-): Promise<AutomationDecision> {
+): AutomationDecision {
+  const normalizedIntent = payload.intent.trim().toLowerCase();
+  const hasConcreteVisitDate =
+    typeof payload.proposedVisitDate === "string" &&
+    !Number.isNaN(new Date(payload.proposedVisitDate).getTime());
+
+  const qualificationDecision =
+    normalizedIntent.includes("disqual") || normalizedIntent.includes("descart")
+      ? "DISQUALIFIED"
+      : payload.shouldScheduleVisit || normalizedIntent.includes("qualif")
+        ? "QUALIFIED"
+        : null;
+
+  return {
+    responseText: payload.message.trim(),
+    qualificationDecision,
+    visitIntent: payload.shouldScheduleVisit ? { requested: true } : null,
+    visitProposal: payload.shouldScheduleVisit
+      ? {
+          proposed: hasConcreteVisitDate,
+          slotSummary: getAvailabilitySummary(context) ?? undefined,
+          scheduledAt: hasConcreteVisitDate ? payload.proposedVisitDate : null,
+        }
+      : null,
+    internalNotes: [
+      `AI intent: ${payload.intent}`,
+      `AI confidence: ${payload.confidence}`,
+      payload.needsHumanHandoff ? "AI marked this conversation for human handoff." : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  };
+}
+
+function buildDeterministicFallback(
+  context: PreparedConversationContext,
+  reason: string,
+): AutomationDecision {
   const latestInbound = getLatestInboundMessage(context);
   const latestBody = latestInbound?.body.trim() ?? "";
-  const visitRequested = latestBody ? hasVisitIntent(latestBody) : false;
+  const visitRequested = latestBody ? hasVisitIntentFallback(latestBody) : false;
   const availabilitySummary = getAvailabilitySummary(context);
   const concreteScheduledAt = getConcreteScheduledAt(context);
 
   if (!context.property) {
     return {
       responseText:
-        "Thanks for reaching out. Could you tell us which property you are asking about so we can help you faster?",
+        "Gracias por escribirnos. ¿Me contás qué propiedad te interesa así te ayudo más rápido?",
       qualificationDecision: null,
       visitIntent: visitRequested ? { requested: true } : null,
       visitProposal: null,
-      internalNotes: "Missing property context. Automation should clarify the requested property.",
+      internalNotes: `Fallback activado (${reason}). Falta contexto de propiedad.`,
     };
   }
 
   if (visitRequested) {
     if (availabilitySummary) {
       return {
-        responseText: `Thanks for your interest in ${context.property.title}. We can coordinate a visit. We currently have availability around ${availabilitySummary}. Does one of those options work for you?`,
+        responseText: `Gracias por tu interes en ${context.property.title}. Tenemos disponibilidad para coordinar una visita en estos horarios: ${availabilitySummary}. ¿Te sirve alguna de esas opciones?`,
         qualificationDecision: "QUALIFIED",
         visitIntent: { requested: true },
         visitProposal: {
-          proposed: true,
+          proposed: Boolean(concreteScheduledAt),
           slotSummary: availabilitySummary,
           scheduledAt: concreteScheduledAt,
         },
-        internalNotes:
-          concreteScheduledAt
-            ? "Visit intent detected with one deterministic availability slot ready for safe scheduling."
-            : "Visit intent detected and active availability slots were found.",
+        internalNotes: `Fallback activado (${reason}). Se detecto intencion de visita con disponibilidad.`,
       };
     }
 
     return {
-      responseText: `Thanks for your interest in ${context.property.title}. We can help coordinate a visit, but the current availability is still being confirmed. What day and time would you prefer?`,
+      responseText: `Gracias por tu interes en ${context.property.title}. Podemos coordinar una visita, pero todavía estamos confirmando disponibilidad. ¿Qué día y horario te quedan mejor?`,
       qualificationDecision: "QUALIFIED",
       visitIntent: { requested: true },
       visitProposal: {
         proposed: false,
-        slotSummary: "No active availability slots found yet.",
+        slotSummary: "Sin disponibilidad activa confirmada.",
         scheduledAt: null,
       },
-      internalNotes: "Visit intent detected but no active availability slots were found.",
+      internalNotes: `Fallback activado (${reason}). Se detecto intencion de visita sin disponibilidad activa.`,
     };
   }
 
   if (context.lead.status === "NEW") {
     return {
-      responseText: `Thanks for your interest in ${context.property.title}. To help you better, are you looking to move soon or just exploring options right now?`,
+      responseText: `Gracias por tu interes en ${context.property.title}. Para orientarte mejor, ¿estás buscando mudarte pronto o por ahora estás explorando opciones?`,
       qualificationDecision: null,
       visitIntent: null,
       visitProposal: null,
-      internalNotes: "Lead is still new. Automation is asking a first qualification follow-up.",
+      internalNotes: `Fallback activado (${reason}). Lead nuevo, se envia pregunta inicial de calificacion.`,
     };
   }
 
   return {
-    responseText: `Thanks for the message about ${context.property.title}. We have your details and will keep helping from here. If you want, share your preferred schedule or any questions about the property.`,
+    responseText: `Gracias por tu mensaje sobre ${context.property.title}. Ya tenemos tus datos cargados. Si querés, contame qué horario te conviene o qué duda puntual tenés sobre la propiedad.`,
     qualificationDecision: null,
     visitIntent: null,
     visitProposal: null,
-    internalNotes: "Safe default follow-up generated from existing property context.",
+    internalNotes: `Fallback activado (${reason}). Seguimiento seguro con contexto de propiedad existente.`,
   };
+}
+
+async function generateAiDecision(context: PreparedConversationContext) {
+  const client = getOpenAiClient();
+
+  if (!client) {
+    return null;
+  }
+
+  const prompt = buildPrompt(context);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
+  let completion: Awaited<ReturnType<typeof client.chat.completions.create>>;
+
+  try {
+    completion = await client.chat.completions.create(
+      {
+        model: getDecisionModel(),
+        temperature: 0.2,
+        response_format: {
+          type: "json_object",
+        },
+        messages: [
+          {
+            role: "system",
+            content: prompt.system,
+          },
+          {
+            role: "user",
+            content: prompt.user,
+          },
+        ],
+      },
+      { signal: controller.signal },
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  const content = completion.choices[0]?.message?.content;
+
+  if (!content) {
+    throw new Error("empty-llm-response");
+  }
+
+  const parsed = aiDecisionSchema.safeParse(JSON.parse(content));
+
+  if (!parsed.success) {
+    throw new Error("invalid-llm-json");
+  }
+
+  return parsed.data;
+}
+
+export async function generateAutomationDecision(
+  context: PreparedConversationContext,
+): Promise<AutomationDecision> {
+  try {
+    const aiDecision = await generateAiDecision(context);
+
+    if (!aiDecision) {
+      return buildDeterministicFallback(context, "openai-not-configured");
+    }
+
+    return mapAiDecisionToAutomationDecision(aiDecision, context);
+  } catch (error) {
+    console.error(
+      "[automation-decision] Falling back to deterministic decision service",
+      error instanceof Error ? error.message : error,
+    );
+
+    return buildDeterministicFallback(
+      context,
+      error instanceof Error ? error.message : "llm-request-failed",
+    );
+  }
 }
