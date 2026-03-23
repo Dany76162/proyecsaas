@@ -5,6 +5,19 @@ This project is prepared to run as two separate services:
 - Web app: Next.js app that serves the CRM, public routes, and the WhatsApp webhook.
 - Worker: long-running BullMQ worker that consumes queued automation jobs.
 
+## Pre-deploy checklist
+
+Before the first production rollout, confirm all of the following:
+
+- PostgreSQL is provisioned and reachable from both web and worker runtimes
+- Redis is provisioned and reachable from both web and worker runtimes
+- all required production environment variables are injected at runtime
+- `npm run validate:runtime:web` passes in the web runtime environment
+- `npm run validate:runtime:worker` passes in the worker runtime environment
+- the target release has already built successfully
+- database backup / snapshot policy is confirmed before applying migrations
+- WhatsApp webhook verify token and app secret are configured in the target environment
+
 ## Required managed services
 
 - PostgreSQL
@@ -137,13 +150,38 @@ The web container starts Next.js bound to `0.0.0.0`, so it can receive traffic i
 4. Apply Prisma migrations with `npm run prisma:migrate:deploy`.
 5. Deploy the worker.
 6. Deploy the web app.
-7. Confirm webhook verification and queue connectivity.
+7. Switch or confirm webhook traffic only after the web app is live and the worker is healthy.
+8. Run the smoke checks below.
+
+## Smoke test checklist
+
+Run these checks immediately after rollout:
+
+1. Open the web app and confirm a tenant workspace loads successfully.
+2. Confirm `GET /api/webhooks/whatsapp` verification succeeds with the expected token/challenge flow.
+3. Send one controlled WhatsApp inbound test message and confirm:
+   - the webhook responds successfully
+   - the job is enqueued
+   - the worker logs job start and completion
+4. Confirm the conversation appears in the CRM with inbound/outbound history.
+5. Confirm Redis connectivity and Postgres-backed reads/writes are healthy in both services.
+6. Confirm no unexpected `503 queue-unavailable` webhook responses are appearing.
+
+## First go-live recommendation
+
+For the first production rollout:
+
+- run a single worker instance
+- keep the webhook live only after the worker is already healthy
+- use a controlled internal WhatsApp test conversation before broader traffic is considered live
+- avoid schema changes and webhook cutover in separate unsynchronized steps
 
 ## Rollback cautions
 
 - Coordinate rollbacks across both web and worker if a release changes Prisma schema usage.
 - Do not roll back code to a version that cannot read the currently deployed schema.
 - If delivery or queue issues occur, verify `REDIS_URL`, WhatsApp credentials, and worker health before reprocessing messages manually.
+- If rollout fails after migrations are applied, pause webhook traffic first, then roll back web/worker runtime only if the previous release is schema-compatible.
 
 ## Operational notes
 
