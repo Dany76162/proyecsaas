@@ -61,6 +61,9 @@ Dev-only and normally disabled in production:
 
 - `INTERNAL_AUTOMATION_SIMULATION_TOKEN`
 
+In production, the web and worker startup paths now validate their required runtime variables
+and fail fast if they are missing.
+
 ## Build and start commands
 
 Web app:
@@ -74,6 +77,13 @@ Worker:
 
 ```bash
 npm run worker:start
+```
+
+Explicit runtime validation helpers:
+
+```bash
+npm run validate:runtime:web
+npm run validate:runtime:worker
 ```
 
 In this production-preparation phase, the worker runs directly from TypeScript via `tsx`.
@@ -138,5 +148,6 @@ The web container starts Next.js bound to `0.0.0.0`, so it can receive traffic i
 ## Operational notes
 
 - The webhook returns quickly and should not perform business processing inline.
+- If queue enqueue fails, the webhook now returns a non-200 response (`503`) instead of pretending success.
 - The worker is the only long-running automation processor and must remain up for end-to-end automation to function.
 - Missing `REDIS_URL` now fails in production instead of silently falling back to localhost.

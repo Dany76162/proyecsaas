@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
+import { validateWebRuntimeConfig } from "@/server/config/runtime";
 import { getWhatsAppChannels } from "@/server/config/whatsapp-channels";
 import { getAutomationQueue } from "@/server/queues";
 
@@ -53,6 +54,8 @@ function validateSignature(rawBody: string, signatureHeader: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  validateWebRuntimeConfig();
+
   const verifyToken = request.nextUrl.searchParams.get("hub.verify_token") ?? "";
   const challenge = request.nextUrl.searchParams.get("hub.challenge") ?? "";
   const expectedVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
@@ -65,7 +68,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  validateWebRuntimeConfig();
+
   const rawBody = await request.text();
+  const receivedAt = Date.now();
 
   if (!validateSignature(rawBody, request.headers.get("x-hub-signature-256"))) {
     return NextResponse.json({ ok: false }, { status: 401 });
@@ -89,6 +95,7 @@ export async function POST(request: NextRequest) {
   const channels = getWhatsAppChannels();
   const jobs: Array<ReturnType<typeof buildJobPayload>> = [];
   let ignoredMessageCount = 0;
+  let receivedMessageCount = 0;
 
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
@@ -109,6 +116,7 @@ export async function POST(request: NextRequest) {
       const contact = value.contacts?.[0];
 
       for (const message of value.messages) {
+        receivedMessageCount += 1;
         jobs.push(
           buildJobPayload({
             organizationId: channel.organizationId,
@@ -122,6 +130,16 @@ export async function POST(request: NextRequest) {
       }
     }
   }
+
+  console.log(
+    JSON.stringify({
+      scope: "automation-webhook",
+      event: "received",
+      receivedMessageCount,
+      queuedCandidateCount: jobs.length,
+      ignoredMessageCount,
+    }),
+  );
 
   if (ignoredMessageCount > 0) {
     console.warn(
@@ -147,12 +165,29 @@ export async function POST(request: NextRequest) {
         ),
         ENQUEUE_TIMEOUT_MS,
       );
+
+      console.log(
+        JSON.stringify({
+          scope: "automation-webhook",
+          event: "enqueued",
+          queuedCount: jobs.length,
+          durationMs: Date.now() - receivedAt,
+        }),
+      );
     } catch (error) {
-      console.error("Failed to enqueue WhatsApp webhook jobs", error);
+      console.error(
+        JSON.stringify({
+          scope: "automation-webhook",
+          event: "enqueue-failed",
+          queuedCount: jobs.length,
+          durationMs: Date.now() - receivedAt,
+          message: error instanceof Error ? error.message : "unknown-enqueue-error",
+        }),
+      );
 
       return NextResponse.json(
-        { ok: true, queued: false, error: "queue-unavailable" },
-        { status: 200 },
+        { ok: false, queued: false, error: "queue-unavailable" },
+        { status: 503 },
       );
     }
   }
