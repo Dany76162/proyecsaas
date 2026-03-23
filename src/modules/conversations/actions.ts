@@ -1,10 +1,9 @@
 "use server";
 
-import { NotificationType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
+import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 import { getOrganizationBySlug } from "@/server/db/organization-context";
-import { prisma } from "@/server/db/prisma";
 
 export async function resolveConversationFollowUpAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
@@ -21,49 +20,11 @@ export async function resolveConversationFollowUpAction(formData: FormData) {
     return;
   }
 
-  const conversation = await prisma.conversation.findFirst({
-    where: {
-      id: conversationId,
-      organizationId: organization.id,
-    },
-    select: {
-      id: true,
-      subject: true,
-      followUpActive: true,
-      followUpReason: true,
-    },
-  });
-
-  if (!conversation?.followUpActive) {
-    return;
-  }
-
-  const resolvedAt = new Date();
-
-  await prisma.$transaction(async (tx) => {
-    await tx.conversation.update({
-      where: {
-        id: conversation.id,
-      },
-      data: {
-        followUpActive: false,
-        followUpResolvedAt: resolvedAt,
-      },
-    });
-
-    await tx.notification.create({
-      data: {
-        organizationId: organization.id,
-        type: NotificationType.FOLLOW_UP_RESOLVED,
-        title: "Conversation follow-up resolved",
-        body: conversation.followUpReason
-          ? `${conversation.subject ?? "Conversation"}: ${conversation.followUpReason}`
-          : `${conversation.subject ?? "Conversation"} was marked as resolved by an operator.`,
-        link: `/${orgSlug}/conversations`,
-        entityType: "conversation",
-        entityId: conversation.id,
-      },
-    });
+  await resolveConversationFollowUp({
+    organizationId: organization.id,
+    conversationId,
+    resolutionMethod: "MANUAL",
+    link: `/${orgSlug}/conversations`,
   });
 
   revalidatePath(`/${orgSlug}/conversations`);

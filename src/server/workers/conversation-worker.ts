@@ -634,6 +634,22 @@ async function syncConversationFollowUpState(input: {
     return;
   }
 
+  const existingConversation = await prisma.conversation.findUnique({
+    where: {
+      id: input.conversationId,
+    },
+    select: {
+      followUpResolvedAt: true,
+    },
+  });
+
+  if (
+    existingConversation?.followUpResolvedAt &&
+    Date.now() - existingConversation.followUpResolvedAt.getTime() < 1000
+  ) {
+    return;
+  }
+
   await prisma.conversation.update({
     where: {
       id: input.conversationId,

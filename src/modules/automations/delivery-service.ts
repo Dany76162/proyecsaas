@@ -1,9 +1,13 @@
+import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
+
 export type PersistedOutboundResponse = {
   organizationId: string;
   conversationId: string;
   outboundMessageId: string;
   responseText: string;
   recipientPhone: string;
+  senderKind?: "automation" | "human";
+  deliveryLink?: string;
   channel: {
     provider: "whatsapp";
     phoneNumberId: string;
@@ -198,7 +202,7 @@ export async function attemptWhatsAppOutboundDelivery(
       };
     }
 
-    return {
+    const deliveryResult: DeliveryAttemptResult = {
       deliveryStatus: "delivered",
       sendAttempted: true,
       reason: "provider-accepted",
@@ -209,6 +213,31 @@ export async function attemptWhatsAppOutboundDelivery(
       },
       providerMessageId: payload?.messages?.[0]?.id,
     };
+
+    if (input.senderKind === "human") {
+      try {
+        await resolveConversationFollowUp({
+          organizationId: input.organizationId,
+          conversationId: input.conversationId,
+          resolutionMethod: "AUTO_REPLY",
+          link: input.deliveryLink,
+        });
+      } catch (error) {
+        console.error(
+          JSON.stringify({
+            scope: "automation-delivery",
+            event: "follow-up-auto-clear-failed",
+            organizationId: input.organizationId,
+            conversationId: input.conversationId,
+            outboundMessageId: input.outboundMessageId,
+            message:
+              error instanceof Error ? error.message : "unknown-follow-up-auto-clear-error",
+          }),
+        );
+      }
+    }
+
+    return deliveryResult;
   } catch (error) {
     return {
       deliveryStatus: "failed",

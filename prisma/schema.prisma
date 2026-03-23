@@ -258,6 +258,7 @@ model Notification {
   type           NotificationType
   title          String
   body           String
+  metadata       Json?
   link           String?
   entityType     String?
   entityId       String?
