@@ -173,6 +173,8 @@ model Conversation {
   followUpReason String?
   followUpActiveAt DateTime?
   followUpResolvedAt DateTime?
+  nextBestAction String?
+  nextBestActionAt DateTime?
   participantName String?
   participantPhone String?
   propertyContextNote String?

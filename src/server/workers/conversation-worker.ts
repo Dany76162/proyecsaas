@@ -629,6 +629,7 @@ async function syncConversationFollowUpState(input: {
   conversationId: string;
   required: boolean;
   summary: string;
+  nextBestAction: string;
 }) {
   if (!input.required) {
     return;
@@ -659,6 +660,8 @@ async function syncConversationFollowUpState(input: {
       followUpReason: input.summary,
       followUpActiveAt: new Date(),
       followUpResolvedAt: null,
+      nextBestAction: input.nextBestAction,
+      nextBestActionAt: new Date(),
     },
   });
 }
@@ -764,6 +767,8 @@ async function prepareInboundAutomationContext(input: {
           participantName: input.participantName,
           participantPhone: input.participantPhone,
           lastMessageAt: input.sentAt,
+          nextBestAction: null,
+          nextBestActionAt: null,
         },
       });
     }
@@ -852,6 +857,7 @@ async function runAutomationPipeline(input: {
       conversationId: input.prepared.conversationId,
       required: handoffDecision.required,
       summary: handoffDecision.summary,
+      nextBestAction: decision.nextBestAction,
     });
 
     operatorNotificationId = await maybeCreateOperatorNotification({

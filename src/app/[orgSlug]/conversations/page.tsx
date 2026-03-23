@@ -112,6 +112,14 @@ export default async function ConversationsPage({
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <p className="font-semibold">Operator follow-up recommended</p>
                     <p className="mt-1 leading-6">{conversation.followUpReason}</p>
+                    {conversation.nextBestAction ? (
+                      <div className="mt-3 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs leading-5 text-slate-600">
+                        <p className="font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          Copilot hint
+                        </p>
+                        <p className="mt-1">{conversation.nextBestAction}</p>
+                      </div>
+                    ) : null}
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       {conversation.followUpActiveAt ? (
                         <span className="text-xs font-medium uppercase tracking-[0.2em] text-amber-700">

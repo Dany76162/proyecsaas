@@ -38,11 +38,24 @@ export async function listOrganizationConversations(
       (left, right) => new Date(left.sentAt).getTime() - new Date(right.sentAt).getTime(),
     );
     const latestMessage = conversation.messages[0];
+    const latestInboundMessage = conversation.messages.find(
+      (message) => message.direction === "INBOUND",
+    );
     const leadSignals = readLeadCommercialSignals({
       notes: conversation.lead?.notes,
       interestLabel: conversation.lead?.interestLabel,
       budgetLabel: conversation.lead?.budgetLabel,
     });
+    const nextBestActionIsFresh =
+      conversation.followUpActive &&
+      Boolean(conversation.nextBestAction?.trim()) &&
+      Boolean(conversation.nextBestActionAt) &&
+      (!conversation.followUpResolvedAt ||
+        (conversation.nextBestActionAt &&
+          conversation.nextBestActionAt.getTime() > conversation.followUpResolvedAt.getTime())) &&
+      (!latestInboundMessage ||
+        !conversation.nextBestActionAt ||
+        latestInboundMessage.sentAt.getTime() <= conversation.nextBestActionAt.getTime());
 
     return {
       id: conversation.id,
@@ -63,6 +76,7 @@ export async function listOrganizationConversations(
       followUpReason: conversation.followUpReason,
       followUpActiveAt: conversation.followUpActiveAt?.toISOString() ?? null,
       followUpResolvedAt: conversation.followUpResolvedAt?.toISOString() ?? null,
+      nextBestAction: nextBestActionIsFresh ? conversation.nextBestAction ?? null : null,
       lastMessageAt: (conversation.lastMessageAt ?? conversation.updatedAt).toISOString(),
       latestMessagePreview: latestMessage?.body ?? "No messages recorded yet.",
       messages: sortedMessages.map((message) => ({

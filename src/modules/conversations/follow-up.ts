@@ -44,6 +44,8 @@ export async function resolveConversationFollowUp(input: ResolveConversationFoll
       data: {
         followUpActive: false,
         followUpResolvedAt: resolvedAt,
+        nextBestAction: null,
+        nextBestActionAt: null,
       },
     });
 

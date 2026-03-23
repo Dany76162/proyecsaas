@@ -33,6 +33,7 @@ export type ConversationListItem = {
   followUpReason: string | null;
   followUpActiveAt: string | null;
   followUpResolvedAt: string | null;
+  nextBestAction: string | null;
   lastMessageAt: string;
   latestMessagePreview: string;
   messages: ConversationMessageItem[];
