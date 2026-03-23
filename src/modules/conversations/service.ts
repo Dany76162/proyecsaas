@@ -59,8 +59,10 @@ export async function listOrganizationConversations(
       leadName: conversation.lead?.fullName ?? "Lead not linked yet",
       leadStatus: conversation.lead?.status ?? LeadStatus.NEW,
       leadTemperature: leadSignals.leadTemperature,
-      requiresFollowUp: leadSignals.requiresFollowUp,
-      followUpReason: leadSignals.followUpReason,
+      requiresFollowUp: conversation.followUpActive,
+      followUpReason: conversation.followUpReason,
+      followUpActiveAt: conversation.followUpActiveAt?.toISOString() ?? null,
+      followUpResolvedAt: conversation.followUpResolvedAt?.toISOString() ?? null,
       lastMessageAt: (conversation.lastMessageAt ?? conversation.updatedAt).toISOString(),
       latestMessagePreview: latestMessage?.body ?? "No messages recorded yet.",
       messages: sortedMessages.map((message) => ({

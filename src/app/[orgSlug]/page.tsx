@@ -270,10 +270,16 @@ export default async function OrganizationHomePage({
                     label={
                       notification.type === "OPERATOR_ACTION_REQUIRED"
                         ? "Action required"
+                        : notification.type === "FOLLOW_UP_RESOLVED"
+                          ? "Resolved"
                         : "Visit event"
                     }
                     tone={
-                      notification.type === "OPERATOR_ACTION_REQUIRED" ? "warning" : "info"
+                      notification.type === "OPERATOR_ACTION_REQUIRED"
+                        ? "warning"
+                        : notification.type === "FOLLOW_UP_RESOLVED"
+                          ? "success"
+                          : "info"
                     }
                   />
                   {notification.link ? (

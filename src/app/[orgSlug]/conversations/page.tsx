@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
+import { resolveConversationFollowUpAction } from "@/modules/conversations/actions";
 import {
   listConversationNotifications,
   listOrganizationAvailability,
@@ -111,6 +112,24 @@ export default async function ConversationsPage({
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <p className="font-semibold">Operator follow-up recommended</p>
                     <p className="mt-1 leading-6">{conversation.followUpReason}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      {conversation.followUpActiveAt ? (
+                        <span className="text-xs font-medium uppercase tracking-[0.2em] text-amber-700">
+                          Active since {formatDateTime(conversation.followUpActiveAt)}
+                        </span>
+                      ) : null}
+                      <form action={resolveConversationFollowUpAction}>
+                        <input type="hidden" name="orgSlug" value={orgSlug} />
+                        <input type="hidden" name="conversationId" value={conversation.id} />
+                        <input type="hidden" name="leadId" value={conversation.leadId ?? ""} />
+                        <button
+                          type="submit"
+                          className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100"
+                        >
+                          Mark resolved
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 ) : null}
 
@@ -169,10 +188,16 @@ export default async function ConversationsPage({
                       label={
                         notification.type === "OPERATOR_ACTION_REQUIRED"
                           ? "Action required"
-                          : "Visit event"
+                          : notification.type === "FOLLOW_UP_RESOLVED"
+                            ? "Resolved"
+                            : "Visit event"
                       }
                       tone={
-                        notification.type === "OPERATOR_ACTION_REQUIRED" ? "warning" : "info"
+                        notification.type === "OPERATOR_ACTION_REQUIRED"
+                          ? "warning"
+                          : notification.type === "FOLLOW_UP_RESOLVED"
+                            ? "success"
+                            : "info"
                       }
                     />
                   </div>

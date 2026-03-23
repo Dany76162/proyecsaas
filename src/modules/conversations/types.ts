@@ -31,6 +31,8 @@ export type ConversationListItem = {
   leadTemperature: LeadTemperature;
   requiresFollowUp: boolean;
   followUpReason: string | null;
+  followUpActiveAt: string | null;
+  followUpResolvedAt: string | null;
   lastMessageAt: string;
   latestMessagePreview: string;
   messages: ConversationMessageItem[];

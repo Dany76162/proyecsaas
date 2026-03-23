@@ -625,6 +625,28 @@ async function maybeCreateOperatorNotification(input: {
   return notification.id;
 }
 
+async function syncConversationFollowUpState(input: {
+  conversationId: string;
+  required: boolean;
+  summary: string;
+}) {
+  if (!input.required) {
+    return;
+  }
+
+  await prisma.conversation.update({
+    where: {
+      id: input.conversationId,
+    },
+    data: {
+      followUpActive: true,
+      followUpReason: input.summary,
+      followUpActiveAt: new Date(),
+      followUpResolvedAt: null,
+    },
+  });
+}
+
 async function prepareInboundAutomationContext(input: {
   organizationId: string;
   participantPhone: string;
@@ -810,6 +832,12 @@ async function runAutomationPipeline(input: {
   let operatorNotificationId: string | undefined;
 
   if (handoffDecision.required && handoffDecision.reason !== "none") {
+    await syncConversationFollowUpState({
+      conversationId: input.prepared.conversationId,
+      required: handoffDecision.required,
+      summary: handoffDecision.summary,
+    });
+
     operatorNotificationId = await maybeCreateOperatorNotification({
       organizationId: input.prepared.organizationId,
       conversationId: input.prepared.conversationId,

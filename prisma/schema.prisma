@@ -53,6 +53,7 @@ enum MessageDirection {
 enum NotificationType {
   VISIT_CREATED
   OPERATOR_ACTION_REQUIRED
+  FOLLOW_UP_RESOLVED
 }
 
 model User {
@@ -168,6 +169,10 @@ model Conversation {
   propertyId     String?
   channel        String
   status         ConversationStatus @default(OPEN)
+  followUpActive Boolean      @default(false)
+  followUpReason String?
+  followUpActiveAt DateTime?
+  followUpResolvedAt DateTime?
   participantName String?
   participantPhone String?
   propertyContextNote String?

@@ -85,6 +85,21 @@ export async function getLeadDetail(
     include: {
       property: true,
       owner: true,
+      conversations: {
+        where: {
+          organization: {
+            slug: orgSlug,
+          },
+        },
+        select: {
+          id: true,
+          followUpActive: true,
+          followUpReason: true,
+          followUpActiveAt: true,
+          updatedAt: true,
+        },
+        orderBy: [{ followUpActiveAt: "desc" }, { updatedAt: "desc" }],
+      },
       visits: {
         include: {
           property: true,
@@ -144,6 +159,9 @@ export async function getLeadDetail(
     interestLabel: lead.interestLabel,
     budgetLabel: lead.budgetLabel,
   });
+  const activeFollowUpConversation = lead.conversations.find(
+    (conversation) => conversation.followUpActive,
+  );
 
   return {
     id: lead.id,
@@ -161,8 +179,8 @@ export async function getLeadDetail(
     propertyTitle: lead.property?.title ?? "No property linked yet",
     lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
     leadTemperature: signals.leadTemperature,
-    requiresFollowUp: signals.requiresFollowUp,
-    followUpReason: signals.followUpReason,
+    requiresFollowUp: Boolean(activeFollowUpConversation),
+    followUpReason: activeFollowUpConversation?.followUpReason ?? null,
     extractedPreferences: signals.extractedPreferences,
     activity,
     visits,
