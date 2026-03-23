@@ -200,6 +200,7 @@ npm run worker:dev
 - Web app (production): `npm run start:web`
 - Worker (local): `npm run worker:dev`
 - Worker (production): `npm run worker:start`
+- Production migrations: `npm run prisma:migrate:deploy`
 
 Production rollout guidance for web + worker lives in [docs/production-deploy.md](docs/production-deploy.md).
 

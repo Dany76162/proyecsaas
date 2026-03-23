@@ -80,6 +80,37 @@ In this production-preparation phase, the worker runs directly from TypeScript v
 That means the deployment image/runtime must include `tsx` at runtime. There is no separate
 worker build artifact yet in this phase.
 
+## Migration command
+
+Run migrations explicitly before the new web/worker release accepts traffic:
+
+```bash
+npm run prisma:migrate:deploy
+```
+
+## Container artifacts
+
+This repository now includes two minimal deployment artifacts:
+
+- `Dockerfile.web`
+- `Dockerfile.worker`
+
+Example image builds:
+
+```bash
+docker build -f Dockerfile.web -t proyecsaas-web .
+docker build -f Dockerfile.worker -t proyecsaas-worker .
+```
+
+Example container starts:
+
+```bash
+docker run --env-file .env -p 3000:3000 proyecsaas-web
+docker run --env-file .env proyecsaas-worker
+```
+
+The web container starts Next.js bound to `0.0.0.0`, so it can receive traffic inside a container runtime.
+
 ## Migration order
 
 1. Deploy schema-compatible code to both web and worker artifacts.
@@ -91,9 +122,9 @@ worker build artifact yet in this phase.
 ## Recommended deploy order
 
 1. Provision or confirm PostgreSQL and Redis.
-2. Build the web app artifact.
-3. Prepare the worker runtime with application dependencies installed.
-4. Apply Prisma migrations.
+2. Build the web image or web runtime artifact.
+3. Build the worker image or worker runtime artifact.
+4. Apply Prisma migrations with `npm run prisma:migrate:deploy`.
 5. Deploy the worker.
 6. Deploy the web app.
 7. Confirm webhook verification and queue connectivity.
