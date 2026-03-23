@@ -188,13 +188,27 @@ npm run db:seed
 npm run dev
 ```
 
+8. Start the background worker in a separate terminal when you want to process automation jobs locally
+
+```bash
+npm run worker:dev
+```
+
+## Runtime entrypoints
+
+- Web app (local): `npm run dev`
+- Web app (production): `npm run start:web`
+- Worker (local): `npm run worker:dev`
+- Worker (production): `npm run worker:start`
+
+Production rollout guidance for web + worker lives in [docs/production-deploy.md](docs/production-deploy.md).
+
 ## What is intentionally not implemented yet
 
 - Full authentication flow
 - Full CRUD for modules
 - External integrations
 - Automation builder UI
-- Background workers and processors
 - Advanced permissions
 - Public search and map filters
 
