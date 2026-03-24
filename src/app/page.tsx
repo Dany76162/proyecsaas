@@ -24,7 +24,7 @@ export default async function HomePage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                href={`/${organizations[0]?.slug ?? "north-hill"}`}
+                href="/map"
                 className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
               >
                 Open sample workspace
