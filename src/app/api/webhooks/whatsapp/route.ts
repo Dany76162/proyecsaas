@@ -2,8 +2,11 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import { validateWebRuntimeConfig } from "@/server/config/runtime";
-import { getWhatsAppChannels } from "@/server/config/whatsapp-channels";
 import { getAutomationQueue } from "@/server/queues";
+import {
+  resolveInboundByPhoneNumberId,
+  resolveLegacyFallback,
+} from "@/server/whatsapp/channel-resolver";
 
 export const runtime = "nodejs";
 
@@ -92,10 +95,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "invalid-payload" }, { status: 400 });
   }
 
-  const channels = getWhatsAppChannels();
   const jobs: Array<ReturnType<typeof buildJobPayload>> = [];
   let ignoredMessageCount = 0;
   let receivedMessageCount = 0;
+  const legacyFallback = await resolveLegacyFallback();
 
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
@@ -106,9 +109,9 @@ export async function POST(request: NextRequest) {
       }
 
       const phoneNumberId = value.metadata?.phone_number_id;
-      const channel = phoneNumberId ? channels[phoneNumberId] : undefined;
+      const channel = phoneNumberId ? await resolveInboundByPhoneNumberId(phoneNumberId) : null;
 
-      if (!phoneNumberId || !channel) {
+      if (!phoneNumberId || !channel || !channel.accessToken) {
         ignoredMessageCount += value.messages.length;
         continue;
       }
@@ -142,14 +145,14 @@ export async function POST(request: NextRequest) {
   );
 
   if (ignoredMessageCount > 0) {
-    console.warn(
-      JSON.stringify({
-        scope: "automation-webhook",
-        event: "messages-ignored-no-channel",
-        ignoredMessageCount,
-        hasConfiguredChannels: Object.keys(channels).length > 0,
-      }),
-    );
+      console.warn(
+        JSON.stringify({
+          scope: "automation-webhook",
+          event: "messages-ignored-no-channel",
+          ignoredMessageCount,
+          hasConfiguredChannels: Boolean(legacyFallback),
+        }),
+      );
   }
 
   if (jobs.length) {

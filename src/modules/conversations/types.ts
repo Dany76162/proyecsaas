@@ -1,6 +1,8 @@
 import type {
   ConversationStatus,
+  FollowUpCategory,
   LeadStatus,
+  MessageDeliveryStatus,
   MessageDirection,
   NotificationType,
 } from "@prisma/client";
@@ -13,6 +15,9 @@ export type ConversationMessageItem = {
   senderName: string;
   senderPhone: string;
   sentAt: string;
+  deliveryStatus: MessageDeliveryStatus;
+  providerMessageId: string | null;
+  deliveryError: string | null;
 };
 
 export type ConversationListItem = {
@@ -30,6 +35,7 @@ export type ConversationListItem = {
   leadStatus: LeadStatus;
   leadTemperature: LeadTemperature;
   requiresFollowUp: boolean;
+  followUpCategory: FollowUpCategory | null;
   followUpReason: string | null;
   followUpActiveAt: string | null;
   followUpResolvedAt: string | null;

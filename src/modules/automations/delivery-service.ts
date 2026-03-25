@@ -20,6 +20,7 @@ export type DeliveryAttemptResult = {
   sendAttempted: boolean;
   reason: string;
   awaitingRealDelivery: boolean;
+  attemptedAt: string | null;
   channel: {
     provider: "whatsapp";
     phoneNumberId: string;
@@ -62,6 +63,7 @@ export async function attemptSimulatedWhatsAppOutboundDelivery(input: {
       sendAttempted: false,
       reason: "missing-phone-number-id",
       awaitingRealDelivery: true,
+      attemptedAt: null,
       channel: {
         provider: "whatsapp",
         phoneNumberId: "",
@@ -75,6 +77,7 @@ export async function attemptSimulatedWhatsAppOutboundDelivery(input: {
       sendAttempted: false,
       reason: "empty-response-text",
       awaitingRealDelivery: false,
+      attemptedAt: null,
       channel: {
         provider: "whatsapp",
         phoneNumberId: input.phoneNumberId,
@@ -87,6 +90,7 @@ export async function attemptSimulatedWhatsAppOutboundDelivery(input: {
     sendAttempted: true,
     reason: "dev-simulated-delivery",
     awaitingRealDelivery: false,
+    attemptedAt: new Date().toISOString(),
     channel: {
       provider: "whatsapp",
       phoneNumberId: input.phoneNumberId,
@@ -104,6 +108,7 @@ export async function attemptWhatsAppOutboundDelivery(
       sendAttempted: false,
       reason: "missing-phone-number-id",
       awaitingRealDelivery: true,
+      attemptedAt: null,
       channel: {
         provider: input.channel.provider,
         phoneNumberId: "",
@@ -117,6 +122,7 @@ export async function attemptWhatsAppOutboundDelivery(
       sendAttempted: false,
       reason: "empty-response-text",
       awaitingRealDelivery: false,
+      attemptedAt: null,
       channel: {
         provider: input.channel.provider,
         phoneNumberId: input.channel.phoneNumberId,
@@ -130,6 +136,7 @@ export async function attemptWhatsAppOutboundDelivery(
       sendAttempted: false,
       reason: "invalid-recipient-phone",
       awaitingRealDelivery: false,
+      attemptedAt: null,
       channel: {
         provider: input.channel.provider,
         phoneNumberId: input.channel.phoneNumberId,
@@ -143,6 +150,7 @@ export async function attemptWhatsAppOutboundDelivery(
       sendAttempted: false,
       reason: "missing-access-token",
       awaitingRealDelivery: true,
+      attemptedAt: null,
       channel: {
         provider: input.channel.provider,
         phoneNumberId: input.channel.phoneNumberId,
@@ -156,6 +164,7 @@ export async function attemptWhatsAppOutboundDelivery(
   }, DELIVERY_TIMEOUT_MS);
 
   const finalTo = normalizeWhatsAppRecipientPhone(input.recipientPhone);
+  const attemptedAt = new Date().toISOString();
 
   try {
     const response = await fetch(
@@ -195,6 +204,7 @@ export async function attemptWhatsAppOutboundDelivery(
         sendAttempted: true,
         reason: payload?.error?.message ?? `provider-http-${response.status}`,
         awaitingRealDelivery: false,
+        attemptedAt,
         channel: {
           provider: input.channel.provider,
           phoneNumberId: input.channel.phoneNumberId,
@@ -207,6 +217,7 @@ export async function attemptWhatsAppOutboundDelivery(
       sendAttempted: true,
       reason: "provider-accepted",
       awaitingRealDelivery: false,
+      attemptedAt,
       channel: {
         provider: input.channel.provider,
         phoneNumberId: input.channel.phoneNumberId,
@@ -249,6 +260,7 @@ export async function attemptWhatsAppOutboundDelivery(
             ? error.message
             : "provider-request-failed",
       awaitingRealDelivery: false,
+      attemptedAt,
       channel: {
         provider: input.channel.provider,
         phoneNumberId: input.channel.phoneNumberId,

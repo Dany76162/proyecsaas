@@ -31,6 +31,18 @@ function getTemperatureTone(temperature: "hot" | "warm" | "cold" | "unclear") {
   return "neutral" as const;
 }
 
+function getFollowUpLabel(category: "TECHNICAL" | "COMMERCIAL" | null) {
+  if (category === "TECHNICAL") {
+    return "Delivery issue";
+  }
+
+  if (category === "COMMERCIAL") {
+    return "Commercial follow-up";
+  }
+
+  return "Operator follow-up";
+}
+
 export default async function LeadDetailPage({
   params,
   searchParams,
@@ -179,7 +191,7 @@ export default async function LeadDetailPage({
 
       {lead.requiresFollowUp && lead.followUpReason ? (
         <section className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-soft">
-          <p className="font-semibold">Commercial follow-up recommended</p>
+          <p className="font-semibold">{getFollowUpLabel(lead.followUpCategory)} recommended</p>
           <p className="mt-1 leading-6">{lead.followUpReason}</p>
         </section>
       ) : null}

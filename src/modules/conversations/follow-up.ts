@@ -2,7 +2,7 @@ import { NotificationType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
 
-export type FollowUpResolutionMethod = "MANUAL" | "AUTO_REPLY";
+export type FollowUpResolutionMethod = "MANUAL" | "AUTO_REPLY" | "AUTO_SYSTEM";
 
 type ResolveConversationFollowUpInput = {
   organizationId: string;
@@ -24,6 +24,7 @@ export async function resolveConversationFollowUp(input: ResolveConversationFoll
         id: true,
         subject: true,
         followUpActive: true,
+        followUpCategory: true,
         followUpReason: true,
       },
     });
@@ -43,6 +44,8 @@ export async function resolveConversationFollowUp(input: ResolveConversationFoll
       },
       data: {
         followUpActive: false,
+        followUpCategory: null,
+        followUpReason: null,
         followUpResolvedAt: resolvedAt,
         nextBestAction: null,
         nextBestActionAt: null,
@@ -65,9 +68,12 @@ export async function resolveConversationFollowUp(input: ResolveConversationFoll
           ? `${conversation.subject ?? "Conversation"}: ${conversation.followUpReason}`
           : input.resolutionMethod === "AUTO_REPLY"
             ? `${conversation.subject ?? "Conversation"} was auto-resolved after a human reply.`
+            : input.resolutionMethod === "AUTO_SYSTEM"
+              ? `${conversation.subject ?? "Conversation"} was auto-resolved after the underlying issue cleared.`
             : `${conversation.subject ?? "Conversation"} was marked as resolved by an operator.`,
         metadata: {
           resolutionMethod: input.resolutionMethod,
+          previousCategory: conversation.followUpCategory,
           previousReason: conversation.followUpReason,
         } satisfies Prisma.InputJsonValue,
         link: input.link,

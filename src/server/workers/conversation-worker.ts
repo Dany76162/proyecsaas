@@ -1,10 +1,13 @@
 import {
   ConversationStatus,
+  FollowUpCategory,
   LeadStatus,
+  MessageDeliveryStatus,
   MessageDirection,
   NotificationType,
   Prisma,
 } from "@prisma/client";
+import { createHash } from "node:crypto";
 import { Job, Worker } from "bullmq";
 
 import { generateAutomationDecision } from "@/modules/automations/decision-service";
@@ -25,13 +28,14 @@ import {
   encodeCommercialSignalsInNotes,
   getLeadTemperatureLabel,
 } from "@/modules/leads/commercial-signals";
+import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 import {
   createVisitForAutomation,
   VisitAutomationError,
 } from "@/modules/visits/service";
 import { prisma } from "@/server/db/prisma";
-import { getWhatsAppChannels } from "@/server/config/whatsapp-channels";
 import { getQueueConnection } from "@/server/queues/connection";
+import { resolveInboundByPhoneNumberId } from "@/server/whatsapp/channel-resolver";
 
 export type WhatsAppInboundJobData = {
   source: "whatsapp";
@@ -96,6 +100,7 @@ type PreparedInboundAutomationContext = {
   leadId: string;
   inboundMessageId: string;
   conversationStatus: ConversationStatus;
+  continuityAction: "reused-open" | "reopened-qualified" | "created-new";
   context: PreparedConversationContext;
 };
 
@@ -141,6 +146,28 @@ function resolveSentAt(value: string | null) {
 
 function normalizeBody(value: string | null | undefined) {
   return value?.trim() || "";
+}
+
+function buildSyntheticInboundExternalId(data: {
+  phoneNumberId: string;
+  participantPhone: string;
+  timestamp: string | null;
+  type: string;
+  body: string;
+}) {
+  const hash = createHash("sha256")
+    .update(
+      [
+        data.phoneNumberId,
+        data.participantPhone,
+        data.timestamp ?? "missing-timestamp",
+        data.type,
+        data.body,
+      ].join("|"),
+    )
+    .digest("hex");
+
+  return `synthetic-wa:${hash}`;
 }
 
 async function acquireConversationLock(
@@ -314,6 +341,7 @@ async function persistAutomationResponse(input: {
         organizationId: input.organizationId,
         conversationId: input.conversationId,
         direction: MessageDirection.OUTBOUND,
+        deliveryStatus: MessageDeliveryStatus.PENDING,
         body: input.decision.responseText,
         senderName: "Automation assistant",
         senderPhone: null,
@@ -336,6 +364,39 @@ async function persistAutomationResponse(input: {
     return {
       outboundMessageId: outboundMessage.id,
     };
+  });
+}
+
+async function applyOutboundDeliveryTruth(input: {
+  organizationId: string;
+  outboundMessageId: string;
+  delivery: DeliveryAttemptResult;
+}) {
+  const deliveryStatusMap = {
+    delivered: MessageDeliveryStatus.SENT,
+    failed: MessageDeliveryStatus.FAILED,
+    skipped: MessageDeliveryStatus.SKIPPED,
+  } satisfies Record<DeliveryAttemptResult["deliveryStatus"], MessageDeliveryStatus>;
+
+  const attemptedAt = input.delivery.attemptedAt ? new Date(input.delivery.attemptedAt) : null;
+  const deliveredAt =
+    input.delivery.deliveryStatus === "delivered" && input.delivery.attemptedAt
+      ? new Date(input.delivery.attemptedAt)
+      : null;
+
+  await prisma.message.updateMany({
+    where: {
+      id: input.outboundMessageId,
+      organizationId: input.organizationId,
+      direction: MessageDirection.OUTBOUND,
+    },
+    data: {
+      deliveryStatus: deliveryStatusMap[input.delivery.deliveryStatus],
+      providerMessageId: input.delivery.providerMessageId ?? null,
+      deliveryError: input.delivery.deliveryStatus === "failed" ? input.delivery.reason : null,
+      deliveryAttemptedAt: input.delivery.sendAttempted ? attemptedAt : null,
+      deliveredAt,
+    },
   });
 }
 
@@ -535,6 +596,20 @@ function getOperatorHandoffDecision(input: {
   };
 }
 
+function getFollowUpCategory(
+  reason: Exclude<AutomationOperatorHandoff["reason"], "none">,
+): FollowUpCategory {
+  switch (reason) {
+    case "delivery-skipped":
+    case "delivery-failed":
+    case "visit-creation-failed":
+      return FollowUpCategory.TECHNICAL;
+    case "property-context-unresolved":
+    case "visit-proposal-not-concrete":
+      return FollowUpCategory.COMMERCIAL;
+  }
+}
+
 async function maybeCreateOperatorNotification(input: {
   organizationId: string;
   conversationId: string;
@@ -626,23 +701,47 @@ async function maybeCreateOperatorNotification(input: {
 }
 
 async function syncConversationFollowUpState(input: {
+  organizationId: string;
   conversationId: string;
   required: boolean;
+  reason: AutomationOperatorHandoff["reason"];
+  category: FollowUpCategory | null;
   summary: string;
   nextBestAction: string;
 }) {
-  if (!input.required) {
-    return;
-  }
-
   const existingConversation = await prisma.conversation.findUnique({
     where: {
       id: input.conversationId,
     },
     select: {
+      followUpActive: true,
+      followUpActiveAt: true,
+      followUpCategory: true,
+      followUpReason: true,
       followUpResolvedAt: true,
     },
   });
+
+  if (!input.required) {
+    if (!existingConversation?.followUpActive) {
+      return;
+    }
+
+    await resolveConversationFollowUp({
+      organizationId: input.organizationId,
+      conversationId: input.conversationId,
+      resolutionMethod: "AUTO_SYSTEM",
+    });
+
+    logAutomationEvent("follow-up-auto-resolved", {
+      organizationId: input.organizationId,
+      conversationId: input.conversationId,
+      previousCategory: existingConversation.followUpCategory,
+      previousReason: existingConversation.followUpReason,
+    });
+
+    return;
+  }
 
   if (
     existingConversation?.followUpResolvedAt &&
@@ -657,8 +756,9 @@ async function syncConversationFollowUpState(input: {
     },
     data: {
       followUpActive: true,
+      followUpCategory: input.category,
       followUpReason: input.summary,
-      followUpActiveAt: new Date(),
+      followUpActiveAt: existingConversation?.followUpActiveAt ?? new Date(),
       followUpResolvedAt: null,
       nextBestAction: input.nextBestAction,
       nextBestActionAt: new Date(),
@@ -672,12 +772,12 @@ async function prepareInboundAutomationContext(input: {
   participantName: string;
   messageBody: string;
   sentAt: Date;
-  externalId: string | null;
+  externalId: string;
 }): Promise<PreparedInboundAutomationContext> {
   return prisma.$transaction(async (tx) => {
     await acquireConversationLock(tx, input.organizationId, input.participantPhone);
 
-    let createdConversation = false;
+    let continuityAction: PreparedInboundAutomationContext["continuityAction"] = "created-new";
     let conversation = await tx.conversation.findFirst({
       where: {
         organizationId: input.organizationId,
@@ -695,7 +795,39 @@ async function prepareInboundAutomationContext(input: {
     });
 
     if (!conversation) {
-      createdConversation = true;
+      const qualifiedConversation = await tx.conversation.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          channel: "whatsapp",
+          status: ConversationStatus.QUALIFIED,
+          participantPhone: input.participantPhone,
+        },
+        orderBy: [{ lastMessageAt: "desc" }, { updatedAt: "desc" }],
+        select: {
+          id: true,
+          leadId: true,
+        },
+      });
+
+      if (qualifiedConversation) {
+        continuityAction = "reopened-qualified";
+        conversation = qualifiedConversation;
+
+        await tx.conversation.update({
+          where: {
+            id: qualifiedConversation.id,
+          },
+          data: {
+            status: ConversationStatus.OPEN,
+            lastMessageAt: input.sentAt,
+          },
+        });
+      }
+    } else {
+      continuityAction = "reused-open";
+    }
+
+    if (!conversation) {
       conversation = await tx.conversation.create({
         data: {
           organizationId: input.organizationId,
@@ -747,6 +879,7 @@ async function prepareInboundAutomationContext(input: {
         conversationId: conversation.id,
         externalId: input.externalId,
         direction: MessageDirection.INBOUND,
+        deliveryStatus: MessageDeliveryStatus.RECEIVED,
         body: input.messageBody,
         senderName: input.participantName,
         senderPhone: input.participantPhone,
@@ -757,12 +890,13 @@ async function prepareInboundAutomationContext(input: {
       },
     });
 
-    if (!createdConversation || conversation.leadId !== lead.id) {
+    if (continuityAction !== "created-new" || conversation.leadId !== lead.id) {
       await tx.conversation.update({
         where: {
           id: conversation.id,
         },
         data: {
+          status: ConversationStatus.OPEN,
           leadId: lead.id,
           participantName: input.participantName,
           participantPhone: input.participantPhone,
@@ -785,6 +919,7 @@ async function prepareInboundAutomationContext(input: {
       leadId: lead.id,
       inboundMessageId: message.id,
       conversationStatus: context.conversation.status,
+      continuityAction,
       context,
     };
   });
@@ -830,6 +965,11 @@ async function runAutomationPipeline(input: {
             accessToken: input.accessToken,
           },
         });
+  await applyOutboundDeliveryTruth({
+    organizationId: input.prepared.organizationId,
+    outboundMessageId: persisted.outboundMessageId,
+    delivery,
+  });
   const qualificationApplied = Boolean(
     await applyConversationStatusAfterDelivery({
       conversationId: input.prepared.conversationId,
@@ -853,13 +993,6 @@ async function runAutomationPipeline(input: {
   let operatorNotificationId: string | undefined;
 
   if (handoffDecision.required && handoffDecision.reason !== "none") {
-    await syncConversationFollowUpState({
-      conversationId: input.prepared.conversationId,
-      required: handoffDecision.required,
-      summary: handoffDecision.summary,
-      nextBestAction: decision.nextBestAction,
-    });
-
     operatorNotificationId = await maybeCreateOperatorNotification({
       organizationId: input.prepared.organizationId,
       conversationId: input.prepared.conversationId,
@@ -868,6 +1001,17 @@ async function runAutomationPipeline(input: {
       summary: handoffDecision.summary,
     });
   }
+
+  await syncConversationFollowUpState({
+    organizationId: input.prepared.organizationId,
+    conversationId: input.prepared.conversationId,
+    required: handoffDecision.required,
+    reason: handoffDecision.reason,
+    category:
+      handoffDecision.reason === "none" ? null : getFollowUpCategory(handoffDecision.reason),
+    summary: handoffDecision.summary,
+    nextBestAction: decision.nextBestAction,
+  });
 
   const operatorHandoff: AutomationOperatorHandoff = {
     required: handoffDecision.required,
@@ -920,7 +1064,7 @@ export async function processWhatsAppInboundJob(
   const channel =
     options.channelOverride && options.channelOverride.phoneNumberId === phoneNumberId
       ? options.channelOverride
-      : getWhatsAppChannels()[phoneNumberId];
+      : await resolveInboundByPhoneNumberId(phoneNumberId);
 
   if (!channel) {
     throw new ConversationWorkerError(
@@ -995,6 +1139,15 @@ export async function processWhatsAppInboundJob(
 
   const sentAt = resolveSentAt(data.message.timestamp);
   const participantName = data.contact.name?.trim() || "Unknown contact";
+  const effectiveExternalId =
+    data.message.externalId ??
+    buildSyntheticInboundExternalId({
+      phoneNumberId,
+      participantPhone,
+      timestamp: data.message.timestamp,
+      type: data.message.type,
+      body: messageBody,
+    });
 
   try {
     const prepared = await prepareInboundAutomationContext({
@@ -1003,23 +1156,37 @@ export async function processWhatsAppInboundJob(
       participantName,
       messageBody,
       sentAt,
-      externalId: data.message.externalId,
+      externalId: effectiveExternalId,
     });
+
+    if (prepared.continuityAction !== "created-new") {
+      logAutomationEvent("conversation-continuity-reused", {
+        organizationId: prepared.organizationId,
+        conversationId: prepared.conversationId,
+        leadId: prepared.leadId,
+        continuityAction: prepared.continuityAction,
+        previousStatus:
+          prepared.continuityAction === "reopened-qualified"
+            ? ConversationStatus.QUALIFIED
+            : ConversationStatus.OPEN,
+      });
+    }
+
     return runAutomationPipeline({
       prepared,
       phoneNumberId,
       deliveryMode: options.deliveryMode,
-      accessToken: data.channel.accessToken,
+      accessToken: data.channel.accessToken ?? channel.accessToken,
     });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002" &&
-      data.message.externalId
+      effectiveExternalId
     ) {
       const existingMessage = await prisma.message.findUnique({
         where: {
-          externalId: data.message.externalId,
+          externalId: effectiveExternalId,
         },
         select: {
           id: true,
@@ -1032,7 +1199,7 @@ export async function processWhatsAppInboundJob(
           organizationId: organization.id,
           conversationId: existingMessage.conversationId,
           messageId: existingMessage.id,
-          externalId: data.message.externalId,
+          externalId: effectiveExternalId,
         });
 
         return {
@@ -1052,7 +1219,7 @@ export async function processWhatsAppInboundJob(
           message: error.message,
           phoneNumberId,
           organizationId: organization.id,
-          externalId: data.message.externalId,
+          externalId: effectiveExternalId,
         }),
       );
     }

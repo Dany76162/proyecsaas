@@ -4,17 +4,17 @@ import { LeadStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { MembershipRole } from "@prisma/client";
+
 import { createLeadSchema, updateLeadSchema } from "@/modules/leads/schemas";
-import { getOrganizationBySlug } from "@/server/db/organization-context";
+import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 
 export async function createLeadAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
-  const organization = await getOrganizationBySlug(orgSlug);
-
-  if (!organization) {
-    return;
-  }
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+  const organization = membership.organization;
 
   const parsed = createLeadSchema.safeParse({
     fullName: String(formData.get("fullName") ?? ""),
@@ -62,11 +62,9 @@ export async function createLeadAction(formData: FormData) {
 export async function updateLeadAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
   const leadId = String(formData.get("leadId") ?? "");
-  const organization = await getOrganizationBySlug(orgSlug);
-
-  if (!organization) {
-    return;
-  }
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+  const organization = membership.organization;
 
   const parsed = updateLeadSchema.safeParse({
     fullName: String(formData.get("fullName") ?? ""),
@@ -115,9 +113,10 @@ export async function updateLeadAction(formData: FormData) {
     return;
   }
 
-  const updatedLead = await prisma.lead.findUnique({
+  const updatedLead = await prisma.lead.findFirst({
     where: {
       id: leadId,
+      organizationId: organization.id,
     },
     select: {
       id: true,

@@ -16,6 +16,8 @@
     "lint": "next lint",
     "validate:runtime:web": "tsx scripts/validate-runtime.ts web",
     "validate:runtime:worker": "tsx scripts/validate-runtime.ts worker",
+    "whatsapp:backfill:legacy-channel": "tsx --conditions=react-server scripts/backfill-whatsapp-channel.ts",
+    "whatsapp:verify:resolution": "tsx --conditions=react-server scripts/verify-whatsapp-channel-resolution.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

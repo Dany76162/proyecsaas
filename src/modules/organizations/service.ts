@@ -38,6 +38,11 @@ function buildOrganizationSummary(organization: {
   } satisfies OrganizationSummary;
 }
 
+/**
+ * INTERNAL / ADMIN USE ONLY — returns all organizations with no auth or tenant scoping.
+ * Must never be called from user-facing pages, components, or server actions.
+ * For user-facing org lists, use listOrganizationsForUser(userId) instead.
+ */
 export async function listOrganizations(): Promise<OrganizationSummary[]> {
   const organizations = await prisma.organization.findMany({
     orderBy: { name: "asc" },
@@ -53,6 +58,40 @@ export async function listOrganizations(): Promise<OrganizationSummary[]> {
   });
 
   return organizations.map((organization) => buildOrganizationSummary(organization));
+}
+
+export async function listOrganizationsForUser(
+  userId: string,
+): Promise<OrganizationSummary[]> {
+  const memberships = await prisma.membership.findMany({
+    where: {
+      userId,
+      user: {
+        isActive: true,
+      },
+      organization: {
+        isActive: true,
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    select: {
+      organization: {
+        include: {
+          _count: {
+            select: {
+              memberships: true,
+              leads: true,
+              properties: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return memberships.map(({ organization }) => buildOrganizationSummary(organization));
 }
 
 export async function getOrganizationWorkspace(
@@ -97,8 +136,8 @@ export async function getOrganizationWorkspace(
   };
 }
 
-export async function getOrganizationSwitcherItems() {
-  return listOrganizations();
+export async function getOrganizationSwitcherItems(userId: string): Promise<OrganizationSummary[]> {
+  return listOrganizationsForUser(userId);
 }
 
 export async function listWorkspaceNotifications(

@@ -55,10 +55,12 @@ Both web and worker services:
 
 Web app only:
 
+- `AUTH_SESSION_SECRET`
+- `AUTH_SHARED_PASSWORD`
 - `WHATSAPP_APP_SECRET`
 - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
 
-Web app and worker when runtime WhatsApp delivery is enabled:
+Legacy tenant-bound WhatsApp fallback, only when env-backed channel resolution is still needed:
 
 - `WHATSAPP_PHONE_NUMBER_ID`
 - `WHATSAPP_ORGANIZATION_ID`
@@ -76,6 +78,8 @@ Dev-only and normally disabled in production:
 
 In production, the web and worker startup paths now validate their required runtime variables
 and fail fast if they are missing.
+Tenant-bound WhatsApp env vars are now optional when DB-backed `WhatsAppChannel` resolution is the
+primary runtime path, but legacy fallback still works if those env vars are kept in place.
 
 ## Build and start commands
 

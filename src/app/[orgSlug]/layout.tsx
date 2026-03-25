@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import { requireOrganizationMembership } from "@/server/auth/access";
 
 export default async function OrganizationLayout({
   children,
@@ -11,6 +12,7 @@ export default async function OrganizationLayout({
   params: Promise<{ orgSlug: string }>;
 }>) {
   const { orgSlug } = await params;
+  await requireOrganizationMembership(orgSlug);
   const organization = await getOrganizationWorkspace(orgSlug);
 
   if (!organization) {

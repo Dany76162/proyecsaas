@@ -5,11 +5,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { getOrganizationBySlug } from "@/server/db/organization-context";
+import { MembershipRole } from "@prisma/client";
+
 import {
   createVisitForAutomation,
   VisitAutomationError,
 } from "@/modules/visits/service";
+import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 
 const createVisitSchema = z.object({
   scheduledAt: z
@@ -26,11 +28,9 @@ function redirectToVisitError(orgSlug: string, leadId: string, error: string): n
 export async function createVisitAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
   const leadId = String(formData.get("leadId") ?? "");
-  const organization = await getOrganizationBySlug(orgSlug);
-
-  if (!organization) {
-    redirect("/login");
-  }
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+  const organization = membership.organization;
 
   const parsed = createVisitSchema.safeParse({
     scheduledAt: String(formData.get("scheduledAt") ?? ""),

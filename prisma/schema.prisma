@@ -45,15 +45,46 @@ enum ConversationStatus {
   CLOSED
 }
 
+enum FollowUpCategory {
+  TECHNICAL
+  COMMERCIAL
+}
+
 enum MessageDirection {
   INBOUND
   OUTBOUND
+}
+
+enum MessageDeliveryStatus {
+  RECEIVED
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
 }
 
 enum NotificationType {
   VISIT_CREATED
   OPERATOR_ACTION_REQUIRED
   FOLLOW_UP_RESOLVED
+}
+
+enum WhatsAppProvider {
+  WHATSAPP_CLOUD
+}
+
+enum WhatsAppChannelStatus {
+  ACTIVE
+  INACTIVE
+  DISCONNECTED
+  ERROR
+}
+
+enum WhatsAppChannelVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  REVOKED
 }
 
 model User {
@@ -87,6 +118,7 @@ model Organization {
   notifications Notification[]
   visits        Visit[]
   automations   AutomationRule[]
+  whatsappChannels WhatsAppChannel[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -170,6 +202,7 @@ model Conversation {
   channel        String
   status         ConversationStatus @default(OPEN)
   followUpActive Boolean      @default(false)
+  followUpCategory FollowUpCategory?
   followUpReason String?
   followUpActiveAt DateTime?
   followUpResolvedAt DateTime?
@@ -200,14 +233,20 @@ model Message {
   conversationId String
   externalId     String?          @unique
   direction      MessageDirection
+  deliveryStatus MessageDeliveryStatus @default(RECEIVED)
   body           String
   senderName     String?
   senderPhone    String?
+  providerMessageId String?
+  deliveryError  String?
+  deliveryAttemptedAt DateTime?
+  deliveredAt    DateTime?
   sentAt         DateTime         @default(now())
   conversation   Conversation     @relation(fields: [conversationId, organizationId], references: [id, organizationId], onDelete: Cascade)
   createdAt      DateTime         @default(now())
 
   @@index([organizationId, conversationId, sentAt])
+  @@index([organizationId, direction, deliveryStatus])
 }
 
 model Visit {
@@ -284,4 +323,35 @@ model AutomationRule {
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId, isActive])
+}
+
+model WhatsAppChannel {
+  id                          String                            @id @default(cuid())
+  organizationId              String
+  provider                    WhatsAppProvider                  @default(WHATSAPP_CLOUD)
+  status                      WhatsAppChannelStatus             @default(INACTIVE)
+  verificationStatus          WhatsAppChannelVerificationStatus @default(PENDING)
+  phoneNumberId               String                            @unique
+  wabaId                      String?
+  businessAccountId           String?
+  displayPhoneNumber          String?
+  verifiedDisplayName         String?
+  accessTokenEncrypted        String?
+  tokenLastValidatedAt        DateTime?
+  tokenExpiresAt              DateTime?
+  webhookSubscribed           Boolean                           @default(false)
+  webhookSubscriptionCheckedAt DateTime?
+  lastInboundAt               DateTime?
+  lastDeliveryAt              DateTime?
+  lastErrorAt                 DateTime?
+  lastErrorCode               String?
+  lastErrorMessage            String?
+  isPrimary                   Boolean                           @default(false)
+  providerMetadata            Json?
+  organization                Organization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt                   DateTime                          @default(now())
+  updatedAt                   DateTime                          @updatedAt
+
+  @@index([organizationId, provider, status])
+  @@index([organizationId, isPrimary])
 }

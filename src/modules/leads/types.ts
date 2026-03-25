@@ -1,4 +1,4 @@
-import type { VisitStatus } from "@prisma/client";
+import type { FollowUpCategory, VisitStatus } from "@prisma/client";
 import type { LeadExtractedPreferences, LeadTemperature } from "@/modules/leads/commercial-signals";
 
 export type LeadStage =
@@ -53,6 +53,7 @@ export type LeadDetail = LeadListItem & {
   assignedUserEmail: string;
   extractedPreferences: LeadExtractedPreferences;
   requiresFollowUp: boolean;
+  followUpCategory: FollowUpCategory | null;
   followUpReason: string | null;
   activity: LeadActivityItem[];
   visits: LeadVisitItem[];

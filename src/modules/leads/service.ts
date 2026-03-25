@@ -94,6 +94,7 @@ export async function getLeadDetail(
         select: {
           id: true,
           followUpActive: true,
+          followUpCategory: true,
           followUpReason: true,
           followUpActiveAt: true,
           updatedAt: true,
@@ -184,5 +185,6 @@ export async function getLeadDetail(
     extractedPreferences: signals.extractedPreferences,
     activity,
     visits,
+    followUpCategory: activeFollowUpConversation?.followUpCategory ?? null,
   };
 }

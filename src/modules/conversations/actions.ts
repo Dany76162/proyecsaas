@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import { MembershipRole } from "@prisma/client";
+
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
-import { getOrganizationBySlug } from "@/server/db/organization-context";
+import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 
 export async function resolveConversationFollowUpAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
@@ -14,11 +16,9 @@ export async function resolveConversationFollowUpAction(formData: FormData) {
     return;
   }
 
-  const organization = await getOrganizationBySlug(orgSlug);
-
-  if (!organization) {
-    return;
-  }
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+  const organization = membership.organization;
 
   await resolveConversationFollowUp({
     organizationId: organization.id,

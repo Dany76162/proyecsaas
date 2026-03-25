@@ -1,10 +1,13 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 
-import { listOrganizations } from "@/modules/organizations/service";
+import { logoutAction } from "@/server/auth/actions";
+import { getSessionUser } from "@/server/auth/session";
+import { listOrganizationsForUser } from "@/modules/organizations/service";
 
 export default async function HomePage() {
-  const organizations = await listOrganizations();
+  const sessionUser = await getSessionUser();
+  const organizations = sessionUser ? await listOrganizationsForUser(sessionUser.id) : [];
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-10">
@@ -23,18 +26,39 @@ export default async function HomePage() {
               map, and visits flows.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link
-                href="/map"
-                className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
-              >
-                Open sample workspace
-              </Link>
-              <Link
-                href="/map"
-                className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-              >
-                Review public inventory
-              </Link>
+              {sessionUser ? (
+                <>
+                  <Link
+                    href={organizations[0] ? `/${organizations[0].slug}` : "/map"}
+                    className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
+                  >
+                    Open your workspace
+                  </Link>
+                  <form action={logoutAction}>
+                    <button
+                      type="submit"
+                      className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
+                  >
+                    Sign in to workspace
+                  </Link>
+                  <Link
+                    href="/map"
+                    className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Review public inventory
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -77,36 +101,45 @@ export default async function HomePage() {
               Workspaces
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-              Available organizations
+              {sessionUser ? "Your organizations" : "Private organizations"}
             </h2>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {organizations.map((organization) => (
-            <Link
-              key={organization.id}
-              href={`/${organization.slug}`}
-              className="rounded-[1.5rem] border bg-white p-6 shadow-soft transition hover:-translate-y-0.5"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-slate-950">{organization.name}</h3>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                  {organization.planLabel}
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-slate-500">{organization.city}</p>
-              <p className="mt-4 text-sm leading-6 text-slate-600">
-                {organization.marketFocus}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
-                <span>{organization.memberCount} team members</span>
-                <span>{organization.leadCount} leads</span>
-                <span>{organization.propertyCount} properties</span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {sessionUser ? (
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {organizations.map((organization) => (
+              <Link
+                key={organization.id}
+                href={`/${organization.slug}`}
+                className="rounded-[1.5rem] border bg-white p-6 shadow-soft transition hover:-translate-y-0.5"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-slate-950">{organization.name}</h3>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                    {organization.planLabel}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-slate-500">{organization.city}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-600">
+                  {organization.marketFocus}
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
+                  <span>{organization.memberCount} team members</span>
+                  <span>{organization.leadCount} leads</span>
+                  <span>{organization.propertyCount} properties</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6 rounded-[1.5rem] border bg-white p-6 shadow-soft">
+            <p className="text-sm leading-7 text-slate-600">
+              The internal CRM workspace now requires an authenticated user with an active
+              organization membership.
+            </p>
+          </div>
+        )}
       </section>
     </main>
   );

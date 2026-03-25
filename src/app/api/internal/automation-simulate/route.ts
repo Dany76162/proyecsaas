@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/server/db/prisma";
@@ -9,6 +11,49 @@ import {
 export const runtime = "nodejs";
 
 type SimulationPreset = "default" | "visit-intent" | "ignored-non-text";
+
+const VALID_PRESETS = new Set<SimulationPreset>(["default", "visit-intent", "ignored-non-text"]);
+
+function isValidPreset(value: unknown): value is SimulationPreset {
+  return typeof value === "string" && VALID_PRESETS.has(value as SimulationPreset);
+}
+
+function badRequest(message: string) {
+  return NextResponse.json({ ok: false, error: message }, { status: 400 });
+}
+
+function forbidden() {
+  return NextResponse.json({ ok: false }, { status: 403 });
+}
+
+function isSimulationEnabled() {
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
+
+  return process.env.INTERNAL_AUTOMATION_SIMULATION_ENABLED === "true";
+}
+
+function validateSimulationToken(provided: string | null): boolean {
+  const expected = process.env.INTERNAL_AUTOMATION_SIMULATION_TOKEN;
+
+  if (!expected || !provided) {
+    return false;
+  }
+
+  const expectedBuffer = Buffer.from(expected);
+  const providedBuffer = Buffer.from(provided);
+
+  if (expectedBuffer.length !== providedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(expectedBuffer, providedBuffer);
+}
+
+function getPinnedOrgSlug(): string | null {
+  return process.env.INTERNAL_AUTOMATION_SIMULATION_ORG_SLUG?.trim() || null;
+}
 
 function buildSimulatedInboundPayload(input: {
   phoneNumberId: string;
@@ -58,32 +103,60 @@ function getPresetBody(preset: SimulationPreset) {
 }
 
 export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ ok: false }, { status: 404 });
+  if (!isSimulationEnabled()) {
+    return forbidden();
   }
 
-  const expectedToken = process.env.INTERNAL_AUTOMATION_SIMULATION_TOKEN;
-  const providedToken = request.headers.get("x-internal-simulation-token");
-
-  if (!expectedToken) {
-    return NextResponse.json({ ok: false, error: "simulation-token-not-configured" }, { status: 503 });
+  if (!validateSimulationToken(request.headers.get("x-internal-simulation-token"))) {
+    return forbidden();
   }
 
-  if (!providedToken || providedToken !== expectedToken) {
-    return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  const pinnedOrgSlug = getPinnedOrgSlug();
+
+  if (!pinnedOrgSlug) {
+    return forbidden();
   }
 
-  const body = (await request.json().catch(() => ({}))) as {
-    orgSlug?: string;
-    preset?: SimulationPreset;
-    contactPhone?: string;
-    contactName?: string;
-    externalId?: string;
-  };
-  const orgSlug = body.orgSlug ?? "north-hill";
+  const rawBody = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+
+  const preset = isValidPreset(rawBody.preset)
+    ? rawBody.preset
+    : rawBody.preset === undefined
+      ? "default"
+      : null;
+
+  if (preset === null) {
+    return badRequest("invalid preset");
+  }
+
+  const contactPhone =
+    rawBody.contactPhone === undefined
+      ? undefined
+      : typeof rawBody.contactPhone === "string" && rawBody.contactPhone.length <= 30
+        ? rawBody.contactPhone
+        : null;
+
+  const contactName =
+    rawBody.contactName === undefined
+      ? undefined
+      : typeof rawBody.contactName === "string" && rawBody.contactName.length <= 200
+        ? rawBody.contactName
+        : null;
+
+  const externalId =
+    rawBody.externalId === undefined
+      ? undefined
+      : typeof rawBody.externalId === "string" && rawBody.externalId.length <= 128
+        ? rawBody.externalId
+        : null;
+
+  if (contactPhone === null || contactName === null || externalId === null) {
+    return badRequest("invalid input field");
+  }
+
   const organization = await prisma.organization.findUnique({
     where: {
-      slug: orgSlug,
+      slug: pinnedOrgSlug,
     },
     select: {
       id: true,
@@ -92,19 +165,18 @@ export async function POST(request: NextRequest) {
   });
 
   if (!organization) {
-    return NextResponse.json({ ok: false, error: "organization-not-found" }, { status: 404 });
+    return forbidden();
   }
 
-  const preset = body.preset ?? "default";
   const phoneNumberId = `simulated-${organization.slug}`;
   const scenario = getPresetBody(preset);
   const defaultContactPhone = `+54911${Date.now().toString().slice(-8)}`;
   const defaultContactName = `Simulation Lead (${preset})`;
   const payload = buildSimulatedInboundPayload({
     phoneNumberId,
-    externalId: body.externalId ?? `sim-${preset}-${Date.now()}`,
-    contactName: body.contactName ?? defaultContactName,
-    contactPhone: body.contactPhone ?? defaultContactPhone,
+    externalId: externalId ?? `sim-${preset}-${Date.now()}`,
+    contactName: contactName ?? defaultContactName,
+    contactPhone: contactPhone ?? defaultContactPhone,
     body: scenario.body,
     type: scenario.type,
   });

@@ -73,6 +73,7 @@ export async function listOrganizationConversations(
       leadStatus: conversation.lead?.status ?? LeadStatus.NEW,
       leadTemperature: leadSignals.leadTemperature,
       requiresFollowUp: conversation.followUpActive,
+      followUpCategory: conversation.followUpCategory,
       followUpReason: conversation.followUpReason,
       followUpActiveAt: conversation.followUpActiveAt?.toISOString() ?? null,
       followUpResolvedAt: conversation.followUpResolvedAt?.toISOString() ?? null,
@@ -86,6 +87,9 @@ export async function listOrganizationConversations(
         senderName: message.senderName ?? "Unknown sender",
         senderPhone: message.senderPhone ?? "Phone pending",
         sentAt: message.sentAt.toISOString(),
+        deliveryStatus: message.deliveryStatus,
+        providerMessageId: message.providerMessageId ?? null,
+        deliveryError: message.deliveryError ?? null,
       })),
     } satisfies ConversationListItem;
   });
