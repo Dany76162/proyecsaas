@@ -13,6 +13,7 @@ import {
 import { getPropertySummary, listOrganizationProperties } from "@/modules/properties/service";
 import { getUserRoleBreakdown, listOrganizationUsers } from "@/modules/users/service";
 import { getVisitSummary, listOrganizationVisits } from "@/modules/visits/service";
+import { prisma } from "@/server/db/prisma";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 
 export default async function OrganizationHomePage({
@@ -40,8 +41,8 @@ export default async function OrganizationHomePage({
     getPropertySummary(orgSlug),
     listOrganizationUsers(orgSlug),
     getUserRoleBreakdown(orgSlug),
-    listOrganizationVisits(orgSlug),
-    getVisitSummary(orgSlug),
+    listOrganizationVisits(prisma, orgSlug),
+    getVisitSummary(prisma, orgSlug),
     listWorkspaceNotifications(orgSlug),
   ]);
 

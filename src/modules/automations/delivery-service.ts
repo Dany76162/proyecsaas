@@ -1,3 +1,4 @@
+import { Prisma, PrismaClient } from "@prisma/client";
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 
 export type PersistedOutboundResponse = {
@@ -100,6 +101,7 @@ export async function attemptSimulatedWhatsAppOutboundDelivery(input: {
 }
 
 export async function attemptWhatsAppOutboundDelivery(
+  prisma: PrismaClient | Prisma.TransactionClient,
   input: PersistedOutboundResponse,
 ): Promise<DeliveryAttemptResult> {
   if (!input.channel.phoneNumberId) {
@@ -227,7 +229,7 @@ export async function attemptWhatsAppOutboundDelivery(
 
     if (input.senderKind === "human") {
       try {
-        await resolveConversationFollowUp({
+        await resolveConversationFollowUp(prisma, {
           organizationId: input.organizationId,
           conversationId: input.conversationId,
           resolutionMethod: "AUTO_REPLY",

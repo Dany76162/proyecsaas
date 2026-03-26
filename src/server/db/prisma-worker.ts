@@ -1,3 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 
-export const prisma = new PrismaClient();
+const globalForPrisma = global as unknown as {
+    prismaWorker?: PrismaClient;
+};
+
+export const prismaWorker =
+    globalForPrisma.prismaWorker ??
+    new PrismaClient({
+        log: ["error"],
+    });
+
+if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prismaWorker = prismaWorker;
+}

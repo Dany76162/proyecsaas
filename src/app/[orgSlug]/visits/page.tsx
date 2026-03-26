@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/workspace/status-badge";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getVisitSummary, listOrganizationVisits } from "@/modules/visits/service";
+import { prisma } from "@/server/db/prisma";
 import { formatDate } from "@/lib/utils";
 
 export default async function VisitsPage({
@@ -17,8 +18,8 @@ export default async function VisitsPage({
   const { orgSlug } = await params;
   const [organization, visits, summary] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
-    listOrganizationVisits(orgSlug),
-    getVisitSummary(orgSlug),
+    listOrganizationVisits(prisma, orgSlug),
+    getVisitSummary(prisma, orgSlug),
   ]);
 
   if (!organization) {

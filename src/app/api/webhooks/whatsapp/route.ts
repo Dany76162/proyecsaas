@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { validateWebRuntimeConfig } from "@/server/config/runtime";
 import { getAutomationQueue } from "@/server/queues";
+import { prisma } from "@/server/db/prisma";
 import {
   resolveInboundByPhoneNumberId,
   resolveLegacyFallback,
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
       }
 
       const phoneNumberId = value.metadata?.phone_number_id;
-      const channel = phoneNumberId ? await resolveInboundByPhoneNumberId(phoneNumberId) : null;
+      const channel = phoneNumberId ? await resolveInboundByPhoneNumberId(prisma, phoneNumberId) : null;
 
       if (!phoneNumberId || !channel || !channel.accessToken) {
         ignoredMessageCount += value.messages.length;

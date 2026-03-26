@@ -1,8 +1,4 @@
-import "server-only";
-
-import { LeadStatus, NotificationType, VisitStatus } from "@prisma/client";
-
-import { prisma } from "@/server/db/prisma";
+import { LeadStatus, NotificationType, VisitStatus, Prisma, PrismaClient } from "@prisma/client";
 
 import type { VisitListItem, VisitSummary } from "@/modules/visits/types";
 
@@ -22,6 +18,7 @@ export class VisitAutomationError extends Error {
 }
 
 export async function listOrganizationVisits(
+  prisma: PrismaClient | Prisma.TransactionClient,
   orgSlug: string,
 ): Promise<VisitListItem[]> {
   const visits = await prisma.visit.findMany({
@@ -53,8 +50,11 @@ export async function listOrganizationVisits(
     }));
 }
 
-export async function getVisitSummary(orgSlug: string): Promise<VisitSummary> {
-  const visits = await listOrganizationVisits(orgSlug);
+export async function getVisitSummary(
+  prisma: PrismaClient | Prisma.TransactionClient,
+  orgSlug: string,
+): Promise<VisitSummary> {
+  const visits = await listOrganizationVisits(prisma, orgSlug);
 
   return {
     total: visits.length,
@@ -65,6 +65,7 @@ export async function getVisitSummary(orgSlug: string): Promise<VisitSummary> {
 }
 
 export async function createVisitForAutomation(
+  prisma: PrismaClient | Prisma.TransactionClient,
   params: CreateVisitForAutomationParams,
 ) {
   const organization = await prisma.organization.findUnique({
@@ -151,7 +152,7 @@ export async function createVisitForAutomation(
     throw new VisitAutomationError("invalid-visit", "Visit date is invalid.");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
+  const runInTransaction = async (tx: Prisma.TransactionClient) => {
     await tx.$executeRaw`
       SELECT pg_advisory_xact_lock(hashtext(${organization.id}), hashtext(${`${lead.id}:${property.id}:${scheduledAt.toISOString()}`}))
     `;
@@ -221,12 +222,15 @@ export async function createVisitForAutomation(
     });
 
     return { visit, notification, reusedExisting: false };
-  });
+  };
+
+  const result = ('$transaction' in prisma) 
+    ? await (prisma as PrismaClient).$transaction(runInTransaction)
+    : await runInTransaction(prisma as Prisma.TransactionClient);
 
   return {
     ...result,
     organizationSlug: organization.slug,
     propertyId: property.id,
-    reusedExisting: false,
   };
 }

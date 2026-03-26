@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { MembershipRole } from "@prisma/client";
 
+import { prisma } from "@/server/db/prisma";
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 
@@ -20,7 +21,7 @@ export async function resolveConversationFollowUpAction(formData: FormData) {
   assertMinimumRole(membership.role, MembershipRole.AGENT);
   const organization = membership.organization;
 
-  await resolveConversationFollowUp({
+  await resolveConversationFollowUp(prisma, {
     organizationId: organization.id,
     conversationId,
     resolutionMethod: "MANUAL",

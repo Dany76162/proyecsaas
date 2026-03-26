@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { MembershipRole } from "@prisma/client";
 
+import { prisma } from "@/server/db/prisma";
 import {
   createVisitForAutomation,
   VisitAutomationError,
@@ -44,7 +45,7 @@ export async function createVisitAction(formData: FormData) {
   let propertyId = "";
 
   try {
-    const result = await createVisitForAutomation({
+    const result = await createVisitForAutomation(prisma, {
       organizationId: organization.id,
       leadId,
       scheduledAt: new Date(parsed.data.scheduledAt),

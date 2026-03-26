@@ -1,5 +1,3 @@
-import "server-only";
-
 import type { ConnectionOptions } from "bullmq";
 
 let hasWarnedForDefaultRedisUrl = false;

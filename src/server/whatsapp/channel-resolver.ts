@@ -1,7 +1,6 @@
-import "server-only";
-
 import {
   Prisma,
+  PrismaClient,
 } from "@prisma/client";
 import type {
   WhatsAppChannelStatus,
@@ -9,7 +8,6 @@ import type {
 } from "@prisma/client";
 
 import { getWhatsAppChannels } from "@/server/config/whatsapp-channels";
-import { prisma } from "@/server/db/prisma";
 
 export type ResolvedWhatsAppChannel = {
   source: "legacy-env" | "database";
@@ -71,6 +69,7 @@ function normalizeLegacyResolvedChannel(
 }
 
 async function resolveDatabaseChannelByPhoneNumberId(
+  prisma: PrismaClient | Prisma.TransactionClient,
   phoneNumberId: string,
 ): Promise<ResolvedWhatsAppChannel | null> {
   try {
@@ -205,10 +204,11 @@ export async function resolveLegacyFallback(
 }
 
 export async function resolveInboundByPhoneNumberId(
+  prisma: PrismaClient | Prisma.TransactionClient,
   phoneNumberId: string,
 ): Promise<ResolvedWhatsAppChannel | null> {
   const [databaseChannel, legacyChannel] = await Promise.all([
-    resolveDatabaseChannelByPhoneNumberId(phoneNumberId),
+    resolveDatabaseChannelByPhoneNumberId(prisma, phoneNumberId),
     resolveLegacyFallback(phoneNumberId),
   ]);
 

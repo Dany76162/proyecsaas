@@ -1,5 +1,3 @@
-import "server-only";
-
 type WhatsAppChannelConfig = {
   organizationId: string;
   accessToken: string;

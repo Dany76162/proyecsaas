@@ -1,6 +1,4 @@
-import "server-only";
-
-import { prisma } from "@/server/db/prisma";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 /**
  * RAW UNAUTHENTICATED LOOKUP — for internal automation/worker use only.
@@ -12,7 +10,10 @@ import { prisma } from "@/server/db/prisma";
  * Safe callers: background workers, internal automation pipelines.
  * If you are writing a user-facing action or route, use requireOrganizationMembership() instead.
  */
-export async function getOrganizationBySlugUnauthenticated(orgSlug: string) {
+export async function getOrganizationBySlugUnauthenticated(
+  prisma: PrismaClient | Prisma.TransactionClient,
+  orgSlug: string,
+) {
   return prisma.organization.findUnique({
     where: { slug: orgSlug },
   });

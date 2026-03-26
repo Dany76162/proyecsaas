@@ -1,3 +1,4 @@
+import { prismaWorker } from "@/server/db/prisma-worker";
 import { resolveInboundByPhoneNumberId, resolveLegacyFallback } from "@/server/whatsapp/channel-resolver";
 
 function requiredEnv(name: "WHATSAPP_PHONE_NUMBER_ID" | "WHATSAPP_ORGANIZATION_ID") {
@@ -15,7 +16,7 @@ async function main() {
   const expectedOrganizationId = requiredEnv("WHATSAPP_ORGANIZATION_ID");
 
   const [resolved, legacyFallback] = await Promise.all([
-    resolveInboundByPhoneNumberId(phoneNumberId),
+    resolveInboundByPhoneNumberId(prismaWorker, phoneNumberId),
     resolveLegacyFallback(phoneNumberId),
   ]);
 

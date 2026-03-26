@@ -1,6 +1,4 @@
-import { NotificationType, Prisma } from "@prisma/client";
-
-import { prisma } from "@/server/db/prisma";
+import { NotificationType, Prisma, PrismaClient } from "@prisma/client";
 
 export type FollowUpResolutionMethod = "MANUAL" | "AUTO_REPLY" | "AUTO_SYSTEM";
 
@@ -11,10 +9,13 @@ type ResolveConversationFollowUpInput = {
   link?: string;
 };
 
-export async function resolveConversationFollowUp(input: ResolveConversationFollowUpInput) {
+export async function resolveConversationFollowUp(
+  prisma: PrismaClient | Prisma.TransactionClient,
+  input: ResolveConversationFollowUpInput,
+) {
   const resolvedAt = new Date();
 
-  return prisma.$transaction(async (tx) => {
+  const runInsideTransaction = async (tx: Prisma.TransactionClient) => {
     const conversation = await tx.conversation.findFirst({
       where: {
         id: input.conversationId,
@@ -89,5 +90,11 @@ export async function resolveConversationFollowUp(input: ResolveConversationFoll
       resolved: true,
       notificationId: notification.id,
     };
-  });
+  };
+
+  if ("$transaction" in prisma) {
+    return (prisma as PrismaClient).$transaction(runInsideTransaction);
+  }
+
+  return runInsideTransaction(prisma as Prisma.TransactionClient);
 }

@@ -11,7 +11,7 @@ declare global {
 export function getAutomationQueue() {
   if (!globalThis.automationQueue) {
     globalThis.automationQueue = new Queue("automation-jobs", {
-      connection: getQueueConnection(),
+      connection: getQueueConnection() as any,
       defaultJobOptions: {
         attempts: 3,
         backoff: {
