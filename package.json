@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "worker:dev": "npx tsx --conditions=react-server src/server/workers/start.ts",
+    "worker:start": "node --dns-result-order=ipv4first ./node_modules/tsx/dist/cli.mjs src/server/workers/start.ts",
     "build": "next build",
     "start": "node --dns-result-order=ipv4first ./node_modules/next/dist/bin/next start -H 0.0.0.0",
     "lint": "next lint",
