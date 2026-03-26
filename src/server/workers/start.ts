@@ -1,5 +1,4 @@
-// 👇 CLAVE: esto evita que Next trate este archivo como client
-import "server-only";
+process.env.NEXT_RUNTIME = "nodejs";
 
 import { validateWorkerRuntimeConfig } from "@/server/config/runtime";
 import { createConversationWorker } from "@/server/workers/conversation-worker";
@@ -63,13 +62,8 @@ async function main() {
     process.exit(0);
   };
 
-  process.on("SIGINT", () => {
-    void shutdown("SIGINT");
-  });
-
-  process.on("SIGTERM", () => {
-    void shutdown("SIGTERM");
-  });
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
   process.on("unhandledRejection", (reason) => {
     console.error(
@@ -92,7 +86,7 @@ async function main() {
     process.exit(1);
   });
 
-  await new Promise(() => undefined);
+  await new Promise(() => { });
 }
 
 void main().catch((error) => {
