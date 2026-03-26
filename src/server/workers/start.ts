@@ -1,3 +1,6 @@
+// 👇 CLAVE: esto evita que Next trate este archivo como client
+import "server-only";
+
 import { validateWorkerRuntimeConfig } from "@/server/config/runtime";
 import { createConversationWorker } from "@/server/workers/conversation-worker";
 
