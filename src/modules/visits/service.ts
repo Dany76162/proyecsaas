@@ -17,15 +17,21 @@ export class VisitAutomationError extends Error {
   }
 }
 
+export type VisitView = "upcoming" | "all";
+
 export async function listOrganizationVisits(
   prisma: PrismaClient | Prisma.TransactionClient,
   orgSlug: string,
+  view: VisitView = "upcoming",
 ): Promise<VisitListItem[]> {
   const visits = await prisma.visit.findMany({
     where: {
       organization: {
         slug: orgSlug,
       },
+      ...(view === "upcoming"
+        ? { status: { in: [VisitStatus.PENDING, VisitStatus.CONFIRMED] } }
+        : {}),
     },
     include: {
       property: true,
@@ -35,6 +41,7 @@ export async function listOrganizationVisits(
     orderBy: {
       scheduledAt: "asc",
     },
+    take: 200,
   });
 
   return visits.map((visit) => ({
@@ -54,14 +61,15 @@ export async function getVisitSummary(
   prisma: PrismaClient | Prisma.TransactionClient,
   orgSlug: string,
 ): Promise<VisitSummary> {
-  const visits = await listOrganizationVisits(prisma, orgSlug);
+  const orgWhere = { organization: { slug: orgSlug } };
+  const [total, pendingCount, confirmedCount, completedCount] = await Promise.all([
+    prisma.visit.count({ where: orgWhere }),
+    prisma.visit.count({ where: { ...orgWhere, status: VisitStatus.PENDING } }),
+    prisma.visit.count({ where: { ...orgWhere, status: VisitStatus.CONFIRMED } }),
+    prisma.visit.count({ where: { ...orgWhere, status: VisitStatus.COMPLETED } }),
+  ]);
 
-  return {
-    total: visits.length,
-    pendingCount: visits.filter((visit) => visit.status === VisitStatus.PENDING).length,
-    confirmedCount: visits.filter((visit) => visit.status === VisitStatus.CONFIRMED).length,
-    completedCount: visits.filter((visit) => visit.status === VisitStatus.COMPLETED).length,
-  };
+  return { total, pendingCount, confirmedCount, completedCount };
 }
 
 export async function createVisitForAutomation(

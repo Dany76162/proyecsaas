@@ -12,13 +12,17 @@ import { formatDate } from "@/lib/utils";
 
 export default async function VisitsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgSlug: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { orgSlug } = await params;
+  const view = (await searchParams).tab === "all" ? "all" : "upcoming";
+
   const [organization, visits, summary] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
-    listOrganizationVisits(prisma, orgSlug),
+    listOrganizationVisits(prisma, orgSlug, view),
     getVisitSummary(prisma, orgSlug),
   ]);
 
@@ -42,36 +46,67 @@ export default async function VisitsPage({
         title="Visit board"
         description="Lean scheduling surface focused on clarity, not a full calendar engine."
       >
-        <div className="space-y-4">
-          {visits.map((visit) => (
-            <article
-              key={visit.id}
-              className="flex flex-col gap-4 rounded-[1.5rem] border border-slate-200 p-5 lg:flex-row lg:items-center lg:justify-between"
-            >
-              <div>
-                <p className="text-lg font-semibold text-slate-950">{visit.leadName}</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  <Link href={`/${orgSlug}/properties/${visit.propertyId}`} className="hover:text-brand-600">
-                    {visit.propertyTitle}
-                  </Link>
-                  {" / "}
-                  <Link href={`/${orgSlug}/leads/${visit.leadId}`} className="hover:text-brand-600">
-                    Lead detail
-                  </Link>
-                </p>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{visit.notes}</p>
-              </div>
+        <nav className="mb-5 flex gap-4 border-b border-slate-200 pb-4">
+          <Link
+            href={`/${orgSlug}/visits`}
+            className={
+              view === "upcoming"
+                ? "text-sm font-semibold text-brand-600"
+                : "text-sm font-medium text-slate-500 hover:text-slate-700"
+            }
+          >
+            Upcoming
+          </Link>
+          <Link
+            href={`/${orgSlug}/visits?tab=all`}
+            className={
+              view === "all"
+                ? "text-sm font-semibold text-brand-600"
+                : "text-sm font-medium text-slate-500 hover:text-slate-700"
+            }
+          >
+            All visits
+          </Link>
+        </nav>
 
-              <div className="flex flex-col items-start gap-2 lg:items-end">
-                <StatusBadge
-                  label={visit.status}
-                  tone={visit.status === "CONFIRMED" ? "success" : "warning"}
-                />
-                <p className="text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>
-                <p className="text-sm text-slate-500">{visit.ownerName}</p>
-              </div>
-            </article>
-          ))}
+        <div className="space-y-4">
+          {visits.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-400">
+              {view === "upcoming"
+                ? 'No pending or confirmed visits. Use "All visits" to see history.'
+                : "No visits recorded yet."}
+            </p>
+          ) : (
+            visits.map((visit) => (
+              <article
+                key={visit.id}
+                className="flex flex-col gap-4 rounded-[1.5rem] border border-slate-200 p-5 lg:flex-row lg:items-center lg:justify-between"
+              >
+                <div>
+                  <p className="text-lg font-semibold text-slate-950">{visit.leadName}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    <Link href={`/${orgSlug}/properties/${visit.propertyId}`} className="hover:text-brand-600">
+                      {visit.propertyTitle}
+                    </Link>
+                    {" / "}
+                    <Link href={`/${orgSlug}/leads/${visit.leadId}`} className="hover:text-brand-600">
+                      Lead detail
+                    </Link>
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{visit.notes}</p>
+                </div>
+
+                <div className="flex flex-col items-start gap-2 lg:items-end">
+                  <StatusBadge
+                    label={visit.status}
+                    tone={visit.status === "CONFIRMED" ? "success" : "warning"}
+                  />
+                  <p className="text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>
+                  <p className="text-sm text-slate-500">{visit.ownerName}</p>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       </SectionCard>
     </>
