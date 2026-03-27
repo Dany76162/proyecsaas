@@ -5,6 +5,7 @@ import { MembershipRole } from "@prisma/client";
 import type { ActionResult } from "@/modules/types";
 import { updateOrganizationSchema } from "@/modules/organizations/schemas";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
+import { prisma } from "@/server/db/prisma";
 
 /**
  * Updates the public profile of the given organization.
@@ -32,8 +33,10 @@ export async function updateOrganizationProfileAction(
     };
   }
 
-  return {
-    success: false,
-    message: "Organization persistence will be wired in the next iteration.",
-  };
+  await prisma.organization.update({
+    where: { slug: orgSlug },
+    data: parsed.data,
+  });
+
+  return { success: true, message: "Organization profile updated." };
 }

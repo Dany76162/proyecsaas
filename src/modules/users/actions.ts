@@ -5,6 +5,7 @@ import { MembershipRole } from "@prisma/client";
 import type { ActionResult } from "@/modules/types";
 import { inviteUserSchema } from "@/modules/users/schemas";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
+import { prisma } from "@/server/db/prisma";
 
 /**
  * Invites a new user to the given organization.
@@ -29,8 +30,34 @@ export async function inviteUserAction(orgSlug: string, input: unknown): Promise
     };
   }
 
-  return {
-    success: false,
-    message: "User invitations are prepared at the action layer and will be persisted next.",
-  };
+  const user = await prisma.user.upsert({
+    where: { email: parsed.data.email },
+    create: {
+      email: parsed.data.email,
+      fullName: parsed.data.fullName,
+      isActive: true,
+    },
+    update: {
+      fullName: parsed.data.fullName,
+    },
+  });
+
+  await prisma.membership.upsert({
+    where: {
+      userId_organizationId: {
+        userId: user.id,
+        organizationId: membership.organization.id,
+      },
+    },
+    create: {
+      userId: user.id,
+      organizationId: membership.organization.id,
+      role: parsed.data.role,
+    },
+    update: {
+      role: parsed.data.role,
+    },
+  });
+
+  return { success: true, message: "User invited." };
 }

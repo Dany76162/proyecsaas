@@ -40,7 +40,14 @@ function validateSignature(rawBody: string, signatureHeader: string | null) {
   const appSecret = process.env.WHATSAPP_APP_SECRET;
 
   if (!appSecret) {
-    return true;
+    console.error(
+      JSON.stringify({
+        scope: "automation-webhook",
+        event: "signature-validation-skipped",
+        reason: "WHATSAPP_APP_SECRET is not configured — rejecting request",
+      }),
+    );
+    return false;
   }
 
   if (!signatureHeader?.startsWith("sha256=")) {

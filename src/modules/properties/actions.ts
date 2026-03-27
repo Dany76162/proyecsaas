@@ -5,6 +5,7 @@ import { MembershipRole } from "@prisma/client";
 import type { ActionResult } from "@/modules/types";
 import { createPropertySchema } from "@/modules/properties/schemas";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
+import { prisma } from "@/server/db/prisma";
 
 /**
  * Creates a new property under the given organization.
@@ -32,8 +33,14 @@ export async function createPropertyAction(
     };
   }
 
-  return {
-    success: false,
-    message: "Property creation is prepared and will be connected to persistence next.",
-  };
+  await prisma.property.create({
+    data: {
+      organizationId: membership.organization.id,
+      ...parsed.data,
+      status: "DRAFT",
+      publicVisible: false,
+    },
+  });
+
+  return { success: true, message: "Property created." };
 }

@@ -20,6 +20,7 @@ export async function listOrganizationProperties(
       },
     },
     orderBy: [{ publicVisible: "desc" }, { createdAt: "desc" }],
+    take: 200,
   });
 
   return properties.map((property) => ({
@@ -42,15 +43,19 @@ export async function listOrganizationProperties(
 export async function getPropertySummary(
   orgSlug: string,
 ): Promise<PropertySummary> {
-  const properties = await listOrganizationProperties(orgSlug);
-  const totalTicket = properties.reduce((sum, property) => sum + property.priceCents, 0);
+  const orgWhere = { organization: { slug: orgSlug } };
+  const [total, availableCount, publicCount, aggregate] = await Promise.all([
+    prisma.property.count({ where: orgWhere }),
+    prisma.property.count({ where: { ...orgWhere, status: PropertyStatus.AVAILABLE } }),
+    prisma.property.count({ where: { ...orgWhere, publicVisible: true } }),
+    prisma.property.aggregate({ where: orgWhere, _avg: { priceCents: true } }),
+  ]);
 
   return {
-    total: properties.length,
-    availableCount: properties.filter((property) => property.status === PropertyStatus.AVAILABLE)
-      .length,
-    publicCount: properties.filter((property) => property.publicVisible).length,
-    averageTicketCents: properties.length ? Math.round(totalTicket / properties.length) : 0,
+    total,
+    availableCount,
+    publicCount,
+    averageTicketCents: Math.round(aggregate._avg.priceCents ?? 0),
   };
 }
 
@@ -74,6 +79,7 @@ export async function getPropertyDetail(
         orderBy: {
           updatedAt: "desc",
         },
+        take: 50,
       },
       visits: {
         include: {
@@ -82,6 +88,7 @@ export async function getPropertyDetail(
         orderBy: {
           scheduledAt: "asc",
         },
+        take: 50,
       },
     },
   });
@@ -131,6 +138,7 @@ export async function listPublicProperties() {
       publicVisible: true,
     },
     orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
+    take: 200,
   }).then((properties) =>
     properties.map((property) => ({
       id: property.id,

@@ -3,9 +3,17 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  const email = process.argv[2];
+  const orgSlug = process.argv[3];
+
+  if (!email || !orgSlug) {
+    console.error("Usage: npx ts-node scripts/fix-membership.ts <email> <orgSlug>");
+    process.exit(1);
+  }
+
   const user = await prisma.user.findFirst({
     where: {
-      email: "dany76162@gmail.com",
+      email,
     },
   });
 
@@ -24,7 +32,7 @@ async function main() {
 
   const org = await prisma.organization.findFirst({
     where: {
-      slug: "north-hill",
+      slug: orgSlug,
     },
   });
 
