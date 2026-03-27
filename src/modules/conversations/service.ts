@@ -11,9 +11,18 @@ import type {
   InternalNotificationItem,
 } from "@/modules/conversations/types";
 
+const CONVERSATION_PAGE_SIZE = 50;
+
+export type ConversationPage = {
+  items: ConversationListItem[];
+  /** ID of the last item in this page. Pass as `?cursor=` to fetch the next page. Null when there are no more pages. */
+  nextCursor: string | null;
+};
+
 export async function listOrganizationConversations(
   orgSlug: string,
-): Promise<ConversationListItem[]> {
+  cursor?: string,
+): Promise<ConversationPage> {
   const conversations = await prisma.conversation.findMany({
     where: {
       organization: {
@@ -30,10 +39,20 @@ export async function listOrganizationConversations(
         take: 3,
       },
     },
-    orderBy: [{ lastMessageAt: "desc" }, { updatedAt: "desc" }],
+    // id as tiebreaker instead of updatedAt: updatedAt is mutable and would shift
+    // a record's position in the ordered set mid-navigation, breaking cursor stability.
+    orderBy: [{ lastMessageAt: "desc" }, { id: "desc" }],
+    cursor: cursor ? { id: cursor } : undefined,
+    skip: cursor ? 1 : 0,
+    take: CONVERSATION_PAGE_SIZE,
   });
 
-  return conversations.map((conversation) => {
+  const nextCursor =
+    conversations.length === CONVERSATION_PAGE_SIZE
+      ? (conversations[CONVERSATION_PAGE_SIZE - 1]?.id ?? null)
+      : null;
+
+  const items = conversations.map((conversation) => {
     const sortedMessages = [...conversation.messages].sort(
       (left, right) => new Date(left.sentAt).getTime() - new Date(right.sentAt).getTime(),
     );
@@ -93,6 +112,8 @@ export async function listOrganizationConversations(
       })),
     } satisfies ConversationListItem;
   });
+
+  return { items, nextCursor };
 }
 
 export async function listOrganizationAvailability(
