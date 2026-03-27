@@ -18,18 +18,29 @@ const VISIT_STAGE: LeadStage = "VISIT";
 
 export async function listOrganizationLeads(
   orgSlug: string,
+  q?: string,
 ): Promise<LeadListItem[]> {
   const leads = await prisma.lead.findMany({
     where: {
       organization: {
         slug: orgSlug,
       },
+      ...(q
+        ? {
+            OR: [
+              { fullName: { contains: q, mode: "insensitive" } },
+              { phone: { contains: q } },
+              { email: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
     },
     include: {
       property: true,
       owner: true,
     },
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    take: 100,
   });
 
   return leads.map((lead) => {
@@ -59,16 +70,18 @@ export async function listOrganizationLeads(
 }
 
 export async function getLeadSummary(orgSlug: string): Promise<LeadSummary> {
-  const leads = await listOrganizationLeads(orgSlug);
+  const orgWhere = { organization: { slug: orgSlug } };
+  const [total, newCount, contactedCount, interestedCount, visitCount, closedCount] =
+    await Promise.all([
+      prisma.lead.count({ where: orgWhere }),
+      prisma.lead.count({ where: { ...orgWhere, status: NEW_STAGE } }),
+      prisma.lead.count({ where: { ...orgWhere, status: CONTACTED_STAGE } }),
+      prisma.lead.count({ where: { ...orgWhere, status: INTERESTED_STAGE } }),
+      prisma.lead.count({ where: { ...orgWhere, status: VISIT_STAGE } }),
+      prisma.lead.count({ where: { ...orgWhere, status: CLOSED_STAGE } }),
+    ]);
 
-  return {
-    total: leads.length,
-    newCount: leads.filter((lead) => lead.status === NEW_STAGE).length,
-    contactedCount: leads.filter((lead) => lead.status === CONTACTED_STAGE).length,
-    interestedCount: leads.filter((lead) => lead.status === INTERESTED_STAGE).length,
-    visitCount: leads.filter((lead) => lead.status === VISIT_STAGE).length,
-    closedCount: leads.filter((lead) => lead.status === CLOSED_STAGE).length,
-  };
+  return { total, newCount, contactedCount, interestedCount, visitCount, closedCount };
 }
 
 export async function getLeadDetail(

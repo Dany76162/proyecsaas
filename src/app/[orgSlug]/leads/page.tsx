@@ -42,24 +42,16 @@ export default async function LeadsPage({
 }) {
   const { orgSlug } = await params;
   const { q = "" } = await searchParams;
-  const query = q.trim().toLowerCase();
-  const [organization, allLeads, summary] = await Promise.all([
+  const query = q.trim();
+  const [organization, leads, summary] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
-    listOrganizationLeads(orgSlug),
+    listOrganizationLeads(orgSlug, query || undefined),
     getLeadSummary(orgSlug),
   ]);
 
   if (!organization) {
     notFound();
   }
-
-  const leads = query
-    ? allLeads.filter((lead) =>
-        [lead.fullName, lead.phone, lead.email].some((value) =>
-          value.toLowerCase().includes(query),
-        ),
-      )
-    : allLeads;
 
   return (
     <>
@@ -141,7 +133,9 @@ export default async function LeadsPage({
             </div>
           </form>
           <p className="mt-4 text-sm text-slate-500">
-            Showing {leads.length} of {allLeads.length} leads.
+            {query
+              ? `${leads.length} result${leads.length === 1 ? "" : "s"} for "${q}"`
+              : `Showing ${leads.length} of ${summary.total} leads.`}
           </p>
         </SectionCard>
       </section>
