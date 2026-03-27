@@ -250,6 +250,23 @@ export async function processWhatsAppInboundJob(
     recentMessages: [],
   });
 
+  // Persist commercial signals into the Lead record (notes + conservative stage mapping)
+  const nextLeadStatus =
+    decision.qualificationDecision === "DISQUALIFIED"
+      ? LeadStatus.CLOSED
+      : decision.qualificationDecision === "QUALIFIED" &&
+          (result.lead.status === LeadStatus.NEW || result.lead.status === LeadStatus.CONTACTED)
+        ? LeadStatus.INTERESTED
+        : null;
+
+  await prisma.lead.update({
+    where: { id: result.lead.id },
+    data: {
+      notes: encodeCommercialSignalsInNotes(result.lead.notes, decision),
+      ...(nextLeadStatus ? { status: nextLeadStatus, lastContactAt: new Date() } : {}),
+    },
+  });
+
   // 4. Visit Creation (if proposed and concrete)
   let visitResult: AutomationVisitCreationResult = {
     proposalPresent: false,
@@ -330,6 +347,43 @@ export async function processWhatsAppInboundJob(
             ? MessageDeliveryStatus.SENT
             : MessageDeliveryStatus.FAILED,
         externalId: deliveryResult.providerMessageId,
+        deliveryError:
+          deliveryResult.deliveryStatus !== "delivered" ? deliveryResult.reason : null,
+      },
+    });
+  }
+
+  if (decision.requiresFollowUp) {
+    const followUpReason =
+      decision.followUpReason ?? "Automation flagged this conversation for follow-up.";
+
+    const [org] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: channel.organizationId },
+        select: { slug: true },
+      }),
+      prisma.conversation.update({
+        where: { id: result.conversation.id },
+        data: {
+          followUpActive: true,
+          followUpCategory: FollowUpCategory.COMMERCIAL,
+          followUpReason,
+          followUpActiveAt: new Date(),
+          nextBestAction: decision.nextBestAction,
+          nextBestActionAt: new Date(),
+        },
+      }),
+    ]);
+
+    await prisma.notification.create({
+      data: {
+        organizationId: channel.organizationId,
+        type: NotificationType.OPERATOR_ACTION_REQUIRED,
+        title: `Follow-up needed: ${result.conversation.participantName || participantPhone}`,
+        body: followUpReason,
+        link: org ? `/${org.slug}/conversations` : undefined,
+        entityType: "conversation",
+        entityId: result.conversation.id,
       },
     });
   }
