@@ -210,19 +210,25 @@ export async function processWhatsAppInboundJob(
       });
     }
 
-    const message = await tx.message.create({
-      data: {
-        organizationId: channel.organizationId,
-        conversationId: conversation.id,
-        externalId: data.message.externalId,
-        direction: MessageDirection.INBOUND,
-        body: messageBody,
-        senderName: participantName,
-        senderPhone: participantPhone,
-        sentAt,
-        deliveryStatus: MessageDeliveryStatus.RECEIVED,
-      },
-    });
+    let message = data.message.externalId
+      ? await tx.message.findUnique({ where: { externalId: data.message.externalId } })
+      : null;
+
+    if (!message) {
+      message = await tx.message.create({
+        data: {
+          organizationId: channel.organizationId,
+          conversationId: conversation.id,
+          externalId: data.message.externalId,
+          direction: MessageDirection.INBOUND,
+          body: messageBody,
+          senderName: participantName,
+          senderPhone: participantPhone,
+          sentAt,
+          deliveryStatus: MessageDeliveryStatus.RECEIVED,
+        },
+      });
+    }
 
     return { conversation, lead, message };
   });
@@ -306,53 +312,83 @@ export async function processWhatsAppInboundJob(
   let deliveryResult: DeliveryAttemptResult | undefined;
 
   if (decision.responseText) {
-    const persistence = await prisma.message.create({
-      data: {
+    const deterministicOutboundId = `rep_${result.message.id}`;
+
+    let persistence = await prisma.message.findUnique({
+      where: {
+        id: deterministicOutboundId,
+      },
+    });
+
+    if (!persistence) {
+      persistence = await prisma.message.create({
+        data: {
+          id: deterministicOutboundId,
+          organizationId: channel.organizationId,
+          conversationId: result.conversation.id,
+          direction: MessageDirection.OUTBOUND,
+          body: decision.responseText,
+          sentAt: new Date(),
+          deliveryStatus: MessageDeliveryStatus.PENDING,
+        },
+      });
+    }
+
+    if (
+      persistence.deliveryStatus === MessageDeliveryStatus.SENT ||
+      persistence.deliveryStatus === MessageDeliveryStatus.SKIPPED ||
+      persistence.deliveryStatus === MessageDeliveryStatus.RECEIVED
+    ) {
+      deliveryResult = {
+        deliveryStatus:
+          persistence.deliveryStatus === MessageDeliveryStatus.SKIPPED ? "skipped" : "delivered",
+        providerMessageId: persistence.externalId ?? undefined,
+        sendAttempted: false,
+        reason: "already-processed",
+        awaitingRealDelivery: false,
+        attemptedAt: null,
+        channel: { provider: "whatsapp", phoneNumberId: channel.phoneNumberId },
+      };
+    } else {
+      const deliveryInput = {
         organizationId: channel.organizationId,
         conversationId: result.conversation.id,
-        direction: MessageDirection.OUTBOUND,
-        body: decision.responseText,
-        sentAt: new Date(),
-        deliveryStatus: MessageDeliveryStatus.PENDING,
-      },
-    });
+        outboundMessageId: persistence.id,
+        responseText: decision.responseText,
+        recipientPhone: participantPhone,
+        senderKind: "automation" as const,
+        channel: {
+          provider: "whatsapp" as const,
+          phoneNumberId: channel.phoneNumberId,
+          accessToken: channel.accessToken,
+        },
+      };
 
-    const deliveryInput = {
-      organizationId: channel.organizationId,
-      conversationId: result.conversation.id,
-      outboundMessageId: persistence.id,
-      responseText: decision.responseText,
-      recipientPhone: participantPhone,
-      senderKind: "automation" as const,
-      channel: {
-        provider: "whatsapp" as const,
-        phoneNumberId: channel.phoneNumberId,
-        accessToken: channel.accessToken,
-      },
-    };
+      deliveryResult =
+        options.deliveryMode === "simulate"
+          ? await attemptSimulatedWhatsAppOutboundDelivery({
+              phoneNumberId: channel.phoneNumberId,
+              responseText: decision.responseText,
+            })
+          : await attemptWhatsAppOutboundDelivery(prisma, deliveryInput);
 
-    deliveryResult =
-      options.deliveryMode === "simulate"
-        ? await attemptSimulatedWhatsAppOutboundDelivery({
-            phoneNumberId: channel.phoneNumberId,
-            responseText: decision.responseText,
-          })
-        : await attemptWhatsAppOutboundDelivery(prisma, deliveryInput);
+      await prisma.message.update({
+        where: { id: persistence.id },
+        data: {
+          deliveryStatus:
+            deliveryResult.deliveryStatus === "delivered"
+              ? MessageDeliveryStatus.SENT
+              : deliveryResult.deliveryStatus === "skipped"
+                ? MessageDeliveryStatus.SKIPPED
+                : MessageDeliveryStatus.FAILED,
+          externalId: deliveryResult.providerMessageId,
+          deliveryError:
+            deliveryResult.deliveryStatus !== "delivered" ? deliveryResult.reason : null,
+        },
+      });
+    }
 
-    await prisma.message.update({
-      where: { id: persistence.id },
-      data: {
-        deliveryStatus:
-          deliveryResult.deliveryStatus === "delivered"
-            ? MessageDeliveryStatus.SENT
-            : MessageDeliveryStatus.FAILED,
-        externalId: deliveryResult.providerMessageId,
-        deliveryError:
-          deliveryResult.deliveryStatus !== "delivered" ? deliveryResult.reason : null,
-      },
-    });
-
-    if (deliveryResult.deliveryStatus !== "delivered") {
+    if (deliveryResult && deliveryResult.deliveryStatus !== "delivered") {
       console.warn(
         JSON.stringify({
           scope: "worker",

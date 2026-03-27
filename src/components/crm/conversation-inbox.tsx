@@ -348,12 +348,22 @@ function ConversationDetail({ conv, orgSlug }: { conv: ConversationListItem; org
                       ? "bg-slate-100 text-slate-800"
                       : "bg-brand-900 text-white",
                     msg.deliveryStatus === "FAILED" && "border border-red-200 bg-red-50 text-red-950",
+                    msg.deliveryStatus === "SKIPPED" && "border border-slate-200 bg-slate-100 text-slate-900",
                   )}
                 >
                   <p className="whitespace-pre-wrap">{msg.body}</p>
                   {msg.deliveryError && (
-                    <div className="mt-2 text-[9px] font-semibold uppercase text-red-800 opacity-80 border-t border-red-200/50 pt-1.5">
-                      Error: {msg.deliveryError}
+                    <div
+                      className={cn(
+                        "mt-2 rounded p-1.5 text-[10px] font-bold uppercase",
+                        msg.deliveryStatus === "FAILED"
+                          ? "bg-red-100/50 text-red-900"
+                          : msg.deliveryStatus === "SKIPPED"
+                            ? "bg-slate-200/50 text-slate-800"
+                            : "bg-black/20 text-white"
+                      )}
+                    >
+                      ⚠️ Error: {msg.deliveryError}
                     </div>
                   )}
                 </div>
