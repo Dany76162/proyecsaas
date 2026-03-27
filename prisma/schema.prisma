@@ -88,17 +88,31 @@ enum WhatsAppChannelVerificationStatus {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  email         String       @unique
+  id            String        @id @default(cuid())
+  email         String        @unique
   fullName      String
   jobTitle      String?
-  isActive      Boolean      @default(true)
+  isActive      Boolean       @default(true)
+  passwordHash  String?
   availabilitySlots AvailabilitySlot[]
   memberships   Membership[]
-  ownedLeads    Lead[]       @relation("LeadOwner")
-  createdVisits Visit[]      @relation("VisitCreatedBy")
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  ownedLeads    Lead[]        @relation("LeadOwner")
+  createdVisits Visit[]       @relation("VisitCreatedBy")
+  inviteTokens  InviteToken[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model InviteToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Organization {

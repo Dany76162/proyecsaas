@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/workspace/status-badge";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getUserRoleBreakdown, listOrganizationUsers } from "@/modules/users/service";
+import { InviteUserDialog } from "@/components/users/invite-user-dialog";
 
 export default async function UsersSettingsPage({
   params,
@@ -25,7 +26,9 @@ export default async function UsersSettingsPage({
 
   return (
     <>
-      <WorkspaceHeader organization={organization} />
+      <WorkspaceHeader organization={organization}>
+        <InviteUserDialog orgSlug={orgSlug} />
+      </WorkspaceHeader>
 
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard

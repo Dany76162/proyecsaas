@@ -9,4 +9,5 @@ export type ActionResult = {
   success: boolean;
   message: string;
   fieldErrors?: Record<string, string[] | undefined>;
+  data?: any;
 };

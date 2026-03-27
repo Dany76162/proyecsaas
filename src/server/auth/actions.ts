@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { prisma } from "@/server/db/prisma";
 import { clearSession, createSession } from "@/server/auth/session";
+import { verifyPassword } from "@/server/auth/password";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -32,6 +33,7 @@ function pruneExpiredLoginAttempts(): void {
   if (loginAttempts.size < LOGIN_RATE_LIMIT_PRUNE_THRESHOLD) {
     return;
   }
+
   const now = Date.now();
   for (const [key, entry] of loginAttempts) {
     if (now - entry.windowStart > LOGIN_RATE_LIMIT_WINDOW_MS) {
@@ -121,10 +123,6 @@ export async function loginAction(formData: FormData) {
     redirect(buildLoginRedirect("invalid-credentials"));
   }
 
-  if (!timingSafePasswordEqual(parsed.data.password, getSharedPassword())) {
-    redirect(buildLoginRedirect("invalid-credentials", parsed.data.next || undefined));
-  }
-
   const user = await prisma.user.findFirst({
     where: {
       email: parsed.data.email,
@@ -132,6 +130,7 @@ export async function loginAction(formData: FormData) {
     },
     select: {
       id: true,
+      passwordHash: true,
       memberships: {
         where: {
           organization: {
@@ -153,16 +152,34 @@ export async function loginAction(formData: FormData) {
     },
   });
 
-  if (!user) {
+  // 1. Password Verification (Hash or Shared Fallback)
+  let isValidPassword = false;
+  if (user) {
+    if (user.passwordHash) {
+      isValidPassword = await verifyPassword(parsed.data.password, user.passwordHash);
+    } else {
+      isValidPassword = timingSafePasswordEqual(parsed.data.password, getSharedPassword());
+    }
+  } else {
+    // If user not found, we still want to spend some time on validation
+    // to partially mitigate timing attacks on existence.
+    await verifyPassword(parsed.data.password, "dummy:hash");
+    isValidPassword = false;
+  }
+
+  if (!isValidPassword) {
     redirect(buildLoginRedirect("invalid-credentials", parsed.data.next || undefined));
   }
 
-  const firstMembership = user.memberships[0];
+  // 2. Membership Check (Only after valid password)
+  const firstMembership = user?.memberships[0];
 
   if (!firstMembership) {
+    // If password was correct but user has no active memberships
     redirect(buildLoginRedirect("no-memberships", parsed.data.next || undefined));
   }
 
+  // 3. Success: Finalize Session
   clearLoginAttempts(clientId);
   await createSession(user.id);
 
