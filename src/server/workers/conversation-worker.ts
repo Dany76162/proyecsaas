@@ -351,6 +351,27 @@ export async function processWhatsAppInboundJob(
           deliveryResult.deliveryStatus !== "delivered" ? deliveryResult.reason : null,
       },
     });
+
+    if (deliveryResult.deliveryStatus !== "delivered") {
+      console.warn(
+        JSON.stringify({
+          scope: "worker",
+          event: "outbound-delivery-failed",
+          organizationId: channel.organizationId,
+          conversationId: result.conversation.id,
+          leadId: result.lead.id,
+          outboundMessageId: persistence.id,
+          providerMessageId: deliveryResult.providerMessageId ?? null,
+          deliveryStatus: deliveryResult.deliveryStatus,
+          sendAttempted: deliveryResult.sendAttempted,
+          awaitingRealDelivery: deliveryResult.awaitingRealDelivery,
+          attemptedAt: deliveryResult.attemptedAt,
+          reason: deliveryResult.reason,
+          deliveryMode: options.deliveryMode ?? "runtime",
+          phoneNumberId: channel.phoneNumberId,
+        }),
+      );
+    }
   }
 
   if (decision.requiresFollowUp) {

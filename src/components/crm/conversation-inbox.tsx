@@ -227,7 +227,8 @@ function ConversationDetail({ conv, orgSlug }: { conv: ConversationListItem; org
               <div>
                 <p className="text-xs font-bold text-red-900 uppercase tracking-tight">Delivery failure</p>
                 <p className="mt-0.5 text-xs text-red-800 opacity-90 leading-relaxed">
-                  One or more messages failed. Automatic workflows are suspended.
+                  One or more outbound messages failed to send. Review the error details and
+                  follow up manually if needed.
                 </p>
               </div>
             </div>

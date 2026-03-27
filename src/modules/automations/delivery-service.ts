@@ -31,6 +31,35 @@ export type DeliveryAttemptResult = {
 
 const DELIVERY_TIMEOUT_MS = 8000;
 
+function formatWhatsAppProviderError(input: {
+  httpStatus: number;
+  message?: string;
+  code?: number | string;
+  type?: string;
+  subcode?: number | string;
+  fbtraceId?: string;
+}) {
+  const parts = [`provider-http-${input.httpStatus}`];
+
+  if (input.code !== undefined && input.code !== null && String(input.code).trim()) {
+    parts.push(`wa_code=${String(input.code).trim()}`);
+  }
+  if (input.subcode !== undefined && input.subcode !== null && String(input.subcode).trim()) {
+    parts.push(`wa_subcode=${String(input.subcode).trim()}`);
+  }
+  if (input.type && input.type.trim()) {
+    parts.push(`wa_type=${input.type.trim()}`);
+  }
+  if (input.fbtraceId && input.fbtraceId.trim()) {
+    parts.push(`wa_trace=${input.fbtraceId.trim()}`);
+  }
+  if (input.message && input.message.trim()) {
+    parts.push(`message=${input.message.trim()}`);
+  }
+
+  return parts.join(" | ");
+}
+
 function isRealRecipientPhone(value: string) {
   const normalized = value.trim();
 
@@ -196,6 +225,10 @@ export async function attemptWhatsAppOutboundDelivery(
         }>;
         error?: {
           message?: string;
+          type?: string;
+          code?: number;
+          error_subcode?: number;
+          fbtrace_id?: string;
         };
       }
       | null;
@@ -204,7 +237,14 @@ export async function attemptWhatsAppOutboundDelivery(
       return {
         deliveryStatus: "failed",
         sendAttempted: true,
-        reason: payload?.error?.message ?? `provider-http-${response.status}`,
+        reason: formatWhatsAppProviderError({
+          httpStatus: response.status,
+          message: payload?.error?.message,
+          type: payload?.error?.type,
+          code: payload?.error?.code,
+          subcode: payload?.error?.error_subcode,
+          fbtraceId: payload?.error?.fbtrace_id,
+        }),
         awaitingRealDelivery: false,
         attemptedAt,
         channel: {
