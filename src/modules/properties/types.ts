@@ -3,17 +3,17 @@ import type { PropertyStatus, VisitStatus } from "@prisma/client";
 export type PropertyListItem = {
   id: string;
   title: string;
-  address: string;
-  city: string;
-  neighborhood: string;
-  propertyType: string;
+  address: string | null;
+  city: string | null;
+  neighborhood: string | null;
+  propertyType: string | null;
   status: PropertyStatus;
   publicVisible: boolean;
-  priceCents: number;
-  currency: string;
-  bedrooms: number;
-  bathrooms: number;
-  surfaceM2: number;
+  priceCents: number | null;
+  currency: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  surfaceM2: number | null;
 };
 
 export type PropertySummary = {

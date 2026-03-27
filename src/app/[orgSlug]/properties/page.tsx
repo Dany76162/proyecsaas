@@ -8,6 +8,7 @@ import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getPropertySummary, listOrganizationProperties } from "@/modules/properties/service";
 import { formatCurrency } from "@/lib/utils";
+import { CreatePropertyDialog } from "@/components/properties/create-property-dialog";
 
 export default async function PropertiesPage({
   params,
@@ -27,7 +28,9 @@ export default async function PropertiesPage({
 
   return (
     <>
-      <WorkspaceHeader organization={organization} />
+      <WorkspaceHeader organization={organization}>
+        <CreatePropertyDialog orgSlug={orgSlug} />
+      </WorkspaceHeader>
 
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard
@@ -63,7 +66,7 @@ export default async function PropertiesPage({
                 <div>
                   <p className="text-lg font-semibold text-slate-950">{property.title}</p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {property.address}, {property.neighborhood}, {property.city}
+                    {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Location details pending"}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
@@ -79,18 +82,26 @@ export default async function PropertiesPage({
               </div>
 
               <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
-                <span>{property.propertyType}</span>
-                <span>{property.bedrooms} bed</span>
-                <span>{property.bathrooms} bath</span>
-                <span>{property.surfaceM2} m2</span>
+                <span>{property.propertyType || "Property"}</span>
+                <span>{property.bedrooms ?? 0} bed</span>
+                <span>{property.bathrooms ?? 0} bath</span>
+                <span>{property.surfaceM2 ?? 0} m2</span>
               </div>
 
               <p className="mt-5 text-2xl font-semibold text-slate-950">
-                {formatCurrency(property.priceCents, property.currency)}
+                {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Price on request"}
               </p>
             </Link>
           ))}
         </div>
+
+        {properties.length < summary.total && (
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
+            <p className="text-sm font-medium text-slate-600">
+              Showing the latest {properties.length} properties out of {summary.total} total. Filter to see the rest.
+            </p>
+          </div>
+        )}
       </SectionCard>
     </>
   );

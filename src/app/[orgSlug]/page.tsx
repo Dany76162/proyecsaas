@@ -196,10 +196,10 @@ export default async function OrganizationHomePage({
                 {property.neighborhood}, {property.city}
               </p>
               <p className="mt-4 text-sm text-slate-600">
-                {property.bedrooms} bed / {property.bathrooms} bath / {property.surfaceM2} m2
+                {property.bedrooms ?? 0} bed / {property.bathrooms ?? 0} bath / {property.surfaceM2 ?? 0} m2
               </p>
               <p className="mt-4 text-lg font-semibold text-slate-950">
-                {formatCurrency(property.priceCents, property.currency)}
+                {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Price on request"}
               </p>
             </div>
           ))}

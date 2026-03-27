@@ -36,7 +36,7 @@ export default async function PropertyDetailPage({
               {property.title}
             </h1>
             <p className="mt-3 text-base leading-7 text-slate-600">
-              {property.address}, {property.neighborhood}, {property.city}
+              {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Location details pending"}
             </p>
           </div>
 
@@ -58,10 +58,10 @@ export default async function PropertyDetailPage({
       </section>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Price" value={formatCurrency(property.priceCents, property.currency)} hint="Current asking price." />
-        <MetricCard label="Type" value={property.propertyType} hint="Commercial classification." />
-        <MetricCard label="Layout" value={`${property.bedrooms} / ${property.bathrooms}`} hint="Bedrooms and bathrooms." />
-        <MetricCard label="Surface" value={`${property.surfaceM2} m2`} hint="Useful for matching and map presentation." />
+        <MetricCard label="Price" value={property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Price on request"} hint="Current asking price." />
+        <MetricCard label="Type" value={property.propertyType || "Property"} hint="Commercial classification." />
+        <MetricCard label="Layout" value={`${property.bedrooms ?? 0} / ${property.bathrooms ?? 0}`} hint="Bedrooms and bathrooms." />
+        <MetricCard label="Surface" value={`${property.surfaceM2 ?? 0} m2`} hint="Useful for matching and map presentation." />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">

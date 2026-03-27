@@ -30,13 +30,13 @@ export default async function PublicMapPage() {
                   <StatusBadge label={property.status} tone="success" />
                 </div>
                 <p className="mt-2 text-sm text-slate-500">
-                  {property.neighborhood}, {property.city}
+                  {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Location details pending"}
                 </p>
                 <p className="mt-3 text-sm text-slate-600">
-                  {property.bedrooms} bed / {property.bathrooms} bath / {property.surfaceM2} m2
+                  {property.bedrooms ?? 0} bed / {property.bathrooms ?? 0} bath / {property.surfaceM2 ?? 0} m2
                 </p>
                 <p className="mt-3 text-lg font-semibold text-slate-950">
-                  {formatCurrency(property.priceCents, property.currency)}
+                  {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Price on request"}
                 </p>
               </Link>
             ))}

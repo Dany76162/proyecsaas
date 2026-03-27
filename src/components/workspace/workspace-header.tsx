@@ -5,9 +5,10 @@ import { StatusBadge } from "@/components/workspace/status-badge";
 
 type WorkspaceHeaderProps = {
   organization: OrganizationWorkspace;
+  children?: React.ReactNode;
 };
 
-export function WorkspaceHeader({ organization }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ organization, children }: WorkspaceHeaderProps) {
   return (
     <section className="rounded-[1.75rem] border bg-white p-6 shadow-soft">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -24,7 +25,8 @@ export function WorkspaceHeader({ organization }: WorkspaceHeaderProps) {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
+          {children}
           <Link
             href={`/${organization.slug}/leads`}
             className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
