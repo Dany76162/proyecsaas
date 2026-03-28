@@ -15,15 +15,13 @@ export default async function HomePage() {
         <div className="grid gap-8 lg:grid-cols-[1.4fr_0.9fr]">
           <div className="space-y-6">
             <span className="inline-flex rounded-full bg-brand-100 px-3 py-1 text-sm font-medium text-brand-900">
-              Real-estate SaaS MVP foundation
+              Plataforma Operativa Inmobiliaria
             </span>
             <h1 className="text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
-              Internal workspace for organizations, teams, leads, and property inventory.
+              Control centralizado de propiedades, prospectos y gestión comercial.
             </h1>
             <p className="text-lg leading-8 text-slate-600">
-              The product now exposes a first real tenant workspace layer: organization context,
-              team roles, lead pipeline, and inventory views that are ready to evolve into CRM,
-              map, and visits flows.
+              RaicesPilot es el entorno de trabajo donde tu equipo inmobiliario centraliza operaciones: desde el alta de inventario y calificación de leads, hasta el cruce inteligente de propiedades y coordinación de visitas.
             </p>
             <div className="flex flex-wrap gap-3">
               {sessionUser ? (
@@ -32,14 +30,14 @@ export default async function HomePage() {
                     href={organizations[0] ? `/${organizations[0].slug}` : "/map"}
                     className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
                   >
-                    Open your workspace
+                    Ingresar a tu área de trabajo
                   </Link>
                   <form action={logoutAction}>
                     <button
                       type="submit"
                       className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                     >
-                      Sign out
+                      Cerrar sesión
                     </button>
                   </form>
                 </>
@@ -49,13 +47,13 @@ export default async function HomePage() {
                     href="/login"
                     className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
                   >
-                    Sign in to workspace
+                    Iniciar sesión
                   </Link>
                   <Link
                     href="/map"
                     className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                   >
-                    Review public inventory
+                    Ver mapa público
                   </Link>
                 </>
               )}
@@ -64,21 +62,21 @@ export default async function HomePage() {
 
           <div className="rounded-[1.75rem] border bg-slate-950 p-6 text-slate-50">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Included now
+              Módulos principales
             </p>
             <div className="mt-5 grid gap-3">
               {[
                 {
-                  title: "Organizations",
-                  description: "Tenant workspaces, profile context, and portfolio metrics.",
+                  title: "Gestión multi-sucursal",
+                  description: "Entornos aislados por equipo con métricas de rendimiento en tiempo real.",
                 },
                 {
-                  title: "Users and roles",
-                  description: "Visible member directory with clear ownership and role breakdown.",
+                  title: "Roles y permisos",
+                  description: "Directorio de agentes con asignación clara de responsabilidades operativas.",
                 },
                 {
-                  title: "Leads and properties",
-                  description: "Operational views that feel like an internal product, not placeholders.",
+                  title: "Propiedades y Leads",
+                  description: "Vistas operativas profesionales diseñadas para la gestión diaria del inventario.",
                 },
               ].map((item) => (
                 <div
@@ -98,10 +96,10 @@ export default async function HomePage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-              Workspaces
+              Organizaciones
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-              {sessionUser ? "Your organizations" : "Private organizations"}
+              {sessionUser ? "Tus inmobiliarias" : "Acceso restringido"}
             </h2>
           </div>
         </div>
@@ -125,9 +123,9 @@ export default async function HomePage() {
                   {organization.marketFocus}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
-                  <span>{organization.memberCount} team members</span>
+                  <span>{organization.memberCount} miembros</span>
                   <span>{organization.leadCount} leads</span>
-                  <span>{organization.propertyCount} properties</span>
+                  <span>{organization.propertyCount} propiedades</span>
                 </div>
               </Link>
             ))}
@@ -135,8 +133,7 @@ export default async function HomePage() {
         ) : (
           <div className="mt-6 rounded-[1.5rem] border bg-white p-6 shadow-soft">
             <p className="text-sm leading-7 text-slate-600">
-              The internal CRM workspace now requires an authenticated user with an active
-              organization membership.
+              El acceso a RaicesPilot requiere autenticación e invitación previa a una organización válida.
             </p>
           </div>
         )}
