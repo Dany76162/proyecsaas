@@ -48,7 +48,7 @@ export function WorkspaceSidebar({ organization, role }: WorkspaceSidebarProps) 
   const roleDisplay = ROLE_MAP[role] ?? { label: role, copy: "" };
 
   return (
-    <aside className="flex h-full flex-col rounded-[1.75rem] bg-slate-950 p-5 text-slate-100 shadow-soft">
+    <aside className="sticky top-0 flex h-screen w-72 shrink-0 flex-col bg-slate-950 p-5 text-slate-100 shadow-xl overflow-y-auto">
       <Link
         href="/"
         className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"

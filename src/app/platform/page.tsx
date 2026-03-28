@@ -85,7 +85,7 @@ export default async function PlatformPage() {
         <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b bg-slate-50 px-5 py-4 flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-800">Cuentas en Riesgo (Top 5)</h3>
-            <span className="rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">Action Required</span>
+            <span className="rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">Requiere Atención</span>
           </div>
           <div className="divide-y divide-slate-100 flex-1">
             {riskAccounts.map(org => (

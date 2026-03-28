@@ -20,11 +20,11 @@ export default async function OrganizationLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto grid min-h-screen max-w-7xl gap-6 px-4 py-4 lg:grid-cols-[280px_1fr] lg:px-6 lg:py-6">
-        <WorkspaceSidebar organization={organization} role={membership.role} />
-        <main className="space-y-6">{children}</main>
-      </div>
+    <div className="flex min-h-screen bg-slate-100">
+      <WorkspaceSidebar organization={organization} role={membership.role} />
+      <main className="flex-1 min-w-0 px-6 py-6 lg:px-8 lg:py-8">
+        {children}
+      </main>
     </div>
   );
 }

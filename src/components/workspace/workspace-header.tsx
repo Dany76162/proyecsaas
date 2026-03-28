@@ -10,39 +10,44 @@ type WorkspaceHeaderProps = {
 
 export function WorkspaceHeader({ organization, children }: WorkspaceHeaderProps) {
   return (
-    <section className="rounded-[1.75rem] border bg-white p-6 shadow-soft">
+    <section className="rounded-2xl border bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-3xl">
-          <div className="flex flex-wrap items-center gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge label={organization.planLabel} tone="info" />
-            <StatusBadge label={`${organization.city} workspace`} />
+            {organization.city && (
+              <StatusBadge label={organization.city} />
+            )}
           </div>
-          <div className="mt-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              Operando en la inmobiliaria:
+          <div className="mt-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Panel de Inmobiliaria
             </p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">
+            <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
               {organization.name}
             </h1>
           </div>
-          <p className="mt-3 text-base leading-7 text-slate-600">
-            {organization.description} Market focus: {organization.marketFocus}.
-          </p>
+          {organization.description && (
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {organization.description}
+              {organization.marketFocus ? ` · ${organization.marketFocus}` : ""}
+            </p>
+          )}
         </div>
 
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex shrink-0 flex-wrap gap-3 items-center">
           {children}
           <Link
             href={`/${organization.slug}/leads`}
-            className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+            className="rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
           >
-            Review pipeline
+            Ver pipeline
           </Link>
           <Link
             href={`/${organization.slug}/properties`}
             className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
-            Review inventory
+            Ver propiedades
           </Link>
         </div>
       </div>

@@ -1,9 +1,65 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { clearOrganizationMembershipsAction, generateInitialAdminInviteAction } from "@/modules/platform/actions";
-import { MoreVertical, Copy, UserX, UserPlus, X } from "lucide-react";
+import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle } from "lucide-react";
+
+/** Sub-componente: acceso excepcional de soporte con modal de confirmación */
+function SupportAccessButton({ orgSlug, orgName }: { orgSlug: string; orgName: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center gap-2 px-4 py-2 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+      >
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+        <span>Soporte técnico</span>
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Acceso de Soporte Técnico</h3>
+                <p className="text-xs text-slate-500">{orgName}</p>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-slate-700">
+              Estás por acceder al <strong>workspace privado</strong> de este cliente como operador de soporte de plataforma.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Esta acción es de carácter excepcional. Solo debe usarse para resolver incidencias técnicas.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <Link
+                href={`/${orgSlug}`}
+                onClick={() => setOpen(false)}
+                className="rounded-xl bg-amber-500 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-amber-600"
+              >
+                Confirmar acceso
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export function OnboardingControls({ 
   orgSlug, 
@@ -99,7 +155,8 @@ export function OnboardingControls({
       </button>
 
       {menuOpen && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-48 origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg focus:outline-none">
+        <div className="absolute right-0 top-full z-20 mt-1 w-56 origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg focus:outline-none">
+          {/* Acciones de Onboarding */}
           <div className="py-1">
             {hasUsers ? (
               <button
@@ -124,6 +181,11 @@ export function OnboardingControls({
                 <span>Crear 1º Acceso</span>
               </button>
             )}
+          </div>
+
+          {/* Divisor + Acceso excepcional de soporte con confirmación */}
+          <div className="border-t border-slate-100 py-1">
+            <SupportAccessButton orgSlug={orgSlug} orgName={orgName} />
           </div>
         </div>
       )}

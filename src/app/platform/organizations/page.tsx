@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
-import { Search, SlidersHorizontal, ArrowUpRight } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 
 import { listOrganizationsForPlatform } from "@/modules/platform/service";
 import { HealthBadge, WhatsAppStatus, formatRelativeTime } from "@/components/platform/platform-ui";
@@ -109,16 +108,8 @@ export default async function PlatformOrganizationsPage() {
                 </td>
 
                 <td className="px-3 py-4 align-top">
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end">
                     <OnboardingControls orgSlug={org.slug} orgName={org.name} hasUsers={org.memberCount > 0} />
-                    <Link
-                      href={`/${org.slug}`}
-                      title="Acceso de soporte (Suplantar Tenant)"
-                      className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                    >
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                      Entrar
-                    </Link>
                   </div>
                 </td>
               </tr>
