@@ -99,6 +99,7 @@ export async function listOrganizationConversations(
       followUpActiveAt: conversation.followUpActiveAt?.toISOString() ?? null,
       followUpResolvedAt: conversation.followUpResolvedAt?.toISOString() ?? null,
       nextBestAction: nextBestActionIsFresh ? conversation.nextBestAction ?? null : null,
+      isHumanControlled: conversation.isHumanControlled,
       lastMessageAt: (conversation.lastMessageAt ?? conversation.updatedAt).toISOString(),
       latestMessagePreview: latestMessage?.body ?? "No messages recorded yet.",
       messages: sortedMessages.map((message) => ({

@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useState, useMemo } from "react";
 
 import { confirmLeadPropertyAction } from "@/modules/leads/actions";
-import { resolveConversationFollowUpAction } from "@/modules/conversations/actions";
+import {
+  releaseConversationAction,
+  resolveConversationFollowUpAction,
+  sendManualMessageAction,
+  takeConversationAction,
+} from "@/modules/conversations/actions";
 import { cn, formatDateTime } from "@/lib/utils";
 import type { ConversationListItem } from "@/modules/conversations/types";
 
@@ -186,6 +191,11 @@ function ConversationRow({
             )}
           >
             {conv.followUpCategory === "TECHNICAL" ? "Technical" : "Commercial"}
+          </span>
+        )}
+        {conv.isHumanControlled && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-blue-700">
+            Agent
           </span>
         )}
       </div>
@@ -519,6 +529,51 @@ function ConversationDetail({
         )}
       </div>
 
+      {/* ─── Human Control ─── */}
+      {conv.isHumanControlled ? (
+        <div className="relative overflow-hidden rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+          <div className="absolute left-0 top-0 h-full w-1 bg-blue-500" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
+                H
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-tight text-blue-900">
+                  Agent in control
+                </p>
+                <p className="mt-0.5 text-xs text-blue-800 opacity-90">
+                  Bot responses paused. Release to hand back to automation.
+                </p>
+              </div>
+            </div>
+            <form action={releaseConversationAction} className="shrink-0">
+              <input type="hidden" name="orgSlug" value={orgSlug} />
+              <input type="hidden" name="conversationId" value={conv.id} />
+              <button
+                type="submit"
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:brightness-95 active:scale-95"
+              >
+                Release to bot
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <form action={takeConversationAction}>
+            <input type="hidden" name="orgSlug" value={orgSlug} />
+            <input type="hidden" name="conversationId" value={conv.id} />
+            <button
+              type="submit"
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-100 active:scale-95"
+            >
+              Take control
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* ─── Message List ─── */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex shrink-0 items-center justify-between border-b border-slate-50 bg-slate-50/30 px-5 py-2.5">
@@ -576,6 +631,34 @@ function ConversationDetail({
           )}
         </div>
       </div>
+
+      {/* ─── Compose ─── */}
+      <form
+        action={sendManualMessageAction}
+        className="shrink-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <input type="hidden" name="orgSlug" value={orgSlug} />
+        <input type="hidden" name="conversationId" value={conv.id} />
+        <textarea
+          name="messageBody"
+          rows={2}
+          placeholder="Type a message to send via WhatsApp…"
+          className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
+        />
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <p className="text-[10px] text-slate-400">
+            {conv.isHumanControlled
+              ? "You are in control — bot is paused"
+              : "Sending will pause the bot automatically"}
+          </p>
+          <button
+            type="submit"
+            className="rounded-md bg-brand-600 px-4 py-1.5 text-xs font-bold text-white transition-all hover:bg-brand-700 active:scale-95"
+          >
+            Send
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

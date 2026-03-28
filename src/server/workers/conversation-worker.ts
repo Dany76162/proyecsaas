@@ -234,6 +234,11 @@ export async function processWhatsAppInboundJob(
     return { conversation, lead, message };
   });
 
+  // 2.5 — Early return if an agent has taken manual control of this conversation
+  if (result.conversation.isHumanControlled) {
+    return { status: "ignored" as const, reason: "human-controlled" };
+  }
+
   // 3. Prepare context with real inventory matching before generating the decision
   const priorSignals = readLeadCommercialSignals({
     notes: result.lead.notes,

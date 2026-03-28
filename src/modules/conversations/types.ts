@@ -43,6 +43,7 @@ export type ConversationListItem = {
   followUpActiveAt: string | null;
   followUpResolvedAt: string | null;
   nextBestAction: string | null;
+  isHumanControlled: boolean;
   lastMessageAt: string;
   latestMessagePreview: string;
   messages: ConversationMessageItem[];

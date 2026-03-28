@@ -227,6 +227,7 @@ model Conversation {
   propertyContextNote String?
   subject        String?
   lastMessageAt  DateTime?
+  isHumanControlled Boolean  @default(false)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   lead           Lead?        @relation(fields: [leadId, organizationId], references: [id, organizationId], onDelete: Restrict)
   property       Property?    @relation("ConversationPropertyContext", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
