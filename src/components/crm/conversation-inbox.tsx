@@ -611,6 +611,16 @@ function ConversationDetail({
                   )}
                 >
                   <p className="whitespace-pre-wrap">{msg.body}</p>
+                  {msg.direction === "OUTBOUND" && (
+                    <p
+                      className={cn(
+                        "mt-1.5 text-[9px] font-semibold uppercase tracking-wider opacity-60",
+                        msg.deliveryStatus === "FAILED" ? "text-red-700" : "text-current",
+                      )}
+                    >
+                      {msg.senderName === "Unknown sender" ? "Bot" : msg.senderName}
+                    </p>
+                  )}
                   {msg.deliveryError && (
                     <div
                       className={cn(
@@ -622,7 +632,7 @@ function ConversationDetail({
                             : "bg-black/20 text-white"
                       )}
                     >
-                      ⚠️ Error: {msg.deliveryError}
+                      Error: {msg.deliveryError}
                     </div>
                   )}
                 </div>
