@@ -48,6 +48,45 @@ export async function clearOrganizationMembershipsAction(orgSlug: string): Promi
 }
 
 /**
+ * Superadmin Action: Deactivates an organization (soft delete / baja de cliente).
+ * Sets isActive = false, preserving all data but blocking tenant access.
+ */
+export async function deactivateOrganizationAction(orgSlug: string): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: { id: true, name: true, isActive: true },
+    });
+
+    if (!org) {
+      return { success: false, message: "Inmobiliaria no encontrada." };
+    }
+
+    if (!org.isActive) {
+      return { success: false, message: "Esta cuenta ya está desactivada." };
+    }
+
+    await prisma.organization.update({
+      where: { id: org.id },
+      data: { isActive: false },
+    });
+
+    return {
+      success: true,
+      message: `La cuenta "${org.name}" fue dada de baja. Los usuarios ya no podrán acceder al workspace.`,
+    };
+  } catch (error) {
+    console.error("[deactivateOrganizationAction] Falló:", error);
+    return {
+      success: false,
+      message: "Hubo un error al desactivar la cuenta. Verifica los logs.",
+    };
+  }
+}
+
+/**
  * Superadmin Action: Bootstraps the first user (OWNER) for an organization
  * and generates a direct invite link for them to set their password.
  */

@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Building2, 
-  UserPlus, 
-  ActivitySquare, 
+import {
+  LayoutDashboard,
+  Building2,
+  UserPlus,
+  ActivitySquare,
   CreditCard,
   Settings,
-  LogOut
+  LogOut,
 } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 import { logoutAction } from "@/server/auth/actions";
 
 const PLATFORM_NAV = [
@@ -26,40 +28,53 @@ export function PlatformSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed bottom-0 left-0 top-0 w-64 flex flex-col border-r bg-white">
-      {/* Brand Header */}
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/platform" className="flex flex-col">
-          <span className="text-lg font-bold tracking-tight text-slate-900">
-            RaicesPilot
-          </span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Plataforma
-          </span>
-        </Link>
-      </div>
+    <aside className="fixed bottom-0 left-0 top-0 w-64 flex flex-col bg-slate-950 overflow-y-auto">
+      {/* Brand card — mismo patrón que el sidebar de inmobiliaria */}
+      <Link
+        href="/platform"
+        className="m-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
+      >
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+          RaicesPilot
+        </p>
+        <h2 className="mt-2 text-lg font-bold tracking-tight text-white">Superadmin</h2>
+        <div className="mt-2.5 inline-block rounded bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-300">
+          Plataforma
+        </div>
+      </Link>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6">
+      <nav className="flex-1 px-4 pb-4">
+        <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+          Administración
+        </p>
         <ul className="space-y-1">
           {PLATFORM_NAV.map((item) => {
-            const isActive = item.exact 
-              ? pathname === item.href 
+            const isActive = item.exact
+              ? pathname === item.href
               : pathname.startsWith(item.href);
-              
+
             const Icon = item.icon;
-            
+
             return (
               <li key={item.name}>
                 <Link
                   href={item.href}
-                  className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive 
-                      ? "bg-slate-100 text-slate-900" 
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",
+                    isActive
+                      ? "bg-white text-slate-950"
+                      : "text-slate-300 hover:bg-white/10 hover:text-white",
+                  )}
                 >
-                  <Icon className={`h-4 w-4 ${isActive ? "text-slate-900" : "text-slate-400 group-hover:text-slate-500"}`} />
+                  <Icon
+                    className={cn(
+                      "h-4 w-4 shrink-0",
+                      isActive
+                        ? "text-slate-900"
+                        : "text-slate-500 group-hover:text-slate-300",
+                    )}
+                  />
                   {item.name}
                 </Link>
               </li>
@@ -68,14 +83,14 @@ export function PlatformSidebar() {
         </ul>
       </nav>
 
-      {/* Footer / User Profile */}
-      <div className="border-t p-4">
+      {/* Footer / Logout */}
+      <div className="p-4 border-t border-white/10">
         <form action={logoutAction}>
-          <button 
+          <button
             type="submit"
-            className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-red-50 hover:text-red-700"
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
           >
-            <LogOut className="h-4 w-4 text-slate-400 group-hover:text-red-500" />
+            <LogOut className="h-4 w-4" />
             Cerrar sesión
           </button>
         </form>

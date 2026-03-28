@@ -9,14 +9,14 @@ export default async function PlatformLayout({
   const sessionUser = await requirePlatformAdmin();
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-100">
       <PlatformSidebar />
       <div className="flex flex-1 flex-col ml-64">
         {/* Topbar compacta */}
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-8 shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="rounded bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-700">
-              Workspace Superadmin
+            <span className="rounded bg-violet-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-600">
+              Superadmin · Plataforma
             </span>
           </div>
           <div className="flex items-center gap-6">

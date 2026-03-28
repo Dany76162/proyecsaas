@@ -102,7 +102,12 @@ export default async function PlatformOrganizationsPage() {
 
                 <td className="px-3 py-4 align-top">
                   <div className="flex items-center justify-end">
-                    <OnboardingControls orgSlug={org.slug} orgName={org.name} hasUsers={org.memberCount > 0} />
+                    <OnboardingControls
+                    orgSlug={org.slug}
+                    orgName={org.name}
+                    hasUsers={org.memberCount > 0}
+                    isActive={org.isActive}
+                  />
                   </div>
                 </td>
               </tr>
