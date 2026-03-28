@@ -17,9 +17,14 @@ export function WorkspaceHeader({ organization, children }: WorkspaceHeaderProps
             <StatusBadge label={organization.planLabel} tone="info" />
             <StatusBadge label={`${organization.city} workspace`} />
           </div>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-            {organization.name}
-          </h1>
+          <div className="mt-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Operando en la inmobiliaria:
+            </p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">
+              {organization.name}
+            </h1>
+          </div>
           <p className="mt-3 text-base leading-7 text-slate-600">
             {organization.description} Market focus: {organization.marketFocus}.
           </p>

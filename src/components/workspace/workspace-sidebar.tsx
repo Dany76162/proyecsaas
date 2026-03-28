@@ -25,6 +25,13 @@ const MANAGEMENT_NAV = [
   { label: "Organización", path: "/settings/organization" },
 ] as const;
 
+const ROLE_MAP = {
+  OWNER: { label: "Titular", copy: "Acceso total" },
+  ADMIN: { label: "Administrador", copy: "Gestión y operación" },
+  AGENT: { label: "Agente de ventas", copy: "Operación comercial" },
+  ASSISTANT: { label: "Asistente", copy: "Soporte operativo" },
+} as const;
+
 function isAdminOrOwner(role: MembershipRole): boolean {
   return role === "OWNER" || role === "ADMIN";
 }
@@ -38,17 +45,21 @@ export function WorkspaceSidebar({ organization, role }: WorkspaceSidebarProps) 
     return currentPath === href || currentPath.startsWith(href + "/");
   }
 
+  const roleDisplay = ROLE_MAP[role] ?? { label: role, copy: "" };
+
   return (
     <aside className="flex h-full flex-col rounded-[1.75rem] bg-slate-950 p-5 text-slate-100 shadow-soft">
       <Link
         href="/"
         className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
           RaicesPilot
         </p>
-        <h2 className="mt-2 text-lg font-semibold">{organization.name}</h2>
-        <p className="mt-1 text-sm text-slate-400">{organization.city}</p>
+        <h2 className="mt-2 text-lg font-bold tracking-tight text-white">{organization.name}</h2>
+        <div className="mt-2.5 inline-block rounded bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+          Panel de Inmobiliaria
+        </div>
       </Link>
 
       <div className="mt-6 space-y-1">
@@ -94,10 +105,18 @@ export function WorkspaceSidebar({ organization, role }: WorkspaceSidebarProps) 
       )}
 
       <div className="mt-auto pt-6">
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">
-            {role}
-          </p>
+        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">
+            {roleDisplay.label.charAt(0)}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-white uppercase tracking-tight">
+              {roleDisplay.label}
+            </p>
+            {roleDisplay.copy && (
+              <p className="text-[10px] text-slate-400">{roleDisplay.copy}</p>
+            )}
+          </div>
         </div>
       </div>
     </aside>

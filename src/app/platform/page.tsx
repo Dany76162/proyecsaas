@@ -10,7 +10,7 @@ function HealthBadge({ status }: { status: OrgHealthStatus }) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
         <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-        Critical
+        Crítico
       </span>
     );
   }
@@ -18,7 +18,7 @@ function HealthBadge({ status }: { status: OrgHealthStatus }) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-        Warning
+        Advertencia
       </span>
     );
   }
@@ -32,7 +32,7 @@ function HealthBadge({ status }: { status: OrgHealthStatus }) {
 
 function WhatsAppStatus({ channel }: { channel: OrgPlatformSummary["whatsappChannel"] }) {
   if (!channel) {
-    return <span className="text-xs text-slate-400">No channel</span>;
+    return <span className="text-xs text-slate-400">Sin canal</span>;
   }
 
   const statusColors: Record<string, string> = {
@@ -60,11 +60,11 @@ function WhatsAppStatus({ channel }: { channel: OrgPlatformSummary["whatsappChan
 function formatRelativeTime(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
   const minutes = Math.floor(diff / 60_000);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `hace ${minutes} min`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `hace ${hours} h`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `hace ${days} d`;
 }
 
 export default async function PlatformPage() {
@@ -76,14 +76,14 @@ export default async function PlatformPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Organizations</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Inmobiliarias activas</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {orgs.length} total
+          {orgs.length} en total
           {criticalCount > 0 && (
-            <span className="ml-2 font-medium text-red-600">{criticalCount} critical</span>
+            <span className="ml-2 font-medium text-red-600">{criticalCount} con error crítico</span>
           )}
           {warningCount > 0 && (
-            <span className="ml-2 font-medium text-amber-600">{warningCount} warning</span>
+            <span className="ml-2 font-medium text-amber-600">{warningCount} con advertencia</span>
           )}
         </p>
       </div>
@@ -92,14 +92,14 @@ export default async function PlatformPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <th className="px-5 py-3">Organization</th>
-              <th className="px-5 py-3">Health</th>
+              <th className="px-5 py-3">Inmobiliaria</th>
+              <th className="px-5 py-3">Estado</th>
               <th className="px-5 py-3">WhatsApp</th>
               <th className="px-5 py-3">Leads (7d)</th>
-              <th className="px-5 py-3">Follow-ups</th>
-              <th className="px-5 py-3">Failed (7d)</th>
-              <th className="px-5 py-3">Last activity</th>
-              <th className="px-5 py-3">Members</th>
+              <th className="px-5 py-3">Pendientes</th>
+              <th className="px-5 py-3">Errores (7d)</th>
+              <th className="px-5 py-3">Última actividad</th>
+              <th className="px-5 py-3">Miembros</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
@@ -148,7 +148,7 @@ export default async function PlatformPage() {
                     href={`/${org.slug}`}
                     className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
                   >
-                    Open
+                    Entrar
                   </Link>
                 </td>
               </tr>
@@ -156,7 +156,7 @@ export default async function PlatformPage() {
             {orgs.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-5 py-10 text-center text-sm text-slate-400">
-                  No organizations found.
+                  No hay inmobiliarias registradas.
                 </td>
               </tr>
             )}

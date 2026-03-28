@@ -12,28 +12,28 @@ export default async function PlatformLayout({
     <div className="min-h-screen bg-slate-100">
       <header className="border-b bg-white shadow-sm">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Link href="/platform" className="text-base font-semibold text-slate-900">
-              Platform
+              RaicesPilot <span className="text-slate-400 font-normal">| Panel de Plataforma</span>
             </Link>
-            <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
-              Admin
+            <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-700">
+              Superadmin
             </span>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-slate-500">{sessionUser.email}</span>
             <Link
               href="/"
-              className="text-sm text-slate-500 transition hover:text-slate-800"
+              className="text-sm font-medium text-slate-500 transition hover:text-slate-800"
             >
-              Home
+              Volver al inicio
             </Link>
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="rounded-full border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
               >
-                Sign out
+                Cerrar sesión
               </button>
             </form>
           </div>
