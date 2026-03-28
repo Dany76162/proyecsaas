@@ -88,12 +88,13 @@ enum WhatsAppChannelVerificationStatus {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  email         String        @unique
-  fullName      String
-  jobTitle      String?
-  isActive      Boolean       @default(true)
-  passwordHash  String?
+  id               String        @id @default(cuid())
+  email            String        @unique
+  fullName         String
+  jobTitle         String?
+  isActive         Boolean       @default(true)
+  isPlatformAdmin  Boolean       @default(false)
+  passwordHash     String?
   availabilitySlots AvailabilitySlot[]
   memberships   Membership[]
   ownedLeads    Lead[]        @relation("LeadOwner")
