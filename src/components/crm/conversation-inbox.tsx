@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useMemo } from "react";
 
+import { confirmLeadPropertyAction } from "@/modules/leads/actions";
 import { resolveConversationFollowUpAction } from "@/modules/conversations/actions";
 import { cn, formatDateTime } from "@/lib/utils";
 import type { ConversationListItem } from "@/modules/conversations/types";
@@ -61,6 +63,44 @@ function DeliveryBadge({ status }: { status: string }) {
       {item.label}
     </span>
   );
+}
+
+function getPropertyMatchLabel(
+  status:
+    | "matched"
+    | "existing-link"
+    | "manual-confirmed"
+    | "manual-overridden"
+    | "no-match",
+) {
+  if (status === "matched") return "Auto-matched";
+  if (status === "existing-link") return "Existing link";
+  if (status === "manual-confirmed") return "Confirmed manually";
+  if (status === "manual-overridden") return "Changed manually";
+  return "Needs manual review";
+}
+
+function getPropertyMatchTone(
+  status:
+    | "matched"
+    | "existing-link"
+    | "manual-confirmed"
+    | "manual-overridden"
+    | "no-match",
+) {
+  if (status === "matched") return "bg-emerald-100 text-emerald-700";
+  if (status === "existing-link" || status === "manual-confirmed") {
+    return "bg-blue-100 text-blue-700";
+  }
+  return "bg-slate-100 text-slate-600";
+}
+
+function formatNextBestAction(action: string | null | undefined) {
+  if (!action) return null;
+  return action
+    .split("-")
+    .join(" ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function ConversationRow({
@@ -163,8 +203,17 @@ function ContextSummary({ title, content }: { title: string; content: string | n
   );
 }
 
-function ConversationDetail({ conv, orgSlug }: { conv: ConversationListItem; orgSlug: string }) {
+function ConversationDetail({
+  conv,
+  orgSlug,
+  currentCursor,
+}: {
+  conv: ConversationListItem;
+  orgSlug: string;
+  currentCursor?: string;
+}) {
   const urgency = getConversationUrgency(conv);
+  const shortlist = conv.propertyMatch?.shortlist ?? [];
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -214,10 +263,165 @@ function ConversationDetail({ conv, orgSlug }: { conv: ConversationListItem; org
           <ContextSummary title="Lead Stage" content={conv.leadStatus} />
           <ContextSummary title="Notes" content={conv.propertyContextNote} />
         </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {conv.propertyMatch ? (
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider",
+                getPropertyMatchTone(conv.propertyMatch.status),
+              )}
+            >
+              {getPropertyMatchLabel(conv.propertyMatch.status)}
+            </span>
+          ) : null}
+          {conv.nextBestAction ? (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-700">
+              {formatNextBestAction(conv.nextBestAction)}
+            </span>
+          ) : null}
+          {conv.propertyMatch?.score != null ? (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+              Score {conv.propertyMatch.score}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {conv.leadId ? (
+            <Link
+              href={`/${orgSlug}/leads/${conv.leadId}`}
+              className="rounded-full border border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+            >
+              Open lead
+            </Link>
+          ) : null}
+          {conv.propertyId ? (
+            <Link
+              href={`/${orgSlug}/properties/${conv.propertyId}`}
+              className="rounded-full border border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+            >
+              Open property
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {/* ─── Action Center ─── */}
       <div className="space-y-2">
+        {(conv.automationSummary || conv.propertyMatch) && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                Commercial context
+              </p>
+              {conv.propertyMatch?.consideredSignals.map((signal) => (
+                <span
+                  key={signal}
+                  className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-600"
+                >
+                  {signal}
+                </span>
+              ))}
+            </div>
+
+            {conv.automationSummary ? (
+              <p className="mt-3 text-xs leading-relaxed text-slate-600">{conv.automationSummary}</p>
+            ) : null}
+
+            {conv.propertyMatch?.reasons.length ? (
+              <ul className="mt-3 space-y-2 text-xs leading-relaxed text-slate-600">
+                {conv.propertyMatch.reasons.map((reason) => (
+                  <li
+                    key={reason}
+                    className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2"
+                  >
+                    {reason}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {shortlist.length ? (
+              <div className="mt-4 space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                  Suggested shortlist
+                </p>
+                {shortlist.map((candidate) => (
+                  <div
+                    key={candidate.propertyId}
+                    className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-900">{candidate.title}</p>
+                        <p className="text-[11px] text-slate-500">
+                          {[candidate.neighborhood, candidate.city].filter(Boolean).join(" / ") ||
+                            "Location pending"}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-700">
+                        Score {candidate.score}
+                      </span>
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {candidate.propertyType ? (
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-600 ring-1 ring-slate-200">
+                          {candidate.propertyType}
+                        </span>
+                      ) : null}
+                      {candidate.bedrooms ? (
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-600 ring-1 ring-slate-200">
+                          {candidate.bedrooms} br
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
+                      {candidate.reasons[0]}
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        href={`/${orgSlug}/properties/${candidate.propertyId}`}
+                        className="rounded-full border border-slate-300 px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Open property
+                      </Link>
+                      {conv.leadId ? (
+                        <form action={confirmLeadPropertyAction}>
+                          <input type="hidden" name="orgSlug" value={orgSlug} />
+                          <input type="hidden" name="leadId" value={conv.leadId} />
+                          <input type="hidden" name="propertyId" value={candidate.propertyId} />
+                          <input
+                            type="hidden"
+                            name="redirectTo"
+                            value={
+                              currentCursor
+                                ? `/${orgSlug}/conversations?cursor=${encodeURIComponent(currentCursor)}&selected=${encodeURIComponent(conv.id)}`
+                                : `/${orgSlug}/conversations?selected=${encodeURIComponent(conv.id)}`
+                            }
+                          />
+                          <button
+                            type="submit"
+                            className="rounded-full bg-brand-500 px-3 py-1.5 text-[10px] font-semibold text-white transition hover:bg-brand-600"
+                          >
+                            {conv.propertyId === candidate.propertyId
+                              ? "Keep this property"
+                              : conv.propertyId
+                                ? "Use this instead"
+                                : "Link this property"}
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )}
         {/* Delivery failure banner */}
         {hasFailedDelivery(conv) && (
           <div className="relative overflow-hidden rounded-xl border border-red-200 bg-red-50/50 p-4">
@@ -381,12 +585,20 @@ function ConversationDetail({ conv, orgSlug }: { conv: ConversationListItem; org
 export function ConversationInbox({
   conversations,
   orgSlug,
+  currentCursor,
+  initialSelectedId,
 }: {
   conversations: ConversationListItem[];
   orgSlug: string;
+  currentCursor?: string;
+  initialSelectedId?: string;
 }) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(conversations[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialSelectedId && conversations.some((conversation) => conversation.id === initialSelectedId)
+      ? initialSelectedId
+      : conversations[0]?.id ?? null,
+  );
 
   const prioritized = useMemo(() => {
     return [...conversations].sort((a, b) => {
@@ -482,7 +694,7 @@ export function ConversationInbox({
       {/* ─── Detail Panel ─── */}
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50/30 p-8 shadow-inner">
         {selected ? (
-          <ConversationDetail conv={selected} orgSlug={orgSlug} />
+          <ConversationDetail conv={selected} orgSlug={orgSlug} currentCursor={currentCursor} />
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-center opacity-40">
             <div className="h-10 w-10 rounded-full border-4 border-slate-200 border-t-brand-500 animate-spin mb-4" />

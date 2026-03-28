@@ -30,6 +30,19 @@ export type PreparedConversationContext = {
         currency: string | null;
       }
     | null;
+  propertyMatch:
+    | {
+        status:
+          | "matched"
+          | "existing-link"
+          | "manual-confirmed"
+          | "manual-overridden"
+          | "no-match";
+        score: number | null;
+        reasons: string[];
+        consideredSignals: string[];
+      }
+    | null;
   availability: Array<{
     id: string;
     label: string;

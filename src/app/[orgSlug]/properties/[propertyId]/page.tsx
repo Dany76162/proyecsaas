@@ -5,15 +5,43 @@ import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+function getPropertyStatusTone(status: string) {
+  if (status === "AVAILABLE") {
+    return "success" as const;
+  }
+
+  if (status === "DRAFT") {
+    return "neutral" as const;
+  }
+
+  return "warning" as const;
+}
+
+function getVisitStatusTone(status: string) {
+  if (status === "CONFIRMED" || status === "COMPLETED") {
+    return "success" as const;
+  }
+
+  if (status === "CANCELED") {
+    return "neutral" as const;
+  }
+
+  return "warning" as const;
+}
+
 export default async function PropertyDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgSlug: string; propertyId: string }>;
+  searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const { orgSlug, propertyId } = await params;
+  const { success, error } = await searchParams;
   const [organization, property] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     getPropertyDetail(orgSlug, propertyId),
@@ -23,13 +51,33 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
+  const successMessage =
+    success === "property-updated" ? "Property updated successfully." : null;
+  const errorMessage =
+    error === "invalid-property"
+      ? "Property data is invalid. Review the fields and try again."
+      : error === "property-not-found"
+        ? "That property no longer exists in this workspace."
+        : null;
+
   return (
     <>
+      {successMessage ? (
+        <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">
+          {successMessage}
+        </section>
+      ) : null}
+      {errorMessage ? (
+        <section className="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800 shadow-soft">
+          {errorMessage}
+        </section>
+      ) : null}
+
       <section className="rounded-[1.75rem] border bg-white p-6 shadow-soft">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge label={property.status} tone={property.status === "AVAILABLE" ? "success" : "warning"} />
+              <StatusBadge label={property.status} tone={getPropertyStatusTone(property.status)} />
               <StatusBadge label={property.publicVisible ? "Public listing" : "Internal only"} tone={property.publicVisible ? "info" : "neutral"} />
             </div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
@@ -65,6 +113,151 @@ export default async function PropertyDetailPage({
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <SectionCard
+          eyebrow="Edit"
+          title="Property details"
+          description="Keep the inventory current without leaving the workspace or touching the database."
+        >
+          <form action={updatePropertyAction} className="grid gap-4 md:grid-cols-2">
+            <input type="hidden" name="orgSlug" value={orgSlug} />
+            <input type="hidden" name="propertyId" value={property.id} />
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Title</span>
+              <input
+                name="title"
+                required
+                defaultValue={property.title}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Property type</span>
+              <input
+                name="propertyType"
+                defaultValue={property.propertyType ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+                placeholder="Apartment, house, lot..."
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
+              <span>Address</span>
+              <input
+                name="address"
+                defaultValue={property.address ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>City</span>
+              <input
+                name="city"
+                defaultValue={property.city ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Neighborhood</span>
+              <input
+                name="neighborhood"
+                defaultValue={property.neighborhood ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Price (cents)</span>
+              <input
+                name="priceCents"
+                type="number"
+                min="0"
+                defaultValue={property.priceCents ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Currency</span>
+              <input
+                name="currency"
+                defaultValue={property.currency ?? "USD"}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Bedrooms</span>
+              <input
+                name="bedrooms"
+                type="number"
+                min="0"
+                defaultValue={property.bedrooms ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Bathrooms</span>
+              <input
+                name="bathrooms"
+                type="number"
+                min="0"
+                defaultValue={property.bathrooms ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Surface (m2)</span>
+              <input
+                name="surfaceM2"
+                type="number"
+                min="0"
+                defaultValue={property.surfaceM2 ?? ""}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Status</span>
+              <select
+                name="status"
+                defaultValue={property.status}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+              >
+                <option value="DRAFT">DRAFT</option>
+                <option value="AVAILABLE">AVAILABLE</option>
+                <option value="RESERVED">RESERVED</option>
+                <option value="SOLD">SOLD</option>
+                <option value="RENTED">RENTED</option>
+              </select>
+            </label>
+
+            <label className="md:col-span-2 flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+              <input
+                name="publicVisible"
+                type="checkbox"
+                defaultChecked={property.publicVisible}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              <span>Expose this property on the public map/listing surfaces</span>
+            </label>
+
+            <div className="md:col-span-2">
+              <button
+                type="submit"
+                className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+              >
+                Save property
+              </button>
+            </div>
+          </form>
+        </SectionCard>
+
         <SectionCard
           eyebrow="Interest"
           title="Linked leads"
@@ -102,7 +295,7 @@ export default async function PropertyDetailPage({
                     <p className="font-semibold text-slate-950">{visit.leadName}</p>
                     <StatusBadge
                       label={visit.status}
-                      tone={visit.status === "CONFIRMED" ? "success" : "warning"}
+                      tone={getVisitStatusTone(visit.status)}
                     />
                   </div>
                   <p className="mt-2 text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>

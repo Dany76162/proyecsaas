@@ -104,13 +104,34 @@ export async function getLeadDetail(
             slug: orgSlug,
           },
         },
+        take: 1,
         select: {
           id: true,
+          status: true,
+          subject: true,
+          participantName: true,
+          participantPhone: true,
           followUpActive: true,
           followUpCategory: true,
           followUpReason: true,
           followUpActiveAt: true,
+          lastMessageAt: true,
           updatedAt: true,
+          messages: {
+            orderBy: {
+              sentAt: "desc",
+            },
+            take: 12,
+            select: {
+              id: true,
+              direction: true,
+              body: true,
+              senderName: true,
+              sentAt: true,
+              deliveryStatus: true,
+              deliveryError: true,
+            },
+          },
         },
         orderBy: [{ followUpActiveAt: "desc" }, { updatedAt: "desc" }],
       },
@@ -173,9 +194,34 @@ export async function getLeadDetail(
     interestLabel: lead.interestLabel,
     budgetLabel: lead.budgetLabel,
   });
-  const activeFollowUpConversation = lead.conversations.find(
-    (conversation) => conversation.followUpActive,
-  );
+  const conversationContextSource = lead.conversations[0] ?? null;
+  const activeFollowUpConversation = lead.conversations.find((conversation) => conversation.followUpActive);
+  const conversationContext = conversationContextSource
+    ? {
+        id: conversationContextSource.id,
+        status: conversationContextSource.status,
+        subject: conversationContextSource.subject ?? "Property conversation",
+        participantName: conversationContextSource.participantName ?? "Unknown participant",
+        participantPhone: conversationContextSource.participantPhone ?? "Phone pending",
+        followUpActive: conversationContextSource.followUpActive,
+        followUpCategory: conversationContextSource.followUpCategory,
+        followUpReason: conversationContextSource.followUpReason,
+        lastMessageAt: (
+          conversationContextSource.lastMessageAt ?? conversationContextSource.updatedAt
+        ).toISOString(),
+        messages: [...conversationContextSource.messages]
+          .sort((left, right) => left.sentAt.getTime() - right.sentAt.getTime())
+          .map((message) => ({
+            id: message.id,
+            direction: message.direction,
+            body: message.body,
+            senderName: message.senderName ?? "Unknown sender",
+            sentAt: message.sentAt.toISOString(),
+            deliveryStatus: message.deliveryStatus,
+            deliveryError: message.deliveryError ?? null,
+          })),
+      }
+    : null;
 
   return {
     id: lead.id,
@@ -193,11 +239,15 @@ export async function getLeadDetail(
     propertyTitle: lead.property?.title ?? "No property linked yet",
     lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
     leadTemperature: signals.leadTemperature,
+    propertyMatch: signals.propertyMatch,
+    nextBestAction: signals.nextBestAction,
+    automationSummary: signals.automationSummary,
     requiresFollowUp: Boolean(activeFollowUpConversation),
     followUpReason: activeFollowUpConversation?.followUpReason ?? null,
     extractedPreferences: signals.extractedPreferences,
     activity,
     visits,
     followUpCategory: activeFollowUpConversation?.followUpCategory ?? null,
+    conversationContext,
   };
 }

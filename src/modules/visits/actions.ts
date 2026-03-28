@@ -68,3 +68,103 @@ export async function createVisitAction(formData: FormData) {
   revalidatePath(`/${orgSlug}`);
   redirect(`/${orgSlug}/leads/${leadId}?success=visit-created`);
 }
+
+const updateVisitStatusSchema = z.object({
+  visitId: z.string().trim().min(1),
+  nextStatus: z.nativeEnum(VisitStatus),
+  tab: z.enum(["upcoming", "all"]).default("upcoming"),
+});
+
+function redirectToVisitsResult(
+  orgSlug: string,
+  tab: "upcoming" | "all",
+  params: Record<string, string>,
+): never {
+  const search = new URLSearchParams(params);
+
+  if (tab === "all") {
+    search.set("tab", "all");
+  }
+
+  redirect(`/${orgSlug}/visits?${search.toString()}`);
+}
+
+function isAllowedVisitStatusTransition(
+  currentStatus: VisitStatus,
+  nextStatus: VisitStatus,
+): boolean {
+  if (currentStatus === nextStatus) {
+    return false;
+  }
+
+  if (currentStatus === VisitStatus.PENDING) {
+    return nextStatus === VisitStatus.CONFIRMED || nextStatus === VisitStatus.CANCELED;
+  }
+
+  if (currentStatus === VisitStatus.CONFIRMED) {
+    return nextStatus === VisitStatus.COMPLETED || nextStatus === VisitStatus.CANCELED;
+  }
+
+  return false;
+}
+
+export async function updateVisitStatusAction(formData: FormData) {
+  const orgSlug = String(formData.get("orgSlug") ?? "");
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = updateVisitStatusSchema.safeParse({
+    visitId: String(formData.get("visitId") ?? ""),
+    nextStatus: String(formData.get("nextStatus") ?? ""),
+    tab: String(formData.get("tab") ?? "upcoming"),
+  });
+
+  const fallbackTab = parsed.success ? parsed.data.tab : "upcoming";
+
+  if (!parsed.success) {
+    redirectToVisitsResult(orgSlug, fallbackTab, { error: "invalid-visit-status" });
+  }
+
+  const visit = await prisma.visit.findFirst({
+    where: {
+      id: parsed.data.visitId,
+      organizationId: membership.organization.id,
+    },
+    select: {
+      id: true,
+      status: true,
+      leadId: true,
+      propertyId: true,
+    },
+  });
+
+  if (!visit) {
+    redirectToVisitsResult(orgSlug, parsed.data.tab, { error: "visit-not-found" });
+  }
+
+  if (!isAllowedVisitStatusTransition(visit.status, parsed.data.nextStatus)) {
+    redirectToVisitsResult(orgSlug, parsed.data.tab, { error: "invalid-visit-transition" });
+  }
+
+  await prisma.visit.update({
+    where: {
+      id: visit.id,
+    },
+    data: {
+      status: parsed.data.nextStatus,
+    },
+  });
+
+  revalidatePath(`/${orgSlug}/visits`);
+  revalidatePath(`/${orgSlug}`);
+
+  if (visit.leadId) {
+    revalidatePath(`/${orgSlug}/leads/${visit.leadId}`);
+  }
+
+  revalidatePath(`/${orgSlug}/properties/${visit.propertyId}`);
+
+  redirectToVisitsResult(orgSlug, parsed.data.tab, {
+    success: `visit-${parsed.data.nextStatus.toLowerCase()}`,
+  });
+}

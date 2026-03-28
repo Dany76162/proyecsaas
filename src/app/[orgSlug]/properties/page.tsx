@@ -10,6 +10,18 @@ import { getPropertySummary, listOrganizationProperties } from "@/modules/proper
 import { formatCurrency } from "@/lib/utils";
 import { CreatePropertyDialog } from "@/components/properties/create-property-dialog";
 
+function getPropertyStatusTone(status: string) {
+  if (status === "AVAILABLE") {
+    return "success" as const;
+  }
+
+  if (status === "DRAFT") {
+    return "neutral" as const;
+  }
+
+  return "warning" as const;
+}
+
 export default async function PropertiesPage({
   params,
 }: {
@@ -72,7 +84,7 @@ export default async function PropertiesPage({
                 <div className="flex flex-col items-end gap-2">
                   <StatusBadge
                     label={property.status}
-                    tone={property.status === "AVAILABLE" ? "success" : "warning"}
+                    tone={getPropertyStatusTone(property.status)}
                   />
                   <StatusBadge
                     label={property.publicVisible ? "Public" : "Internal"}

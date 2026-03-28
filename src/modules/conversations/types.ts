@@ -7,6 +7,7 @@ import type {
   NotificationType,
 } from "@prisma/client";
 import type { LeadTemperature } from "@/modules/leads/commercial-signals";
+import type { LeadPropertyMatchTrace } from "@/modules/properties/matching";
 
 export type ConversationMessageItem = {
   id: string;
@@ -34,6 +35,8 @@ export type ConversationListItem = {
   leadName: string;
   leadStatus: LeadStatus;
   leadTemperature: LeadTemperature;
+  propertyMatch: LeadPropertyMatchTrace | null;
+  automationSummary: string | null;
   requiresFollowUp: boolean;
   followUpCategory: FollowUpCategory | null;
   followUpReason: string | null;

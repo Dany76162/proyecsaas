@@ -11,7 +11,14 @@ type WorkspaceSidebarProps = {
   organization: OrganizationSummary;
 };
 
-const primaryModuleKeys = new Set(["organizations", "users", "leads", "properties", "visits"]);
+const primaryModuleKeys = new Set([
+  "organizations",
+  "users",
+  "leads",
+  "properties",
+  "visits",
+  "conversations",
+]);
 
 export function WorkspaceSidebar({
   organization,
@@ -19,7 +26,10 @@ export function WorkspaceSidebar({
   const currentPath = usePathname();
   const primaryModules = modules.filter((module) => primaryModuleKeys.has(module.key));
   const laterModules = modules.filter(
-    (module) => module.workspacePath && !primaryModuleKeys.has(module.key),
+    (module) =>
+      module.workspacePath &&
+      !primaryModuleKeys.has(module.key) &&
+      module.key !== "automations",
   );
 
   return (
@@ -63,25 +73,27 @@ export function WorkspaceSidebar({
         ))}
       </div>
 
-      <div className="mt-6 space-y-2">
-        <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Later phases
-        </p>
-        {laterModules.map((module) => (
-          <Link
-            key={module.key}
-            href={`/${organization.slug}${module.workspacePath ?? ""}`}
-            className="block rounded-xl px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
-          >
-            {module.label}
-          </Link>
-        ))}
-      </div>
+      {laterModules.length ? (
+        <div className="mt-6 space-y-2">
+          <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Later phases
+          </p>
+          {laterModules.map((module) => (
+            <Link
+              key={module.key}
+              href={`/${organization.slug}${module.workspacePath ?? ""}`}
+              className="block rounded-xl px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+            >
+              {module.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4">
         <p className="text-sm font-semibold">Workspace readiness</p>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Core CRM and portfolio foundations are active. Visits, conversations, and automations stay parked for the next phase.
+          The operational workspace is active: leads, properties, visits, and conversation context are ready for day-to-day follow-up.
         </p>
       </div>
     </aside>

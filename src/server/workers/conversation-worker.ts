@@ -32,8 +32,9 @@ import type {
 
 import {
   encodeCommercialSignalsInNotes,
-  getLeadTemperatureLabel,
+  readLeadCommercialSignals,
 } from "@/modules/leads/commercial-signals";
+import { matchLeadToProperty } from "@/modules/properties/matching";
 
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 
@@ -182,7 +183,7 @@ export async function processWhatsAppInboundJob(
         },
       });
     } else {
-      await tx.conversation.update({
+      conversation = await tx.conversation.update({
         where: { id: conversation.id },
         data: {
           lastMessageAt: sentAt,
@@ -233,7 +234,139 @@ export async function processWhatsAppInboundJob(
     return { conversation, lead, message };
   });
 
-  // 3. Automation Decision
+  // 3. Prepare context with real inventory matching before generating the decision
+  const priorSignals = readLeadCommercialSignals({
+    notes: result.lead.notes,
+    interestLabel: result.lead.interestLabel,
+    budgetLabel: result.lead.budgetLabel,
+  });
+  let propertyMatch = await matchLeadToProperty(prisma, {
+    organizationId: channel.organizationId,
+    currentPropertyId: result.lead.propertyId,
+    latestMessageBody: messageBody,
+    extractedPreferences: priorSignals.extractedPreferences,
+  });
+
+  if (
+    result.lead.propertyId &&
+    priorSignals.propertyMatch?.propertyId === result.lead.propertyId &&
+    (priorSignals.propertyMatch.status === "manual-confirmed" ||
+      priorSignals.propertyMatch.status === "manual-overridden")
+  ) {
+    propertyMatch = {
+      ...propertyMatch,
+      trace: {
+        ...priorSignals.propertyMatch,
+        propertyId: propertyMatch.property?.id ?? priorSignals.propertyMatch.propertyId,
+        propertyTitle: propertyMatch.property?.title ?? priorSignals.propertyMatch.propertyTitle,
+        shortlist:
+          priorSignals.propertyMatch.shortlist.length
+            ? priorSignals.propertyMatch.shortlist
+            : propertyMatch.trace.shortlist,
+      },
+    };
+  }
+
+  if (propertyMatch.trace.status !== "no-match") {
+    console.log(
+      JSON.stringify({
+        scope: "worker",
+        event: "lead-property-match",
+        organizationId: channel.organizationId,
+        leadId: result.lead.id,
+        conversationId: result.conversation.id,
+        propertyId: propertyMatch.trace.propertyId,
+        status: propertyMatch.trace.status,
+        score: propertyMatch.trace.score,
+        reasons: propertyMatch.trace.reasons,
+      }),
+    );
+  } else {
+    console.log(
+      JSON.stringify({
+        scope: "worker",
+        event: "lead-property-no-match",
+        organizationId: channel.organizationId,
+        leadId: result.lead.id,
+        conversationId: result.conversation.id,
+        reasons: propertyMatch.trace.reasons,
+        consideredSignals: propertyMatch.trace.consideredSignals,
+      }),
+    );
+  }
+
+  if (
+    propertyMatch.property &&
+    (result.lead.propertyId !== propertyMatch.property.id ||
+      result.conversation.propertyId !== propertyMatch.property.id)
+  ) {
+    await prisma.$transaction([
+      ...(result.lead.propertyId !== propertyMatch.property.id
+        ? [
+            prisma.lead.update({
+              where: { id: result.lead.id },
+              data: { propertyId: propertyMatch.property.id },
+            }),
+          ]
+        : []),
+      prisma.conversation.update({
+        where: { id: result.conversation.id },
+        data: {
+          propertyId: propertyMatch.property.id,
+          propertyContextNote: propertyMatch.trace.reasons.join(" "),
+        },
+      }),
+    ]);
+
+    result.lead.propertyId = propertyMatch.property.id;
+    result.conversation.propertyId = propertyMatch.property.id;
+  }
+
+  const [availability, recentMessages] = await Promise.all([
+    propertyMatch.property
+      ? prisma.availabilitySlot.findMany({
+          where: {
+            organizationId: channel.organizationId,
+            propertyId: propertyMatch.property.id,
+            isActive: true,
+          },
+          select: {
+            id: true,
+            label: true,
+            weekday: true,
+            startMinute: true,
+            endMinute: true,
+            timezone: true,
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+          orderBy: [{ weekday: "asc" }, { startMinute: "asc" }],
+          take: 6,
+        })
+      : Promise.resolve([]),
+    prisma.message.findMany({
+      where: {
+        organizationId: channel.organizationId,
+        conversationId: result.conversation.id,
+      },
+      select: {
+        id: true,
+        direction: true,
+        body: true,
+        sentAt: true,
+        senderName: true,
+        senderPhone: true,
+      },
+      orderBy: {
+        sentAt: "desc",
+      },
+      take: 8,
+    }),
+  ]);
+
   const decision: AutomationDecision = await generateAutomationDecision({
     conversation: {
       id: result.conversation.id,
@@ -249,11 +382,46 @@ export async function processWhatsAppInboundJob(
       status: result.lead.status,
       phone: result.lead.phone ?? "",
       email: result.lead.email,
-      propertyId: result.lead.propertyId,
+      propertyId: propertyMatch.property?.id ?? result.lead.propertyId,
     },
-    property: null,
-    availability: [],
-    recentMessages: [],
+    property: propertyMatch.property
+      ? {
+          id: propertyMatch.property.id,
+          title: propertyMatch.property.title,
+          address: propertyMatch.property.address,
+          city: propertyMatch.property.city,
+          neighborhood: propertyMatch.property.neighborhood,
+          propertyType: propertyMatch.property.propertyType,
+          status: propertyMatch.property.status,
+          priceCents: propertyMatch.property.priceCents,
+          currency: propertyMatch.property.currency,
+        }
+      : null,
+    propertyMatch: {
+      status: propertyMatch.trace.status,
+      score: propertyMatch.trace.score,
+      reasons: propertyMatch.trace.reasons,
+      consideredSignals: propertyMatch.trace.consideredSignals,
+    },
+    availability: availability.map((slot) => ({
+      id: slot.id,
+      label: slot.label,
+      weekday: slot.weekday,
+      startMinute: slot.startMinute,
+      endMinute: slot.endMinute,
+      timezone: slot.timezone,
+      userName: slot.user?.fullName ?? null,
+    })),
+    recentMessages: [...recentMessages]
+      .reverse()
+      .map((message) => ({
+        id: message.id,
+        direction: message.direction,
+        body: message.body,
+        sentAt: message.sentAt.toISOString(),
+        senderName: message.senderName,
+        senderPhone: message.senderPhone,
+      })),
   });
 
   // Persist commercial signals into the Lead record (notes + conservative stage mapping)
@@ -268,7 +436,12 @@ export async function processWhatsAppInboundJob(
   await prisma.lead.update({
     where: { id: result.lead.id },
     data: {
-      notes: encodeCommercialSignalsInNotes(result.lead.notes, decision),
+      notes: encodeCommercialSignalsInNotes(
+        result.lead.notes,
+        decision,
+        propertyMatch.trace,
+        decision.internalNotes ?? null,
+      ),
       ...(nextLeadStatus ? { status: nextLeadStatus, lastContactAt: new Date() } : {}),
     },
   });

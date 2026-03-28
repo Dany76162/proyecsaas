@@ -91,6 +91,8 @@ export async function listOrganizationConversations(
       leadName: conversation.lead?.fullName ?? "Lead not linked yet",
       leadStatus: conversation.lead?.status ?? LeadStatus.NEW,
       leadTemperature: leadSignals.leadTemperature,
+      propertyMatch: leadSignals.propertyMatch,
+      automationSummary: leadSignals.automationSummary,
       requiresFollowUp: conversation.followUpActive,
       followUpCategory: conversation.followUpCategory,
       followUpReason: conversation.followUpReason,

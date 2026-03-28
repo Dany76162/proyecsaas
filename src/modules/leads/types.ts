@@ -1,5 +1,7 @@
 import type { FollowUpCategory, VisitStatus } from "@prisma/client";
 import type { LeadExtractedPreferences, LeadTemperature } from "@/modules/leads/commercial-signals";
+import type { MessageDeliveryStatus, MessageDirection, ConversationStatus } from "@prisma/client";
+import type { LeadPropertyMatchTrace } from "@/modules/properties/matching";
 
 export type LeadStage =
   | "NEW"
@@ -49,12 +51,39 @@ export type LeadVisitItem = {
   propertyTitle: string;
 };
 
+export type LeadConversationMessageItem = {
+  id: string;
+  direction: MessageDirection;
+  body: string;
+  senderName: string;
+  sentAt: string;
+  deliveryStatus: MessageDeliveryStatus;
+  deliveryError: string | null;
+};
+
+export type LeadConversationContext = {
+  id: string;
+  status: ConversationStatus;
+  subject: string;
+  participantName: string;
+  participantPhone: string;
+  followUpActive: boolean;
+  followUpCategory: FollowUpCategory | null;
+  followUpReason: string | null;
+  lastMessageAt: string;
+  messages: LeadConversationMessageItem[];
+};
+
 export type LeadDetail = LeadListItem & {
   assignedUserEmail: string;
   extractedPreferences: LeadExtractedPreferences;
+  propertyMatch: LeadPropertyMatchTrace | null;
+  nextBestAction: string | null;
+  automationSummary: string | null;
   requiresFollowUp: boolean;
   followUpCategory: FollowUpCategory | null;
   followUpReason: string | null;
   activity: LeadActivityItem[];
   visits: LeadVisitItem[];
+  conversationContext: LeadConversationContext | null;
 };

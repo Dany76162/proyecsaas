@@ -11,10 +11,10 @@ export default async function ConversationsPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string }>;
-  searchParams: Promise<{ cursor?: string }>;
+  searchParams: Promise<{ cursor?: string; success?: string; selected?: string }>;
 }) {
   const { orgSlug } = await params;
-  const { cursor } = await searchParams;
+  const { cursor, success, selected } = await searchParams;
 
   const [organization, { items: conversations, nextCursor }] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
@@ -30,6 +30,11 @@ export default async function ConversationsPage({
   return (
     <>
       <WorkspaceHeader organization={organization} />
+      {success === "property-linked" ? (
+        <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">
+          Property link updated from Conversations.
+        </section>
+      ) : null}
 
       {/* Pagination bar — only rendered when there are multiple pages */}
       {(!isFirstPage || nextCursor) && (
@@ -57,7 +62,12 @@ export default async function ConversationsPage({
         </nav>
       )}
 
-      <ConversationInbox conversations={conversations} orgSlug={orgSlug} />
+      <ConversationInbox
+        conversations={conversations}
+        orgSlug={orgSlug}
+        currentCursor={cursor}
+        initialSelectedId={selected}
+      />
     </>
   );
 }

@@ -6,19 +6,51 @@ import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import { updateVisitStatusAction } from "@/modules/visits/actions";
 import { getVisitSummary, listOrganizationVisits } from "@/modules/visits/service";
 import { prisma } from "@/server/db/prisma";
 import { formatDate } from "@/lib/utils";
+
+function getVisitStatusTone(status: string) {
+  if (status === "CONFIRMED" || status === "COMPLETED") {
+    return "success" as const;
+  }
+
+  if (status === "CANCELED") {
+    return "neutral" as const;
+  }
+
+  return "warning" as const;
+}
+
+function getVisitActionOptions(status: string) {
+  if (status === "PENDING") {
+    return [
+      { label: "Confirm", nextStatus: "CONFIRMED" },
+      { label: "Cancel", nextStatus: "CANCELED" },
+    ] as const;
+  }
+
+  if (status === "CONFIRMED") {
+    return [
+      { label: "Complete", nextStatus: "COMPLETED" },
+      { label: "Cancel", nextStatus: "CANCELED" },
+    ] as const;
+  }
+
+  return [] as const;
+}
 
 export default async function VisitsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ orgSlug: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; success?: string; error?: string }>;
 }) {
   const { orgSlug } = await params;
-  const view = (await searchParams).tab === "all" ? "all" : "upcoming";
+  const { tab, success, error } = await searchParams;
+  const view = tab === "all" ? "all" : "upcoming";
 
   const [organization, visits, summary] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
@@ -30,9 +62,39 @@ export default async function VisitsPage({
     notFound();
   }
 
+  const successMessage =
+    success === "visit-confirmed"
+      ? "Visit confirmed successfully."
+      : success === "visit-completed"
+        ? "Visit completed successfully."
+        : success === "visit-canceled"
+          ? "Visit canceled successfully."
+          : null;
+
+  const errorMessage =
+    error === "visit-not-found"
+      ? "The selected visit no longer exists for this organization."
+      : error === "invalid-visit-transition"
+        ? "That visit status transition is not allowed."
+        : error === "invalid-visit-status"
+          ? "Visit status action is invalid."
+          : null;
+
   return (
     <>
       <WorkspaceHeader organization={organization} />
+
+      {successMessage ? (
+        <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">
+          {successMessage}
+        </section>
+      ) : null}
+
+      {errorMessage ? (
+        <section className="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800 shadow-soft">
+          {errorMessage}
+        </section>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-4">
         <MetricCard label="All visits" value={String(summary.total)} hint="Current scheduled operational visits." />
@@ -99,10 +161,28 @@ export default async function VisitsPage({
                 <div className="flex flex-col items-start gap-2 lg:items-end">
                   <StatusBadge
                     label={visit.status}
-                    tone={visit.status === "CONFIRMED" ? "success" : "warning"}
+                    tone={getVisitStatusTone(visit.status)}
                   />
                   <p className="text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>
                   <p className="text-sm text-slate-500">{visit.ownerName}</p>
+                  {getVisitActionOptions(visit.status).length ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {getVisitActionOptions(visit.status).map((action) => (
+                        <form key={action.nextStatus} action={updateVisitStatusAction}>
+                          <input type="hidden" name="orgSlug" value={orgSlug} />
+                          <input type="hidden" name="visitId" value={visit.id} />
+                          <input type="hidden" name="nextStatus" value={action.nextStatus} />
+                          <input type="hidden" name="tab" value={view} />
+                          <button
+                            type="submit"
+                            className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                          >
+                            {action.label}
+                          </button>
+                        </form>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </article>
             ))

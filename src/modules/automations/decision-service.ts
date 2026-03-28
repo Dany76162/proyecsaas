@@ -203,6 +203,188 @@ function extractPreferencesFallback(context: PreparedConversationContext) {
   } satisfies AutomationDecision["extractedPreferences"];
 }
 
+function hasMatchedPropertyContext(context: PreparedConversationContext) {
+  return Boolean(context.property && context.propertyMatch?.status !== "no-match");
+}
+
+function hasAvailability(context: PreparedConversationContext) {
+  return context.availability.length > 0;
+}
+
+function getMissingDemandSignals(
+  preferences: AutomationDecision["extractedPreferences"],
+  context: PreparedConversationContext,
+) {
+  const missingSignals: string[] = [];
+  const latestBody = getLatestInboundMessage(context)?.body ?? "";
+
+  if (!preferences.zones.length) {
+    missingSignals.push("zona");
+  }
+
+  if (!preferences.budget && !FALLBACK_BUDGET_HINTS.some((hint) => latestBody.toLowerCase().includes(hint))) {
+    missingSignals.push("presupuesto");
+  }
+
+  if (!preferences.rooms) {
+    missingSignals.push("cantidad de ambientes");
+  }
+
+  if (!context.property && !context.propertyMatch?.consideredSignals.includes("property type")) {
+    missingSignals.push("tipo de propiedad");
+  }
+
+  return missingSignals;
+}
+
+function buildClarifyingQuestion(
+  preferences: AutomationDecision["extractedPreferences"],
+  context: PreparedConversationContext,
+) {
+  const missingSignals = getMissingDemandSignals(preferences, context);
+
+  if (!missingSignals.length) {
+    return "Contame un poco mas sobre la propiedad que te interesa y te acerco una opcion concreta.";
+  }
+
+  if (missingSignals.length === 1) {
+    return `Para acercarte una propiedad mejor, decime ${missingSignals[0]}.`;
+  }
+
+  if (missingSignals.length === 2) {
+    return `Para acercarte una opcion mejor, decime ${missingSignals[0]} y ${missingSignals[1]}.`;
+  }
+
+  return `Para acercarte una propiedad mejor, decime ${missingSignals.slice(0, 2).join(", ")} y ${missingSignals[2]}.`;
+}
+
+function appendInternalNotes(
+  decision: AutomationDecision,
+  notes: Array<string | null | undefined>,
+) {
+  return {
+    ...decision,
+    internalNotes: [decision.internalNotes, ...notes].filter(Boolean).join(" ").trim() || undefined,
+  };
+}
+
+function enrichDecisionWithContext(
+  decision: AutomationDecision,
+  context: PreparedConversationContext,
+) {
+  const latestInbound = getLatestInboundMessage(context);
+  const latestBody = latestInbound?.body.trim() ?? "";
+  const visitRequested = latestBody ? hasVisitIntentFallback(latestBody) : false;
+  const availabilitySummary = getAvailabilitySummary(context);
+  const doubleOptionSummary = getDoubleOptionVisitSummary(context);
+  const concreteScheduledAt = getConcreteScheduledAt(context);
+  const hasMatchedProperty = hasMatchedPropertyContext(context);
+  const availableSlots = hasAvailability(context);
+  const missingSignals = getMissingDemandSignals(decision.extractedPreferences, context);
+
+  if (!hasMatchedProperty) {
+    return appendInternalNotes(
+      {
+        ...decision,
+        nextBestAction:
+          missingSignals.length >= 2 ? "pedir-zona-y-presupuesto" : "clarificar-propiedad-objetivo",
+        visitIntent: visitRequested ? { requested: true } : decision.visitIntent,
+        visitProposal: null,
+        followUpReason:
+          decision.followUpReason ??
+          "No se encontro una propiedad suficientemente clara en el inventario para proponer visita todavia.",
+      },
+      [
+        "No inventory match was available, so the next step stays in clarification mode.",
+        context.propertyMatch?.reasons[0] ?? null,
+      ],
+    );
+  }
+
+  if (
+    availableSlots &&
+    (visitRequested || decision.visitIntent?.requested || decision.qualificationDecision === "QUALIFIED")
+  ) {
+    return appendInternalNotes(
+      {
+        ...decision,
+        qualificationDecision: decision.qualificationDecision ?? "QUALIFIED",
+        leadTemperature:
+          decision.leadTemperature === "unclear" ? "warm" : decision.leadTemperature,
+        nextBestAction: "proponer-visita-propiedad-vinculada",
+        visitIntent: { requested: true },
+        visitProposal: {
+          proposed: Boolean(concreteScheduledAt),
+          slotSummary: doubleOptionSummary ?? availabilitySummary ?? undefined,
+          scheduledAt: concreteScheduledAt,
+        },
+        requiresFollowUp: false,
+        followUpReason: null,
+      },
+      [
+        `Property match is active for ${context.property?.title ?? "the linked property"}.`,
+        availabilitySummary
+          ? `Availability is ready, so the system can push a concrete visit proposal (${doubleOptionSummary ?? availabilitySummary}).`
+          : null,
+      ],
+    );
+  }
+
+  if (
+    hasMatchedProperty &&
+    !availableSlots &&
+    (visitRequested || decision.visitIntent?.requested || decision.leadTemperature === "hot")
+  ) {
+    return appendInternalNotes(
+      {
+        ...decision,
+        qualificationDecision: decision.qualificationDecision ?? "QUALIFIED",
+        nextBestAction: "pedir-horario-o-derivar-por-disponibilidad",
+        visitIntent: { requested: true },
+        visitProposal: {
+          proposed: false,
+          slotSummary: "Sin disponibilidad activa confirmada para la propiedad vinculada.",
+          scheduledAt: null,
+        },
+        requiresFollowUp: true,
+        followUpReason:
+          decision.followUpReason ??
+          `Hay interes por visitar ${context.property?.title ?? "la propiedad vinculada"}, pero falta disponibilidad concreta para cerrarlo.`,
+      },
+      [
+        `The lead shows visit intent for ${context.property?.title ?? "the linked property"}, but there is no active availability yet.`,
+      ],
+    );
+  }
+
+  if (hasMatchedProperty && decision.leadTemperature === "cold") {
+    return appendInternalNotes(
+      {
+        ...decision,
+        nextBestAction: "confirmar-interes-antes-de-visita",
+      },
+      [
+        `Property match exists for ${context.property?.title ?? "the linked property"}, but the lead is still in low-intent discovery.`,
+      ],
+    );
+  }
+
+  return appendInternalNotes(
+    {
+      ...decision,
+      nextBestAction:
+        decision.nextBestAction === "seguir-conversacion"
+          ? "seguir-nutriendo-propiedad-vinculada"
+          : decision.nextBestAction,
+    },
+    [
+      hasMatchedProperty
+        ? `Property context stays anchored on ${context.property?.title ?? "the linked property"}.`
+        : null,
+    ],
+  );
+}
+
 function buildCommercialSignalDefaults(
   context: PreparedConversationContext,
   overrides: Partial<
@@ -266,6 +448,10 @@ function buildPrompt(context: PreparedConversationContext) {
       "- UNCLEAR: aclara contexto o deriva a humano si hace falta.",
       "Reglas comerciales:",
       "- Si hay disponibilidad, preferi proponer dos opciones concretas.",
+      "- Si ya hay una propiedad vinculada o matcheada de forma confiable, usala como contexto principal para decidir el siguiente paso.",
+      "- Si hay propiedad matcheada + disponibilidad + senal clara de interes, orienta la respuesta a proponer visita.",
+      "- Si hay propiedad matcheada pero todavia no alcanza para visita, pedi la aclaracion minima util sin volver a cero.",
+      "- Si NO hay property match claro, no inventes una propiedad: pedi zona, presupuesto, ambientes o tipo segun falte.",
       "- No presiones a leads frios.",
       "- Si el lead es vago, intenta pedir zona, presupuesto o finalidad.",
       "- Deriva a humano si aparecen negociacion, temas legales, friccion repetida o pedido explicito de hablar con una persona.",
@@ -294,6 +480,7 @@ function buildPrompt(context: PreparedConversationContext) {
         conversation: context.conversation,
         lead: context.lead,
         property: context.property,
+        propertyMatch: context.propertyMatch,
         availability: context.availability,
         availabilitySummary,
         preferredVisitOptions: doubleOptionSummary,
@@ -332,7 +519,7 @@ function mapAiDecisionToAutomationDecision(
     typeof payload.proposedVisitDate === "string" &&
     !Number.isNaN(new Date(payload.proposedVisitDate).getTime());
 
-  return {
+  return enrichDecisionWithContext({
     responseText: payload.message.trim(),
     qualificationDecision: mapQualificationDecision(payload),
     visitIntent: payload.shouldScheduleVisit ? { requested: true } : null,
@@ -364,7 +551,7 @@ function mapAiDecisionToAutomationDecision(
     ]
       .filter(Boolean)
       .join(" "),
-  };
+  }, context);
 }
 
 function buildDeterministicFallback(
@@ -379,24 +566,23 @@ function buildDeterministicFallback(
   const concreteScheduledAt = getConcreteScheduledAt(context);
 
   if (!context.property) {
-    return {
-      responseText:
-        "Gracias por escribirnos. Decime que propiedad te interesa y te ayudo mas rapido.",
+    return enrichDecisionWithContext({
+      responseText: buildClarifyingQuestion(extractPreferencesFallback(context), context),
       qualificationDecision: null,
       visitIntent: visitRequested ? { requested: true } : null,
       ...buildCommercialSignalDefaults(context, {
         leadTemperature: "unclear",
-        nextBestAction: "pedir-propiedad",
+        nextBestAction: "clarificar-propiedad-objetivo",
         requiresFollowUp: false,
       }),
       visitProposal: null,
       internalNotes: `Fallback activado (${reason}). Falta contexto de propiedad.`,
-    };
+    }, context);
   }
 
   if (visitRequested) {
     if (availabilitySummary) {
-      return {
+      return enrichDecisionWithContext({
         responseText: `Gracias por tu interes en ${context.property.title}. Podemos coordinar visita. Tengo ${doubleOptionSummary ?? availabilitySummary}. Te sirve alguna?`,
         qualificationDecision: "QUALIFIED",
         visitIntent: { requested: true },
@@ -411,10 +597,10 @@ function buildDeterministicFallback(
           scheduledAt: concreteScheduledAt,
         },
         internalNotes: `Fallback activado (${reason}). Intencion de visita detectada con disponibilidad.`,
-      };
+      }, context);
     }
 
-    return {
+    return enrichDecisionWithContext({
       responseText: `Gracias por tu interes en ${context.property.title}. Quiero ayudarte a coordinar visita. Que dia y horario te quedan mejor?`,
       qualificationDecision: "QUALIFIED",
       visitIntent: { requested: true },
@@ -430,11 +616,11 @@ function buildDeterministicFallback(
         scheduledAt: null,
       },
       internalNotes: `Fallback activado (${reason}). Intencion de visita detectada sin disponibilidad activa.`,
-    };
+    }, context);
   }
 
   if (context.lead.status === "NEW") {
-    return {
+    return enrichDecisionWithContext({
       responseText: `Gracias por tu interes en ${context.property.title}. Estas buscando para vivir o como inversion? Y en que zona te gustaria enfocarte?`,
       qualificationDecision: null,
       visitIntent: null,
@@ -446,10 +632,10 @@ function buildDeterministicFallback(
       }),
       visitProposal: null,
       internalNotes: `Fallback activado (${reason}). Lead nuevo, se envia pregunta comercial de calificacion.`,
-    };
+    }, context);
   }
 
-  return {
+  return enrichDecisionWithContext({
     responseText: `Gracias por tu mensaje sobre ${context.property.title}. Si queres, contame presupuesto, zona ideal o si te interesa coordinar una visita.`,
     qualificationDecision: null,
     visitIntent: null,
@@ -460,7 +646,7 @@ function buildDeterministicFallback(
     }),
     visitProposal: null,
     internalNotes: `Fallback activado (${reason}). Seguimiento comercial seguro con contexto de propiedad.`,
-  };
+  }, context);
 }
 
 async function generateAiDecision(context: PreparedConversationContext) {

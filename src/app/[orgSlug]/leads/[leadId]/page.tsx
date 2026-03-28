@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { updateLeadAction } from "@/modules/leads/actions";
+import { confirmLeadPropertyAction, updateLeadAction } from "@/modules/leads/actions";
 import { getLeadDetail } from "@/modules/leads/service";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { listOrganizationProperties } from "@/modules/properties/service";
@@ -41,6 +41,87 @@ function getFollowUpLabel(category: "TECHNICAL" | "COMMERCIAL" | null) {
   }
 
   return "Operator follow-up";
+}
+
+function getPropertyMatchLabel(
+  status:
+    | "matched"
+    | "existing-link"
+    | "manual-confirmed"
+    | "manual-overridden"
+    | "no-match",
+) {
+  if (status === "matched") {
+    return "Auto-matched";
+  }
+
+  if (status === "existing-link") {
+    return "Existing link";
+  }
+
+  if (status === "manual-confirmed") {
+    return "Confirmed manually";
+  }
+
+  if (status === "manual-overridden") {
+    return "Changed manually";
+  }
+
+  return "Needs manual review";
+}
+
+function getPropertyMatchTone(
+  status:
+    | "matched"
+    | "existing-link"
+    | "manual-confirmed"
+    | "manual-overridden"
+    | "no-match",
+) {
+  if (status === "matched") {
+    return "success" as const;
+  }
+
+  if (status === "existing-link" || status === "manual-confirmed") {
+    return "info" as const;
+  }
+
+  return "neutral" as const;
+}
+
+function formatNextBestAction(action: string | null) {
+  if (!action) {
+    return null;
+  }
+
+  return action
+    .split("-")
+    .join(" ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function getDeliveryStatusTone(status: "RECEIVED" | "PENDING" | "SENT" | "FAILED" | "SKIPPED") {
+  if (status === "SENT" || status === "RECEIVED") {
+    return "success" as const;
+  }
+
+  if (status === "FAILED") {
+    return "warning" as const;
+  }
+
+  return "neutral" as const;
+}
+
+function getVisitStatusTone(status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED") {
+  if (status === "CONFIRMED" || status === "COMPLETED") {
+    return "success" as const;
+  }
+
+  if (status === "CANCELED") {
+    return "neutral" as const;
+  }
+
+  return "warning" as const;
 }
 
 export default async function LeadDetailPage({
@@ -189,11 +270,222 @@ export default async function LeadDetailPage({
         </SectionCard>
       ) : null}
 
+      {lead.propertyMatch ? (
+        <SectionCard
+          eyebrow="Inventory match"
+          title="Property linkage context"
+          description="A lightweight trace of how the workspace kept or assigned the property for this lead."
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge
+              label={getPropertyMatchLabel(lead.propertyMatch.status)}
+              tone={getPropertyMatchTone(lead.propertyMatch.status)}
+            />
+            {lead.propertyMatch.score !== null ? (
+              <StatusBadge label={`Score: ${lead.propertyMatch.score}`} tone="neutral" />
+            ) : null}
+            {lead.propertyMatch.consideredSignals.map((signal) => (
+              <StatusBadge key={signal} label={`Signal: ${signal}`} tone="neutral" />
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <p className="text-sm font-semibold text-slate-950">
+              {lead.propertyMatch.propertyId && lead.propertyTitle !== "No property linked yet"
+                ? lead.propertyTitle
+                : "No property assigned automatically"}
+            </p>
+            {lead.propertyMatch.propertyId ? (
+              <Link
+                href={`/${orgSlug}/properties/${lead.propertyMatch.propertyId}`}
+                className="mt-2 inline-flex rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Open matched property
+              </Link>
+            ) : null}
+          </div>
+
+          <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
+            {lead.propertyMatch.reasons.map((reason) => (
+              <li key={reason} className="rounded-2xl border border-slate-200 px-4 py-3">
+                {reason}
+              </li>
+            ))}
+          </ul>
+
+          {lead.propertyMatch.shortlist.length ? (
+            <div className="mt-5 space-y-3">
+              <p className="text-sm font-semibold text-slate-950">
+                Suggested properties for manual review
+              </p>
+              {lead.propertyMatch.shortlist.map((candidate) => (
+                <article
+                  key={candidate.propertyId}
+                  className="rounded-2xl border border-slate-200 p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-950">{candidate.title}</p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {[candidate.neighborhood, candidate.city].filter(Boolean).join(" / ") ||
+                          "Location pending"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusBadge label={`Score: ${candidate.score}`} tone="neutral" />
+                      {candidate.propertyType ? (
+                        <StatusBadge label={candidate.propertyType} tone="neutral" />
+                      ) : null}
+                      {candidate.bedrooms ? (
+                        <StatusBadge label={`${candidate.bedrooms} br`} tone="neutral" />
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                    {candidate.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <Link
+                      href={`/${orgSlug}/properties/${candidate.propertyId}`}
+                      className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      Open property
+                    </Link>
+                    <form action={confirmLeadPropertyAction}>
+                      <input type="hidden" name="orgSlug" value={orgSlug} />
+                      <input type="hidden" name="leadId" value={lead.id} />
+                      <input type="hidden" name="propertyId" value={candidate.propertyId} />
+                      <button
+                        type="submit"
+                        className="rounded-full bg-brand-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-600"
+                      >
+                        {lead.propertyId === candidate.propertyId
+                          ? "Keep this property"
+                          : lead.propertyId
+                            ? "Use this instead"
+                            : "Confirm this property"}
+                      </button>
+                    </form>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </SectionCard>
+      ) : null}
+
+      {lead.nextBestAction || lead.automationSummary ? (
+        <SectionCard
+          eyebrow="Automation guidance"
+          title="Recommended next step"
+          description="A concise operational read of what the workflow thinks should happen next."
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            {lead.nextBestAction ? (
+              <StatusBadge
+                label={formatNextBestAction(lead.nextBestAction) ?? "Suggested action"}
+                tone="info"
+              />
+            ) : null}
+            {lead.requiresFollowUp ? (
+              <StatusBadge
+                label={getFollowUpLabel(lead.followUpCategory)}
+                tone="warning"
+              />
+            ) : null}
+          </div>
+          {lead.automationSummary ? (
+            <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
+              {lead.automationSummary}
+            </p>
+          ) : null}
+        </SectionCard>
+      ) : null}
+
       {lead.requiresFollowUp && lead.followUpReason ? (
         <section className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-soft">
           <p className="font-semibold">{getFollowUpLabel(lead.followUpCategory)} recommended</p>
           <p className="mt-1 leading-6">{lead.followUpReason}</p>
         </section>
+      ) : null}
+
+      {lead.conversationContext ? (
+        <SectionCard
+          eyebrow="Conversation"
+          title="WhatsApp context"
+          description="The assigned agent can review the latest bot-assisted thread here without leaving the lead."
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-base font-semibold text-slate-950">
+                {lead.conversationContext.subject}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {lead.conversationContext.participantName}
+                {" / "}
+                {lead.conversationContext.participantPhone}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge label={lead.conversationContext.status} />
+              {lead.conversationContext.followUpActive ? (
+                <StatusBadge
+                  label={getFollowUpLabel(lead.conversationContext.followUpCategory)}
+                  tone="warning"
+                />
+              ) : null}
+              <Link
+                href={`/${orgSlug}/conversations`}
+                className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Open full inbox
+              </Link>
+            </div>
+          </div>
+
+          {lead.conversationContext.followUpActive && lead.conversationContext.followUpReason ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {lead.conversationContext.followUpReason}
+            </div>
+          ) : null}
+
+          <div className="mt-5 space-y-3">
+            {lead.conversationContext.messages.length ? (
+              lead.conversationContext.messages.map((message) => (
+                <article
+                  key={message.id}
+                  className={`rounded-2xl px-4 py-3 ${
+                    message.direction === "OUTBOUND"
+                      ? "ml-auto border border-brand-200 bg-brand-50"
+                      : "mr-auto border border-slate-200 bg-slate-50"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-950">{message.senderName}</p>
+                    <StatusBadge label={message.direction} tone="neutral" />
+                    {message.direction === "OUTBOUND" ? (
+                      <StatusBadge
+                        label={message.deliveryStatus}
+                        tone={getDeliveryStatusTone(message.deliveryStatus)}
+                      />
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">{message.body}</p>
+                  <p className="mt-2 text-xs text-slate-500">{formatDateTime(message.sentAt)}</p>
+                  {message.direction === "OUTBOUND" && message.deliveryError ? (
+                    <p className="mt-2 text-xs font-medium text-rose-600">{message.deliveryError}</p>
+                  ) : null}
+                </article>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No WhatsApp messages stored yet for this lead.</p>
+            )}
+          </div>
+        </SectionCard>
       ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
@@ -370,7 +662,7 @@ export default async function LeadDetailPage({
                     <p className="font-semibold text-slate-950">{visit.propertyTitle}</p>
                     <StatusBadge
                       label={visit.status}
-                      tone={visit.status === "CONFIRMED" ? "success" : "warning"}
+                      tone={getVisitStatusTone(visit.status)}
                     />
                   </div>
                   <p className="mt-2 text-sm text-slate-500">

@@ -1,9 +1,11 @@
 "use server";
 
 import { MembershipRole } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import type { ActionResult } from "@/modules/types";
-import { createPropertySchema } from "@/modules/properties/schemas";
+import { createPropertySchema, updatePropertySchema } from "@/modules/properties/schemas";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 
@@ -43,4 +45,83 @@ export async function createPropertyAction(
   });
 
   return { success: true, message: "Property created." };
+}
+
+function redirectToPropertyResult(
+  orgSlug: string,
+  propertyId: string,
+  params: Record<string, string>,
+): never {
+  const search = new URLSearchParams(params);
+  redirect(`/${orgSlug}/properties/${propertyId}?${search.toString()}`);
+}
+
+export async function updatePropertyAction(formData: FormData) {
+  const orgSlug = String(formData.get("orgSlug") ?? "");
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const rawPropertyId = String(formData.get("propertyId") ?? "");
+
+  const parsed = updatePropertySchema.safeParse({
+    propertyId: rawPropertyId,
+    title: String(formData.get("title") ?? ""),
+    address: String(formData.get("address") ?? ""),
+    city: String(formData.get("city") ?? ""),
+    neighborhood: String(formData.get("neighborhood") ?? ""),
+    propertyType: String(formData.get("propertyType") ?? ""),
+    priceCents: String(formData.get("priceCents") ?? ""),
+    currency: String(formData.get("currency") ?? ""),
+    bedrooms: String(formData.get("bedrooms") ?? ""),
+    bathrooms: String(formData.get("bathrooms") ?? ""),
+    surfaceM2: String(formData.get("surfaceM2") ?? ""),
+    status: String(formData.get("status") ?? ""),
+    publicVisible: formData.get("publicVisible") === "on",
+  });
+
+  if (!parsed.success) {
+    redirectToPropertyResult(orgSlug, rawPropertyId, { error: "invalid-property" });
+  }
+
+  const property = await prisma.property.findFirst({
+    where: {
+      id: parsed.data.propertyId,
+      organizationId: membership.organization.id,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!property) {
+    redirectToPropertyResult(orgSlug, parsed.data.propertyId, { error: "property-not-found" });
+  }
+
+  await prisma.property.update({
+    where: {
+      id: property.id,
+    },
+    data: {
+      title: parsed.data.title,
+      address: parsed.data.address,
+      city: parsed.data.city,
+      neighborhood: parsed.data.neighborhood,
+      propertyType: parsed.data.propertyType,
+      priceCents: parsed.data.priceCents,
+      currency: parsed.data.currency ?? "USD",
+      bedrooms: parsed.data.bedrooms,
+      bathrooms: parsed.data.bathrooms,
+      surfaceM2: parsed.data.surfaceM2,
+      status: parsed.data.status,
+      publicVisible: parsed.data.publicVisible,
+    },
+  });
+
+  revalidatePath(`/${orgSlug}`);
+  revalidatePath(`/${orgSlug}/properties`);
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  revalidatePath(`/${orgSlug}/leads`);
+  revalidatePath(`/${orgSlug}/visits`);
+
+  redirectToPropertyResult(orgSlug, property.id, { success: "property-updated" });
 }

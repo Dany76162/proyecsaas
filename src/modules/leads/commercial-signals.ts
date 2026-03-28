@@ -1,4 +1,5 @@
 import type { AutomationDecision } from "@/modules/automations/types";
+import type { LeadPropertyMatchTrace } from "@/modules/properties/matching";
 
 const COMMERCIAL_MARKER_START = "[AI_COMMERCIAL]";
 const COMMERCIAL_MARKER_END = "[/AI_COMMERCIAL]";
@@ -11,8 +12,10 @@ export type LeadCommercialSignals = {
   leadTemperature: LeadTemperature;
   extractedPreferences: LeadExtractedPreferences;
   nextBestAction: string | null;
+  automationSummary: string | null;
   requiresFollowUp: boolean;
   followUpReason: string | null;
+  propertyMatch: LeadPropertyMatchTrace | null;
 };
 
 function getDefaultPreferences(): LeadExtractedPreferences {
@@ -56,15 +59,26 @@ export function stripCommercialSignals(notes: string | null | undefined) {
 export function encodeCommercialSignalsInNotes(
   notes: string | null | undefined,
   decision: AutomationDecision,
+  propertyMatch?: LeadPropertyMatchTrace | null,
+  automationSummary?: string | null,
 ) {
-  const cleanNotes = stripCommercialSignals(notes);
-  const metadata = JSON.stringify({
+  return writeLeadCommercialSignals(notes, {
     leadTemperature: decision.leadTemperature,
     extractedPreferences: decision.extractedPreferences,
     nextBestAction: decision.nextBestAction,
+    automationSummary: automationSummary ?? decision.internalNotes ?? null,
     requiresFollowUp: decision.requiresFollowUp,
     followUpReason: decision.followUpReason,
+    propertyMatch: propertyMatch ?? null,
   });
+}
+
+export function writeLeadCommercialSignals(
+  notes: string | null | undefined,
+  payload: Omit<LeadCommercialSignals, "notes">,
+) {
+  const cleanNotes = stripCommercialSignals(notes);
+  const metadata = JSON.stringify(payload);
 
   return [cleanNotes, `${COMMERCIAL_MARKER_START}${metadata}${COMMERCIAL_MARKER_END}`]
     .filter(Boolean)
@@ -95,8 +109,15 @@ export function readLeadCommercialSignals(input: {
           zones: parsed.extractedPreferences?.zones ?? [],
         },
         nextBestAction: parsed.nextBestAction ?? null,
+        automationSummary: parsed.automationSummary ?? null,
         requiresFollowUp: parsed.requiresFollowUp ?? false,
         followUpReason: parsed.followUpReason ?? null,
+        propertyMatch: parsed.propertyMatch
+          ? {
+              ...parsed.propertyMatch,
+              shortlist: parsed.propertyMatch.shortlist ?? [],
+            }
+          : null,
       };
     } catch {
       return {
@@ -116,8 +137,10 @@ export function readLeadCommercialSignals(input: {
             : null,
         },
         nextBestAction: null,
+        automationSummary: null,
         requiresFollowUp: false,
         followUpReason: null,
+        propertyMatch: null,
       };
     }
   }
@@ -140,8 +163,10 @@ export function readLeadCommercialSignals(input: {
           : null,
     },
     nextBestAction: null,
+    automationSummary: null,
     requiresFollowUp: false,
     followUpReason: null,
+    propertyMatch: null,
   };
 }
 
