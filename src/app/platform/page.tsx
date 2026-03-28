@@ -72,20 +72,64 @@ export default async function PlatformPage() {
 
   const criticalCount = orgs.filter((o) => o.health === "critical").length;
   const warningCount = orgs.filter((o) => o.health === "warning").length;
+  const totalLeads7d = orgs.reduce((sum, o) => sum + o.recentLeadCount, 0);
+  const totalFailed7d = orgs.reduce((sum, o) => sum + o.recentFailedDeliveries, 0);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Inmobiliarias activas</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {orgs.length} en total
-          {criticalCount > 0 && (
-            <span className="ml-2 font-medium text-red-600">{criticalCount} con error crítico</span>
-          )}
-          {warningCount > 0 && (
-            <span className="ml-2 font-medium text-amber-600">{warningCount} con advertencia</span>
-          )}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+          Control de Plataforma
+        </h1>
+        <p className="text-sm text-slate-500">
+          Supervisión global de tenants, actividad operativa y estado de conexiones activas.
         </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Cuentas Activas
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-semibold text-slate-950">{orgs.length}</span>
+            <span className="text-sm text-slate-500">total</span>
+          </div>
+        </div>
+        
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Alertas de Salud
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className={`text-3xl font-semibold ${criticalCount > 0 ? "text-red-600" : "text-slate-950"}`}>
+              {criticalCount + warningCount}
+            </span>
+            <span className="text-sm text-slate-500">requieren revisión</span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Tráfico Leads (7d)
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-semibold text-slate-950">{totalLeads7d}</span>
+            <span className="text-sm text-slate-500">procesados</span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Fallas Delivery (7d)
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className={`text-3xl font-semibold ${totalFailed7d > 0 ? "text-red-600" : "text-emerald-600"}`}>
+              {totalFailed7d}
+            </span>
+            <span className="text-sm text-slate-500">errores de WABA</span>
+          </div>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
@@ -93,6 +137,7 @@ export default async function PlatformPage() {
           <thead>
             <tr className="border-b bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <th className="px-5 py-3">Inmobiliaria</th>
+              <th className="px-5 py-3">Modelo Comercial</th>
               <th className="px-5 py-3">Estado</th>
               <th className="px-5 py-3">WhatsApp</th>
               <th className="px-5 py-3">Leads (7d)</th>
@@ -111,11 +156,14 @@ export default async function PlatformPage() {
               >
                 <td className="px-5 py-4">
                   <div>
-                    <p className="font-medium text-slate-900">{org.name}</p>
-                    <p className="text-xs text-slate-400">
-                      {org.city} · {org.planLabel}
-                    </p>
+                    <p className="font-semibold text-slate-950">{org.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{org.city}</p>
                   </div>
+                </td>
+                <td className="px-5 py-4">
+                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                    Pendiente definir
+                  </span>
                 </td>
                 <td className="px-5 py-4">
                   <HealthBadge status={org.health} />
