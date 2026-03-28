@@ -12,7 +12,7 @@ export default async function OrganizationLayout({
   params: Promise<{ orgSlug: string }>;
 }>) {
   const { orgSlug } = await params;
-  await requireOrganizationMembership(orgSlug);
+  const { membership } = await requireOrganizationMembership(orgSlug);
   const organization = await getOrganizationWorkspace(orgSlug);
 
   if (!organization) {
@@ -22,7 +22,7 @@ export default async function OrganizationLayout({
   return (
     <div className="min-h-screen bg-slate-100">
       <div className="mx-auto grid min-h-screen max-w-7xl gap-6 px-4 py-4 lg:grid-cols-[280px_1fr] lg:px-6 lg:py-6">
-        <WorkspaceSidebar organization={organization} />
+        <WorkspaceSidebar organization={organization} role={membership.role} />
         <main className="space-y-6">{children}</main>
       </div>
     </div>
