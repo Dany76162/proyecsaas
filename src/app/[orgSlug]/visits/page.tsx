@@ -26,15 +26,15 @@ function getVisitStatusTone(status: string) {
 function getVisitActionOptions(status: string) {
   if (status === "PENDING") {
     return [
-      { label: "Confirm", nextStatus: "CONFIRMED" },
-      { label: "Cancel", nextStatus: "CANCELED" },
+      { label: "Confirmar", nextStatus: "CONFIRMED" },
+      { label: "Cancelar", nextStatus: "CANCELED" },
     ] as const;
   }
 
   if (status === "CONFIRMED") {
     return [
-      { label: "Complete", nextStatus: "COMPLETED" },
-      { label: "Cancel", nextStatus: "CANCELED" },
+      { label: "Completar", nextStatus: "COMPLETED" },
+      { label: "Cancelar", nextStatus: "CANCELED" },
     ] as const;
   }
 
@@ -64,20 +64,20 @@ export default async function VisitsPage({
 
   const successMessage =
     success === "visit-confirmed"
-      ? "Visit confirmed successfully."
+      ? "Visita confirmada exitosamente."
       : success === "visit-completed"
-        ? "Visit completed successfully."
+        ? "Visita completada exitosamente."
         : success === "visit-canceled"
-          ? "Visit canceled successfully."
+          ? "Visita cancelada exitosamente."
           : null;
 
   const errorMessage =
     error === "visit-not-found"
-      ? "The selected visit no longer exists for this organization."
+      ? "La visita seleccionada ya no existe en esta organización."
       : error === "invalid-visit-transition"
-        ? "That visit status transition is not allowed."
+        ? "Ese cambio de estado de visita no está permitido."
         : error === "invalid-visit-status"
-          ? "Visit status action is invalid."
+          ? "Acción de estado de visita inválida."
           : null;
 
   return (
@@ -97,16 +97,16 @@ export default async function VisitsPage({
       ) : null}
 
       <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="All visits" value={String(summary.total)} hint="Current scheduled operational visits." />
-        <MetricCard label="Pending" value={String(summary.pendingCount)} hint="Awaiting final confirmation." />
-        <MetricCard label="Confirmed" value={String(summary.confirmedCount)} hint="Ready to execute." />
-        <MetricCard label="Completed" value={String(summary.completedCount)} hint="Finished and ready for follow-up." />
+        <MetricCard label="Todas" value={String(summary.total)} hint="Agenda de visitas activas." />
+        <MetricCard label="Pendientes" value={String(summary.pendingCount)} hint="A la espera de confirmación." />
+        <MetricCard label="Confirmadas" value={String(summary.confirmedCount)} hint="Listas para realizarse." />
+        <MetricCard label="Completadas" value={String(summary.completedCount)} hint="Finalizadas, revisión pendiente." />
       </section>
 
       <SectionCard
-        eyebrow="Schedule"
-        title="Visit board"
-        description="Lean scheduling surface focused on clarity, not a full calendar engine."
+        eyebrow="Agenda"
+        title="Tablero de Visitas"
+        description="Visualización rápida de visitas organizadas por estado."
       >
         <nav className="mb-5 flex gap-4 border-b border-slate-200 pb-4">
           <Link
@@ -117,7 +117,7 @@ export default async function VisitsPage({
                 : "text-sm font-medium text-slate-500 hover:text-slate-700"
             }
           >
-            Upcoming
+            Próximas
           </Link>
           <Link
             href={`/${orgSlug}/visits?tab=all`}
@@ -127,7 +127,7 @@ export default async function VisitsPage({
                 : "text-sm font-medium text-slate-500 hover:text-slate-700"
             }
           >
-            All visits
+            Todas
           </Link>
         </nav>
 
@@ -135,8 +135,8 @@ export default async function VisitsPage({
           {visits.length === 0 ? (
             <p className="py-6 text-center text-sm text-slate-400">
               {view === "upcoming"
-                ? 'No pending or confirmed visits. Use "All visits" to see history.'
-                : "No visits recorded yet."}
+                ? 'No hay visitas pendientes ni confirmadas. Usá "Todas" para el historial.'
+                : "No hay visitas registradas."}
             </p>
           ) : (
             visits.map((visit) => (
@@ -152,7 +152,7 @@ export default async function VisitsPage({
                     </Link>
                     {" / "}
                     <Link href={`/${orgSlug}/leads/${visit.leadId}`} className="hover:text-brand-600">
-                      Lead detail
+                      Ver lead
                     </Link>
                   </p>
                   <p className="mt-3 text-sm leading-6 text-slate-600">{visit.notes}</p>

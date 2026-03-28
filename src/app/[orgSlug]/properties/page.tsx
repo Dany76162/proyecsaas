@@ -46,26 +46,26 @@ export default async function PropertiesPage({
 
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Portfolio size"
+          label="Inventario total"
           value={String(summary.total)}
-          hint="Current inventory represented in the tenant workspace."
+          hint="Total de propiedades cargadas en la inmobiliaria."
         />
         <MetricCard
-          label="Available"
+          label="Disponibles"
           value={String(summary.availableCount)}
-          hint="Ready for assignment, matching, and visit scheduling."
+          hint="Listas para asignar leads y coordinar visitas."
         />
         <MetricCard
-          label="Public-ready"
+          label="Aptas publicación"
           value={String(summary.publicCount)}
-          hint="Visible on the future public map and property discovery routes."
+          hint="Listas para alimentar mapas públicos y portales."
         />
       </section>
 
       <SectionCard
-        eyebrow="Inventory"
-        title="Property portfolio"
-        description="Every property can now act as the start of a concrete property -> lead -> visit flow."
+        eyebrow="Inventario"
+        title="Propiedades"
+        description="Cada propiedad es el inicio del flujo operativo hacia leads y visitas."
       >
         <div className="grid gap-4 xl:grid-cols-2">
           {properties.map((property) => (
@@ -78,7 +78,7 @@ export default async function PropertiesPage({
                 <div>
                   <p className="text-lg font-semibold text-slate-950">{property.title}</p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Location details pending"}
+                    {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Ubicación pendiente"}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
@@ -87,21 +87,21 @@ export default async function PropertiesPage({
                     tone={getPropertyStatusTone(property.status)}
                   />
                   <StatusBadge
-                    label={property.publicVisible ? "Public" : "Internal"}
+                    label={property.publicVisible ? "Público" : "Interno"}
                     tone={property.publicVisible ? "info" : "neutral"}
                   />
                 </div>
               </div>
 
               <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
-                <span>{property.propertyType || "Property"}</span>
-                <span>{property.bedrooms ?? 0} bed</span>
-                <span>{property.bathrooms ?? 0} bath</span>
+                <span>{property.propertyType || "Propiedad"}</span>
+                <span>{property.bedrooms ?? 0} dor</span>
+                <span>{property.bathrooms ?? 0} ba</span>
                 <span>{property.surfaceM2 ?? 0} m2</span>
               </div>
 
               <p className="mt-5 text-2xl font-semibold text-slate-950">
-                {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Price on request"}
+                {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Precio a consultar"}
               </p>
             </Link>
           ))}
@@ -110,7 +110,7 @@ export default async function PropertiesPage({
         {properties.length < summary.total && (
           <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
             <p className="text-sm font-medium text-slate-600">
-              Showing the latest {properties.length} properties out of {summary.total} total. Filter to see the rest.
+              Mostrando las {properties.length} propiedades más recientes de {summary.total}. Usa los filtros para ver el resto.
             </p>
           </div>
         )}

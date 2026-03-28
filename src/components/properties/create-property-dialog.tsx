@@ -28,7 +28,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
         setIsOpen(false);
         router.refresh();
       } else {
-        setError(result.message || "Failed to save property");
+        setError(result.message || "Error al guardar la propiedad");
       }
     });
   }
@@ -39,14 +39,14 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
         onClick={() => setIsOpen(true)}
         className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
       >
-        Upload property
+        Cargar propiedad
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[1.5rem] bg-white p-6 shadow-xl relative top-0 animate-in fade-in zoom-in-95 duration-200">
-            <h2 className="text-xl font-semibold tracking-tight text-slate-950">Upload property</h2>
-            <p className="mt-2 text-sm text-slate-500">Register new inventory directly into your portfolio.</p>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-950">Cargar propiedad</h2>
+            <p className="mt-2 text-sm text-slate-500">Ingresá nuevo inventario directo a tu cartera.</p>
 
             {error && (
               <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-100">
@@ -56,34 +56,34 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
             <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Description (Title)</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción (Título)</label>
                 <input 
                   required 
                   name="title" 
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500" 
-                  placeholder="e.g. Modern Apartment in Downtown" 
+                  placeholder="ej. Departamento Moderno en Palermo" 
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Address</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Dirección</label>
                 <input 
                   required 
                   name="address" 
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500" 
-                  placeholder="e.g. 123 Main St" 
+                  placeholder="ej. Av Cabildo 1234" 
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">City</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Ciudad</label>
                 <input 
                   required 
                   name="city" 
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500" 
-                  placeholder="e.g. New York" 
+                  placeholder="ej. Buenos Aires" 
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Price (in cents)</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Precio (Valor numérico)</label>
                 <input 
                   required 
                   type="number" 
@@ -100,14 +100,14 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                   onClick={() => setIsOpen(false)} 
                   className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button 
                   type="submit" 
                   disabled={isPending} 
                   className="rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50"
                 >
-                  {isPending ? "Saving..." : "Save property"}
+                  {isPending ? "Guardando..." : "Guardar propiedad"}
                 </button>
               </div>
             </form>

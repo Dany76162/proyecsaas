@@ -13,17 +13,16 @@ type WorkspaceSidebarProps = {
 };
 
 const OPERATION_NAV = [
+  { label: "Inicio", path: "" },
   { label: "Leads", path: "/leads" },
-  { label: "Conversations", path: "/conversations" },
-  { label: "Visits", path: "/visits" },
-  { label: "Properties", path: "/properties" },
+  { label: "Conversaciones", path: "/conversations" },
+  { label: "Visitas", path: "/visits" },
+  { label: "Propiedades", path: "/properties" },
 ] as const;
 
 const MANAGEMENT_NAV = [
-  { label: "Overview", path: "" },
-  { label: "Team", path: "/settings/users" },
-  { label: "Organization", path: "/settings/organization" },
-  { label: "Integrations", path: "/settings/integrations" },
+  { label: "Equipo", path: "/settings/users" },
+  { label: "Organización", path: "/settings/organization" },
 ] as const;
 
 function isAdminOrOwner(role: MembershipRole): boolean {
@@ -46,7 +45,7 @@ export function WorkspaceSidebar({ organization, role }: WorkspaceSidebarProps) 
         className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
       >
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-          ProyecSaaS
+          RaicesPilot
         </p>
         <h2 className="mt-2 text-lg font-semibold">{organization.name}</h2>
         <p className="mt-1 text-sm text-slate-400">{organization.city}</p>
@@ -54,7 +53,7 @@ export function WorkspaceSidebar({ organization, role }: WorkspaceSidebarProps) 
 
       <div className="mt-6 space-y-1">
         <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Operations
+          Operación
         </p>
         {OPERATION_NAV.map((item) => (
           <Link
@@ -75,7 +74,7 @@ export function WorkspaceSidebar({ organization, role }: WorkspaceSidebarProps) 
       {isAdminOrOwner(role) && (
         <div className="mt-6 space-y-1">
           <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Management
+            Administración
           </p>
           {MANAGEMENT_NAV.map((item) => (
             <Link

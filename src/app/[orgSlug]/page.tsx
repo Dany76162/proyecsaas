@@ -58,48 +58,46 @@ export default async function OrganizationHomePage({
     <>
       <WorkspaceHeader organization={organization} />
 
-      <SetupChecklist orgSlug={orgSlug} {...setupChecklist} />
-
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Active leads"
+          label="Leads activos"
           value={String(organization.activeLeadCount)}
-          hint="Live prospects currently being worked by the commercial team."
+          hint="Candidatos siendo gestionados por el equipo comercial."
         />
         <MetricCard
-          label="Portfolio"
+          label="Propiedades"
           value={String(organization.propertyCount)}
-          hint={`${organization.availablePropertyCount} properties are immediately available.`}
+          hint={`${organization.availablePropertyCount} propiedades disponibles.`}
         />
         <MetricCard
-          label="Public listings"
+          label="Aptos publicación"
           value={String(organization.publicPropertyCount)}
-          hint="Ready to feed the future public map and listing pages."
+          hint="Listas para publicar en mapas y portales."
         />
         <MetricCard
-          label="Team members"
+          label="Equipo"
           value={String(organization.memberCount)}
-          hint="Visible role ownership for the tenant workspace."
+          hint="Usuarios activos en la inmobiliaria."
         />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
         <SectionCard
-          eyebrow="CRM pulse"
-          title="Lead pipeline snapshot"
-          description="A lean first look at lead ownership and stage distribution."
+          eyebrow="Pulso CRM"
+          title="Embudo de Leads"
+          description="Vistazo rápido del estado y responsables de las oportunidades."
         >
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm text-slate-500">Total leads</p>
+              <p className="text-sm text-slate-500">Total</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{leadSummary.total}</p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm text-slate-500">New this cycle</p>
+              <p className="text-sm text-slate-500">Nuevos</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{leadSummary.newCount}</p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm text-slate-500">Interested</p>
+              <p className="text-sm text-slate-500">Interesados</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">
                 {leadSummary.interestedCount}
               </p>
@@ -137,9 +135,9 @@ export default async function OrganizationHomePage({
         </SectionCard>
 
         <SectionCard
-          eyebrow="Workspace team"
-          title="Roles and ownership"
-          description="Users are already represented as organization-scoped members with explicit roles."
+          eyebrow="Equipo"
+          title="Roles y permisos"
+          description="Usuarios y configuración de accesos a la cuenta."
         >
           <div className="space-y-3">
             {roleBreakdown.map((item) => (
@@ -154,7 +152,7 @@ export default async function OrganizationHomePage({
           </div>
 
           <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-4">
-            <p className="text-sm font-medium text-slate-700">Current member list</p>
+            <p className="text-sm font-medium text-slate-700">Miembros actuales</p>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               {users.map((user) => user.fullName).join(", ")}.
             </p>
@@ -163,25 +161,25 @@ export default async function OrganizationHomePage({
       </section>
 
       <SectionCard
-        eyebrow="Portfolio pulse"
-        title="Property readiness"
-        description="Inventory is already separated from public visibility so publishing can remain deliberate."
+        eyebrow="Inventario"
+        title="Estado de propiedades"
+        description="El inventario interno está separado de la visibilidad pública para control total."
       >
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Available now</p>
+            <p className="text-sm text-slate-500">Disponibles</p>
             <p className="mt-2 text-2xl font-semibold text-slate-950">
               {propertySummary.availableCount}
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Public-ready</p>
+            <p className="text-sm text-slate-500">Listas para publicar</p>
             <p className="mt-2 text-2xl font-semibold text-slate-950">
               {propertySummary.publicCount}
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Average ticket</p>
+            <p className="text-sm text-slate-500">Ticket promedio</p>
             <p className="mt-2 text-2xl font-semibold text-slate-950">
               {formatCurrency(propertySummary.averageTicketCents, properties[0]?.currency ?? "USD")}
             </p>
@@ -194,7 +192,7 @@ export default async function OrganizationHomePage({
               <div className="flex items-center justify-between">
                 <p className="text-lg font-semibold text-slate-950">{property.title}</p>
                 <StatusBadge
-                  label={property.publicVisible ? "Public" : "Private"}
+                  label={property.publicVisible ? "Público" : "Privado"}
                   tone={property.publicVisible ? "success" : "neutral"}
                 />
               </div>
@@ -202,10 +200,10 @@ export default async function OrganizationHomePage({
                 {property.neighborhood}, {property.city}
               </p>
               <p className="mt-4 text-sm text-slate-600">
-                {property.bedrooms ?? 0} bed / {property.bathrooms ?? 0} bath / {property.surfaceM2 ?? 0} m2
+                {property.bedrooms ?? 0} dor / {property.bathrooms ?? 0} ba / {property.surfaceM2 ?? 0} m2
               </p>
               <p className="mt-4 text-lg font-semibold text-slate-950">
-                {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Price on request"}
+                {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Precio a consultar"}
               </p>
             </div>
           ))}
@@ -213,23 +211,23 @@ export default async function OrganizationHomePage({
       </SectionCard>
 
       <SectionCard
-        eyebrow="Visit pipeline"
-        title="Upcoming visits"
-        description="Visits now connect the selected property and active lead in a single operational flow."
+        eyebrow="Agenda"
+        title="Próximas visitas"
+        description="Visitas programadas conectando al lead con la propiedad en un único flujo operativo."
       >
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Scheduled</p>
+            <p className="text-sm text-slate-500">Programadas</p>
             <p className="mt-2 text-2xl font-semibold text-slate-950">{visitSummary.total}</p>
           </div>
           <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Pending</p>
+            <p className="text-sm text-slate-500">Pendientes</p>
             <p className="mt-2 text-2xl font-semibold text-slate-950">
               {visitSummary.pendingCount}
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-sm text-slate-500">Confirmed</p>
+            <p className="text-sm text-slate-500">Confirmadas</p>
             <p className="mt-2 text-2xl font-semibold text-slate-950">
               {visitSummary.confirmedCount}
             </p>
@@ -261,9 +259,9 @@ export default async function OrganizationHomePage({
       </SectionCard>
 
       <SectionCard
-        eyebrow="Notifications"
-        title="Recent internal events"
-        description="Visit events and automation follow-up signals now share the same lightweight workspace feed so operators can spot action-required states faster."
+        eyebrow="Notificaciones"
+        title="Actividad reciente"
+        description="Historial de seguimiento y eventos recientes para que el equipo detecte interacciones pendientes rápidamente."
       >
         <div className="space-y-3">
           {notifications.map((notification) => (
@@ -276,10 +274,10 @@ export default async function OrganizationHomePage({
                   <StatusBadge
                     label={
                       notification.type === "OPERATOR_ACTION_REQUIRED"
-                        ? "Action required"
+                        ? "Acción requerida"
                         : notification.type === "FOLLOW_UP_RESOLVED"
-                          ? "Resolved"
-                        : "Visit event"
+                          ? "Resuelto"
+                        : "Evento de visita"
                     }
                     tone={
                       notification.type === "OPERATOR_ACTION_REQUIRED"
@@ -291,7 +289,7 @@ export default async function OrganizationHomePage({
                   />
                   {notification.link ? (
                     <Link href={notification.link} className="text-sm font-medium text-brand-600">
-                      Open
+                      Abrir
                     </Link>
                   ) : null}
                 </div>

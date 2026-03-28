@@ -59,23 +59,23 @@ export default async function LeadsPage({
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
-          eyebrow="Action"
-          title="New lead"
-          description="Fast manual capture for agents working the pipeline in real time."
+          eyebrow="Acción"
+          title="Nuevo lead"
+          description="Carga rápida manual para agilidad comercial."
         >
           <form action={createLeadAction} className="grid gap-3 md:grid-cols-2">
             <input type="hidden" name="orgSlug" value={orgSlug} />
             <label className="space-y-2 text-sm text-slate-600">
-              <span>Name</span>
+              <span>Nombre y Apellido</span>
               <input
                 name="fullName"
                 required
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-                placeholder="Lead full name"
+                placeholder="Nombre del lead"
               />
             </label>
             <label className="space-y-2 text-sm text-slate-600">
-              <span>Phone</span>
+              <span>Teléfono</span>
               <input
                 name="phone"
                 required
@@ -84,12 +84,12 @@ export default async function LeadsPage({
               />
             </label>
             <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
-              <span>Email (optional)</span>
+              <span>Email (opcional)</span>
               <input
                 name="email"
                 type="email"
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-                placeholder="lead@example.com"
+                placeholder="lead@ejemplo.com"
               />
             </label>
             <div className="md:col-span-2">
@@ -97,84 +97,90 @@ export default async function LeadsPage({
                 type="submit"
                 className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
               >
-                New Lead
+                Crear Lead
               </button>
             </div>
           </form>
         </SectionCard>
 
         <SectionCard
-          eyebrow="Search"
-          title="Find leads quickly"
-          description="Filter by name, phone, or email without leaving the list."
+          eyebrow="Búsqueda"
+          title="Búsqueda rápida"
+          description="Filtrá por nombre, teléfono o email."
         >
           <form className="space-y-3">
             <input
               name="q"
               defaultValue={q}
               className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-              placeholder="Search name, phone, or email"
+              placeholder="Buscar por nombre, teléfono o email"
             />
             <div className="flex gap-3">
               <button
                 type="submit"
                 className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
               >
-                Search
+                Buscar
               </button>
               {q ? (
                 <Link
                   href={`/${orgSlug}/leads`}
                   className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                 >
-                  Clear
+                  Limpiar
                 </Link>
               ) : null}
             </div>
           </form>
           <p className="mt-4 text-sm text-slate-500">
             {query
-              ? `${leads.length} result${leads.length === 1 ? "" : "s"} for "${q}"`
-              : `Showing ${leads.length} of ${summary.total} leads.`}
+              ? `${leads.length} resultado${leads.length === 1 ? "" : "s"} para "${q}"`
+              : `Mostrando ${leads.length} de ${summary.total} leads.`}
           </p>
         </SectionCard>
       </section>
 
       <section className="grid gap-4 md:grid-cols-5">
-        <MetricCard label="New" value={String(summary.newCount)} hint="Fresh inbound demand." />
+        <MetricCard label="Nuevos" value={String(summary.newCount)} hint="Demanda entrante reciente." />
         <MetricCard
-          label="Contacted"
+          label="Contactados"
           value={String(summary.contactedCount)}
-          hint="Initial outreach is underway."
+          hint="Primer contacto en curso."
         />
         <MetricCard
-          label="Interested"
+          label="Interesados"
           value={String(summary.interestedCount)}
-          hint="Qualified enough to match with inventory."
+          hint="Perfil calificado."
         />
         <MetricCard
-          label="Visit"
+          label="En Visita"
           value={String(summary.visitCount)}
-          hint="Already moved into scheduling."
+          hint="Agenda de visitas en marcha."
         />
         <MetricCard
-          label="Closed"
+          label="Cerrados"
           value={String(summary.closedCount)}
-          hint="Commercial cycle completed."
+          hint="Ciclo comercial completado."
         />
       </section>
 
       <SectionCard
-        eyebrow="Pipeline"
-        title="Lead CRM flow"
-        description="The pipeline now mirrors the real commercial progression from inbound demand to visit and closure."
+        eyebrow="Embudo"
+        title="Flujo comercial"
+        description="El tablero refleja el progreso de la oportunidad desde el primer contacto hasta el cierre."
       >
         <div className="grid gap-4 xl:grid-cols-5">
           {stageOrder.map((stage) => {
             const stageLeads = leads.filter((lead) => lead.status === stage);
 
             return (
-              <StageColumn key={stage} title={stage.replaceAll("_", " ")} count={stageLeads.length}>
+              <StageColumn key={stage} title={
+                stage === "NEW" ? "NUEVO" :
+                stage === "CONTACTED" ? "CONTACTADO" :
+                stage === "INTERESTED" ? "INTERESADO" :
+                stage === "VISIT" ? "EN VISITA" :
+                stage === "CLOSED" ? "CERRADO" : stage
+              } count={stageLeads.length}>
                 {stageLeads.map((lead) => (
                   <LeadMiniCard
                     key={lead.id}
@@ -194,20 +200,20 @@ export default async function LeadsPage({
       </SectionCard>
 
       <SectionCard
-        eyebrow="List"
-        title="Lead register"
-        description="A tabular operational view remains useful alongside the pipeline."
+        eyebrow="Lista"
+        title="Registro global"
+        description="Visualización tradicional de la cartera de leads."
       >
         <div className="overflow-x-auto">
           <table className="min-w-full text-left">
             <thead className="text-sm text-slate-500">
               <tr>
                 <th className="pb-3 font-medium">Lead</th>
-                <th className="pb-3 font-medium">Property</th>
-                <th className="pb-3 font-medium">Owner</th>
-                <th className="pb-3 font-medium">Source</th>
-                <th className="pb-3 font-medium">Stage</th>
-                <th className="pb-3 font-medium">Last contact</th>
+                <th className="pb-3 font-medium">Propiedad</th>
+                <th className="pb-3 font-medium">Responsable</th>
+                <th className="pb-3 font-medium">Origen</th>
+                <th className="pb-3 font-medium">Etapa</th>
+                <th className="pb-3 font-medium">Último contacto</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -226,7 +232,7 @@ export default async function LeadsPage({
                           {lead.email}
                         </a>
                       ) : (
-                        <span>No email</span>
+                        <span>Sin email</span>
                       )}
                     </div>
                     <div className="mt-1 text-sm text-slate-500">

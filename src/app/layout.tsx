@@ -6,7 +6,7 @@ import "@/app/globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ProyecSaaS",
+  title: "RaicesPilot",
   description: "Multi-tenant real-estate SaaS foundation for CRM, properties, visits, and automations.",
 };
 

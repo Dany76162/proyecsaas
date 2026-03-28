@@ -42,11 +42,11 @@ function getConversationUrgency(c: ConversationListItem): UrgencyLevel {
 
 function DeliveryBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-    FAILED: { label: "Failed", dot: "bg-red-500", bg: "bg-red-50", text: "text-red-700" },
-    SENT: { label: "Sent", dot: "bg-blue-500", bg: "bg-blue-50", text: "text-blue-700" },
-    RECEIVED: { label: "Received", dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700" },
-    SKIPPED: { label: "Skipped", dot: "bg-slate-400", bg: "bg-slate-100", text: "text-slate-600" },
-    PENDING: { label: "Pending", dot: "bg-amber-400", bg: "bg-amber-50", text: "text-amber-700" },
+    FAILED: { label: "Fallido", dot: "bg-red-500", bg: "bg-red-50", text: "text-red-700" },
+    SENT: { label: "Enviado", dot: "bg-blue-500", bg: "bg-blue-50", text: "text-blue-700" },
+    RECEIVED: { label: "Recibido", dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700" },
+    SKIPPED: { label: "Omitido", dot: "bg-slate-400", bg: "bg-slate-100", text: "text-slate-600" },
+    PENDING: { label: "Pendiente", dot: "bg-amber-400", bg: "bg-amber-50", text: "text-amber-700" },
   };
 
   const item = config[status] || {
@@ -78,11 +78,11 @@ function getPropertyMatchLabel(
     | "manual-overridden"
     | "no-match",
 ) {
-  if (status === "matched") return "Auto-matched";
-  if (status === "existing-link") return "Existing link";
-  if (status === "manual-confirmed") return "Confirmed manually";
-  if (status === "manual-overridden") return "Changed manually";
-  return "Needs manual review";
+  if (status === "matched") return "Auto-vinculada";
+  if (status === "existing-link") return "Vínculo previo";
+  if (status === "manual-confirmed") return "Confirmada manual";
+  if (status === "manual-overridden") return "Cambiada manual";
+  return "Revisión requerida";
 }
 
 function getPropertyMatchTone(
@@ -190,12 +190,12 @@ function ConversationRow({
                 : "bg-amber-100 text-amber-700",
             )}
           >
-            {conv.followUpCategory === "TECHNICAL" ? "Technical" : "Commercial"}
+            {conv.followUpCategory === "TECHNICAL" ? "Técnico" : "Comercial"}
           </span>
         )}
         {conv.isHumanControlled && (
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-blue-700">
-            Agent
+            Agente
           </span>
         )}
       </div>
@@ -269,9 +269,9 @@ function ConversationDetail({
 
         {/* ─── Data Summaries ─── */}
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
-          <ContextSummary title="Property Link" content={conv.propertyTitle} />
-          <ContextSummary title="Lead Stage" content={conv.leadStatus} />
-          <ContextSummary title="Notes" content={conv.propertyContextNote} />
+          <ContextSummary title="Propiedad" content={conv.propertyTitle} />
+          <ContextSummary title="Etapa" content={conv.leadStatus} />
+          <ContextSummary title="Notas" content={conv.propertyContextNote} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -303,7 +303,7 @@ function ConversationDetail({
               href={`/${orgSlug}/leads/${conv.leadId}`}
               className="rounded-full border border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
             >
-              Open lead
+              Abrir lead
             </Link>
           ) : null}
           {conv.propertyId ? (
@@ -311,7 +311,7 @@ function ConversationDetail({
               href={`/${orgSlug}/properties/${conv.propertyId}`}
               className="rounded-full border border-slate-300 px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
             >
-              Open property
+              Abrir propiedad
             </Link>
           ) : null}
         </div>
@@ -323,7 +323,7 @@ function ConversationDetail({
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-                Commercial context
+                Contexto analizado
               </p>
               {conv.propertyMatch?.consideredSignals.map((signal) => (
                 <span
@@ -355,7 +355,7 @@ function ConversationDetail({
             {shortlist.length ? (
               <div className="mt-4 space-y-2">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-                  Suggested shortlist
+                  Shortlist sugerida
                 </p>
                 {shortlist.map((candidate) => (
                   <div
@@ -367,7 +367,7 @@ function ConversationDetail({
                         <p className="text-xs font-semibold text-slate-900">{candidate.title}</p>
                         <p className="text-[11px] text-slate-500">
                           {[candidate.neighborhood, candidate.city].filter(Boolean).join(" / ") ||
-                            "Location pending"}
+                            "Ubicación pendiente"}
                         </p>
                       </div>
                       <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-700">
@@ -397,7 +397,7 @@ function ConversationDetail({
                         href={`/${orgSlug}/properties/${candidate.propertyId}`}
                         className="rounded-full border border-slate-300 px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-100"
                       >
-                        Open property
+                        Abrir propiedad
                       </Link>
                       {conv.leadId ? (
                         <form action={confirmLeadPropertyAction}>
@@ -418,10 +418,10 @@ function ConversationDetail({
                             className="rounded-full bg-brand-500 px-3 py-1.5 text-[10px] font-semibold text-white transition hover:bg-brand-600"
                           >
                             {conv.propertyId === candidate.propertyId
-                              ? "Keep this property"
+                              ? "Mantener actual"
                               : conv.propertyId
-                                ? "Use this instead"
-                                : "Link this property"}
+                                ? "Reemplazar por esta"
+                                : "Vincular propiedad"}
                           </button>
                         </form>
                       ) : null}
@@ -439,10 +439,9 @@ function ConversationDetail({
             <div className="flex items-start gap-4">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">!</span>
               <div>
-                <p className="text-xs font-bold text-red-900 uppercase tracking-tight">Delivery failure</p>
+                <p className="text-xs font-bold text-red-900 uppercase tracking-tight">Error de envío</p>
                 <p className="mt-0.5 text-xs text-red-800 opacity-90 leading-relaxed">
-                  One or more outbound messages failed to send. Review the error details and
-                  follow up manually if needed.
+                  Hubo un error al enviar uno o más mensajes. Revisá los detalles y gestioná el seguimiento manual.
                 </p>
               </div>
             </div>
@@ -479,26 +478,26 @@ function ConversationDetail({
                   >
                     {conv.followUpCategory === "TECHNICAL" ? "Technical" : "Commercial"}
                   </span>
-                  <p className="text-xs font-bold">Follow-up suggested</p>
+                  <p className="text-xs font-bold">Seguimiento sugerido</p>
                   {conv.followUpActiveAt && (
                     <span className="text-[10px] text-slate-400 tabular-nums">
-                      since {formatDateTime(conv.followUpActiveAt)}
+                      desde {formatDateTime(conv.followUpActiveAt)}
                     </span>
                   )}
                 </div>
 
                 <div className="grid grid-cols-[auto_1fr] gap-4">
                   <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">Reason</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">Motivo</p>
                     <p className="mt-0.5 text-[11px] font-medium leading-relaxed">
-                      {conv.followUpReason || "Review required."}
+                      {conv.followUpReason || "Revisión necesaria."}
                     </p>
                   </div>
 
                   {conv.nextBestAction && (
                     <div className="rounded-lg border border-slate-200/50 bg-white/50 p-2.5">
                       <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-                        Suggested action (AI)
+                        Acción sugerida (IA)
                       </p>
                       <p className="mt-0.5 text-[11px] text-slate-600 italic leading-relaxed">
                         "{conv.nextBestAction}"
@@ -521,7 +520,7 @@ function ConversationDetail({
                       : "bg-amber-600 text-white",
                   )}
                 >
-                  Mark as resolved
+                  Marcar como resuelto
                 </button>
               </form>
             </div>
@@ -540,10 +539,10 @@ function ConversationDetail({
               </span>
               <div>
                 <p className="text-xs font-bold uppercase tracking-tight text-blue-900">
-                  Agent in control
+                  Agente al control
                 </p>
                 <p className="mt-0.5 text-xs text-blue-800 opacity-90">
-                  Bot responses paused. Release to hand back to automation.
+                  Respuestas del bot pausadas. Liberá el bot para reanudar.
                 </p>
               </div>
             </div>
@@ -554,7 +553,7 @@ function ConversationDetail({
                 type="submit"
                 className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:brightness-95 active:scale-95"
               >
-                Release to bot
+                Liberar bot
               </button>
             </form>
           </div>
@@ -568,7 +567,7 @@ function ConversationDetail({
               type="submit"
               className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-100 active:scale-95"
             >
-              Take control
+              Tomar control
             </button>
           </form>
         </div>
@@ -578,14 +577,14 @@ function ConversationDetail({
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex shrink-0 items-center justify-between border-b border-slate-50 bg-slate-50/30 px-5 py-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Message history ({conv.messages.length})
+            Historial de mensajes ({conv.messages.length})
           </p>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5 custom-scrollbar">
           {conv.messages.length === 0 ? (
             <div className="flex h-full items-center justify-center opacity-30">
-              <p className="text-xs font-semibold italic text-slate-400">Awaiting engagement</p>
+              <p className="text-xs font-semibold italic text-slate-400">Esperando interacción</p>
             </div>
           ) : (
             conv.messages.map((msg) => (
@@ -652,20 +651,20 @@ function ConversationDetail({
         <textarea
           name="messageBody"
           rows={2}
-          placeholder="Type a message to send via WhatsApp…"
+          placeholder="Escribí un mensaje..."
           className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
         />
         <div className="mt-2 flex items-center justify-between gap-2">
           <p className="text-[10px] text-slate-400">
             {conv.isHumanControlled
-              ? "You are in control — bot is paused"
-              : "Sending will pause the bot automatically"}
+              ? "Control activo — IA pausada"
+              : "Responder pausará la IA automáticamente"}
           </p>
           <button
             type="submit"
             className="rounded-md bg-brand-600 px-4 py-1.5 text-xs font-bold text-white transition-all hover:bg-brand-700 active:scale-95"
           >
-            Send
+            Enviar
           </button>
         </div>
       </form>
@@ -720,9 +719,9 @@ export function ConversationInbox({
         {/* Navigation Filters */}
         <div className="flex gap-1 rounded-xl bg-slate-100/50 p-1 ring-1 ring-slate-200/50">
           {[
-            { key: "all", label: "All", count: prioritized.length },
-            { key: "followup", label: "Follow-up", count: followUpCount, alert: true },
-            { key: "failed", label: "Errors", count: failedCount, danger: true },
+            { key: "all", label: "Todas", count: prioritized.length },
+            { key: "followup", label: "Pendientes", count: followUpCount, alert: true },
+            { key: "failed", label: "Errores", count: failedCount, danger: true },
           ].map((f) => (
             <button
               key={f.key}
@@ -765,10 +764,10 @@ export function ConversationInbox({
             <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
               <p className="text-xs font-semibold text-slate-400 italic">
                 {activeFilter === "failed"
-                  ? "No failed deliveries found."
+                  ? "No hay fallas de envío."
                   : activeFilter === "followup"
-                    ? "Operational queue is empty."
-                    : "No conversations recorded."}
+                    ? "La bandeja operativa está vacía."
+                    : "No hay conversaciones."}
               </p>
             </div>
           ) : (
@@ -792,7 +791,7 @@ export function ConversationInbox({
           <div className="flex h-full flex-col items-center justify-center text-center opacity-40">
             <div className="h-10 w-10 rounded-full border-4 border-slate-200 border-t-brand-500 animate-spin mb-4" />
             <p className="text-xs font-bold text-slate-900 uppercase tracking-widest">
-              Select a conversation
+              Selecciona una conversación
             </p>
           </div>
         )}

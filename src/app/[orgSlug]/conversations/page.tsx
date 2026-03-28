@@ -32,7 +32,7 @@ export default async function ConversationsPage({
       <WorkspaceHeader organization={organization} />
       {success === "property-linked" ? (
         <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">
-          Property link updated from Conversations.
+          Propiedad vinculada actualizada desde Conversaciones.
         </section>
       ) : null}
 
@@ -44,7 +44,7 @@ export default async function ConversationsPage({
               href={`/${orgSlug}/conversations`}
               className="font-medium text-brand-600 hover:text-brand-700"
             >
-              ← Recent conversations
+              ← Conversaciones recientes
             </Link>
           ) : (
             <span />
@@ -54,10 +54,10 @@ export default async function ConversationsPage({
               href={`/${orgSlug}/conversations?cursor=${nextCursor}`}
               className="font-medium text-brand-600 hover:text-brand-700"
             >
-              Load older →
+              Cargar más antiguas →
             </Link>
           ) : (
-            <span className="text-slate-400">End of conversations</span>
+            <span className="text-slate-400">No hay más conversaciones</span>
           )}
         </nav>
       )}

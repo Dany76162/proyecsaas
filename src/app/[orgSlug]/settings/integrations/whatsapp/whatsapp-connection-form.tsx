@@ -131,7 +131,7 @@ export function WhatsAppConnectionForm({
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm leading-6 text-amber-900">
-          This only validates the number against Meta and saves the channel in PROYECSAAS. Embedded
+          This only validates the number against Meta and saves the channel in RaicesPilot. Embedded
           Signup, token refresh, and multi-number management stay out of scope for this block.
         </div>
 

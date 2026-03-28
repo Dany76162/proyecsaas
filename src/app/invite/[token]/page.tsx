@@ -93,10 +93,9 @@ export default async function InvitePage({
             />
           </svg>
         </div>
-        <h1 className="mt-6 text-2xl font-semibold text-slate-950">Join PROYECSAAS</h1>
-        <p className="mt-3 text-base leading-7 text-slate-600">
-          Hi <span className="font-semibold text-slate-950">{invite.user.fullName}</span>, you've
-          been invited to join the workspace. Please set your password to continue.
+        <h1 className="mt-6 text-2xl font-semibold text-slate-950">Bienvenido a RaicesPilot</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          Usa tu correo para crear tus credenciales individuales de acceso.
         </p>
 
         <InviteAcceptForm token={token} email={invite.user.email} />
