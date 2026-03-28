@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { SectionCard } from "@/components/workspace/section-card";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import { prisma } from "@/server/db/prisma";
+
+import { WhatsAppConnectionForm } from "./whatsapp-connection-form";
 
 export default async function WhatsAppIntegrationPage({
   params,
@@ -16,6 +19,25 @@ export default async function WhatsAppIntegrationPage({
     notFound();
   }
 
+  const connectedChannel = await prisma.whatsAppChannel.findFirst({
+    where: {
+      organizationId: organization.id,
+      provider: "WHATSAPP_CLOUD",
+    },
+    orderBy: [{ status: "asc" }, { isPrimary: "desc" }, { createdAt: "asc" }],
+    select: {
+      phoneNumberId: true,
+      displayPhoneNumber: true,
+      verifiedDisplayName: true,
+      status: true,
+    },
+  });
+
+  const webhookBaseUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() || "Set NEXT_PUBLIC_APP_URL in runtime";
+  const verifyToken =
+    process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN?.trim() || "Set WHATSAPP_WEBHOOK_VERIFY_TOKEN";
+
   return (
     <>
       <WorkspaceHeader organization={organization} />
@@ -25,30 +47,19 @@ export default async function WhatsAppIntegrationPage({
         title="Connect your number"
         description="Link your WhatsApp Business number (via Meta Cloud API) to start receiving inbound messages and automating lead responses."
       >
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-            <svg
-              className="h-6 w-6 text-slate-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
-              />
-            </svg>
-          </div>
-          <p className="mt-4 text-sm font-semibold text-slate-700">
-            WhatsApp connection — coming next
-          </p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            You will be able to paste your Phone Number ID and Access Token here
-            to activate automatic lead handling via WhatsApp Cloud API.
-          </p>
-        </div>
+        <WhatsAppConnectionForm
+          orgSlug={orgSlug}
+          defaultPhoneNumberId={connectedChannel?.phoneNumberId ?? ""}
+          webhookUrl={`${webhookBaseUrl.replace(/\/$/, "")}/api/webhooks/whatsapp`}
+          verifyToken={verifyToken}
+          channelStatus={{
+            isConnected: connectedChannel?.status === "ACTIVE",
+            phoneNumberId: connectedChannel?.phoneNumberId ?? null,
+            displayPhoneNumber: connectedChannel?.displayPhoneNumber ?? null,
+            verifiedDisplayName: connectedChannel?.verifiedDisplayName ?? null,
+            statusLabel: connectedChannel?.status === "ACTIVE" ? "Connected" : "Not connected",
+          }}
+        />
       </SectionCard>
     </>
   );
