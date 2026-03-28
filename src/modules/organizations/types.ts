@@ -25,3 +25,9 @@ export type WorkspaceNotification = {
   link?: string;
   createdAt: string;
 };
+
+export type SetupChecklistStatus = {
+  profileComplete: boolean;
+  whatsappConnected: boolean;
+  teamInvited: boolean;
+};

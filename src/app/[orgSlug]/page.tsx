@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
+import { SetupChecklist } from "@/components/workspace/setup-checklist";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getLeadSummary, listOrganizationLeads } from "@/modules/leads/service";
 import {
   getOrganizationWorkspace,
+  getSetupChecklistStatus,
   listWorkspaceNotifications,
 } from "@/modules/organizations/service";
 import { getPropertySummary, listOrganizationProperties } from "@/modules/properties/service";
@@ -24,6 +26,7 @@ export default async function OrganizationHomePage({
   const { orgSlug } = await params;
   const [
     organization,
+    setupChecklist,
     leads,
     leadSummary,
     properties,
@@ -35,6 +38,7 @@ export default async function OrganizationHomePage({
     notifications,
   ] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
+    getSetupChecklistStatus(orgSlug),
     listOrganizationLeads(orgSlug),
     getLeadSummary(orgSlug),
     listOrganizationProperties(orgSlug),
@@ -53,6 +57,8 @@ export default async function OrganizationHomePage({
   return (
     <>
       <WorkspaceHeader organization={organization} />
+
+      <SetupChecklist orgSlug={orgSlug} {...setupChecklist} />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard

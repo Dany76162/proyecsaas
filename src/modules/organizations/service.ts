@@ -7,6 +7,7 @@ import { prisma } from "@/server/db/prisma";
 import type {
   OrganizationSummary,
   OrganizationWorkspace,
+  SetupChecklistStatus,
   WorkspaceNotification,
 } from "@/modules/organizations/types";
 
@@ -138,6 +139,34 @@ export async function getOrganizationWorkspace(
 
 export async function getOrganizationSwitcherItems(userId: string): Promise<OrganizationSummary[]> {
   return listOrganizationsForUser(userId);
+}
+
+export async function getSetupChecklistStatus(
+  orgSlug: string,
+): Promise<SetupChecklistStatus> {
+  const org = await prisma.organization.findUnique({
+    where: { slug: orgSlug },
+    select: {
+      name: true,
+      city: true,
+      _count: { select: { memberships: true } },
+      whatsappChannels: {
+        where: { status: "ACTIVE" },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+
+  if (!org) {
+    return { profileComplete: false, whatsappConnected: false, teamInvited: false };
+  }
+
+  return {
+    profileComplete: Boolean(org.name?.trim() && org.city?.trim()),
+    whatsappConnected: org.whatsappChannels.length > 0,
+    teamInvited: org._count.memberships > 1,
+  };
 }
 
 export async function listWorkspaceNotifications(
