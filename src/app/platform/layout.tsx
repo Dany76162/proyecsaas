@@ -26,9 +26,10 @@ export default async function PlatformLayout({
             >
               Ir a RaicesPilot Público
             </Link>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-900">{sessionUser.fullName}</span>
-              <span className="text-sm text-slate-400">({sessionUser.email})</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold text-slate-900">{sessionUser.fullName}</span>
+              <span className="text-slate-300">·</span>
+              <span className="text-sm text-slate-500">{sessionUser.email}</span>
             </div>
           </div>
         </header>

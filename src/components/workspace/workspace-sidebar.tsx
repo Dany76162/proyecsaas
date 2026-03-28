@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 type WorkspaceSidebarProps = {
   organization: OrganizationSummary;
   role: MembershipRole;
+  userName: string;
 };
 
 const OPERATION_NAV = [
@@ -36,7 +37,7 @@ function isAdminOrOwner(role: MembershipRole): boolean {
   return role === "OWNER" || role === "ADMIN";
 }
 
-export function WorkspaceSidebar({ organization, role }: WorkspaceSidebarProps) {
+export function WorkspaceSidebar({ organization, role, userName }: WorkspaceSidebarProps) {
   const currentPath = usePathname();
 
   function isActive(orgSlug: string, path: string): boolean {
@@ -107,15 +108,13 @@ export function WorkspaceSidebar({ organization, role }: WorkspaceSidebarProps) 
       <div className="mt-auto pt-6">
         <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">
-            {roleDisplay.label.charAt(0)}
+            {userName.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <p className="text-xs font-bold text-white uppercase tracking-tight">
-              {roleDisplay.label}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-white leading-tight">
+              {userName}
             </p>
-            {roleDisplay.copy && (
-              <p className="text-[10px] text-slate-400">{roleDisplay.copy}</p>
-            )}
+            <p className="text-[10px] text-slate-400">{roleDisplay.label}</p>
           </div>
         </div>
       </div>

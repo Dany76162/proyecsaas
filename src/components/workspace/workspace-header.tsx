@@ -20,10 +20,7 @@ export function WorkspaceHeader({ organization, children }: WorkspaceHeaderProps
             )}
           </div>
           <div className="mt-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              Panel de Inmobiliaria
-            </p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-950">
               {organization.name}
             </h1>
           </div>

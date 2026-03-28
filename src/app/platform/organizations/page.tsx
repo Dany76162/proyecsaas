@@ -42,7 +42,6 @@ export default async function PlatformOrganizationsPage() {
           <thead>
             <tr className="border-b bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <th className="px-5 py-3.5">Organización</th>
-              <th className="px-5 py-3.5">M. Comercial</th>
               <th className="px-5 py-3.5">Salud Sistémica</th>
               <th className="px-5 py-3.5">Canal WABA</th>
               <th className="px-5 py-3.5">Tráfico 7d</th>
@@ -63,13 +62,7 @@ export default async function PlatformOrganizationsPage() {
                     <span className="mt-0.5 text-xs font-medium text-slate-500">{org.city || "Ciudad no especificada"}</span>
                   </div>
                 </td>
-                
-                <td className="px-5 py-4 align-top">
-                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                    Pendiente
-                  </span>
-                </td>
-                
+
                 <td className="px-5 py-4 align-top">
                   <HealthBadge status={org.health} />
                 </td>
@@ -116,7 +109,7 @@ export default async function PlatformOrganizationsPage() {
             ))}
             {orgs.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center">
+                <td colSpan={7} className="px-5 py-12 text-center">
                   <p className="text-base font-semibold text-slate-900">Sin clientes</p>
                   <p className="mt-1 text-sm text-slate-500">
                     Aún no hay inmobiliarias registradas en la base de datos de plataforma.

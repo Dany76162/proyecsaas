@@ -97,7 +97,7 @@ export default async function PlatformPage() {
                 <div className="flex flex-col items-end gap-2">
                   <HealthBadge status={org.health} />
                   <Link href={`/platform/organizations`} className="text-xs font-medium text-slate-500 hover:text-slate-800 transition">
-                    Ver canal
+                    Ver detalle
                   </Link>
                 </div>
               </div>
