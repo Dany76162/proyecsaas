@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
-import { Prisma, WhatsAppChannelVerificationStatus } from "@prisma/client";
+import { MembershipRole, Prisma, WhatsAppChannelVerificationStatus } from "@prisma/client";
 import { z } from "zod";
 
-import { requireOrganizationMembership } from "@/server/auth/access";
+import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 import {
   MetaWhatsAppValidationError,
@@ -48,6 +48,7 @@ export async function saveWhatsAppChannelAction(
 
   const { orgSlug, phoneNumberId, accessToken } = parsed.data;
   const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
   const organizationId = membership.organization.id;
 
   try {
