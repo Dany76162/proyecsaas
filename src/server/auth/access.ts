@@ -30,7 +30,7 @@ export async function requirePlatformAdmin() {
     notFound();
   }
 
-  return sessionUser.id;
+  return sessionUser;
 }
 
 export async function requireOrganizationMembership(orgSlug: string) {

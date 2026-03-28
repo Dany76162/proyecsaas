@@ -18,14 +18,7 @@ const generateInviteSchema = z.object({
  * It strictly cuts human access but leaves the operational data intact.
  */
 export async function clearOrganizationMembershipsAction(orgSlug: string): Promise<ActionResult> {
-  const adminId = await requirePlatformAdmin();
-
-  if (!adminId) {
-    return {
-      success: false,
-      message: "No tienes permisos de plataforma para ejecutar esta acción.",
-    };
-  }
+  await requirePlatformAdmin();
 
   try {
     const org = await prisma.organization.findUnique({
@@ -62,14 +55,7 @@ export async function generateInitialAdminInviteAction(
   orgSlug: string,
   input: { email: string; fullName: string }
 ): Promise<ActionResult> {
-  const adminId = await requirePlatformAdmin();
-
-  if (!adminId) {
-    return {
-      success: false,
-      message: "No tienes permisos de plataforma para ejecutar esta acción.",
-    };
-  }
+  await requirePlatformAdmin();
 
   const parsed = generateInviteSchema.safeParse(input);
 

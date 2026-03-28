@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { logoutAction } from "@/server/auth/actions";
-import { requirePlatformAdmin } from "@/server/auth/platform";
+import { requirePlatformAdmin } from "@/server/auth/access";
+import { PlatformSidebar } from "@/components/platform/platform-sidebar";
 
 export default async function PlatformLayout({
   children,
@@ -9,37 +9,35 @@ export default async function PlatformLayout({
   const sessionUser = await requirePlatformAdmin();
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="border-b bg-white shadow-sm">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <Link href="/platform" className="text-base font-semibold text-slate-900">
-              RaicesPilot <span className="text-slate-400 font-normal">| Panel de Plataforma</span>
-            </Link>
-            <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-700">
-              Superadmin
+    <div className="flex min-h-screen bg-slate-50">
+      <PlatformSidebar />
+      <div className="flex flex-1 flex-col ml-64">
+        {/* Topbar compacta */}
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-8 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="rounded bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-700">
+              Workspace Superadmin
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-500">{sessionUser.email}</span>
+          <div className="flex items-center gap-6">
             <Link
               href="/"
               className="text-sm font-medium text-slate-500 transition hover:text-slate-800"
             >
-              Volver al inicio
+              Ir a RaicesPilot Público
             </Link>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
-              >
-                Cerrar sesión
-              </button>
-            </form>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-900">{sessionUser.fullName}</span>
+              <span className="text-sm text-slate-400">({sessionUser.email})</span>
+            </div>
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+        </header>
+
+        {/* Workspace Body */}
+        <main className="flex-1 p-8">
+          <div className="mx-auto max-w-6xl">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
