@@ -13,6 +13,7 @@ import {
   VisitAutomationError,
 } from "@/modules/visits/service";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
+import { getAutomationQueue } from "@/server/queues";
 
 const createVisitSchema = z.object({
   scheduledAt: z
@@ -154,6 +155,31 @@ export async function updateVisitStatusAction(formData: FormData) {
       status: parsed.data.nextStatus,
     },
   });
+
+  // Trigger post-visit follow-up automation when a visit is marked completed
+  if (parsed.data.nextStatus === VisitStatus.COMPLETED && visit.leadId) {
+    try {
+      const queue = getAutomationQueue();
+      await queue.add("post-visit-follow-up", {
+        source: "post-visit" as const,
+        organizationId: membership.organization.id,
+        visitId: visit.id,
+        leadId: visit.leadId,
+        propertyId: visit.propertyId,
+      });
+    } catch (error) {
+      // Don't fail the action if Redis is unavailable — visit is already updated
+      console.error(
+        JSON.stringify({
+          scope: "visits",
+          event: "post-visit-enqueue-failed",
+          visitId: visit.id,
+          leadId: visit.leadId,
+          error: error instanceof Error ? error.message : "unknown",
+        }),
+      );
+    }
+  }
 
   revalidatePath(`/${orgSlug}/visits`);
   revalidatePath(`/${orgSlug}`);

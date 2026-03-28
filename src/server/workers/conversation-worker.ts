@@ -46,6 +46,11 @@ import {
 import { getQueueConnection } from "@/server/queues/connection";
 import { resolveInboundByPhoneNumberId } from "@/server/whatsapp/channel-resolver";
 
+import {
+  processPostVisitFollowUp,
+  type PostVisitJobData,
+} from "@/server/workers/post-visit-worker";
+
 
 // =========================
 // TYPES
@@ -639,7 +644,7 @@ export async function processWhatsAppInboundJob(
 // =========================
 
 export function createConversationWorker() {
-  const worker = new Worker<WhatsAppInboundJobData>(
+  const worker = new Worker<WhatsAppInboundJobData | PostVisitJobData>(
     "automation-jobs",
     async (job) => {
       console.log(
@@ -653,7 +658,12 @@ export function createConversationWorker() {
 
       try {
         if (job.name === "whatsapp-inbound") {
-          const outcome = await processWhatsAppInboundJob(job.data);
+          const outcome = await processWhatsAppInboundJob(job.data as WhatsAppInboundJobData);
+          return outcome;
+        }
+
+        if (job.name === "post-visit-follow-up") {
+          const outcome = await processPostVisitFollowUp(job.data as PostVisitJobData);
           return outcome;
         }
 
