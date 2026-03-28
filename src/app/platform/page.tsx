@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { listOrganizationsForPlatform } from "@/modules/platform/service";
 import type { OrgHealthStatus, OrgPlatformSummary } from "@/modules/platform/types";
+import { OnboardingControls } from "@/components/platform/onboarding-controls";
 
 function HealthBadge({ status }: { status: OrgHealthStatus }) {
   if (status === "critical") {
@@ -144,7 +145,7 @@ export default async function PlatformPage() {
               <th className="px-5 py-3">Pendientes</th>
               <th className="px-5 py-3">Errores (7d)</th>
               <th className="px-5 py-3">Última actividad</th>
-              <th className="px-5 py-3">Miembros</th>
+              <th className="px-5 py-3">Onboarding</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
@@ -190,14 +191,24 @@ export default async function PlatformPage() {
                 <td className="px-5 py-4 text-xs text-slate-500">
                   {org.lastActivityAt ? formatRelativeTime(org.lastActivityAt) : "—"}
                 </td>
-                <td className="px-5 py-4 text-slate-500">{org.memberCount}</td>
                 <td className="px-5 py-4">
-                  <Link
-                    href={`/${org.slug}`}
-                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
-                  >
-                    Entrar
-                  </Link>
+                  <div className="flex flex-col">
+                    <span className={`text-xs font-semibold ${org.onboardingStatus === "Operativa" ? "text-emerald-700" : org.onboardingStatus === "Sin usuarios" ? "text-slate-400" : "text-amber-600"}`}>
+                      {org.onboardingStatus}
+                    </span>
+                    <span className="text-[10px] text-slate-500">{org.memberCount} miembros</span>
+                  </div>
+                </td>
+                <td className="px-5 py-4">
+                  <div className="flex items-center justify-end gap-3">
+                    <OnboardingControls orgSlug={org.slug} orgName={org.name} hasUsers={org.memberCount > 0} />
+                    <Link
+                      href={`/${org.slug}`}
+                      className="rounded border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 uppercase tracking-wide"
+                    >
+                      Entrar
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

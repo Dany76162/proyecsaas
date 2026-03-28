@@ -8,6 +8,13 @@ import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getUserRoleBreakdown, listOrganizationUsers } from "@/modules/users/service";
 import { InviteUserDialog } from "@/components/users/invite-user-dialog";
 
+const ROLE_MAP: Record<string, string> = {
+  OWNER: "Titular",
+  ADMIN: "Administrador",
+  AGENT: "Agente de ventas",
+  ASSISTANT: "Asistente",
+};
+
 export default async function UsersSettingsPage({
   params,
 }: {
@@ -32,30 +39,30 @@ export default async function UsersSettingsPage({
 
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Members"
+          label="Miembros"
           value={String(users.length)}
-          hint="People with organization-scoped access to this workspace."
+          hint="Personas con acceso asignado a esta organización."
         />
         <MetricCard
-          label="Active roles"
+          label="Roles activos"
           value={String(roleBreakdown.length)}
-          hint="Clear role visibility helps keep future authorization explicit."
+          hint="Visibilidad clara de los roles para asegurar transparencia."
         />
         <MetricCard
-          label="Owners/Admins"
+          label="Titulares/Administradores"
           value={String(
             roleBreakdown
               .filter((item) => item.role !== "ASSISTANT" && item.role !== "AGENT")
               .reduce((sum, item) => sum + item.count, 0),
           )}
-          hint="Leadership roles currently represented in the tenant."
+          hint="Roles de liderazgo actualmente representados en la cuenta."
         />
       </section>
 
       <SectionCard
-        eyebrow="Team"
-        title="Users and roles"
-        description="This is the first internal member directory for the MVP."
+        eyebrow="Equipo"
+        title="Usuarios y roles"
+        description="Directorio principal de miembros del espacio de trabajo."
       >
         <div className="space-y-4">
           {users.map((user) => (
@@ -70,8 +77,8 @@ export default async function UsersSettingsPage({
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <StatusBadge label={user.isActive ? "Active" : "Inactive"} tone="success" />
-                <StatusBadge label={user.role} tone="info" />
+                <StatusBadge label={user.isActive ? "Activo" : "Inactivo"} tone="success" />
+                <StatusBadge label={ROLE_MAP[user.role] ?? user.role} tone="info" />
               </div>
             </div>
           ))}

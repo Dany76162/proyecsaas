@@ -23,4 +23,5 @@ export type OrgPlatformSummary = {
   lastActivityAt: string | null;
   whatsappChannel: WhatsAppChannelHealth | null;
   health: OrgHealthStatus;
+  onboardingStatus: "Sin usuarios" | "Invitación pendiente" | "Onboarding iniciado" | "Operativa";
 };

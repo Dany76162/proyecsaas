@@ -31,6 +31,12 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
         _count: {
           select: { memberships: true, leads: true, properties: true },
         },
+        memberships: {
+          take: 1,
+          select: {
+            user: { select: { passwordHash: true } },
+          },
+        },
         whatsappChannels: {
           orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
           take: 1,
@@ -98,6 +104,14 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
             lastErrorCode: channel.lastErrorCode ?? null,
           }
         : null,
+      onboardingStatus:
+        org._count.memberships === 0
+          ? "Sin usuarios"
+          : org._count.memberships === 1
+            ? org.memberships[0]?.user.passwordHash
+              ? "Onboarding iniciado"
+              : "Invitación pendiente"
+            : "Operativa",
       health: computeHealth({
         channel,
         recentFailedDeliveries,

@@ -23,6 +23,16 @@ export async function requireSessionUser(nextPath = "/") {
   return sessionUser;
 }
 
+export async function requirePlatformAdmin() {
+  const sessionUser = await requireSessionUser("/platform");
+
+  if (!sessionUser.isPlatformAdmin) {
+    notFound();
+  }
+
+  return sessionUser.id;
+}
+
 export async function requireOrganizationMembership(orgSlug: string) {
   const sessionUser = await requireSessionUser(`/${orgSlug}`);
 

@@ -50,19 +50,19 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
         }}
         className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
       >
-        Invite member
+        Invitar miembro
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[1.5rem] bg-white p-6 shadow-xl relative top-0 animate-in fade-in zoom-in-95 duration-200">
             <h2 className="text-xl font-semibold tracking-tight text-slate-950">
-              {inviteUrl ? "Invite ready" : "Invite new member"}
+              {inviteUrl ? "Invitación generada" : "Invitar nuevo miembro"}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
               {inviteUrl 
-                ? "Send this link to the invited user so they can set their password."
-                : "Add a new member to this organization workspace."}
+                ? "Enviá este enlace al usuario para que configure su acceso y contraseña personal."
+                : "Agregá un nuevo miembro al equipo de esta inmobiliaria."}
             </p>
 
             {error && (
@@ -75,7 +75,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
               <div className="mt-6 flex flex-col gap-4">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Invitation link
+                    Enlace de invitación
                   </p>
                   <p className="mt-2 break-all text-sm font-medium text-slate-950">
                     {window.location.origin}{inviteUrl}
@@ -85,47 +85,47 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
                   onClick={handleCopy}
                   className="flex w-full items-center justify-center rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600"
                 >
-                  Copy link
+                  Copiar link
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
                 >
-                  Close
+                  Cerrar
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Full name</label>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Nombre completo</label>
                   <input 
                     required 
                     name="fullName" 
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500" 
-                    placeholder="e.g. John Doe" 
+                    placeholder="Ej. Juan Pérez" 
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Email address</label>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Correo electrónico</label>
                   <input 
                     required 
                     type="email"
                     name="email" 
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500" 
-                    placeholder="e.g. john@example.com" 
+                    placeholder="Ej. juan@inmobiliaria.com" 
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Rol</label>
                   <select 
                     required 
                     name="role" 
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500"
                   >
-                    <option value="AGENT">Agent</option>
-                    <option value="ADMIN">Admin</option>
-                    <option value="ASSISTANT">Assistant</option>
-                    <option value="OWNER">Owner</option>
+                    <option value="AGENT">Agente de ventas</option>
+                    <option value="ADMIN">Administrador</option>
+                    <option value="ASSISTANT">Asistente</option>
+                    <option value="OWNER">Titular</option>
                   </select>
                 </div>
 
@@ -135,14 +135,14 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
                     onClick={() => setIsOpen(false)} 
                     className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
                   >
-                    Cancel
+                    Cancelar
                   </button>
                   <button 
                     type="submit" 
                     disabled={isPending} 
                     className="rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50"
                   >
-                    {isPending ? "Inviting..." : "Send invite"}
+                    {isPending ? "Generando..." : "Enviar invitación"}
                   </button>
                 </div>
               </form>
