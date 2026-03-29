@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   clearOrganizationMembershipsAction,
@@ -9,6 +10,8 @@ import {
   deactivateOrganizationAction,
 } from "@/modules/platform/actions";
 import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle, PowerOff } from "lucide-react";
+
+type MenuCoords = { top: number; right: number };
 
 /** Sub-componente: acceso excepcional de soporte con modal de confirmación */
 function SupportAccessButton({ orgSlug, orgName }: { orgSlug: string; orgName: string }) {
@@ -81,9 +84,13 @@ export function OnboardingControls({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  // Dropdown state
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuCoords, setMenuCoords] = useState<MenuCoords | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Modal states
   const [cleanModalOpen, setCleanModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
@@ -102,15 +109,36 @@ export function OnboardingControls({
   const [deactivateConfirmText, setDeactivateConfirmText] = useState("");
   const [deactivateError, setDeactivateError] = useState("");
 
+  // Click-outside: close dropdown when clicking neither trigger nor dropdown
   useEffect(() => {
+    if (!menuOpen) return;
+
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
+      const target = event.target as Node;
+      if (
+        dropdownRef.current?.contains(target) ||
+        triggerRef.current?.contains(target)
+      ) {
+        return;
       }
+      setMenuOpen(false);
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [menuOpen]);
+
+  // Toggle dropdown — calculate viewport-relative coords from trigger button
+  const handleToggle = () => {
+    if (!menuOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setMenuCoords({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setMenuOpen((prev) => !prev);
+  };
 
   const handleClean = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,73 +205,94 @@ export function OnboardingControls({
     }
   };
 
+  // ─── Portal dropdown ───────────────────────────────────────────────────────
+  // Rendered at document.body to escape overflow:hidden / overflow-x:auto
+  // clipping from the table container. Uses position:fixed + viewport coords.
+  const dropdownPortal =
+    menuOpen && menuCoords
+      ? createPortal(
+          <div
+            ref={dropdownRef}
+            style={{
+              position: "fixed",
+              top: menuCoords.top,
+              right: menuCoords.right,
+              zIndex: 9999,
+            }}
+            className="w-56 origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg"
+          >
+            {/* Onboarding actions */}
+            <div className="py-1">
+              {hasUsers ? (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setCleanModalOpen(true);
+                  }}
+                  className="group flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
+                  <UserX className="h-4 w-4" />
+                  <span>Limpiar accesos</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setInviteModalOpen(true);
+                  }}
+                  className="group flex w-full items-center gap-2 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Crear 1º Acceso</span>
+                </button>
+              )}
+            </div>
+
+            {/* Dar de baja */}
+            {isActive && (
+              <div className="border-t border-slate-100 py-1">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setDeactivateModalOpen(true);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors"
+                >
+                  <PowerOff className="h-4 w-4 shrink-0" />
+                  <span>Dar de baja</span>
+                </button>
+              </div>
+            )}
+
+            {/* Soporte técnico (excepcional) */}
+            <div className="border-t border-slate-100 py-1">
+              <SupportAccessButton orgSlug={orgSlug} orgName={orgName} />
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <div className="relative inline-block text-left" ref={menuRef}>
+    <div className="inline-block">
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setMenuOpen(!menuOpen)}
+        onClick={handleToggle}
         className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 transition"
       >
         <MoreVertical className="h-4 w-4" />
       </button>
 
-      {menuOpen && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-56 origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg focus:outline-none">
-          {/* Acciones de Onboarding */}
-          <div className="py-1">
-            {hasUsers ? (
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  setCleanModalOpen(true);
-                }}
-                className="group flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-              >
-                <UserX className="h-4 w-4" />
-                <span>Limpiar accesos</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  setInviteModalOpen(true);
-                }}
-                className="group flex w-full items-center gap-2 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>Crear 1º Acceso</span>
-              </button>
-            )}
-          </div>
+      {dropdownPortal}
 
-          {/* Dar de baja — acción clara de desactivación */}
-          {isActive && (
-            <div className="border-t border-slate-100 py-1">
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  setDeactivateModalOpen(true);
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors"
-              >
-                <PowerOff className="h-4 w-4 shrink-0" />
-                <span>Dar de baja</span>
-              </button>
-            </div>
-          )}
-
-          {/* Divisor + Acceso excepcional de soporte */}
-          <div className="border-t border-slate-100 py-1">
-            <SupportAccessButton orgSlug={orgSlug} orgName={orgName} />
-          </div>
-        </div>
-      )}
-
-      {/* CLEAN MODAL */}
+      {/* ── CLEAN MODAL ──────────────────────────────────────────────────────── */}
       {cleanModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 shadow-2xl backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl overflow-hidden">
-            <h2 className="text-xl font-bold tracking-tight text-slate-900">Desvincular usuarios</h2>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">
+              Desvincular usuarios
+            </h2>
             <p className="mt-2 text-sm text-slate-600">
               Vas a remover <strong>todos los accesos humanos</strong> de la inmobiliaria "
               {orgName}". Esto es irreversible, aunque los usuarios globales y los datos operativos
@@ -263,7 +312,9 @@ export function OnboardingControls({
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
               />
 
-              {cleanError && <p className="mt-2 text-sm font-medium text-red-600">{cleanError}</p>}
+              {cleanError && (
+                <p className="mt-2 text-sm font-medium text-red-600">{cleanError}</p>
+              )}
 
               <div className="mt-6 flex justify-end gap-3">
                 <button
@@ -286,7 +337,7 @@ export function OnboardingControls({
         </div>
       )}
 
-      {/* INVITE MODAL */}
+      {/* ── INVITE MODAL ─────────────────────────────────────────────────────── */}
       {inviteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
@@ -337,7 +388,7 @@ export function OnboardingControls({
                   <p className="mt-3 text-sm font-medium text-red-600">{inviteError}</p>
                 )}
 
-                <div className="mt-6 flex justify-end gap-3">
+                <div className="mt-6">
                   <button
                     type="submit"
                     disabled={isPending}
@@ -348,7 +399,7 @@ export function OnboardingControls({
                 </div>
               </form>
             ) : (
-              <div className="mt-6 animate-in fade-in slide-in-from-bottom-2">
+              <div className="mt-6">
                 <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-2">
                   URL Lista
                 </p>
@@ -363,13 +414,13 @@ export function OnboardingControls({
                     <Copy className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="mt-6 flex">
+                <div className="mt-6">
                   <button
                     onClick={() => {
                       setInviteUrl(null);
                       setInviteModalOpen(false);
                     }}
-                    className="flex-1 rounded-xl border border-slate-200 py-2.5 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                    className="w-full rounded-xl border border-slate-200 py-2.5 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-50"
                   >
                     Hecho
                   </button>
@@ -380,7 +431,7 @@ export function OnboardingControls({
         </div>
       )}
 
-      {/* DEACTIVATE MODAL — Baja de cliente */}
+      {/* ── DEACTIVATE MODAL — Baja de cliente ───────────────────────────────── */}
       {deactivateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
