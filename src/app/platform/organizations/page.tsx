@@ -36,9 +36,10 @@ export default async function PlatformOrganizationsPage() {
         </button>
       </div>
 
-      {/* Main Table */}
+      {/* Main Table — overflow-x-auto para mobile/tablet */}
       <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <th className="px-5 py-3.5">Organización</th>
@@ -124,6 +125,7 @@ export default async function PlatformOrganizationsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

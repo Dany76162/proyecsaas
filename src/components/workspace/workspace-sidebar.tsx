@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { X } from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
 import type { OrganizationSummary } from "@/modules/organizations/types";
@@ -11,6 +12,8 @@ type WorkspaceSidebarProps = {
   organization: OrganizationSummary;
   role: MembershipRole;
   userName: string;
+  isOpen: boolean;
+  onClose: () => void;
 };
 
 const OPERATION_NAV = [
@@ -37,7 +40,13 @@ function isAdminOrOwner(role: MembershipRole): boolean {
   return role === "OWNER" || role === "ADMIN";
 }
 
-export function WorkspaceSidebar({ organization, role, userName }: WorkspaceSidebarProps) {
+export function WorkspaceSidebar({
+  organization,
+  role,
+  userName,
+  isOpen,
+  onClose,
+}: WorkspaceSidebarProps) {
   const currentPath = usePathname();
 
   function isActive(orgSlug: string, path: string): boolean {
@@ -49,10 +58,28 @@ export function WorkspaceSidebar({ organization, role, userName }: WorkspaceSide
   const roleDisplay = ROLE_MAP[role] ?? { label: role, copy: "" };
 
   return (
-    <aside className="sticky top-0 flex h-screen w-72 shrink-0 flex-col bg-slate-950 p-5 text-slate-100 shadow-xl overflow-y-auto">
+    <aside
+      className={cn(
+        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950 overflow-y-auto",
+        "transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+      )}
+    >
+      {/* Close button — mobile only */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-white/10 transition lg:hidden"
+        aria-label="Cerrar menú"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      {/* Brand card */}
       <Link
         href="/"
-        className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
+        onClick={onClose}
+        className="m-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
       >
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
           RaicesPilot
@@ -63,16 +90,18 @@ export function WorkspaceSidebar({ organization, role, userName }: WorkspaceSide
         </div>
       </Link>
 
-      <div className="mt-6 space-y-1">
-        <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+      {/* Operación */}
+      <div className="px-4 space-y-1">
+        <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
           Operación
         </p>
         {OPERATION_NAV.map((item) => (
           <Link
             key={item.path}
             href={`/${organization.slug}${item.path}`}
+            onClick={onClose}
             className={cn(
-              "block rounded-xl px-3 py-2 text-sm transition",
+              "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
               isActive(organization.slug, item.path)
                 ? "bg-white text-slate-950"
                 : "text-slate-300 hover:bg-white/10 hover:text-white",
@@ -83,17 +112,19 @@ export function WorkspaceSidebar({ organization, role, userName }: WorkspaceSide
         ))}
       </div>
 
+      {/* Administración — solo ADMIN / OWNER */}
       {isAdminOrOwner(role) && (
-        <div className="mt-6 space-y-1">
-          <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+        <div className="mt-6 px-4 space-y-1">
+          <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Administración
           </p>
           {MANAGEMENT_NAV.map((item) => (
             <Link
-              key={item.path || "overview"}
+              key={item.path}
               href={`/${organization.slug}${item.path}`}
+              onClick={onClose}
               className={cn(
-                "block rounded-xl px-3 py-2 text-sm transition",
+                "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
                 isActive(organization.slug, item.path)
                   ? "bg-white text-slate-950"
                   : "text-slate-300 hover:bg-white/10 hover:text-white",
@@ -105,15 +136,14 @@ export function WorkspaceSidebar({ organization, role, userName }: WorkspaceSide
         </div>
       )}
 
-      <div className="mt-auto pt-6">
+      {/* Footer — user + role */}
+      <div className="mt-auto p-4">
         <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">
             {userName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold text-white leading-tight">
-              {userName}
-            </p>
+            <p className="truncate text-xs font-bold text-white leading-tight">{userName}</p>
             <p className="text-[10px] text-slate-400">{roleDisplay.label}</p>
           </div>
         </div>

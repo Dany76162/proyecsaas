@@ -10,6 +10,7 @@ import {
   CreditCard,
   Settings,
   LogOut,
+  X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -24,14 +25,36 @@ const PLATFORM_NAV = [
   { name: "Configuración", href: "/platform/settings", icon: Settings },
 ];
 
-export function PlatformSidebar() {
+type PlatformSidebarProps = {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed bottom-0 left-0 top-0 w-64 flex flex-col bg-slate-950 overflow-y-auto">
+    <aside
+      className={cn(
+        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950 overflow-y-auto",
+        "transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+      )}
+    >
+      {/* Close button — mobile only */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-white/10 transition lg:hidden"
+        aria-label="Cerrar menú"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
       {/* Brand card — mismo patrón que el sidebar de inmobiliaria */}
       <Link
         href="/platform"
+        onClick={onClose}
         className="m-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
       >
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
@@ -60,8 +83,9 @@ export function PlatformSidebar() {
               <li key={item.name}>
                 <Link
                   href={item.href}
+                  onClick={onClose}
                   className={cn(
-                    "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",
+                    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
                     isActive
                       ? "bg-white text-slate-950"
                       : "text-slate-300 hover:bg-white/10 hover:text-white",
@@ -88,7 +112,7 @@ export function PlatformSidebar() {
         <form action={logoutAction}>
           <button
             type="submit"
-            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión

@@ -32,7 +32,7 @@ export default async function PlatformPage() {
       </div>
 
       {/* KPIs — más grandes, más presencia */}
-      <div className="grid gap-5 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2 text-slate-400 mb-3">
             <Database className="h-5 w-5" />
@@ -95,7 +95,7 @@ export default async function PlatformPage() {
       </div>
 
       {/* Widgets secundarios */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         {/* Cuentas en Riesgo */}
         <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b bg-slate-50 px-6 py-5 flex items-center justify-between">
