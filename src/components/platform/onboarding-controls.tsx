@@ -13,63 +13,6 @@ import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle, PowerOff } from 
 
 type MenuCoords = { top: number; right: number };
 
-/** Sub-componente: acceso excepcional de soporte con modal de confirmación */
-function SupportAccessButton({ orgSlug, orgName }: { orgSlug: string; orgName: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 px-4 py-2 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-      >
-        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-        <span>Soporte técnico</span>
-      </button>
-
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Acceso de Soporte Técnico</h3>
-                <p className="text-xs text-slate-500">{orgName}</p>
-              </div>
-            </div>
-            <p className="mt-4 text-sm text-slate-700">
-              Estás por acceder al <strong>workspace privado</strong> de este cliente como operador
-              de soporte de plataforma.
-            </p>
-            <p className="mt-2 text-xs text-slate-500">
-              Esta acción es de carácter excepcional. Solo debe usarse para resolver incidencias
-              técnicas.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Cancelar
-              </button>
-              <Link
-                href={`/${orgSlug}`}
-                onClick={() => setOpen(false)}
-                className="rounded-xl bg-amber-500 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-amber-600"
-              >
-                Confirmar acceso
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
 export function OnboardingControls({
   orgSlug,
   orgName,
@@ -84,7 +27,7 @@ export function OnboardingControls({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Dropdown state
+  // Dropdown state (mobile / tablet only)
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState<MenuCoords | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -94,6 +37,7 @@ export function OnboardingControls({
   const [cleanModalOpen, setCleanModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
 
   // Clean form
   const [confirmText, setConfirmText] = useState("");
@@ -112,7 +56,6 @@ export function OnboardingControls({
   // Click-outside: close dropdown when clicking neither trigger nor dropdown
   useEffect(() => {
     if (!menuOpen) return;
-
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
       if (
@@ -123,7 +66,6 @@ export function OnboardingControls({
       }
       setMenuOpen(false);
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
@@ -146,7 +88,6 @@ export function OnboardingControls({
       setCleanError("El texto no coincide. Debes escribir el nombre exacto.");
       return;
     }
-
     startTransition(async () => {
       setCleanError("");
       const res = await clearOrganizationMembershipsAction(orgSlug);
@@ -168,7 +109,6 @@ export function OnboardingControls({
         email: inviteEmail,
         fullName: inviteName,
       });
-
       if (res.success && res.data?.inviteUrl) {
         setInviteUrl(res.data.inviteUrl);
         router.refresh();
@@ -184,7 +124,6 @@ export function OnboardingControls({
       setDeactivateError("El texto no coincide. Debes escribir el nombre exacto.");
       return;
     }
-
     startTransition(async () => {
       setDeactivateError("");
       const res = await deactivateOrganizationAction(orgSlug);
@@ -205,7 +144,7 @@ export function OnboardingControls({
     }
   };
 
-  // ─── Portal dropdown ───────────────────────────────────────────────────────
+  // ─── Portal dropdown (mobile / tablet) ────────────────────────────────────
   // Rendered at document.body to escape overflow:hidden / overflow-x:auto
   // clipping from the table container. Uses position:fixed + viewport coords.
   const dropdownPortal =
@@ -229,7 +168,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setCleanModalOpen(true);
                   }}
-                  className="group flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                 >
                   <UserX className="h-4 w-4" />
                   <span>Limpiar accesos</span>
@@ -240,7 +179,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setInviteModalOpen(true);
                   }}
-                  className="group flex w-full items-center gap-2 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
                 >
                   <UserPlus className="h-4 w-4" />
                   <span>Crear 1º Acceso</span>
@@ -266,7 +205,16 @@ export function OnboardingControls({
 
             {/* Soporte técnico (excepcional) */}
             <div className="border-t border-slate-100 py-1">
-              <SupportAccessButton orgSlug={orgSlug} orgName={orgName} />
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setSupportModalOpen(true);
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+              >
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>Soporte técnico</span>
+              </button>
             </div>
           </div>,
           document.body,
@@ -275,16 +223,103 @@ export function OnboardingControls({
 
   return (
     <div className="inline-block">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={handleToggle}
-        className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 transition"
-      >
-        <MoreVertical className="h-4 w-4" />
-      </button>
+      {/* ── DESKTOP: acciones inline visibles ────────────────────────────────── */}
+      {/* hidden on mobile/tablet, shown as stacked action links on lg+ */}
+      <div className="hidden lg:flex flex-col items-end gap-0.5">
+        {/* Acción principal de onboarding */}
+        {hasUsers ? (
+          <button
+            type="button"
+            onClick={() => setCleanModalOpen(true)}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
+          >
+            Limpiar accesos
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setInviteModalOpen(true)}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors whitespace-nowrap"
+          >
+            Crear 1º Acceso
+          </button>
+        )}
+
+        {/* Dar de baja — secundaria, tono muted hasta hover */}
+        {isActive && (
+          <button
+            type="button"
+            onClick={() => setDeactivateModalOpen(true)}
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
+          >
+            Dar de baja
+          </button>
+        )}
+
+        {/* Soporte técnico — terciaria, apenas visible */}
+        <button
+          type="button"
+          onClick={() => setSupportModalOpen(true)}
+          className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-colors whitespace-nowrap"
+        >
+          Soporte
+        </button>
+      </div>
+
+      {/* ── MOBILE / TABLET: menú ⋮ ──────────────────────────────────────────── */}
+      <div className="flex lg:hidden">
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={handleToggle}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 transition"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </div>
 
       {dropdownPortal}
+
+      {/* ── SUPPORT MODAL ─────────────────────────────────────────────────────── */}
+      {supportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Acceso de Soporte Técnico</h3>
+                <p className="text-xs text-slate-500">{orgName}</p>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-slate-700">
+              Estás por acceder al <strong>workspace privado</strong> de este cliente como operador
+              de soporte de plataforma.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Esta acción es de carácter excepcional. Solo debe usarse para resolver incidencias
+              técnicas.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setSupportModalOpen(false)}
+                className="rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <Link
+                href={`/${orgSlug}`}
+                onClick={() => setSupportModalOpen(false)}
+                className="rounded-xl bg-amber-500 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-amber-600"
+              >
+                Confirmar acceso
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── CLEAN MODAL ──────────────────────────────────────────────────────── */}
       {cleanModalOpen && (
@@ -294,9 +329,9 @@ export function OnboardingControls({
               Desvincular usuarios
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Vas a remover <strong>todos los accesos humanos</strong> de la inmobiliaria "
-              {orgName}". Esto es irreversible, aunque los usuarios globales y los datos operativos
-              permanecerán intactos.
+              Vas a remover <strong>todos los accesos humanos</strong> de la inmobiliaria &ldquo;
+              {orgName}&rdquo;. Esto es irreversible, aunque los usuarios globales y los datos
+              operativos permanecerán intactos.
             </p>
 
             <form onSubmit={handleClean} className="mt-6">

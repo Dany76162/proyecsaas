@@ -48,7 +48,7 @@ export default async function PlatformOrganizationsPage() {
               <th className="px-5 py-3.5">Tráfico 7d</th>
               <th className="px-5 py-3.5 whitespace-nowrap">Última acción</th>
               <th className="px-5 py-3.5">Onboarding</th>
-              <th className="px-3 py-3.5 text-center">Acciones</th>
+              <th className="px-5 py-3.5 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -69,9 +69,7 @@ export default async function PlatformOrganizationsPage() {
                 </td>
                 
                 <td className="px-5 py-4 align-top">
-                  <div className="max-w-[130px] truncate">
-                    <WhatsAppStatus channel={org.whatsappChannel} />
-                  </div>
+                  <WhatsAppStatus channel={org.whatsappChannel} />
                 </td>
                 
                 <td className="px-5 py-4 align-top">
@@ -101,7 +99,7 @@ export default async function PlatformOrganizationsPage() {
                   </div>
                 </td>
 
-                <td className="px-3 py-4 align-top">
+                <td className="px-5 py-4 align-top">
                   <div className="flex items-center justify-end">
                     <OnboardingControls
                     orgSlug={org.slug}
