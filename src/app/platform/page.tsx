@@ -23,7 +23,7 @@ export default async function PlatformPage() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8">
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Resumen General</h1>
         <p className="text-sm text-slate-500">
