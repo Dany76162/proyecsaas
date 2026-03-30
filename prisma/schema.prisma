@@ -69,6 +69,18 @@ enum NotificationType {
   FOLLOW_UP_RESOLVED
 }
 
+enum BillingStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  PENDING
+  ISSUED
+  EXEMPT
+}
+
 enum WhatsAppProvider {
   WHATSAPP_CLOUD
 }
@@ -134,6 +146,7 @@ model Organization {
   visits        Visit[]
   automations   AutomationRule[]
   whatsappChannels WhatsAppChannel[]
+  billingRecords   OrgBillingRecord[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -376,4 +389,25 @@ model WhatsAppChannel {
 
   @@index([organizationId, provider, status])
   @@index([organizationId, isPrimary])
+}
+
+model OrgBillingRecord {
+  id             String        @id @default(cuid())
+  organizationId String
+  description    String
+  amountCents    Int
+  currency       String        @default("ARS")
+  status         BillingStatus @default(PENDING)
+  mpPreferenceId String?
+  mpPaymentUrl   String?
+  mpPaymentId    String?
+  invoiceStatus  InvoiceStatus @default(PENDING)
+  invoiceNumber  String?
+  notes          String?
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
 }

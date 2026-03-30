@@ -1,12 +1,70 @@
 "use server";
 
 import crypto from "node:crypto";
-import { MembershipRole } from "@prisma/client";
+import { MembershipRole, Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import type { ActionResult } from "@/modules/types";
 import { requirePlatformAdmin } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
+
+const createOrganizationSchema = z.object({
+  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(100),
+  slug: z
+    .string()
+    .trim()
+    .min(2, "El slug debe tener al menos 2 caracteres.")
+    .max(60, "El slug no puede superar los 60 caracteres.")
+    .regex(/^[a-z0-9-]+$/, "Solo letras minúsculas, números y guiones."),
+  city: z.string().trim().max(100).optional(),
+  planLabel: z.string().trim().max(60).optional(),
+});
+
+/**
+ * Superadmin Action: Creates a new tenant organization.
+ */
+export async function createOrganizationAction(input: unknown): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  const parsed = createOrganizationSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Datos inválidos.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const { name, slug, city, planLabel } = parsed.data;
+
+  try {
+    await prisma.organization.create({
+      data: {
+        name,
+        slug,
+        city: city || null,
+        planLabel: planLabel || null,
+        isActive: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: `Inmobiliaria "${name}" creada correctamente.`,
+      data: { slug },
+    };
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return {
+        success: false,
+        message: `El slug "${slug}" ya está en uso. Elegí otro.`,
+        fieldErrors: { slug: [`El slug "${slug}" ya está en uso.`] },
+      };
+    }
+    console.error("[createOrganizationAction]", error);
+    return { success: false, message: "Error al crear la inmobiliaria. Intentá nuevamente." };
+  }
+}
 
 const generateInviteSchema = z.object({
   email: z.string().email("Correo electrónico inválido"),

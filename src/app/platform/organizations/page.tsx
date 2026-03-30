@@ -5,6 +5,7 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { listOrganizationsForPlatform } from "@/modules/platform/service";
 import { HealthBadge, WhatsAppStatus, formatRelativeTime } from "@/components/platform/platform-ui";
 import { OnboardingControls } from "@/components/platform/onboarding-controls";
+import { CreateOrgDialog } from "@/components/platform/create-org-dialog";
 
 export default async function PlatformOrganizationsPage() {
   const orgs = await listOrganizationsForPlatform();
@@ -20,7 +21,7 @@ export default async function PlatformOrganizationsPage() {
         </p>
       </div>
 
-      {/* Toolbox (Search/Filters Mock) */}
+      {/* Toolbox */}
       <div className="flex items-center gap-3 w-full">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -34,6 +35,7 @@ export default async function PlatformOrganizationsPage() {
           <SlidersHorizontal className="h-4 w-4 text-slate-400" />
           Filtros
         </button>
+        <CreateOrgDialog />
       </div>
 
       {/* Main Table — overflow-x-auto para mobile/tablet */}
