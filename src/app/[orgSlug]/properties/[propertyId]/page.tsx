@@ -10,6 +10,20 @@ import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+// ── Video embed helper ────────────────────────────────────────────────────────
+function resolveVideoEmbed(url: string): { embedUrl: string } | null {
+  // YouTube: youtube.com/watch?v=ID or youtu.be/ID
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) return { embedUrl: `https://www.youtube.com/embed/${yt[1]}` };
+  // Vimeo: vimeo.com/ID
+  const vimeo = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeo) return { embedUrl: `https://player.vimeo.com/video/${vimeo[1]}` };
+  // Google Drive: drive.google.com/file/d/ID/...
+  const drive = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (drive) return { embedUrl: `https://drive.google.com/file/d/${drive[1]}/preview` };
+  return null;
+}
+
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Borrador",
   AVAILABLE: "Disponible",
@@ -428,7 +442,7 @@ export default async function PropertyDetailPage({
       <SectionCard
         eyebrow="Galería"
         title="Imágenes"
-        description="Pegá URLs de imágenes alojadas externamente. La primera se usa como foto principal."
+        description="Subí fotos desde tu PC o celular, pegá URLs, o usá links de Google Drive. La primera imagen se marca como principal."
       >
         <PropertyImageGallery
           orgSlug={orgSlug}
@@ -436,6 +450,39 @@ export default async function PropertyDetailPage({
           images={property.images}
         />
       </SectionCard>
+
+      {/* Video preview — shown only when videoUrl is set */}
+      {property.videoUrl && (() => {
+        const embed = resolveVideoEmbed(property.videoUrl);
+        return (
+          <SectionCard
+            eyebrow="Video"
+            title="Tour virtual / Video"
+            description={embed ? "Reproducción embebida." : "Link de video externo."}
+          >
+            {embed ? (
+              <div className="overflow-hidden rounded-2xl" style={{ aspectRatio: "16/9" }}>
+                <iframe
+                  src={embed.embedUrl}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="h-full w-full border-0"
+                  title="Video tour"
+                />
+              </div>
+            ) : (
+              <a
+                href={property.videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-brand-600 transition hover:bg-slate-50"
+              >
+                Ver video externo →
+              </a>
+            )}
+          </SectionCard>
+        );
+      })()}
 
       {/* CRM sections */}
       <section className="grid gap-6 xl:grid-cols-2">
