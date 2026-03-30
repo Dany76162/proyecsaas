@@ -130,6 +130,7 @@ export async function loginAction(formData: FormData) {
     },
     select: {
       id: true,
+      isPlatformAdmin: true,
       passwordHash: true,
       memberships: {
         where: {
@@ -175,7 +176,13 @@ export async function loginAction(formData: FormData) {
   const firstMembership = user?.memberships[0];
 
   if (!firstMembership) {
-    // If password was correct but user has no active memberships
+    // Platform admins can access /platform even without active org memberships.
+    if (user?.isPlatformAdmin) {
+      clearLoginAttempts(clientId);
+      await createSession(user.id);
+      redirect(sanitizeRedirectPath(parsed.data.next || undefined, "/platform"));
+    }
+    // Regular users with no active memberships are blocked.
     redirect(buildLoginRedirect("no-memberships", parsed.data.next || undefined));
   }
 
