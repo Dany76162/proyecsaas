@@ -10,6 +10,7 @@ export type OrganizationMember = {
   phone: string | null;
   whatsapp: string | null;
   zone: string | null;
+  agentNotes: string | null;
 };
 
 export type UserRoleBreakdown = {

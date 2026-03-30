@@ -7,6 +7,7 @@ import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getUserRoleBreakdown, listOrganizationUsers } from "@/modules/users/service";
 import { InviteUserDialog } from "@/components/users/invite-user-dialog";
+import { EditMemberDialog } from "@/components/users/edit-member-dialog";
 
 const ROLE_MAP: Record<string, string> = {
   OWNER: "Titular",
@@ -85,8 +86,9 @@ export default async function UsersSettingsPage({
                 )}
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <StatusBadge label={user.isActive ? "Activo" : "Inactivo"} tone="success" />
+                <StatusBadge label={user.isActive ? "Activo" : "Inactivo"} tone={user.isActive ? "success" : "neutral"} />
                 <StatusBadge label={ROLE_MAP[user.role] ?? user.role} tone="info" />
+                <EditMemberDialog orgSlug={orgSlug} member={user} />
               </div>
             </div>
           ))}

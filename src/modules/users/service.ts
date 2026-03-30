@@ -30,6 +30,7 @@ export async function listOrganizationUsers(
       phone: membership.user.phone ?? null,
       whatsapp: membership.user.whatsapp ?? null,
       zone: membership.user.zone ?? null,
+      agentNotes: membership.user.agentNotes ?? null,
     }))
     .sort((left, right) => left.fullName.localeCompare(right.fullName));
 }

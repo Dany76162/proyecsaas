@@ -3,7 +3,7 @@
 import { MembershipRole } from "@prisma/client";
 
 import type { ActionResult } from "@/modules/types";
-import { inviteUserSchema } from "@/modules/users/schemas";
+import { inviteUserSchema, updateMemberProfileSchema } from "@/modules/users/schemas";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 /**
@@ -87,5 +87,63 @@ export async function inviteUserAction(orgSlug: string, input: unknown): Promise
       success: false,
       message: "Failed to create invitation. Please try again.",
     };
+  }
+}
+
+/**
+ * Updates the operational profile of a team member within the organization.
+ * Only ADMIN+ roles can call this. The target user must belong to the same org.
+ */
+export async function updateMemberProfileAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+  const parsed = updateMemberProfileSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: "Datos inválidos.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  // Verify the target user belongs to this org
+  const targetMembership = await prisma.membership.findFirst({
+    where: {
+      userId: parsed.data.userId,
+      organizationId: membership.organization.id,
+    },
+  });
+
+  if (!targetMembership) {
+    return { success: false, message: "Usuario no encontrado en esta organización." };
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: parsed.data.userId },
+      data: {
+        fullName: parsed.data.fullName,
+        email: parsed.data.email,
+        jobTitle: parsed.data.jobTitle || null,
+        phone: parsed.data.phone || null,
+        whatsapp: parsed.data.whatsapp || null,
+        zone: parsed.data.zone || null,
+        agentNotes: parsed.data.agentNotes || null,
+        isActive: parsed.data.isActive,
+      },
+    });
+
+    return { success: true, message: "Perfil actualizado correctamente." };
+  } catch (error: unknown) {
+    const prismaError = error as { code?: string };
+    if (prismaError?.code === "P2002") {
+      return { success: false, message: "El email ya está en uso por otro usuario." };
+    }
+    console.error("[updateMemberProfileAction] Failed:", error);
+    return { success: false, message: "Error al actualizar. Intentá nuevamente." };
   }
 }
