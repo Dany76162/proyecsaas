@@ -58,7 +58,12 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
-  const successMessage = success === "property-updated" ? "Propiedad actualizada correctamente." : null;
+  const successMessage =
+    success === "property-created"
+      ? "Propiedad creada. Completá ahora la ficha avanzada con descripción, características, fotos y más."
+      : success === "property-updated"
+        ? "Propiedad actualizada correctamente."
+        : null;
   const errorMessage =
     error === "invalid-property"
       ? "Los datos son inválidos. Revisá los campos e intentá de nuevo."

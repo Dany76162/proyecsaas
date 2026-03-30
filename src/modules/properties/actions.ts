@@ -37,16 +37,17 @@ export async function createPropertyAction(
     };
   }
 
-  await prisma.property.create({
+  const property = await prisma.property.create({
     data: {
       organizationId: membership.organization.id,
       ...parsed.data,
       status: "DRAFT",
       publicVisible: false,
     },
+    select: { id: true },
   });
 
-  return { success: true, message: "Property created." };
+  return { success: true, message: "Property created.", data: { propertyId: property.id } };
 }
 
 function redirectToPropertyResult(
