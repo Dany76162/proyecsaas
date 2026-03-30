@@ -5,24 +5,11 @@ import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { PropertyImageGallery } from "@/components/properties/property-image-gallery";
+import { PropertyVideoUpload } from "@/components/properties/property-video-upload";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
 import { formatCurrency, formatDate } from "@/lib/utils";
-
-// ── Video embed helper ────────────────────────────────────────────────────────
-function resolveVideoEmbed(url: string): { embedUrl: string } | null {
-  // YouTube: youtube.com/watch?v=ID or youtu.be/ID
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (yt) return { embedUrl: `https://www.youtube.com/embed/${yt[1]}` };
-  // Vimeo: vimeo.com/ID
-  const vimeo = url.match(/vimeo\.com\/(\d+)/);
-  if (vimeo) return { embedUrl: `https://player.vimeo.com/video/${vimeo[1]}` };
-  // Google Drive: drive.google.com/file/d/ID/...
-  const drive = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (drive) return { embedUrl: `https://drive.google.com/file/d/${drive[1]}/preview` };
-  return null;
-}
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Borrador",
@@ -451,38 +438,18 @@ export default async function PropertyDetailPage({
         />
       </SectionCard>
 
-      {/* Video preview — shown only when videoUrl is set */}
-      {property.videoUrl && (() => {
-        const embed = resolveVideoEmbed(property.videoUrl);
-        return (
-          <SectionCard
-            eyebrow="Video"
-            title="Tour virtual / Video"
-            description={embed ? "Reproducción embebida." : "Link de video externo."}
-          >
-            {embed ? (
-              <div className="overflow-hidden rounded-2xl" style={{ aspectRatio: "16/9" }}>
-                <iframe
-                  src={embed.embedUrl}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="h-full w-full border-0"
-                  title="Video tour"
-                />
-              </div>
-            ) : (
-              <a
-                href={property.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-brand-600 transition hover:bg-slate-50"
-              >
-                Ver video externo →
-              </a>
-            )}
-          </SectionCard>
-        );
-      })()}
+      {/* Video — upload directo o enlace externo */}
+      <SectionCard
+        eyebrow="Video"
+        title="Tour virtual / Video"
+        description="Subí un video desde tu PC o celular (MP4, MOV, WebM · máx. 128 MB). Para videos más pesados, pegá el link en el campo 'Video / Tour virtual' de la sección Descripción."
+      >
+        <PropertyVideoUpload
+          orgSlug={orgSlug}
+          propertyId={property.id}
+          videoUrl={property.videoUrl}
+        />
+      </SectionCard>
 
       {/* CRM sections */}
       <section className="grid gap-6 xl:grid-cols-2">

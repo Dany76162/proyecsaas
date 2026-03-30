@@ -20,7 +20,24 @@ export const ourFileRouter = {
       return { userId: user.id };
     })
     .onUploadComplete(async ({ file }) => {
-      // Returns data to the client via onClientUploadComplete
+      return { url: file.url };
+    }),
+
+  /**
+   * Uploader for property video (tour virtual / recorrido).
+   * One video per upload. Ownership validated downstream in setPropertyVideoAction.
+   * 128 MB covers ~2 min of 1080p phone footage. Heavier content should use
+   * YouTube/Vimeo and paste the URL in the external URL field.
+   */
+  propertyVideoUploader: f({
+    video: { maxFileSize: "128MB", maxFileCount: 1 },
+  })
+    .middleware(async () => {
+      const user = await getSessionUser();
+      if (!user) throw new UploadThingError("No autorizado.");
+      return { userId: user.id };
+    })
+    .onUploadComplete(async ({ file }) => {
       return { url: file.url };
     }),
 } satisfies FileRouter;

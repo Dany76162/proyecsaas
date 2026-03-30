@@ -10,6 +10,7 @@ import {
   createPropertySchema,
   removePropertyImageSchema,
   setPropertyImagePrimarySchema,
+  setPropertyVideoSchema,
   updatePropertySchema,
 } from "@/modules/properties/schemas";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
@@ -143,6 +144,42 @@ export async function updatePropertyAction(formData: FormData) {
   revalidatePath(`/${orgSlug}/visits`);
 
   redirectToPropertyResult(orgSlug, property.id, { success: "property-updated" });
+}
+
+// ─── Video action ─────────────────────────────────────────────────────────────
+
+/**
+ * Sets or clears the video URL for a property.
+ * Handles both UploadThing CDN URLs and external URLs.
+ * Pass url: null to remove the video.
+ */
+export async function setPropertyVideoAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = setPropertyVideoSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Datos inválidos." };
+  }
+
+  const property = await prisma.property.findFirst({
+    where: { id: parsed.data.propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  await prisma.property.update({
+    where: { id: property.id },
+    data: { videoUrl: parsed.data.url },
+  });
+
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  return { success: true, message: parsed.data.url ? "Video actualizado." : "Video eliminado." };
 }
 
 // ─── Image actions ────────────────────────────────────────────────────────────

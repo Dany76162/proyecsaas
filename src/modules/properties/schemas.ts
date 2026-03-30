@@ -60,6 +60,11 @@ export const updatePropertySchema = z.object({
   videoUrl: z.preprocess(emptyStringToNull, z.string().trim().max(500).nullable()),
 });
 
+export const setPropertyVideoSchema = z.object({
+  propertyId: z.string().min(1),
+  url: z.string().url().max(1000).nullable(),
+});
+
 export const addPropertyImageSchema = z.object({
   propertyId: z.string().min(1),
   url: z.string().url().max(1000),
