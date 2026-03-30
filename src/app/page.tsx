@@ -27,7 +27,7 @@ export default async function HomePage() {
               {sessionUser ? (
                 <>
                   <Link
-                    href={organizations[0] ? `/${organizations[0].slug}` : "/map"}
+                    href={organizations[0] ? `/${organizations[0].slug}` : sessionUser?.isPlatformAdmin ? "/platform" : "/map"}
                     className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
                   >
                     Ingresar a tu área de trabajo

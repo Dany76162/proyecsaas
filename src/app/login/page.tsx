@@ -32,7 +32,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const nextPath = resolvedSearchParams?.next ?? "/";
+  const nextPath = resolvedSearchParams?.next ?? "";
   const errorMessage = getErrorMessage(resolvedSearchParams?.error);
 
   return (
