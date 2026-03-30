@@ -7,6 +7,9 @@ export type OrganizationMember = {
   jobTitle: string;
   isActive: boolean;
   role: MembershipRole;
+  phone: string | null;
+  whatsapp: string | null;
+  zone: string | null;
 };
 
 export type UserRoleBreakdown = {

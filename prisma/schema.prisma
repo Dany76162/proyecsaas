@@ -104,6 +104,10 @@ model User {
   email            String        @unique
   fullName         String
   jobTitle         String?
+  phone            String?
+  whatsapp         String?
+  zone             String?
+  agentNotes       String?
   isActive         Boolean       @default(true)
   isPlatformAdmin  Boolean       @default(false)
   passwordHash     String?
@@ -129,14 +133,23 @@ model InviteToken {
 }
 
 model Organization {
-  id            String           @id @default(cuid())
-  name          String
-  slug          String           @unique
-  city          String?
-  planLabel     String?
-  marketFocus   String?
-  description   String?
-  isActive      Boolean          @default(true)
+  id                     String           @id @default(cuid())
+  name                   String
+  slug                   String           @unique
+  city                   String?
+  planLabel              String?
+  marketFocus            String?
+  description            String?
+  contactEmail           String?
+  contactPhone           String?
+  contactWhatsapp        String?
+  website                String?
+  businessHours          String?
+  propertySourceUrl      String?
+  propertySourceType     String?
+  propertySourceStatus   String           @default("IDLE")
+  propertySourceSyncedAt DateTime?
+  isActive               Boolean          @default(true)
   memberships   Membership[]
   leads         Lead[]
   properties    Property[]
@@ -204,11 +217,13 @@ model Property {
   longitude      Decimal?       @db.Decimal(10, 7)
   priceCents     Int?
   currency       String?        @default("USD")
-  status         PropertyStatus @default(DRAFT)
-  publicVisible  Boolean        @default(false)
-  bedrooms       Int?
-  bathrooms      Int?
-  surfaceM2      Int?
+  status            PropertyStatus @default(DRAFT)
+  publicVisible     Boolean        @default(false)
+  bedrooms          Int?
+  bathrooms         Int?
+  surfaceM2         Int?
+  externalSourceUrl String?
+  externalId        String?
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   conversations  Conversation[] @relation("ConversationPropertyContext")
   interestedLeads Lead[]        @relation("LeadPropertyInterest")

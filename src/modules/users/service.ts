@@ -27,6 +27,9 @@ export async function listOrganizationUsers(
       jobTitle: membership.user.jobTitle ?? "Team member",
       isActive: membership.user.isActive,
       role: membership.role,
+      phone: membership.user.phone ?? null,
+      whatsapp: membership.user.whatsapp ?? null,
+      zone: membership.user.zone ?? null,
     }))
     .sort((left, right) => left.fullName.localeCompare(right.fullName));
 }

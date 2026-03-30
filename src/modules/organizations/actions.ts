@@ -3,18 +3,13 @@
 import { MembershipRole } from "@prisma/client";
 
 import type { ActionResult } from "@/modules/types";
-import { updateOrganizationSchema } from "@/modules/organizations/schemas";
+import { updateOrganizationSchema, updatePropertySourceSchema } from "@/modules/organizations/schemas";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 
 /**
- * Updates the public profile of the given organization.
- *
- * Auth: requires active session + organization membership for `orgSlug`.
- * Minimum role: ADMIN.
- *
- * NOTE: Placeholder — auth and validation are wired but database persistence
- * is not yet connected. Returns success: false until persistence is implemented.
+ * Updates the public profile and contact info of the given organization.
+ * Auth: active session + org membership. Minimum role: ADMIN.
  */
 export async function updateOrganizationProfileAction(
   orgSlug: string,
@@ -28,15 +23,48 @@ export async function updateOrganizationProfileAction(
   if (!parsed.success) {
     return {
       success: false,
-      message: "Organization profile input is invalid.",
+      message: parsed.error.issues[0]?.message ?? "Datos inválidos.",
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
 
+  // Convert empty strings to null so optional fields clear correctly.
+  const data = Object.fromEntries(
+    Object.entries(parsed.data).map(([k, v]) => [k, typeof v === "string" && v === "" ? null : v]),
+  );
+
   await prisma.organization.update({
     where: { slug: orgSlug },
-    data: parsed.data,
+    data,
   });
 
-  return { success: true, message: "Organization profile updated." };
+  return { success: true, message: "Cambios guardados correctamente." };
+}
+
+/**
+ * Saves the property source URL and type for future sync.
+ * Auth: active session + org membership. Minimum role: ADMIN.
+ */
+export async function updatePropertySourceAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+  const parsed = updatePropertySourceSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return { success: false, message: "Datos de fuente inválidos." };
+  }
+
+  await prisma.organization.update({
+    where: { slug: orgSlug },
+    data: {
+      propertySourceUrl: parsed.data.propertySourceUrl || null,
+      propertySourceType: parsed.data.propertySourceType || null,
+    },
+  });
+
+  return { success: true, message: "Fuente de propiedades guardada." };
 }

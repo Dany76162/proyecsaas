@@ -1,9 +1,16 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 
+import { prisma } from "@/server/db/prisma";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import {
+  OrganizationProfileForm,
+  PropertySourceForm,
+} from "@/components/organizations/organization-settings-forms";
 
 export default async function OrganizationSettingsPage({
   params,
@@ -11,9 +18,30 @@ export default async function OrganizationSettingsPage({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  const organization = await getOrganizationWorkspace(orgSlug);
 
-  if (!organization) {
+  const [organization, orgProfile] = await Promise.all([
+    getOrganizationWorkspace(orgSlug),
+    prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: {
+        name: true,
+        city: true,
+        marketFocus: true,
+        description: true,
+        contactEmail: true,
+        contactPhone: true,
+        contactWhatsapp: true,
+        website: true,
+        businessHours: true,
+        propertySourceUrl: true,
+        propertySourceType: true,
+        propertySourceStatus: true,
+        propertySourceSyncedAt: true,
+      },
+    }),
+  ]);
+
+  if (!organization || !orgProfile) {
     notFound();
   }
 
@@ -25,43 +53,55 @@ export default async function OrganizationSettingsPage({
         <MetricCard
           label="Workspace slug"
           value={organization.slug}
-          hint="Tenant routing is already grounded in the organization slug."
+          hint="Identificador único del tenant. No se puede modificar."
         />
         <MetricCard
           label="Plan"
           value={organization.planLabel}
-          hint="Commercial packaging is visible without introducing billing logic yet."
+          hint="Plan comercial asignado desde el panel superadmin."
         />
         <MetricCard
-          label="Market"
+          label="Mercado"
           value={organization.city}
-          hint="Useful context for future listing coverage and assignment rules."
+          hint="Ciudad o zona principal de operación."
         />
       </section>
 
       <SectionCard
-        eyebrow="Organization"
-        title="Workspace profile"
-        description="Foundational tenant information for the internal product."
+        eyebrow="Configuración"
+        title="Perfil de la inmobiliaria"
+        description="Nombre, contacto y horario operativo. Solo los administradores pueden editar estos datos."
       >
-        <dl className="grid gap-5 md:grid-cols-2">
-          <div className="rounded-2xl bg-slate-50 p-5">
-            <dt className="text-sm text-slate-500">Organization name</dt>
-            <dd className="mt-2 text-lg font-semibold text-slate-950">{organization.name}</dd>
-          </div>
-          <div className="rounded-2xl bg-slate-50 p-5">
-            <dt className="text-sm text-slate-500">Market focus</dt>
-            <dd className="mt-2 text-lg font-semibold text-slate-950">
-              {organization.marketFocus}
-            </dd>
-          </div>
-          <div className="rounded-2xl bg-slate-50 p-5 md:col-span-2">
-            <dt className="text-sm text-slate-500">Workspace description</dt>
-            <dd className="mt-2 text-lg font-semibold text-slate-950">
-              {organization.description}
-            </dd>
-          </div>
-        </dl>
+        <OrganizationProfileForm
+          orgSlug={orgSlug}
+          initial={{
+            name: orgProfile.name,
+            city: orgProfile.city,
+            marketFocus: orgProfile.marketFocus,
+            description: orgProfile.description,
+            contactEmail: orgProfile.contactEmail,
+            contactPhone: orgProfile.contactPhone,
+            contactWhatsapp: orgProfile.contactWhatsapp,
+            website: orgProfile.website,
+            businessHours: orgProfile.businessHours,
+          }}
+        />
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Inventario"
+        title="Fuente de propiedades"
+        description="URL desde donde se leerá el inventario publicado en el sitio de la inmobiliaria. Base para la sincronización automática."
+      >
+        <PropertySourceForm
+          orgSlug={orgSlug}
+          initial={{
+            propertySourceUrl: orgProfile.propertySourceUrl,
+            propertySourceType: orgProfile.propertySourceType,
+            propertySourceStatus: orgProfile.propertySourceStatus,
+            propertySourceSyncedAt: orgProfile.propertySourceSyncedAt?.toISOString() ?? null,
+          }}
+        />
       </SectionCard>
     </>
   );

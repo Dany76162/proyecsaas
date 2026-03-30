@@ -62,21 +62,29 @@ export default async function UsersSettingsPage({
       <SectionCard
         eyebrow="Equipo"
         title="Usuarios y roles"
-        description="Directorio principal de miembros del espacio de trabajo."
+        description="Directorio de miembros del espacio de trabajo con su perfil de contacto."
       >
         <div className="space-y-4">
           {users.map((user) => (
             <div
               key={user.id}
-              className="flex flex-col gap-4 rounded-[1.5rem] border border-slate-200 p-5 md:flex-row md:items-center md:justify-between"
+              className="flex flex-col gap-4 rounded-[1.5rem] border border-slate-200 p-5 md:flex-row md:items-start md:justify-between"
             >
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-lg font-semibold text-slate-950">{user.fullName}</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  {user.jobTitle} / {user.email}
+                  {user.jobTitle} · {user.email}
                 </p>
+                {/* Contact details — show if populated */}
+                {(user.phone || user.whatsapp || user.zone) && (
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+                    {user.phone && <span>Tel: {user.phone}</span>}
+                    {user.whatsapp && <span>WA: {user.whatsapp}</span>}
+                    {user.zone && <span>Zona: {user.zone}</span>}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 shrink-0">
                 <StatusBadge label={user.isActive ? "Activo" : "Inactivo"} tone="success" />
                 <StatusBadge label={ROLE_MAP[user.role] ?? user.role} tone="info" />
               </div>
