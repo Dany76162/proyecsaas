@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Plus, X, Receipt } from "lucide-react";
+import { ExternalLink, Plus, X, Receipt, Copy, Check, MessageCircle, Mail } from "lucide-react";
 import type { OrgBillingRecord, Organization } from "@prisma/client";
 import {
   createBillingRecordAction,
@@ -26,6 +26,32 @@ const INVOICE_STATUS_LABELS: Record<string, string> = {
   EXEMPT: "Exenta",
 };
 
+function buildWhatsAppUrl(record: RecordWithOrg, paymentUrl: string): string {
+  const text = [
+    `*${record.organization.name}*`,
+    record.description,
+    `Monto: ${new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(record.amountCents / 100)}`,
+    `Link de pago: ${paymentUrl}`,
+  ].join("\n");
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
+function buildMailtoUrl(record: RecordWithOrg, paymentUrl: string): string {
+  const subject = `Cobro — ${record.organization.name} — ${record.description}`;
+  const body = [
+    `Hola,`,
+    ``,
+    `Te enviamos el link de pago correspondiente a:`,
+    ``,
+    `Inmobiliaria: ${record.organization.name}`,
+    `Concepto: ${record.description}`,
+    `Monto: ${new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(record.amountCents / 100)}`,
+    ``,
+    `Link de pago: ${paymentUrl}`,
+  ].join("\n");
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 const formatARS = (cents: number) =>
   new Intl.NumberFormat("es-AR", {
     style: "currency",
@@ -45,6 +71,14 @@ export function BillingTable({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (url: string, id: string) => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 2000);
+    });
+  };
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
@@ -205,15 +239,43 @@ export function BillingTable({
                   {/* MP Link */}
                   <td className="px-5 py-4">
                     {r.mpPaymentUrl ? (
-                      <a
-                        href={r.mpPaymentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Abrir link
-                      </a>
+                      <div className="flex items-center gap-1">
+                        <a
+                          href={r.mpPaymentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Abrir link de pago"
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-800 transition"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Abrir
+                        </a>
+                        <button
+                          onClick={() => handleCopy(r.mpPaymentUrl!, r.id)}
+                          title="Copiar link"
+                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                        >
+                          {copiedId === r.id
+                            ? <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                        <a
+                          href={buildWhatsAppUrl(r, r.mpPaymentUrl!)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Compartir por WhatsApp"
+                          className="rounded p-1 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                        </a>
+                        <a
+                          href={buildMailtoUrl(r, r.mpPaymentUrl!)}
+                          title="Enviar por email"
+                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
                     ) : r.status !== "CANCELLED" && r.status !== "PAID" ? (
                       <button
                         disabled={isPending}
