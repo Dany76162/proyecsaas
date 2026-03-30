@@ -75,7 +75,13 @@ export function BillingTable({
         notes: notes || undefined,
       });
       if (res.success) {
-        resetCreate(); setCreateOpen(false); router.refresh();
+        resetCreate();
+        setCreateOpen(false);
+        // Defer refresh to the next tick so React commits the modal unmount
+        // before reconciling the server component tree. Calling router.refresh()
+        // synchronously with setCreateOpen(false) inside startTransition causes
+        // a concurrent DOM mutation race that produces a removeChild crash.
+        setTimeout(() => router.refresh(), 0);
       } else {
         setCreateError(res.message);
       }
@@ -111,7 +117,9 @@ export function BillingTable({
         invoiceNumber || undefined,
       );
       if (res.success) {
-        setInvoiceRecord(null); setInvoiceNumber(""); router.refresh();
+        setInvoiceRecord(null);
+        setInvoiceNumber("");
+        setTimeout(() => router.refresh(), 0);
       } else {
         setInvoiceError(res.message);
       }
