@@ -50,6 +50,7 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
 
   const [orgs, recentLeads, followUps, recentFailures] = await Promise.all([
     prisma.organization.findMany({
+      where: { isActive: true },
       orderBy: { name: "asc" },
       select: {
         id: true,

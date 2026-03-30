@@ -16,7 +16,7 @@ export default async function PlatformOrganizationsPage() {
           Clientes / Inmobiliarias
         </h1>
         <p className="text-sm text-slate-500">
-          Listado de los {orgs.length} tenants registrados en la plataforma.
+          {orgs.length} inmobiliaria{orgs.length !== 1 ? "s" : ""} activa{orgs.length !== 1 ? "s" : ""} registrada{orgs.length !== 1 ? "s" : ""} en la plataforma.
         </p>
       </div>
 
@@ -114,9 +114,9 @@ export default async function PlatformOrganizationsPage() {
             {orgs.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-5 py-12 text-center">
-                  <p className="text-base font-semibold text-slate-900">Sin clientes</p>
+                  <p className="text-base font-semibold text-slate-900">Sin inmobiliarias activas</p>
                   <p className="mt-1 text-sm text-slate-500">
-                    Aún no hay inmobiliarias registradas en la base de datos de plataforma.
+                    No hay organizaciones activas en este momento. Las dadas de baja no aparecen en este panel.
                   </p>
                 </td>
               </tr>
