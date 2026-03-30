@@ -4,34 +4,41 @@ import { notFound } from "next/navigation";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
+import { PropertyImageGallery } from "@/components/properties/property-image-gallery";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+const STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Borrador",
+  AVAILABLE: "Disponible",
+  RESERVED: "Reservada",
+  SOLD: "Vendida",
+  RENTED: "Alquilada",
+};
+
+const OPERATION_TYPE_LABEL: Record<string, string> = {
+  SALE: "Venta",
+  RENT: "Alquiler",
+  TEMPORARY: "Alquiler temporario",
+};
+
 function getPropertyStatusTone(status: string) {
-  if (status === "AVAILABLE") {
-    return "success" as const;
-  }
-
-  if (status === "DRAFT") {
-    return "neutral" as const;
-  }
-
+  if (status === "AVAILABLE") return "success" as const;
+  if (status === "DRAFT") return "neutral" as const;
   return "warning" as const;
 }
 
 function getVisitStatusTone(status: string) {
-  if (status === "CONFIRMED" || status === "COMPLETED") {
-    return "success" as const;
-  }
-
-  if (status === "CANCELED") {
-    return "neutral" as const;
-  }
-
+  if (status === "CONFIRMED" || status === "COMPLETED") return "success" as const;
+  if (status === "CANCELED") return "neutral" as const;
   return "warning" as const;
 }
+
+const inputClass =
+  "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500";
+const labelClass = "block text-sm font-medium text-slate-700 mb-1.5";
 
 export default async function PropertyDetailPage({
   params,
@@ -51,258 +58,439 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
-  const successMessage =
-    success === "property-updated" ? "Property updated successfully." : null;
+  const successMessage = success === "property-updated" ? "Propiedad actualizada correctamente." : null;
   const errorMessage =
     error === "invalid-property"
-      ? "Property data is invalid. Review the fields and try again."
+      ? "Los datos son inválidos. Revisá los campos e intentá de nuevo."
       : error === "property-not-found"
-        ? "That property no longer exists in this workspace."
+        ? "Esta propiedad ya no existe en el workspace."
         : null;
+
+  const operationLabel = property.operationType
+    ? (OPERATION_TYPE_LABEL[property.operationType] ?? property.operationType)
+    : null;
 
   return (
     <>
-      {successMessage ? (
-        <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">
+      {successMessage && (
+        <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
           {successMessage}
         </section>
-      ) : null}
-      {errorMessage ? (
-        <section className="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800 shadow-soft">
+      )}
+      {errorMessage && (
+        <section className="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
           {errorMessage}
         </section>
-      ) : null}
+      )}
 
+      {/* Header */}
       <section className="rounded-[1.75rem] border bg-white p-6 shadow-soft">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge label={property.status} tone={getPropertyStatusTone(property.status)} />
-              <StatusBadge label={property.publicVisible ? "Public listing" : "Internal only"} tone={property.publicVisible ? "info" : "neutral"} />
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge
+                label={STATUS_LABEL[property.status] ?? property.status}
+                tone={getPropertyStatusTone(property.status)}
+              />
+              <StatusBadge
+                label={property.publicVisible ? "Publicada" : "Solo interna"}
+                tone={property.publicVisible ? "info" : "neutral"}
+              />
+              {operationLabel && (
+                <StatusBadge label={operationLabel} tone="info" />
+              )}
             </div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
               {property.title}
             </h1>
-            <p className="mt-3 text-base leading-7 text-slate-600">
-              {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Location details pending"}
+            <p className="mt-2 text-base text-slate-500">
+              {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Ubicación pendiente"}
             </p>
           </div>
-
           <div className="flex flex-wrap gap-3">
-            <Link
-              href={`/map/${property.id}`}
-              className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-            >
-              Open public listing
-            </Link>
+            {property.publicVisible && (
+              <Link
+                href={`/map/${property.id}`}
+                className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Ver publicación
+              </Link>
+            )}
             <Link
               href={`/${orgSlug}/leads`}
               className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
             >
-              Review linked leads
+              Ver leads vinculados
             </Link>
           </div>
         </div>
       </section>
 
+      {/* Metrics row */}
       <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Price" value={property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Price on request"} hint="Current asking price." />
-        <MetricCard label="Type" value={property.propertyType || "Property"} hint="Commercial classification." />
-        <MetricCard label="Layout" value={`${property.bedrooms ?? 0} / ${property.bathrooms ?? 0}`} hint="Bedrooms and bathrooms." />
-        <MetricCard label="Surface" value={`${property.surfaceM2 ?? 0} m2`} hint="Useful for matching and map presentation." />
+        <MetricCard
+          label="Precio"
+          value={property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "A consultar"}
+          hint="Precio de venta o alquiler actual."
+        />
+        <MetricCard
+          label="Tipo"
+          value={property.propertyType || "Propiedad"}
+          hint="Clasificación comercial."
+        />
+        <MetricCard
+          label="Amb / Dorm / Ba"
+          value={`${property.rooms ?? "–"} / ${property.bedrooms ?? "–"} / ${property.bathrooms ?? "–"}`}
+          hint="Ambientes, dormitorios y baños."
+        />
+        <MetricCard
+          label="Superficie"
+          value={property.surfaceM2 ? `${property.surfaceM2} m²` : "–"}
+          hint="Superficie cubierta."
+        />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      {/* Edit form — all in one submit */}
+      <form action={updatePropertyAction} className="space-y-6">
+        <input type="hidden" name="orgSlug" value={orgSlug} />
+        <input type="hidden" name="propertyId" value={property.id} />
+
+        {/* Sección 1: Datos comerciales */}
         <SectionCard
-          eyebrow="Edit"
-          title="Property details"
-          description="Keep the inventory current without leaving the workspace or touching the database."
+          eyebrow="Datos comerciales"
+          title="Precio, tipo y estado"
+          description="Clasificación principal de la propiedad para el CRM y la publicación."
         >
-          <form action={updatePropertyAction} className="grid gap-4 md:grid-cols-2">
-            <input type="hidden" name="orgSlug" value={orgSlug} />
-            <input type="hidden" name="propertyId" value={property.id} />
-
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Title</span>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="lg:col-span-3">
+              <label className={labelClass}>Título / Nombre comercial</label>
               <input
-                name="title"
                 required
+                name="title"
                 defaultValue={property.title}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+                className={inputClass}
+                placeholder="Ej. Departamento luminoso en Palermo"
               />
-            </label>
+            </div>
 
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Property type</span>
+            <div>
+              <label className={labelClass}>Operación</label>
+              <select name="operationType" defaultValue={property.operationType ?? ""} className={inputClass}>
+                <option value="">Sin especificar</option>
+                <option value="SALE">Venta</option>
+                <option value="RENT">Alquiler</option>
+                <option value="TEMPORARY">Alquiler temporario</option>
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass}>Tipo de propiedad</label>
               <input
                 name="propertyType"
                 defaultValue={property.propertyType ?? ""}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-                placeholder="Apartment, house, lot..."
+                className={inputClass}
+                placeholder="Departamento, casa, terreno…"
               />
-            </label>
+            </div>
 
-            <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
-              <span>Address</span>
-              <input
-                name="address"
-                defaultValue={property.address ?? ""}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-              />
-            </label>
+            <div>
+              <label className={labelClass}>Estado comercial</label>
+              <select name="status" defaultValue={property.status} className={inputClass}>
+                <option value="DRAFT">Borrador</option>
+                <option value="AVAILABLE">Disponible</option>
+                <option value="RESERVED">Reservada</option>
+                <option value="SOLD">Vendida</option>
+                <option value="RENTED">Alquilada</option>
+              </select>
+            </div>
 
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>City</span>
-              <input
-                name="city"
-                defaultValue={property.city ?? ""}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-              />
-            </label>
-
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Neighborhood</span>
-              <input
-                name="neighborhood"
-                defaultValue={property.neighborhood ?? ""}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-              />
-            </label>
-
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Price (cents)</span>
+            <div>
+              <label className={labelClass}>Precio</label>
               <input
                 name="priceCents"
                 type="number"
                 min="0"
                 defaultValue={property.priceCents ?? ""}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+                className={inputClass}
+                placeholder="En centavos (ej. 15000000)"
               />
-            </label>
+            </div>
 
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Currency</span>
+            <div>
+              <label className={labelClass}>Moneda</label>
+              <select name="currency" defaultValue={property.currency ?? "USD"} className={inputClass}>
+                <option value="USD">USD</option>
+                <option value="ARS">ARS</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass}>Expensas (centavos)</label>
               <input
-                name="currency"
-                defaultValue={property.currency ?? "USD"}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+                name="expensesCents"
+                type="number"
+                min="0"
+                defaultValue={property.expensesCents ?? ""}
+                className={inputClass}
+                placeholder="Ej. 5000000"
               />
-            </label>
+            </div>
 
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Bedrooms</span>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
+                <input
+                  name="publicVisible"
+                  type="checkbox"
+                  defaultChecked={property.publicVisible}
+                  className="h-4 w-4 rounded border-slate-300 accent-brand-500"
+                />
+                <div>
+                  <span className="font-medium">Publicar esta propiedad</span>
+                  <p className="text-xs text-slate-400 mt-0.5">Aparecerá en el mapa público y portales externos.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Sección 2: Ubicación */}
+        <SectionCard
+          eyebrow="Ubicación"
+          title="Dirección y zona"
+          description="Datos de ubicación para matching de leads y publicación."
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Dirección</label>
+              <input
+                name="address"
+                defaultValue={property.address ?? ""}
+                className={inputClass}
+                placeholder="Ej. Av. Santa Fe 1234, piso 3"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Barrio / Zona</label>
+              <input
+                name="neighborhood"
+                defaultValue={property.neighborhood ?? ""}
+                className={inputClass}
+                placeholder="Ej. Palermo"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Ciudad</label>
+              <input
+                name="city"
+                defaultValue={property.city ?? ""}
+                className={inputClass}
+                placeholder="Ej. Buenos Aires"
+              />
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Sección 3: Características */}
+        <SectionCard
+          eyebrow="Características"
+          title="Distribución y superficie"
+          description="Datos para matching automático de leads y filtros de búsqueda."
+        >
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className={labelClass}>Ambientes</label>
+              <input
+                name="rooms"
+                type="number"
+                min="0"
+                defaultValue={property.rooms ?? ""}
+                className={inputClass}
+                placeholder="Ej. 3"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Dormitorios</label>
               <input
                 name="bedrooms"
                 type="number"
                 min="0"
                 defaultValue={property.bedrooms ?? ""}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+                className={inputClass}
+                placeholder="Ej. 2"
               />
-            </label>
-
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Bathrooms</span>
+            </div>
+            <div>
+              <label className={labelClass}>Baños</label>
               <input
                 name="bathrooms"
                 type="number"
                 min="0"
                 defaultValue={property.bathrooms ?? ""}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+                className={inputClass}
+                placeholder="Ej. 1"
               />
-            </label>
-
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Surface (m2)</span>
+            </div>
+            <div>
+              <label className={labelClass}>Superficie (m²)</label>
               <input
                 name="surfaceM2"
                 type="number"
                 min="0"
                 defaultValue={property.surfaceM2 ?? ""}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
+                className={inputClass}
+                placeholder="Ej. 65"
               />
-            </label>
-
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Status</span>
-              <select
-                name="status"
-                defaultValue={property.status}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-              >
-                <option value="DRAFT">DRAFT</option>
-                <option value="AVAILABLE">AVAILABLE</option>
-                <option value="RESERVED">RESERVED</option>
-                <option value="SOLD">SOLD</option>
-                <option value="RENTED">RENTED</option>
-              </select>
-            </label>
-
-            <label className="md:col-span-2 flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
-              <input
-                name="publicVisible"
-                type="checkbox"
-                defaultChecked={property.publicVisible}
-                className="h-4 w-4 rounded border-slate-300"
-              />
-              <span>Expose this property on the public map/listing surfaces</span>
-            </label>
-
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
-              >
-                Save property
-              </button>
             </div>
-          </form>
+            <div>
+              <label className={labelClass}>Cocheras</label>
+              <input
+                name="parkingSpots"
+                type="number"
+                min="0"
+                defaultValue={property.parkingSpots ?? ""}
+                className={inputClass}
+                placeholder="Ej. 1"
+              />
+            </div>
+          </div>
         </SectionCard>
 
+        {/* Sección 4: Descripción y multimedia */}
         <SectionCard
-          eyebrow="Interest"
-          title="Linked leads"
-          description="This is where the property turns into CRM opportunity."
+          eyebrow="Descripción"
+          title="Texto y multimedia"
+          description="Descripción comercial, amenities y links externos."
         >
-          <div className="space-y-4">
+          <div className="grid gap-4">
+            <div>
+              <label className={labelClass}>Descripción larga</label>
+              <textarea
+                name="description"
+                rows={5}
+                defaultValue={property.description ?? ""}
+                className={`${inputClass} resize-none`}
+                placeholder="Describí la propiedad en detalle: características, estado, orientación, entorno…"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Amenities / Características destacadas</label>
+              <input
+                name="amenities"
+                defaultValue={property.amenities ?? ""}
+                className={inputClass}
+                placeholder="Ej. Parrilla, Piscina, Seguridad 24hs, Gimnasio"
+              />
+              <p className="mt-1.5 text-xs text-slate-400">Separados por coma.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>Link externo (portal)</label>
+                <input
+                  name="externalLink"
+                  type="url"
+                  defaultValue={property.externalLink ?? ""}
+                  className={inputClass}
+                  placeholder="https://zonaprop.com.ar/..."
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Video / Tour virtual</label>
+                <input
+                  name="videoUrl"
+                  type="url"
+                  defaultValue={property.videoUrl ?? ""}
+                  className={inputClass}
+                  placeholder="https://youtube.com/..."
+                />
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Submit button — bottom of form */}
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="rounded-full bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600"
+          >
+            Guardar propiedad
+          </button>
+        </div>
+      </form>
+
+      {/* Sección 5: Galería (client component — fuera del form) */}
+      <SectionCard
+        eyebrow="Galería"
+        title="Imágenes"
+        description="Pegá URLs de imágenes alojadas externamente. La primera se usa como foto principal."
+      >
+        <PropertyImageGallery
+          orgSlug={orgSlug}
+          propertyId={property.id}
+          images={property.images}
+        />
+      </SectionCard>
+
+      {/* CRM sections */}
+      <section className="grid gap-6 xl:grid-cols-2">
+        <SectionCard
+          eyebrow="Interesados"
+          title="Leads vinculados"
+          description="Contactos interesados en esta propiedad."
+        >
+          <div className="space-y-3">
             {property.interestedLeads.length ? (
               property.interestedLeads.map((lead) => (
-                <div key={lead.id} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
+                <div
+                  key={lead.id}
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 p-4"
+                >
                   <div>
-                    <Link href={`/${orgSlug}/leads/${lead.id}`} className="font-semibold text-slate-950 hover:text-brand-600">
+                    <Link
+                      href={`/${orgSlug}/leads/${lead.id}`}
+                      className="font-semibold text-slate-950 hover:text-brand-600"
+                    >
                       {lead.fullName}
                     </Link>
-                    <p className="mt-1 text-sm text-slate-500">{lead.ownerName}</p>
+                    <p className="mt-0.5 text-sm text-slate-500">{lead.ownerName}</p>
                   </div>
-                  <StatusBadge label={lead.status} tone={lead.status === "VISIT" ? "warning" : lead.status === "CLOSED" ? "success" : "info"} />
+                  <StatusBadge
+                    label={lead.status}
+                    tone={
+                      lead.status === "VISIT"
+                        ? "warning"
+                        : lead.status === "CLOSED"
+                          ? "success"
+                          : "info"
+                    }
+                  />
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No leads linked to this property yet.</p>
+              <p className="text-sm text-slate-400">Sin leads vinculados todavía.</p>
             )}
           </div>
         </SectionCard>
 
         <SectionCard
-          eyebrow="Visits"
-          title="Visit schedule"
-          description="Simple scheduling view without overbuilding a calendar system."
+          eyebrow="Visitas"
+          title="Agenda de visitas"
+          description="Visitas coordinadas para esta propiedad."
         >
-          <div className="space-y-4">
+          <div className="space-y-3">
             {property.visits.length ? (
               property.visits.map((visit) => (
                 <div key={visit.id} className="rounded-2xl border border-slate-200 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold text-slate-950">{visit.leadName}</p>
-                    <StatusBadge
-                      label={visit.status}
-                      tone={getVisitStatusTone(visit.status)}
-                    />
+                    <StatusBadge label={visit.status} tone={getVisitStatusTone(visit.status)} />
                   </div>
-                  <p className="mt-2 text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>
+                  <p className="mt-1.5 text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No visits scheduled yet.</p>
+              <p className="text-sm text-slate-400">Sin visitas agendadas todavía.</p>
             )}
           </div>
         </SectionCard>

@@ -7,13 +7,17 @@ export type PropertyListItem = {
   city: string | null;
   neighborhood: string | null;
   propertyType: string | null;
+  operationType: string | null;
   status: PropertyStatus;
   publicVisible: boolean;
   priceCents: number | null;
   currency: string | null;
+  expensesCents: number | null;
+  rooms: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
   surfaceM2: number | null;
+  parkingSpots: number | null;
 };
 
 export type PropertySummary = {
@@ -37,10 +41,23 @@ export type PropertyVisitItem = {
   leadName: string;
 };
 
+export type PropertyImageItem = {
+  id: string;
+  url: string;
+  altText: string | null;
+  sortOrder: number;
+  isPrimary: boolean;
+};
+
 export type PropertyDetail = PropertyListItem & {
+  description: string | null;
+  amenities: string | null;
+  externalLink: string | null;
+  videoUrl: string | null;
   latitude?: number;
   longitude?: number;
   interestedLeads: PropertyInterestLead[];
   visits: PropertyVisitItem[];
+  images: PropertyImageItem[];
   organizationSlug: string;
 };

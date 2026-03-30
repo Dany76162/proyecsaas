@@ -209,6 +209,8 @@ model Property {
   id             String         @id @default(cuid())
   organizationId String
   title          String
+  description    String?
+  operationType  String?
   address        String?
   city           String?
   neighborhood   String?
@@ -217,11 +219,17 @@ model Property {
   longitude      Decimal?       @db.Decimal(10, 7)
   priceCents     Int?
   currency       String?        @default("USD")
+  expensesCents  Int?
   status            PropertyStatus @default(DRAFT)
   publicVisible     Boolean        @default(false)
+  rooms             Int?
   bedrooms          Int?
   bathrooms         Int?
   surfaceM2         Int?
+  parkingSpots      Int?
+  amenities         String?
+  externalLink      String?
+  videoUrl          String?
   externalSourceUrl String?
   externalId        String?
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -229,12 +237,28 @@ model Property {
   interestedLeads Lead[]        @relation("LeadPropertyInterest")
   availability   AvailabilitySlot[]
   visits         Visit[]        @relation("PropertyVisits")
+  images         PropertyImage[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
   @@index([organizationId, status])
   @@index([organizationId, publicVisible])
   @@unique([id, organizationId])
+}
+
+model PropertyImage {
+  id             String   @id @default(cuid())
+  propertyId     String
+  organizationId String
+  url            String
+  altText        String?
+  sortOrder      Int      @default(0)
+  isPrimary      Boolean  @default(false)
+  property       Property @relation(fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([organizationId, propertyId])
 }
 
 model Conversation {

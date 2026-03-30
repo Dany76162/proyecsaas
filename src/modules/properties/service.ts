@@ -30,13 +30,17 @@ export async function listOrganizationProperties(
     city: property.city,
     neighborhood: property.neighborhood,
     propertyType: property.propertyType,
+    operationType: property.operationType,
     status: property.status,
     publicVisible: property.publicVisible,
     priceCents: property.priceCents,
     currency: property.currency,
+    expensesCents: property.expensesCents,
+    rooms: property.rooms,
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
     surfaceM2: property.surfaceM2,
+    parkingSpots: property.parkingSpots,
   }));
 }
 
@@ -72,6 +76,9 @@ export async function getPropertyDetail(
     },
     include: {
       organization: true,
+      images: {
+        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+      },
       interestedLeads: {
         include: {
           owner: true,
@@ -98,64 +105,88 @@ export async function getPropertyDetail(
   }
 
   const interestedLeads = property.interestedLeads.map((lead) => ({
-      id: lead.id,
-      fullName: lead.fullName,
-      status: lead.status,
-      ownerName: lead.owner?.fullName ?? "Unassigned",
-    }));
+    id: lead.id,
+    fullName: lead.fullName,
+    status: lead.status,
+    ownerName: lead.owner?.fullName ?? "Sin asignar",
+  }));
+
   const visits = property.visits.map((visit) => ({
     id: visit.id,
     scheduledAt: visit.scheduledAt.toISOString(),
     status: visit.status,
-    leadName: visit.lead?.fullName ?? "Unknown lead",
+    leadName: visit.lead?.fullName ?? "Lead desconocido",
+  }));
+
+  const images = property.images.map((img) => ({
+    id: img.id,
+    url: img.url,
+    altText: img.altText,
+    sortOrder: img.sortOrder,
+    isPrimary: img.isPrimary,
   }));
 
   return {
     id: property.id,
     title: property.title,
+    description: property.description,
     address: property.address,
     city: property.city,
     neighborhood: property.neighborhood,
     propertyType: property.propertyType,
+    operationType: property.operationType,
     status: property.status,
     publicVisible: property.publicVisible,
     priceCents: property.priceCents,
     currency: property.currency,
+    expensesCents: property.expensesCents,
+    rooms: property.rooms,
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
     surfaceM2: property.surfaceM2,
+    parkingSpots: property.parkingSpots,
+    amenities: property.amenities,
+    externalLink: property.externalLink,
+    videoUrl: property.videoUrl,
     latitude: property.latitude ? Number(property.latitude) : undefined,
     longitude: property.longitude ? Number(property.longitude) : undefined,
     interestedLeads,
     visits,
+    images,
     organizationSlug: property.organization.slug,
   };
 }
 
 export async function listPublicProperties() {
-  return prisma.property.findMany({
-    where: {
-      publicVisible: true,
-    },
-    orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
-    take: 400,
-  }).then((properties) =>
-    properties.map((property) => ({
-      id: property.id,
-      title: property.title,
-      address: property.address,
-      city: property.city,
-      neighborhood: property.neighborhood,
-      propertyType: property.propertyType,
-      status: property.status,
-      publicVisible: property.publicVisible,
-      priceCents: property.priceCents,
-      currency: property.currency,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      surfaceM2: property.surfaceM2,
-    })),
-  );
+  return prisma.property
+    .findMany({
+      where: {
+        publicVisible: true,
+      },
+      orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
+      take: 400,
+    })
+    .then((properties) =>
+      properties.map((property) => ({
+        id: property.id,
+        title: property.title,
+        address: property.address,
+        city: property.city,
+        neighborhood: property.neighborhood,
+        propertyType: property.propertyType,
+        operationType: property.operationType,
+        status: property.status,
+        publicVisible: property.publicVisible,
+        priceCents: property.priceCents,
+        currency: property.currency,
+        expensesCents: property.expensesCents,
+        rooms: property.rooms,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        surfaceM2: property.surfaceM2,
+        parkingSpots: property.parkingSpots,
+      })),
+    );
 }
 
 export async function getPublicPropertyDetail(propertyId: string): Promise<PropertyDetail | null> {
