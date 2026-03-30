@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/server/db/prisma";
 import { hashPassword } from "@/server/auth/password";
-import { createSession } from "@/server/auth/session";
+import { createSession, getSessionUser } from "@/server/auth/session";
 
 export async function acceptInviteAction(prevState: any, formData: FormData) {
   const token = String(formData.get("token") ?? "");
@@ -53,6 +53,13 @@ export async function acceptInviteAction(prevState: any, formData: FormData) {
       data: { usedAt: new Date() },
     }),
   ]);
+
+  // If the caller is already a platform admin, preserve their session.
+  // Activating the invite (hash + usedAt) was enough — no new session needed.
+  const callerSession = await getSessionUser();
+  if (callerSession?.isPlatformAdmin) {
+    redirect("/platform?invited=ok");
+  }
 
   await createSession(invite.userId);
 
