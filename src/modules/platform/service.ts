@@ -3,6 +3,36 @@ import "server-only";
 import { prisma } from "@/server/db/prisma";
 import type { OrgHealthStatus, OrgPlatformSummary } from "@/modules/platform/types";
 
+export type WorkerStatus = "ok" | "stale" | "down";
+
+export type WorkerHeartbeatStatus = {
+  status: WorkerStatus;
+  lastSeenAt: string | null;
+  secondsAgo: number | null;
+};
+
+export async function getWorkerHeartbeatStatus(): Promise<WorkerHeartbeatStatus> {
+  const record = await prisma.workerHeartbeat.findUnique({
+    where: { id: "singleton" },
+    select: { lastSeenAt: true },
+  });
+
+  if (!record) {
+    return { status: "down", lastSeenAt: null, secondsAgo: null };
+  }
+
+  const secondsAgo = Math.floor((Date.now() - record.lastSeenAt.getTime()) / 1000);
+
+  const status: WorkerStatus =
+    secondsAgo < 120 ? "ok" : secondsAgo < 300 ? "stale" : "down";
+
+  return {
+    status,
+    lastSeenAt: record.lastSeenAt.toISOString(),
+    secondsAgo,
+  };
+}
+
 function computeHealth(input: {
   channel: { status: string } | null;
   recentFailedDeliveries: number;

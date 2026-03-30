@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import { encryptToken } from "@/server/security/token-encryption";
 
 function requiredEnv(name: "WHATSAPP_ACCESS_TOKEN" | "WHATSAPP_PHONE_NUMBER_ID" | "WHATSAPP_ORGANIZATION_ID") {
   const value = process.env[name]?.trim();
@@ -41,7 +42,7 @@ async function main() {
       provider: "WHATSAPP_CLOUD",
       status: "ACTIVE",
       verificationStatus: "VERIFIED",
-      accessTokenEncrypted: accessToken,
+      accessTokenEncrypted: encryptToken(accessToken),
       webhookSubscribed: true,
       tokenLastValidatedAt: new Date(),
       lastErrorAt: null,
@@ -54,7 +55,7 @@ async function main() {
       status: "ACTIVE",
       verificationStatus: "VERIFIED",
       phoneNumberId,
-      accessTokenEncrypted: accessToken,
+      accessTokenEncrypted: encryptToken(accessToken),
       webhookSubscribed: true,
       tokenLastValidatedAt: new Date(),
       isPrimary: true,

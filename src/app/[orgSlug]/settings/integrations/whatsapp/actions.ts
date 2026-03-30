@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
+import { encryptToken } from "@/server/security/token-encryption";
 import {
   MetaWhatsAppValidationError,
   validateWhatsAppCloudNumber,
@@ -92,7 +93,7 @@ export async function saveWhatsAppChannelAction(
           },
           data: {
             phoneNumberId: validatedNumber.phoneNumberId,
-            accessTokenEncrypted: accessToken,
+            accessTokenEncrypted: encryptToken(accessToken),
             displayPhoneNumber: validatedNumber.displayPhoneNumber,
             verifiedDisplayName: validatedNumber.verifiedName,
             provider: "WHATSAPP_CLOUD",
@@ -115,7 +116,7 @@ export async function saveWhatsAppChannelAction(
           data: {
             organizationId,
             phoneNumberId: validatedNumber.phoneNumberId,
-            accessTokenEncrypted: accessToken,
+            accessTokenEncrypted: encryptToken(accessToken),
             displayPhoneNumber: validatedNumber.displayPhoneNumber,
             verifiedDisplayName: validatedNumber.verifiedName,
             provider: "WHATSAPP_CLOUD",

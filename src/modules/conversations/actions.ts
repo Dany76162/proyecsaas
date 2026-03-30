@@ -8,6 +8,7 @@ import { prisma } from "@/server/db/prisma";
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 import { attemptWhatsAppOutboundDelivery } from "@/modules/automations/delivery-service";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
+import { decryptToken } from "@/server/security/token-encryption";
 
 export async function resolveConversationFollowUpAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
@@ -95,7 +96,9 @@ export async function sendManualMessageAction(formData: FormData) {
     channel: {
       provider: "whatsapp",
       phoneNumberId: whatsappChannel?.phoneNumberId ?? "",
-      accessToken: whatsappChannel?.accessTokenEncrypted ?? undefined,
+      accessToken: whatsappChannel?.accessTokenEncrypted
+        ? decryptToken(whatsappChannel.accessTokenEncrypted)
+        : undefined,
     },
   });
 

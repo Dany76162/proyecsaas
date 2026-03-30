@@ -3,11 +3,14 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { AlertTriangle, UserPlus, Activity, Database, ArrowRight } from "lucide-react";
 
-import { listOrganizationsForPlatform } from "@/modules/platform/service";
+import { listOrganizationsForPlatform, getWorkerHeartbeatStatus } from "@/modules/platform/service";
 import { HealthBadge, formatRelativeTime } from "@/components/platform/platform-ui";
 
 export default async function PlatformPage() {
-  const orgs = await listOrganizationsForPlatform();
+  const [orgs, workerStatus] = await Promise.all([
+    listOrganizationsForPlatform(),
+    getWorkerHeartbeatStatus(),
+  ]);
 
   const criticalCount = orgs.filter((o) => o.health === "critical").length;
   const warningCount = orgs.filter((o) => o.health === "warning").length;
@@ -29,6 +32,39 @@ export default async function PlatformPage() {
         <p className="text-sm text-slate-500">
           Vista global de volumen, salud del motor automatizado y pipeline de clientes.
         </p>
+      </div>
+
+      {/* Worker status chip */}
+      <div className="flex items-center gap-2">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
+            workerStatus.status === "ok"
+              ? "bg-emerald-50 text-emerald-700"
+              : workerStatus.status === "stale"
+                ? "bg-amber-50 text-amber-700"
+                : "bg-red-50 text-red-700"
+          }`}
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${
+              workerStatus.status === "ok"
+                ? "bg-emerald-500"
+                : workerStatus.status === "stale"
+                  ? "bg-amber-500"
+                  : "bg-red-500"
+            }`}
+          />
+          {workerStatus.status === "ok"
+            ? "Worker operativo"
+            : workerStatus.status === "stale"
+              ? "Worker lento"
+              : "Worker caído"}
+        </span>
+        <span className="text-xs text-slate-400">
+          {workerStatus.secondsAgo !== null
+            ? `Último heartbeat hace ${workerStatus.secondsAgo}s`
+            : "Sin señal de vida registrada"}
+        </span>
       </div>
 
       {/* KPIs — más grandes, más presencia */}

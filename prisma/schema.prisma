@@ -341,6 +341,12 @@ model AutomationRule {
   @@index([organizationId, isActive])
 }
 
+model WorkerHeartbeat {
+  id         String   @id @default("singleton")
+  lastSeenAt DateTime
+  updatedAt  DateTime @updatedAt
+}
+
 model WhatsAppChannel {
   id                          String                            @id @default(cuid())
   organizationId              String

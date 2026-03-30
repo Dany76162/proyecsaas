@@ -10,6 +10,7 @@ import {
 import { prismaWorker as prisma } from "@/server/db/prisma-worker";
 import { attemptWhatsAppOutboundDelivery } from "@/modules/automations/delivery-service";
 import { readLeadCommercialSignals } from "@/modules/leads/commercial-signals";
+import { decryptToken } from "@/server/security/token-encryption";
 
 // =========================
 // TYPES
@@ -197,7 +198,9 @@ export async function processPostVisitFollowUp(data: PostVisitJobData) {
     channel: {
       provider: "whatsapp",
       phoneNumberId: channelRecord.phoneNumberId,
-      accessToken: channelRecord.accessTokenEncrypted ?? undefined,
+      accessToken: channelRecord.accessTokenEncrypted
+        ? decryptToken(channelRecord.accessTokenEncrypted)
+        : undefined,
     },
   });
 

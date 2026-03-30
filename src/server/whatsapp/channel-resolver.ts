@@ -8,6 +8,7 @@ import type {
 } from "@prisma/client";
 
 import { getWhatsAppChannels } from "@/server/config/whatsapp-channels";
+import { decryptToken } from "@/server/security/token-encryption";
 
 export type ResolvedWhatsAppChannel = {
   source: "legacy-env" | "database";
@@ -130,7 +131,8 @@ async function resolveDatabaseChannelByPhoneNumberId(
       return null;
     }
 
-    const runtimeAccessToken = channel.accessTokenEncrypted?.trim() || undefined;
+    const rawToken = channel.accessTokenEncrypted?.trim() || undefined;
+    const runtimeAccessToken = rawToken ? decryptToken(rawToken) : undefined;
 
     if (!runtimeAccessToken) {
       logResolutionEventOnce("db-invalid", {
