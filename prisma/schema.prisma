@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -99,25 +99,33 @@ enum WhatsAppChannelVerificationStatus {
   REVOKED
 }
 
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
 model User {
-  id               String        @id @default(cuid())
-  email            String        @unique
-  fullName         String
-  jobTitle         String?
-  phone            String?
-  whatsapp         String?
-  zone             String?
-  agentNotes       String?
-  isActive         Boolean       @default(true)
-  isPlatformAdmin  Boolean       @default(false)
-  passwordHash     String?
+  id                String             @id @default(cuid())
+  email             String             @unique
+  fullName          String
+  jobTitle          String?
+  phone             String?
+  whatsapp          String?
+  zone              String?
+  agentNotes        String?
+  isActive          Boolean            @default(true)
+  isPlatformAdmin   Boolean            @default(false)
+  passwordHash      String?
   availabilitySlots AvailabilitySlot[]
-  memberships   Membership[]
-  ownedLeads    Lead[]        @relation("LeadOwner")
-  createdVisits Visit[]       @relation("VisitCreatedBy")
-  inviteTokens  InviteToken[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  memberships       Membership[]
+  ownedLeads        Lead[]             @relation("LeadOwner")
+  createdVisits     Visit[]            @relation("VisitCreatedBy")
+  inviteTokens      InviteToken[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
 model InviteToken {
@@ -133,9 +141,9 @@ model InviteToken {
 }
 
 model Organization {
-  id                     String           @id @default(cuid())
+  id                     String             @id @default(cuid())
   name                   String
-  slug                   String           @unique
+  slug                   String             @unique
   city                   String?
   planLabel              String?
   marketFocus            String?
@@ -147,21 +155,23 @@ model Organization {
   businessHours          String?
   propertySourceUrl      String?
   propertySourceType     String?
-  propertySourceStatus   String           @default("IDLE")
+  propertySourceStatus   String             @default("IDLE")
   propertySourceSyncedAt DateTime?
-  isActive               Boolean          @default(true)
-  memberships   Membership[]
-  leads         Lead[]
-  properties    Property[]
-  conversations Conversation[]
-  availability  AvailabilitySlot[]
-  notifications Notification[]
-  visits        Visit[]
-  automations   AutomationRule[]
-  whatsappChannels WhatsAppChannel[]
-  billingRecords   OrgBillingRecord[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  isActive               Boolean            @default(true)
+  memberships            Membership[]
+  leads                  Lead[]
+  properties             Property[]
+  conversations          Conversation[]
+  availability           AvailabilitySlot[]
+  notifications          Notification[]
+  visits                 Visit[]
+  automations            AutomationRule[]
+  whatsappChannels       WhatsAppChannel[]
+  billingRecords         OrgBillingRecord[]
+  aiAgents               AiAgent[]
+  subscription           Subscription?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 }
 
 model Membership {
@@ -178,50 +188,50 @@ model Membership {
 }
 
 model Lead {
-  id             String       @id @default(cuid())
+  id             String         @id @default(cuid())
   organizationId String
   ownerId        String?
   propertyId     String?
   fullName       String
   email          String?
   phone          String?
-  status         LeadStatus   @default(NEW)
+  status         LeadStatus     @default(NEW)
   source         String?
   notes          String?
   interestLabel  String?
   budgetLabel    String?
   lastContactAt  DateTime?
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  owner          User?        @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  property       Property?    @relation("LeadPropertyInterest", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner          User?          @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  property       Property?      @relation("LeadPropertyInterest", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
   conversations  Conversation[]
   visits         Visit[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
+  @@unique([id, organizationId])
   @@index([organizationId, status])
   @@index([organizationId, ownerId])
   @@index([organizationId, propertyId])
-  @@unique([id, organizationId])
 }
 
 model Property {
-  id             String         @id @default(cuid())
-  organizationId String
-  title          String
-  description    String?
-  operationType  String?
-  address        String?
-  city           String?
-  neighborhood   String?
-  propertyType   String?
-  latitude       Decimal?       @db.Decimal(10, 7)
-  longitude      Decimal?       @db.Decimal(10, 7)
-  priceCents     Int?
-  currency       String?        @default("USD")
-  expensesCents  Int?
-  status            PropertyStatus @default(DRAFT)
-  publicVisible     Boolean        @default(false)
+  id                String             @id @default(cuid())
+  organizationId    String
+  title             String
+  description       String?
+  operationType     String?
+  address           String?
+  city              String?
+  neighborhood      String?
+  propertyType      String?
+  latitude          Decimal?           @db.Decimal(10, 7)
+  longitude         Decimal?           @db.Decimal(10, 7)
+  priceCents        Int?
+  currency          String?            @default("USD")
+  expensesCents     Int?
+  status            PropertyStatus     @default(DRAFT)
+  publicVisible     Boolean            @default(false)
   rooms             Int?
   bedrooms          Int?
   bathrooms         Int?
@@ -232,18 +242,18 @@ model Property {
   videoUrl          String?
   externalSourceUrl String?
   externalId        String?
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  conversations  Conversation[] @relation("ConversationPropertyContext")
-  interestedLeads Lead[]        @relation("LeadPropertyInterest")
-  availability   AvailabilitySlot[]
-  visits         Visit[]        @relation("PropertyVisits")
-  images         PropertyImage[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversations     Conversation[]     @relation("ConversationPropertyContext")
+  interestedLeads   Lead[]             @relation("LeadPropertyInterest")
+  availability      AvailabilitySlot[]
+  visits            Visit[]            @relation("PropertyVisits")
+  images            PropertyImage[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
+  @@unique([id, organizationId])
   @@index([organizationId, status])
   @@index([organizationId, publicVisible])
-  @@unique([id, organizationId])
 }
 
 model PropertyImage {
@@ -262,56 +272,56 @@ model PropertyImage {
 }
 
 model Conversation {
-  id             String       @id @default(cuid())
-  organizationId String
-  leadId         String?
-  propertyId     String?
-  channel        String
-  status         ConversationStatus @default(OPEN)
-  followUpActive Boolean      @default(false)
-  followUpCategory FollowUpCategory?
-  followUpReason String?
-  followUpActiveAt DateTime?
-  followUpResolvedAt DateTime?
-  nextBestAction String?
-  nextBestActionAt DateTime?
-  participantName String?
-  participantPhone String?
+  id                  String             @id @default(cuid())
+  organizationId      String
+  leadId              String?
+  propertyId          String?
+  channel             String
+  status              ConversationStatus @default(OPEN)
+  followUpActive      Boolean            @default(false)
+  followUpCategory    FollowUpCategory?
+  followUpReason      String?
+  followUpActiveAt    DateTime?
+  followUpResolvedAt  DateTime?
+  nextBestAction      String?
+  nextBestActionAt    DateTime?
+  participantName     String?
+  participantPhone    String?
   propertyContextNote String?
-  subject        String?
-  lastMessageAt  DateTime?
-  isHumanControlled Boolean  @default(false)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  lead           Lead?        @relation(fields: [leadId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  property       Property?    @relation("ConversationPropertyContext", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  messages       Message[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  subject             String?
+  lastMessageAt       DateTime?
+  isHumanControlled   Boolean            @default(false)
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead                Lead?              @relation(fields: [leadId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  property            Property?          @relation("ConversationPropertyContext", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  messages            Message[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
+  @@unique([id, organizationId])
   @@index([organizationId, channel])
   @@index([organizationId, leadId])
   @@index([organizationId, propertyId])
   @@index([organizationId, status])
-  @@unique([id, organizationId])
 }
 
 model Message {
-  id             String           @id @default(cuid())
-  organizationId String
-  conversationId String
-  externalId     String?          @unique
-  direction      MessageDirection
-  deliveryStatus MessageDeliveryStatus @default(RECEIVED)
-  body           String
-  senderName     String?
-  senderPhone    String?
-  providerMessageId String?
-  deliveryError  String?
+  id                  String                @id @default(cuid())
+  organizationId      String
+  conversationId      String
+  externalId          String?               @unique
+  direction           MessageDirection
+  deliveryStatus      MessageDeliveryStatus @default(RECEIVED)
+  body                String
+  senderName          String?
+  senderPhone         String?
+  providerMessageId   String?
+  deliveryError       String?
   deliveryAttemptedAt DateTime?
-  deliveredAt    DateTime?
-  sentAt         DateTime         @default(now())
-  conversation   Conversation     @relation(fields: [conversationId, organizationId], references: [id, organizationId], onDelete: Cascade)
-  createdAt      DateTime         @default(now())
+  deliveredAt         DateTime?
+  sentAt              DateTime              @default(now())
+  conversation        Conversation          @relation(fields: [conversationId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  createdAt           DateTime              @default(now())
 
   @@index([organizationId, conversationId, sentAt])
   @@index([organizationId, direction, deliveryStatus])
@@ -400,31 +410,31 @@ model WorkerHeartbeat {
 }
 
 model WhatsAppChannel {
-  id                          String                            @id @default(cuid())
-  organizationId              String
-  provider                    WhatsAppProvider                  @default(WHATSAPP_CLOUD)
-  status                      WhatsAppChannelStatus             @default(INACTIVE)
-  verificationStatus          WhatsAppChannelVerificationStatus @default(PENDING)
-  phoneNumberId               String                            @unique
-  wabaId                      String?
-  businessAccountId           String?
-  displayPhoneNumber          String?
-  verifiedDisplayName         String?
-  accessTokenEncrypted        String?
-  tokenLastValidatedAt        DateTime?
-  tokenExpiresAt              DateTime?
-  webhookSubscribed           Boolean                           @default(false)
+  id                           String                            @id @default(cuid())
+  organizationId               String
+  provider                     WhatsAppProvider                  @default(WHATSAPP_CLOUD)
+  status                       WhatsAppChannelStatus             @default(INACTIVE)
+  verificationStatus           WhatsAppChannelVerificationStatus @default(PENDING)
+  phoneNumberId                String                            @unique
+  wabaId                       String?
+  businessAccountId            String?
+  displayPhoneNumber           String?
+  verifiedDisplayName          String?
+  accessTokenEncrypted         String?
+  tokenLastValidatedAt         DateTime?
+  tokenExpiresAt               DateTime?
+  webhookSubscribed            Boolean                           @default(false)
   webhookSubscriptionCheckedAt DateTime?
-  lastInboundAt               DateTime?
-  lastDeliveryAt              DateTime?
-  lastErrorAt                 DateTime?
-  lastErrorCode               String?
-  lastErrorMessage            String?
-  isPrimary                   Boolean                           @default(false)
-  providerMetadata            Json?
-  organization                Organization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt                   DateTime                          @default(now())
-  updatedAt                   DateTime                          @updatedAt
+  lastInboundAt                DateTime?
+  lastDeliveryAt               DateTime?
+  lastErrorAt                  DateTime?
+  lastErrorCode                String?
+  lastErrorMessage             String?
+  isPrimary                    Boolean                           @default(false)
+  providerMetadata             Json?
+  organization                 Organization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt                    DateTime                          @default(now())
+  updatedAt                    DateTime                          @updatedAt
 
   @@index([organizationId, provider, status])
   @@index([organizationId, isPrimary])
@@ -440,6 +450,9 @@ model OrgBillingRecord {
   mpPreferenceId String?
   mpPaymentUrl   String?
   mpPaymentId    String?
+  // Loose reference to Plan.id — identifies which plan this payment activates.
+  // No FK constraint intentional: consistent with activatedByRecordId on Subscription.
+  planId         String?
   invoiceStatus  InvoiceStatus @default(PENDING)
   invoiceNumber  String?
   notes          String?
@@ -449,4 +462,69 @@ model OrgBillingRecord {
 
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
+}
+
+// ─── Commercial catalog ───────────────────────────────────────────────────────
+
+model Plan {
+  id          String  @id // human-readable slug: "piloto" | "starter" | "growth"
+  name        String
+  description String?
+  sortOrder   Int
+  isActive    Boolean @default(true)
+
+  // Quantitative limits — null means unlimited
+  maxUsers            Int?
+  maxProperties       Int?
+  maxAiAgents         Int?
+  maxWhatsAppChannels Int?
+
+  // Feature flags — false means blocked for tenants on this plan
+  canUseAiAgents                 Boolean @default(false)
+  canUseAutomations              Boolean @default(false)
+  canUsePropertySync             Boolean @default(false)
+  canExportData                  Boolean @default(false)
+  canUseMultipleWhatsAppChannels Boolean @default(false)
+
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id             String @id @default(cuid())
+  organizationId String @unique // enforces one active subscription per org at schema level
+  planId         String
+
+  status             SubscriptionStatus @default(TRIALING)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+
+  // Nullable traceability link — stores OrgBillingRecord.id that activated this subscription.
+  // Stored as plain String (no FK constraint) to avoid touching OrgBillingRecord in this phase.
+  activatedByRecordId String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan         Plan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([currentPeriodEnd, status])
+}
+
+model AiAgent {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  type           String
+  isActive       Boolean      @default(true)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, isActive])
 }

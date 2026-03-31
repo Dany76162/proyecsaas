@@ -16,6 +16,9 @@ const createBillingRecordSchema = z.object({
     .number({ invalid_type_error: "Ingresá un monto válido." })
     .positive("El monto debe ser mayor a 0."),
   notes: z.string().trim().max(500).optional(),
+  // Plan this payment is intended to activate. When set, the MP webhook will
+  // automatically create or renew the organization's Subscription on payment confirmation.
+  planId: z.string().trim().min(1).optional(),
 });
 
 /**
@@ -33,7 +36,7 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
     };
   }
 
-  const { organizationId, description, amountARS, notes } = parsed.data;
+  const { organizationId, description, amountARS, notes, planId } = parsed.data;
 
   try {
     const org = await prisma.organization.findUnique({
@@ -50,6 +53,7 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
         description,
         amountCents: Math.round(amountARS * 100),
         notes: notes || null,
+        planId: planId || null,
       },
     });
 
