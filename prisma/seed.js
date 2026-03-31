@@ -431,7 +431,71 @@ const notifications = [
   },
 ];
 
+// ─── Plan catalog ──────────────────────────────────────────────────────────
+// Plans are catalog data: upserted first, never deleted by re-seed.
+// The id is a stable slug referenced directly by application code.
+
+const plans = [
+  {
+    id: "piloto",
+    name: "Piloto",
+    description: "Período de evaluación. Acceso limitado para explorar la plataforma antes de contratar.",
+    sortOrder: 0,
+    isActive: true,
+    maxUsers: 2,
+    maxProperties: 15,
+    maxAiAgents: null,
+    maxWhatsAppChannels: 1,
+    canUseAiAgents: false,
+    canUseAutomations: false,
+    canUsePropertySync: false,
+    canExportData: false,
+    canUseMultipleWhatsAppChannels: false,
+  },
+  {
+    id: "starter",
+    name: "Starter",
+    description: "Para inmobiliarias en operación. CRM completo, un agente IA y hasta 100 propiedades.",
+    sortOrder: 1,
+    isActive: true,
+    maxUsers: 5,
+    maxProperties: 100,
+    maxAiAgents: 1,
+    maxWhatsAppChannels: 1,
+    canUseAiAgents: true,
+    canUseAutomations: false,
+    canUsePropertySync: false,
+    canExportData: false,
+    canUseMultipleWhatsAppChannels: false,
+  },
+  {
+    id: "growth",
+    name: "Growth",
+    description: "Para equipos en crecimiento. Propiedades ilimitadas, hasta 5 agentes IA y todas las integraciones.",
+    sortOrder: 2,
+    isActive: true,
+    maxUsers: 20,
+    maxProperties: null,
+    maxAiAgents: 5,
+    maxWhatsAppChannels: 3,
+    canUseAiAgents: true,
+    canUseAutomations: true,
+    canUsePropertySync: true,
+    canExportData: true,
+    canUseMultipleWhatsAppChannels: true,
+  },
+];
+
 async function main() {
+  // Upsert plans first — catalog data survives re-seeds
+  for (const plan of plans) {
+    await prisma.plan.upsert({
+      where: { id: plan.id },
+      update: plan,
+      create: plan,
+    });
+  }
+
   await prisma.message.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.availabilitySlot.deleteMany();
