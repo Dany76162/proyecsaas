@@ -6,9 +6,8 @@ export default function nextConfig(phase: string): NextConfig {
 
   return {
     reactStrictMode: true,
+    // Use default .next for production (Railway compatibility).
+    // Dev uses .next-dev to keep artifacts separate from production build.
     distDir: isDev ? ".next-dev" : ".next",
-    // Standalone bundles everything needed to run without pnpm at runtime.
-    // Only enabled for production so dev HMR is unaffected.
-    ...(isDev ? {} : { output: "standalone" }),
   };
 }

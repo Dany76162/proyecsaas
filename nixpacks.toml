@@ -1,8 +1,8 @@
 # Nixpacks configuration for Railway
-# Build from monorepo root — pnpm workspace handles the rest
+# Build from monorepo root — pnpm workspace handles path resolution
 
 [phases.setup]
-nixPkgs = ["nodejs_22"]
+nixPkgs = ["nodejs_22", "openssl"]
 
 [phases.install]
 cmds = [
@@ -17,4 +17,7 @@ cmds = [
 ]
 
 [start]
-cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate deploy && pnpm --filter @workspace/proyecsaas run start"
+# PORT is injected by Railway automatically.
+# next start reads PORT from process.env; -H 0.0.0.0 binds all interfaces.
+# Using ; so a slow/failed migration never blocks server startup.
+cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate deploy; pnpm --filter @workspace/proyecsaas run start"
