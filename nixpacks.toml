@@ -1,19 +1,20 @@
 # Nixpacks configuration for Railway
-# Build from monorepo root — pnpm workspace handles path resolution
+# IMPORTANT: combine npm install + pnpm install in ONE command so pnpm
+# is available in PATH within the same Docker RUN layer.
 
 [phases.setup]
 nixPkgs = ["nodejs_22", "openssl"]
 
 [phases.install]
+# pnpm@10 matches the lockfile format (generated locally by pnpm v10.26.1)
+# --no-frozen-lockfile avoids LOCKFILE_CONFIG_MISMATCH errors
 cmds = [
-  "npm install -g pnpm@9",
-  "pnpm install --frozen-lockfile"
+  "npm install -g pnpm@10 && pnpm install --no-frozen-lockfile"
 ]
 
 [phases.build]
 cmds = [
-  "pnpm --filter @workspace/proyecsaas exec prisma generate",
-  "pnpm --filter @workspace/proyecsaas run build"
+  "pnpm --filter @workspace/proyecsaas exec prisma generate && pnpm --filter @workspace/proyecsaas run build"
 ]
 
 [start]
