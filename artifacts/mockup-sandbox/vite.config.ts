@@ -16,6 +16,9 @@ const basePath = process.env.BASE_PATH || "/";
 
 export default defineConfig({
   base: basePath,
+  css: {
+    postcss: {}, // Prevent inheriting root PostCSS configs (causes issues with Tailwind v4)
+  },
   plugins: [
     mockupPreviewPlugin(),
     react(),
