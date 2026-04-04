@@ -16,7 +16,6 @@ export function ToggleAgentButton({
 }) {
   const [isPending, startTransition] = useTransition();
 
-  const nextStatus: AiAgentStatus = currentStatus === "ACTIVE" ? "PAUSED" : "ACTIVE";
   const label = currentStatus === "ACTIVE" ? "Pausar" : "Activar";
 
   return (
@@ -25,7 +24,7 @@ export function ToggleAgentButton({
       disabled={isPending}
       onClick={() =>
         startTransition(async () => {
-          await toggleAgentStatus(orgSlug, agentId, nextStatus);
+          await toggleAgentStatus(orgSlug, agentId);
         })
       }
       className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
