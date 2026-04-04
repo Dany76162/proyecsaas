@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
@@ -38,7 +37,6 @@ export default async function AgentsPage({
 
   return (
     <>
-      {/* Header */}
       <section className="rounded-[1.75rem] border bg-white p-6 shadow-soft">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -49,9 +47,9 @@ export default async function AgentsPage({
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
               Agentes IA
             </h1>
-            <p className="mt-2 text-base text-slate-500 max-w-xl">
-              Cada agente atiende consultas de WhatsApp las 24 horas, 7 días a la semana — sin descanso,
-              sin horario de oficina. Mientras el equipo duerme, el agente cierra leads.
+            <p className="mt-2 max-w-xl text-base text-slate-500">
+              Cada agente atiende consultas de WhatsApp las 24 horas, 7 días a la semana — sin
+              descanso, sin horario de oficina. Mientras el equipo duerme, el agente cierra leads.
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -59,7 +57,9 @@ export default async function AgentsPage({
               <span className="font-bold text-slate-900">{agents.length}</span>
               <span>de</span>
               <span className="font-bold text-slate-900">{maxAiAgents}</span>
-              <span>agente{maxAiAgents !== 1 ? "s" : ""} habilitado{maxAiAgents !== 1 ? "s" : ""}</span>
+              <span>
+                agente{maxAiAgents !== 1 ? "s" : ""} habilitado{maxAiAgents !== 1 ? "s" : ""}
+              </span>
             </div>
             {isManager && !atQuota && (
               <Link
@@ -70,14 +70,13 @@ export default async function AgentsPage({
               </Link>
             )}
             {isManager && atQuota && (
-              <p className="text-xs text-slate-500 text-right max-w-[220px]">
+              <p className="max-w-[220px] text-right text-xs text-slate-500">
                 Límite alcanzado. Para habilitar más agentes, contactá al soporte.
               </p>
             )}
           </div>
         </div>
 
-        {/* Stat chips */}
         <div className="mt-6 flex flex-wrap gap-3">
           <div className="rounded-2xl border border-slate-200 px-4 py-2.5 text-center">
             <p className="text-2xl font-bold text-slate-950">{stats.total}</p>
@@ -98,7 +97,6 @@ export default async function AgentsPage({
         </div>
       </section>
 
-      {/* Agent list */}
       {agents.length === 0 ? (
         <SectionCard eyebrow="Sin agentes" title="Todavía no hay agentes configurados">
           <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center">
@@ -106,9 +104,9 @@ export default async function AgentsPage({
               🤖
             </div>
             <p className="font-semibold text-slate-700">Tu primer agente IA</p>
-            <p className="mt-2 text-sm text-slate-400 max-w-sm mx-auto">
-              Creá un agente y asignale un número de WhatsApp. Desde ese momento empieza a atender leads
-              automáticamente, todos los días del año.
+            <p className="mx-auto mt-2 max-w-sm text-sm text-slate-400">
+              Creá un agente y asignale un número de WhatsApp. Desde ese momento empieza a atender
+              leads automáticamente, todos los días del año.
             </p>
             {isManager && (
               <Link
@@ -122,13 +120,12 @@ export default async function AgentsPage({
         </SectionCard>
       ) : (
         <section className="grid gap-6 md:grid-cols-2">
-          {agents.map((agent) => (
+          {agents.map((agent: AgentSummary) => (
             <AgentCard key={agent.id} agent={agent} orgSlug={orgSlug} isManager={isManager} />
           ))}
         </section>
       )}
 
-      {/* Value proposition */}
       <SectionCard
         eyebrow="¿Por qué agentes IA?"
         title="Lo que un agente hace mientras el equipo descansa"
@@ -188,8 +185,7 @@ function AgentCard({
   isManager: boolean;
 }) {
   return (
-    <article className="rounded-[1.75rem] border bg-white p-6 shadow-soft flex flex-col gap-4">
-      {/* Header */}
+    <article className="flex flex-col gap-4 rounded-[1.75rem] border bg-white p-6 shadow-soft">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <div
@@ -204,42 +200,44 @@ function AgentCard({
             🤖
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-slate-950 leading-tight">{agent.name}</p>
+            <p className="font-bold leading-tight text-slate-950">{agent.name}</p>
             {agent.description && (
-              <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">{agent.description}</p>
+              <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{agent.description}</p>
             )}
           </div>
         </div>
-        <div className="flex flex-wrap gap-1.5 shrink-0">
+        <div className="flex shrink-0 flex-wrap gap-1.5">
           <AgentStatusBadge status={agent.status} />
           {agent.is24x7 && <StatusBadge label="24/7" tone="info" />}
         </div>
       </div>
 
-      {/* Details */}
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Tono</p>
           <p className="mt-0.5 text-sm font-medium text-slate-800">{TONE_LABELS[agent.tone]}</p>
         </div>
         <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Canal WA</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Canal WA
+          </p>
           <p className="mt-0.5 text-sm font-medium text-slate-800">
             {agent.whatsappChannelId ? "Asignado" : "Sin canal"}
           </p>
         </div>
         {agent.zoneFilters.length > 0 && (
           <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Zonas</p>
-            <p className="mt-0.5 text-sm font-medium text-slate-800 truncate">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Zonas
+            </p>
+            <p className="mt-0.5 truncate text-sm font-medium text-slate-800">
               {agent.zoneFilters.join(", ")}
             </p>
           </div>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+      <div className="flex items-center gap-2 border-t border-slate-100 pt-1">
         <Link
           href={`/${orgSlug}/agents/${agent.id}`}
           className="flex-1 rounded-xl border border-slate-200 py-2 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
