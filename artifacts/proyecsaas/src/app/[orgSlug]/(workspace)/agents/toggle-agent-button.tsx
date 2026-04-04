@@ -2,7 +2,8 @@
 
 import { useTransition } from "react";
 import { toggleAgentStatus } from "@/modules/agents/actions";
-import type { AiAgentStatus } from "@prisma/client";
+
+type AiAgentStatus = "ACTIVE" | "PAUSED" | "DRAFT";
 
 export function ToggleAgentButton({
   orgSlug,
@@ -15,27 +16,25 @@ export function ToggleAgentButton({
 }) {
   const [isPending, startTransition] = useTransition();
 
-  const isActive = currentStatus === "ACTIVE";
-
-  function handleToggle() {
-    startTransition(async () => {
-      await toggleAgentStatus(orgSlug, agentId);
-    });
-  }
+  const nextStatus: AiAgentStatus = currentStatus === "ACTIVE" ? "PAUSED" : "ACTIVE";
+  const label = currentStatus === "ACTIVE" ? "Pausar" : "Activar";
 
   return (
     <button
       type="button"
-      onClick={handleToggle}
-      disabled={isPending || currentStatus === "DRAFT"}
-      className={`rounded-xl border px-3 py-2 text-sm font-semibold transition disabled:opacity-40 ${
-        isActive
-          ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
-          : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-      }`}
-      title={currentStatus === "DRAFT" ? "Completá la configuración primero" : undefined}
+      disabled={isPending}
+      onClick={() =>
+        startTransition(async () => {
+          await toggleAgentStatus({
+            orgSlug,
+            agentId,
+            status: nextStatus,
+          });
+        })
+      }
+      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {isPending ? "..." : isActive ? "Pausar" : "Activar"}
+      {isPending ? "Guardando..." : label}
     </button>
   );
 }
