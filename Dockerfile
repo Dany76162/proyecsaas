@@ -9,9 +9,12 @@ RUN pnpm install --no-frozen-lockfile
 RUN pnpm --filter @workspace/proyecsaas exec prisma generate
 RUN pnpm --filter @workspace/proyecsaas run build
 
-# Railway injects PORT automatically; default to 3000 if absent (aligns with EXPOSE)
-ENV PORT=3000
+# Move into the Next.js package so all relative node_modules paths resolve
+WORKDIR /app/artifacts/proyecsaas
+
 EXPOSE 3000
 
-# Use ; not && so a migration warning never blocks server startup
-CMD sh -c "pnpm --filter @workspace/proyecsaas exec prisma migrate deploy; pnpm --filter @workspace/proyecsaas run start"
+# Migrations run first (failure is logged but doesn't block startup)
+# exec replaces the shell process so Next.js handles signals correctly
+# PORT is injected by Railway; next start reads process.env.PORT automatically
+CMD sh -c "node_modules/.bin/prisma migrate deploy || echo '[warn] migration step failed, continuing'; exec node node_modules/next/dist/bin/next start -H 0.0.0.0"
