@@ -119,7 +119,17 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     return null;
   }
 
-  const payload = decodeSessionToken(token);
+  let payload: SessionPayload | null;
+  try {
+    payload = decodeSessionToken(token);
+  } catch (err) {
+    // AUTH_SESSION_SECRET missing or wrong — clear stale cookie and degrade gracefully
+    console.error(
+      JSON.stringify({ scope: "session", event: "decode-error", message: err instanceof Error ? err.message : String(err) }),
+    );
+    await clearSession();
+    return null;
+  }
 
   if (!payload) {
     return null;

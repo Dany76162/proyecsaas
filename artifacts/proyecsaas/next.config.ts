@@ -1,12 +1,13 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
-const nextConfig: NextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-};
+export default function nextConfig(phase: string): NextConfig {
+  const isDev = phase === PHASE_DEVELOPMENT_SERVER;
 
-export default nextConfig;
+  return {
+    reactStrictMode: true,
+    // Use default .next for production (Railway compatibility).
+    // Dev uses .next-dev to keep artifacts separate from production build.
+    distDir: isDev ? ".next-dev" : ".next",
+  };
+}

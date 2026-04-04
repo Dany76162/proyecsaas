@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 const SESSION_COOKIE_NAME = "proyecsaas_session";
 
 const PUBLIC_PATHS: Array<string | RegExp> = [
+  "/",
   "/login",
   "/favicon.ico",
   "/map",
