@@ -25,8 +25,7 @@ export function ToggleAgentButton({
       disabled={isPending}
       onClick={() =>
         startTransition(async () => {
-          await toggleAgentStatus({
-            orgSlug,
+          await toggleAgentStatus(orgSlug, {
             agentId,
             status: nextStatus,
           });
