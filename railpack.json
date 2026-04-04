@@ -1,8 +1,0 @@
-{
-  "build": {
-    "command": "pnpm --filter @workspace/proyecsaas exec prisma generate"
-  },
-  "start": {
-    "command": "pnpm --filter @workspace/proyecsaas run worker:dev"
-  }
-}
