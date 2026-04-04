@@ -25,10 +25,7 @@ export function ToggleAgentButton({
       disabled={isPending}
       onClick={() =>
         startTransition(async () => {
-          await toggleAgentStatus(orgSlug, {
-            agentId,
-            status: nextStatus,
-          });
+          await toggleAgentStatus(orgSlug, agentId, nextStatus);
         })
       }
       className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
