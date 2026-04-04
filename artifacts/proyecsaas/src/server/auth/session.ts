@@ -127,7 +127,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     console.error(
       JSON.stringify({ scope: "session", event: "decode-error", message: err instanceof Error ? err.message : String(err) }),
     );
-    await clearSession();
     return null;
   }
 
@@ -143,7 +142,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   });
 
   if (!user) {
-    await clearSession();
     return null;
   }
 
