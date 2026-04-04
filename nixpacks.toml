@@ -1,16 +1,13 @@
 # Nixpacks configuration for Railway
-# IMPORTANT: combine npm install + pnpm install in ONE command so pnpm
-# is available in PATH within the same Docker RUN layer.
+# packageManager field in package.json tells Nixpacks/corepack to use pnpm@10.
+# nodePackages.pnpm is also included so pnpm is available in PATH via Nix.
 
 [phases.setup]
-nixPkgs = ["nodejs_22", "openssl"]
+nixPkgs = ["nodejs_22", "openssl", "nodePackages.pnpm"]
 
 [phases.install]
-# pnpm@10 matches the lockfile format (generated locally by pnpm v10.26.1)
-# --no-frozen-lockfile avoids LOCKFILE_CONFIG_MISMATCH errors
-cmds = [
-  "npm install -g pnpm@10 && pnpm install --no-frozen-lockfile"
-]
+# --no-frozen-lockfile: avoids LOCKFILE_CONFIG_MISMATCH between pnpm versions
+cmds = ["pnpm install --no-frozen-lockfile"]
 
 [phases.build]
 cmds = [
@@ -18,7 +15,6 @@ cmds = [
 ]
 
 [start]
-# PORT is injected by Railway automatically.
-# next start reads PORT from process.env; -H 0.0.0.0 binds all interfaces.
-# Using ; so a slow/failed migration never blocks server startup.
+# PORT is injected by Railway; next start reads it from process.env.
+# -H 0.0.0.0 binds all interfaces. ; so migration failure never blocks start.
 cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate deploy; pnpm --filter @workspace/proyecsaas run start"
