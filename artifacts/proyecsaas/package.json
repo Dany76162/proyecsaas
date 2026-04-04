@@ -7,11 +7,12 @@
     "worker:dev": "npx tsx --conditions=react-server src/server/workers/start.ts",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "prisma generate && tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:seed": "node prisma/seed.js"
+    "db:seed": "node prisma/seed.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
