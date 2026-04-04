@@ -5,8 +5,10 @@ import { validateWebRuntimeConfig } from "@/server/config/runtime";
 import { getAutomationQueue } from "@/server/queues";
 import { prisma } from "@/server/db/prisma";
 import {
+  extractOrgSlugFromMessage,
   resolveInboundByPhoneNumberId,
   resolveLegacyFallback,
+  resolveOrgBySlug,
 } from "@/server/whatsapp/channel-resolver";
 
 export const runtime = "nodejs";
@@ -128,9 +130,33 @@ export async function POST(request: NextRequest) {
 
       for (const message of value.messages) {
         receivedMessageCount += 1;
+
+        // Option A: platform-managed routing.
+        // If the message starts with [ref:orgslug], route to that org.
+        // Otherwise fall back to the channel's own org (direct connections).
+        const messageText = message.text?.body ?? "";
+        const routingSlug = extractOrgSlugFromMessage(messageText);
+        let targetOrgId = channel.organizationId;
+
+        if (routingSlug) {
+          const routedOrg = await resolveOrgBySlug(prisma, routingSlug);
+          if (routedOrg) {
+            targetOrgId = routedOrg.id;
+          } else {
+            console.warn(
+              JSON.stringify({
+                scope: "automation-webhook",
+                event: "routing-slug-not-found",
+                slug: routingSlug,
+                fallbackOrgId: targetOrgId,
+              }),
+            );
+          }
+        }
+
         jobs.push(
           buildJobPayload({
-            organizationId: channel.organizationId,
+            organizationId: targetOrgId,
             phoneNumberId,
             accessToken: channel.accessToken,
             contactName: contact?.profile?.name,

@@ -1,186 +1,143 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState } from "react";
 
-import type { WhatsAppConnectionActionState } from "./actions";
-import { saveWhatsAppChannelAction } from "./actions";
-
-type WhatsAppConnectionFormProps = {
+type WhatsAppPlatformDisplayProps = {
   orgSlug: string;
-  defaultPhoneNumberId: string;
-  webhookUrl: string;
-  verifyToken: string;
-  channelStatus: {
-    isConnected: boolean;
-    phoneNumberId: string | null;
-    displayPhoneNumber: string | null;
-    verifiedDisplayName: string | null;
-    statusLabel: string;
-  };
+  orgName: string;
+  platformPhone: string | null;
 };
-
-const initialState: WhatsAppConnectionActionState | null = null;
 
 export function WhatsAppConnectionForm({
   orgSlug,
-  defaultPhoneNumberId,
-  webhookUrl,
-  verifyToken,
-  channelStatus,
-}: WhatsAppConnectionFormProps) {
-  const [state, formAction, isPending] = useActionState(
-    saveWhatsAppChannelAction,
-    initialState,
-  );
+  orgName,
+  platformPhone,
+}: WhatsAppPlatformDisplayProps) {
+  const [copied, setCopied] = useState(false);
 
-  const effectiveChannelStatus =
-    state?.success && state.connectedChannel
-      ? {
-          isConnected: true,
-          phoneNumberId: state.connectedChannel.phoneNumberId,
-          displayPhoneNumber: state.connectedChannel.displayPhoneNumber,
-          verifiedDisplayName: state.connectedChannel.verifiedDisplayName,
-          statusLabel: "Connected",
-        }
-      : channelStatus;
+  const routingCode = `[ref:${orgSlug}]`;
+  const prefilledText = `${routingCode} Hola, me interesan sus propiedades.`;
+  const waLink = platformPhone
+    ? `https://wa.me/${platformPhone}?text=${encodeURIComponent(prefilledText)}`
+    : null;
+
+  const qrSrc = waLink
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(waLink)}&margin=10`
+    : null;
+
+  async function handleCopy() {
+    if (!waLink) return;
+    try {
+      await navigator.clipboard.writeText(waLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback: select text from an input
+    }
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-950">Connection status</p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              Validate the Phone Number ID against Meta before turning the channel on for this
-              organization.
-            </p>
-          </div>
-          <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-              effectiveChannelStatus.isConnected
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-slate-200 text-slate-700"
-            }`}
-          >
-            {effectiveChannelStatus.statusLabel}
-          </span>
-        </div>
-
-        <dl className="mt-5 grid gap-4 md:grid-cols-3">
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Detected number
-            </dt>
-            <dd className="mt-2 text-sm font-medium text-slate-900">
-              {effectiveChannelStatus.displayPhoneNumber ?? "Not connected yet"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Verified name
-            </dt>
-            <dd className="mt-2 text-sm font-medium text-slate-900">
-              {effectiveChannelStatus.verifiedDisplayName ??
-                "Meta has not returned a verified name yet"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Phone Number ID
-            </dt>
-            <dd className="mt-2 break-all text-sm font-medium text-slate-900">
-              {effectiveChannelStatus.phoneNumberId ?? "Not connected yet"}
-            </dd>
-          </div>
-        </dl>
-      </div>
-
-      <form action={formAction} className="space-y-5 rounded-2xl border border-slate-200 p-5">
-        <input type="hidden" name="orgSlug" value={orgSlug} />
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <div>
-            <label htmlFor="phoneNumberId" className="block text-sm font-medium text-slate-700">
-              Phone Number ID
-            </label>
-            <input
-              id="phoneNumberId"
-              name="phoneNumberId"
-              type="text"
-              defaultValue={defaultPhoneNumberId}
-              required
-              className="mt-1.5 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-950 placeholder:text-slate-400 transition-all focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10"
-              placeholder="1092518257269119"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="accessToken" className="block text-sm font-medium text-slate-700">
-              Access Token
-            </label>
-            <input
-              id="accessToken"
-              name="accessToken"
-              type="password"
-              defaultValue=""
-              required
-              className="mt-1.5 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-950 placeholder:text-slate-400 transition-all focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10"
-              placeholder="EAA..."
-            />
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm leading-6 text-amber-900">
-          This only validates the number against Meta and saves the channel in RaicesPilot. Embedded
-          Signup, token refresh, and multi-number management stay out of scope for this block.
-        </div>
-
-        <button
-          type="submit"
-          disabled={isPending}
-          className="inline-flex items-center justify-center rounded-[1.1rem] bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isPending ? "Validating with Meta..." : "Validate and connect WhatsApp"}
-        </button>
-
-        {state?.message ? (
-          <p
-            className={`text-sm font-medium ${
-              state.success ? "text-emerald-700" : "text-red-600"
-            }`}
-          >
-            {state.message}
+    <div className="space-y-5">
+      {/* Status banner */}
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+        <div>
+          <p className="text-sm font-semibold text-slate-950">Canal administrado por la plataforma</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            Tu número de WhatsApp está configurado y gestionado centralmente. No necesitás hacer
+            ninguna configuración adicional.
           </p>
-        ) : null}
-      </form>
-
-      <div className="rounded-2xl border border-slate-200 p-5">
-        <p className="text-sm font-semibold text-slate-950">Webhook instructions</p>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
-          Keep these values read-only here and paste them into the Meta App webhook configuration.
-        </p>
-
-        <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Webhook URL</label>
-            <input
-              type="text"
-              readOnly
-              value={webhookUrl}
-              className="mt-1.5 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Verify Token</label>
-            <input
-              type="text"
-              readOnly
-              value={verifyToken}
-              className="mt-1.5 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900"
-            />
-          </div>
         </div>
+        <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+          Activo
+        </span>
       </div>
+
+      {platformPhone ? (
+        <>
+          {/* QR + link section */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+            <p className="text-sm font-semibold text-slate-950">Tu enlace de WhatsApp</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Compartí este enlace o código QR en tu sitio web, redes sociales o avisos. Cuando un
+              cliente lo toque, se abrirá WhatsApp listo para escribirte.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-6">
+              {/* QR code */}
+              <div className="flex-shrink-0 rounded-xl border border-slate-200 bg-white p-2.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrSrc!}
+                  alt={`Código QR de WhatsApp para ${orgName}`}
+                  width={180}
+                  height={180}
+                  className="block"
+                />
+              </div>
+
+              {/* Link + copy */}
+              <div className="min-w-0 flex-1 space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Enlace para compartir
+                  </label>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={waLink!}
+                      className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="flex-shrink-0 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                    >
+                      {copied ? "¡Copiado!" : "Copiar"}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Código de identificación
+                  </label>
+                  <p className="mt-2 font-mono text-sm text-slate-700 bg-slate-100 rounded-xl px-3 py-2 inline-block">
+                    {routingCode}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
+            <p className="text-sm font-semibold text-blue-900">¿Cómo funciona?</p>
+            <ol className="mt-3 space-y-2 text-sm leading-6 text-blue-800 list-none">
+              <li className="flex gap-3">
+                <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">1</span>
+                Copiá el enlace de arriba y ponelo en tu sitio web o redes sociales como botón de WhatsApp.
+              </li>
+              <li className="flex gap-3">
+                <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">2</span>
+                Cuando un cliente lo toque, se abrirá WhatsApp con un mensaje pre-completado listo para enviar.
+              </li>
+              <li className="flex gap-3">
+                <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">3</span>
+                El sistema identifica automáticamente que el mensaje es para <strong>{orgName}</strong> y lo asigna a tu agente de IA.
+              </li>
+            </ol>
+          </div>
+        </>
+      ) : (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
+          <p className="text-sm font-semibold text-amber-900">Número de plataforma pendiente</p>
+          <p className="mt-1 text-sm leading-6 text-amber-800">
+            El superadmin aún no configuró el número de WhatsApp de la plataforma. Contactalo para
+            activar este canal.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

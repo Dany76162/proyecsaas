@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { prisma } from "@/server/db/prisma";
 import { InviteAcceptForm } from "./invite-accept-form";

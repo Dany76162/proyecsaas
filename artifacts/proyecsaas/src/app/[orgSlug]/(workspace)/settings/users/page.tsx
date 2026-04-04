@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 
 import { MetricCard } from "@/components/workspace/metric-card";

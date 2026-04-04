@@ -1,0 +1,20 @@
+# Nixpacks configuration for Railway
+# Build from monorepo root — pnpm workspace handles the rest
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = [
+  "npm install -g pnpm@9",
+  "pnpm install --frozen-lockfile"
+]
+
+[phases.build]
+cmds = [
+  "pnpm --filter @workspace/proyecsaas exec prisma generate",
+  "pnpm --filter @workspace/proyecsaas run build"
+]
+
+[start]
+cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate deploy && pnpm --filter @workspace/proyecsaas run start"

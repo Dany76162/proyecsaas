@@ -44,7 +44,10 @@ import {
 } from "@/modules/visits/service";
 
 import { getQueueConnection } from "@/server/queues/connection";
-import { resolveInboundByPhoneNumberId } from "@/server/whatsapp/channel-resolver";
+import {
+  resolveInboundByPhoneNumberId,
+  stripRoutingCodeFromMessage,
+} from "@/server/whatsapp/channel-resolver";
 
 import {
   processPostVisitFollowUp,
@@ -147,7 +150,11 @@ export async function processWhatsAppInboundJob(
   }
 
   const participantPhone = normalizePhone(data.contact.phone ?? data.message.from);
-  const messageBody = normalizeBody(data.message.body);
+
+  // Strip the platform routing code ([ref:slug]) before processing so the AI
+  // sees clean text. The routing already happened in the webhook.
+  const rawMessageBody = normalizeBody(data.message.body);
+  const messageBody = stripRoutingCodeFromMessage(rawMessageBody);
 
   if (!participantPhone) {
     throw new ConversationWorkerError("missing-phone", "Participant phone is missing.");
@@ -165,11 +172,36 @@ export async function processWhatsAppInboundJob(
   const sentAt = resolveSentAt(data.message.timestamp);
   const participantName = data.contact.name?.trim() || "Unknown contact";
 
+  // Determine the target organization.
+  // Priority: job-provided org (from routing code) > channel's org > existing conversation's org
+  let targetOrgId = data.organizationId ?? channel.organizationId;
+
+  if (!targetOrgId) {
+    // Return message with no routing code: find existing conversation by phone
+    const existingConv = await prisma.conversation.findFirst({
+      where: {
+        participantPhone,
+        status: { not: ConversationStatus.CLOSED },
+      },
+      orderBy: { lastMessageAt: "desc" },
+      select: { organizationId: true },
+    });
+
+    if (existingConv) {
+      targetOrgId = existingConv.organizationId;
+    } else {
+      throw new ConversationWorkerError(
+        "missing-org",
+        `Cannot determine organization for phone ${participantPhone} — no routing code and no existing conversation.`,
+      );
+    }
+  }
+
   // 2. Persistencia atómica (Conversation + Inbound Message)
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     let conversation = await tx.conversation.findFirst({
       where: {
-        organizationId: channel.organizationId,
+        organizationId: targetOrgId,
         participantPhone,
         status: { not: ConversationStatus.CLOSED },
       },
@@ -178,7 +210,7 @@ export async function processWhatsAppInboundJob(
     if (!conversation) {
       conversation = await tx.conversation.create({
         data: {
-          organizationId: channel.organizationId,
+          organizationId: targetOrgId,
           participantName,
           participantPhone,
           channel: "whatsapp",
@@ -199,7 +231,7 @@ export async function processWhatsAppInboundJob(
 
     let lead = await tx.lead.findFirst({
       where: {
-        organizationId: channel.organizationId,
+        organizationId: targetOrgId,
         phone: participantPhone,
       },
     });
@@ -207,7 +239,7 @@ export async function processWhatsAppInboundJob(
     if (!lead) {
       lead = await tx.lead.create({
         data: {
-          organizationId: channel.organizationId,
+          organizationId: targetOrgId,
           fullName: participantName,
           phone: participantPhone,
           status: LeadStatus.NEW,
@@ -223,7 +255,7 @@ export async function processWhatsAppInboundJob(
     if (!message) {
       message = await tx.message.create({
         data: {
-          organizationId: channel.organizationId,
+          organizationId: targetOrgId,
           conversationId: conversation.id,
           externalId: data.message.externalId,
           direction: MessageDirection.INBOUND,
@@ -251,7 +283,7 @@ export async function processWhatsAppInboundJob(
     budgetLabel: result.lead.budgetLabel,
   });
   let propertyMatch = await matchLeadToProperty(prisma, {
-    organizationId: channel.organizationId,
+    organizationId: targetOrgId,
     currentPropertyId: result.lead.propertyId,
     latestMessageBody: messageBody,
     extractedPreferences: priorSignals.extractedPreferences,
@@ -282,7 +314,7 @@ export async function processWhatsAppInboundJob(
       JSON.stringify({
         scope: "worker",
         event: "lead-property-match",
-        organizationId: channel.organizationId,
+        organizationId: targetOrgId,
         leadId: result.lead.id,
         conversationId: result.conversation.id,
         propertyId: propertyMatch.trace.propertyId,
@@ -296,7 +328,7 @@ export async function processWhatsAppInboundJob(
       JSON.stringify({
         scope: "worker",
         event: "lead-property-no-match",
-        organizationId: channel.organizationId,
+        organizationId: targetOrgId,
         leadId: result.lead.id,
         conversationId: result.conversation.id,
         reasons: propertyMatch.trace.reasons,
@@ -336,7 +368,7 @@ export async function processWhatsAppInboundJob(
     propertyMatch.property
       ? prisma.availabilitySlot.findMany({
           where: {
-            organizationId: channel.organizationId,
+            organizationId: targetOrgId,
             propertyId: propertyMatch.property.id,
             isActive: true,
           },
@@ -359,7 +391,7 @@ export async function processWhatsAppInboundJob(
       : Promise.resolve([]),
     prisma.message.findMany({
       where: {
-        organizationId: channel.organizationId,
+        organizationId: targetOrgId,
         conversationId: result.conversation.id,
       },
       select: {
@@ -472,7 +504,7 @@ export async function processWhatsAppInboundJob(
       visitResult.concrete = true;
       try {
         const outcome = await createVisitForAutomation(prisma, {
-          organizationId: channel.organizationId,
+          organizationId: targetOrgId,
           leadId: result.lead.id,
           scheduledAt,
           notes: decision.internalNotes || "Auto-scheduled from WhatsApp",
@@ -507,7 +539,7 @@ export async function processWhatsAppInboundJob(
       persistence = await prisma.message.create({
         data: {
           id: deterministicOutboundId,
-          organizationId: channel.organizationId,
+          organizationId: targetOrgId,
           conversationId: result.conversation.id,
           direction: MessageDirection.OUTBOUND,
           body: decision.responseText,
@@ -534,7 +566,7 @@ export async function processWhatsAppInboundJob(
       };
     } else {
       const deliveryInput = {
-        organizationId: channel.organizationId,
+        organizationId: targetOrgId,
         conversationId: result.conversation.id,
         outboundMessageId: persistence.id,
         responseText: decision.responseText,
@@ -576,7 +608,7 @@ export async function processWhatsAppInboundJob(
         JSON.stringify({
           scope: "worker",
           event: "outbound-delivery-failed",
-          organizationId: channel.organizationId,
+          organizationId: targetOrgId,
           conversationId: result.conversation.id,
           leadId: result.lead.id,
           outboundMessageId: persistence.id,
@@ -599,7 +631,7 @@ export async function processWhatsAppInboundJob(
 
     const [org] = await Promise.all([
       prisma.organization.findUnique({
-        where: { id: channel.organizationId },
+        where: { id: targetOrgId },
         select: { slug: true },
       }),
       prisma.conversation.update({
@@ -617,7 +649,7 @@ export async function processWhatsAppInboundJob(
 
     await prisma.notification.create({
       data: {
-        organizationId: channel.organizationId,
+        organizationId: targetOrgId,
         type: NotificationType.OPERATOR_ACTION_REQUIRED,
         title: `Follow-up needed: ${result.conversation.participantName || participantPhone}`,
         body: followUpReason,

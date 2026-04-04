@@ -21,6 +21,7 @@ export function OnboardingControls({
   isActive,
   maxAiAgents,
   aiAgentCount,
+  agentQuotaNote,
 }: {
   orgSlug: string;
   orgName: string;
@@ -28,7 +29,7 @@ export function OnboardingControls({
   isActive: boolean;
   maxAiAgents: number;
   aiAgentCount: number;
-  agentQuotaNote: string | null;
+  agentQuotaNote?: string | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

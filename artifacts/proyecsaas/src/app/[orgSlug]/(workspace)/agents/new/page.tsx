@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 
 import { requireOrganizationMembership, assertMinimumRole } from "@/server/auth/access";
