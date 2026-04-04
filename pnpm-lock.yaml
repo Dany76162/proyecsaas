@@ -403,7 +403,7 @@ importers:
   artifacts/proyecsaas:
     dependencies:
       '@prisma/client':
-        specifier: ^6.5.0
+        specifier: 6.19.3
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
       '@uploadthing/react':
         specifier: ^7.3.3
@@ -426,6 +426,9 @@ importers:
       openai:
         specifier: ^6.33.0
         version: 6.33.0(zod@3.25.76)
+      prisma:
+        specifier: 6.19.3
+        version: 6.19.3(typescript@5.9.3)
       react:
         specifier: ^19.0.0
         version: 19.2.4
@@ -463,9 +466,6 @@ importers:
       postcss:
         specifier: ^8.5.3
         version: 8.5.8
-      prisma:
-        specifier: ^6.5.0
-        version: 6.19.3(typescript@5.9.3)
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.19(tsx@4.21.0)(yaml@2.8.3)
