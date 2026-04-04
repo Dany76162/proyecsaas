@@ -6,7 +6,7 @@
     "dev": "next dev --port ${PORT:-25195} --hostname 0.0.0.0",
     "worker:dev": "npx tsx --conditions=react-server src/server/workers/start.ts",
     "build": "next build",
-    "start": "next start -H 0.0.0.0",
+    "start": "node --dns-result-order=ipv4first ./node_modules/next/dist/bin/next start -H 0.0.0.0 -p ${PORT:-3000}",
     "typecheck": "prisma generate && tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
