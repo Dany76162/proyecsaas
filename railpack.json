@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railpack.com/schema.json",
+  "install": {
+    "cmd": "pnpm install --no-frozen-lockfile --ignore-scripts"
+  },
+  "build": {
+    "cmd": "pnpm --filter @workspace/proyecsaas run build"
+  },
+  "start": {
+    "cmd": "pnpm --filter @workspace/proyecsaas run start"
+  }
+}
