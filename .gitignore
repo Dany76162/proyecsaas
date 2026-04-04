@@ -1,4 +1,4 @@
-# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # compiled output
 dist
@@ -47,3 +47,12 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# 🔥 AGREGADO IMPORTANTE (tu caso)
+.env
+.next
+.next-dev
+.next-prod
+*.log
+*.err.log
+*.out.log
