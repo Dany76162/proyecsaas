@@ -1,10 +1,10 @@
 {
   "$schema": "https://railpack.com/schema.json",
   "install": {
-    "cmd": "pnpm install --no-frozen-lockfile"
+    "cmd": "pnpm install --no-frozen-lockfile && pnpm --filter @workspace/proyecsaas exec prisma generate"
   },
   "build": {
-    "cmd": "pnpm --filter @workspace/proyecsaas exec prisma generate && pnpm --filter @workspace/proyecsaas run build"
+    "cmd": "pnpm --filter @workspace/proyecsaas run build"
   },
   "start": {
     "cmd": "pnpm --filter @workspace/proyecsaas exec prisma migrate deploy && pnpm --filter @workspace/proyecsaas run start"
