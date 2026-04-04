@@ -6,10 +6,8 @@ COPY . .
 
 RUN npm install -g pnpm@9
 
-RUN npx pnpm install --no-frozen-lockfile --ignore-scripts
-
+RUN npx pnpm install --no-frozen-lockfile
 RUN npx pnpm --filter @workspace/proyecsaas exec prisma generate
-
 RUN npx pnpm --filter @workspace/proyecsaas run build
 
 EXPOSE 3000
