@@ -220,9 +220,6 @@ export async function processMPPaymentWebhook(
     });
 
     // Create or renew Subscription only when planId is explicitly set on the record.
-    // If planId is null (legacy records or records created before this feature),
-    // the payment is still marked as PAID but no Subscription is activated.
-    // The superadmin can correct this by manually creating the Subscription.
     if (record.planId) {
       await tx.subscription.upsert({
         where: { organizationId: record.organizationId },
@@ -243,6 +240,13 @@ export async function processMPPaymentWebhook(
           cancelAtPeriodEnd: false,
           activatedByRecordId: record.id,
         },
+      });
+
+      // AUTOMATIC REACTIVATION: Always ensure the org is active if they paid.
+      // This "opens the gate" automatically if they were suspended previously.
+      await tx.organization.update({
+        where: { id: record.organizationId },
+        data: { isActive: true },
       });
     } else {
       console.warn(
