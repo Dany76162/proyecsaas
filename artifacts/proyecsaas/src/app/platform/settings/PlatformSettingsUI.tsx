@@ -52,27 +52,27 @@ function EditableSetting({
 
   return (
     <div className="py-5 border-b border-slate-100 last:border-0">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex-1 space-y-0.5">
-          <label className="text-sm font-bold text-slate-800 uppercase tracking-tight">{label}</label>
-          <p className="text-xs text-slate-500 leading-relaxed max-w-md">{description}</p>
+      <div className="flex flex-col gap-4">
+        <div className="space-y-1">
+          <label className="text-xs font-black text-slate-800 uppercase tracking-widest">{label}</label>
+          <p className="text-[11px] leading-relaxed text-slate-500 max-w-xl">{description}</p>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full">
           <input
             type="text"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={placeholder}
-            className="flex-1 md:w-64 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
+            className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
           />
           <button
             onClick={handleSave}
             disabled={isSaving || value === initialValue}
             className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-30 disabled:grayscale",
-              message?.type === "success"
-                ? "bg-emerald-500 text-white"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
+               "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-30 disabled:grayscale",
+               message?.type === "success"
+                 ? "bg-emerald-500 text-white"
+                 : "bg-indigo-600 text-white hover:bg-indigo-700"
             )}
           >
             {isSaving ? (
@@ -266,10 +266,10 @@ export default function PlatformSettingsUI({
             Control Operativo
           </span>
         </div>
-        <h1 className="text-4xl font-black tracking-tight text-slate-950">
+        <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-950">
           Panel de Configuración
         </h1>
-        <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
           Gestioná los parámetros maestros de Raíces Pilot en tiempo real. Estos valores afectan
           directamente la facturación, los links de soporte y las comunicaciones oficiales.
         </p>
