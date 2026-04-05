@@ -8,6 +8,9 @@
 # Instead: add nodePackages.pnpm to nixPkgs — Nix installs pnpm
 # directly into the Nix profile which IS on PATH for all phases.
 
+[variables]
+NODE_OPTIONS = "--dns-result-order=ipv4first"
+
 [phases.setup]
 nixPkgs = ["nodejs_22", "openssl", "nodePackages.pnpm"]
 
