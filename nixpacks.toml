@@ -12,7 +12,7 @@
 NODE_OPTIONS = "--dns-result-order=ipv4first"
 
 [phases.setup]
-nixPkgs = ["nodejs_22", "openssl", "nodePackages.pnpm"]
+nixPkgs = ["nodejs_20", "openssl", "nodePackages.pnpm"]
 
 [phases.install]
 # --no-frozen-lockfile: handles pnpm version differences between local (v10)
@@ -27,5 +27,5 @@ cmds = [
 
 [start]
 # PORT is injected by Railway; next start reads it from process.env.
-# -H 0.0.0.0 binds all interfaces. ; so migration failure never blocks start.
-cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate deploy; pnpm --filter @workspace/proyecsaas run start"
+# HOSTNAME=0.0.0.0 ensures Next.js binds properly on all interfaces instead of ipv6 ::
+cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate deploy && HOSTNAME=0.0.0.0 pnpm --filter @workspace/proyecsaas run start"
