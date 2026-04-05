@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Plus, X, Receipt, Copy, Check, MessageCircle, Mail } from "lucide-react";
+import { ExternalLink, Plus, X, Receipt, Copy, Check, MessageCircle, Mail, Search } from "lucide-react";
 import type { OrgBillingRecord, Organization } from "@prisma/client";
 import {
   createBillingRecordAction,
@@ -72,6 +72,13 @@ export function BillingTable({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredRecords = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return records;
+    return records.filter((r) => r.organization.name.toLowerCase().includes(q));
+  }, [records, search]);
 
   const handleCopy = (url: string, id: string) => {
     navigator.clipboard.writeText(url).then(() => {
@@ -163,15 +170,29 @@ export function BillingTable({
   return (
     <>
       {/* Header row */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-600">{records.length} registro{records.length !== 1 ? "s" : ""}</p>
-        <button
-          onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo cobro
-        </button>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+        <div className="relative flex-1 max-w-sm w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por inmobiliaria..."
+            className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-sm outline-none focus:border-slate-400 transition"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-slate-400">
+            {filteredRecords.length} de {records.length} registro{records.length !== 1 ? "s" : ""}
+          </p>
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo cobro
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -190,7 +211,7 @@ export function BillingTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {records.map((r) => (
+              {filteredRecords.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50/70 transition">
                   <td className="px-5 py-4 font-semibold text-slate-900">{r.organization.name}</td>
                   <td className="px-5 py-4 text-slate-600 max-w-[200px]">
@@ -292,11 +313,20 @@ export function BillingTable({
                   <td className="px-5 py-4 text-right text-xs text-slate-400">{formatDate(r.createdAt)}</td>
                 </tr>
               ))}
-              {records.length === 0 && (
+              {filteredRecords.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-5 py-12 text-center">
-                    <p className="text-base font-semibold text-slate-900">Sin registros comerciales</p>
-                    <p className="mt-1 text-sm text-slate-500">Creá el primer cobro con el botón &ldquo;Nuevo cobro&rdquo;.</p>
+                    {search ? (
+                      <>
+                        <p className="text-base font-semibold text-slate-900">Sin resultados para &ldquo;{search}&rdquo;</p>
+                        <p className="mt-1 text-sm text-slate-500">Probá con otro nombre de inmobiliaria.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-base font-semibold text-slate-900">Sin registros comerciales</p>
+                        <p className="mt-1 text-sm text-slate-500">Creá el primer cobro con el botón &ldquo;Nuevo cobro&rdquo;.</p>
+                      </>
+                    )}
                   </td>
                 </tr>
               )}

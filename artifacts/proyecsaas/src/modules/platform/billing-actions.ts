@@ -8,6 +8,7 @@ import type { ActionResult } from "@/modules/types";
 import { requirePlatformAdmin } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 import { createMercadoPagoPreference } from "@/server/billing/mercadopago";
+import { logAudit } from "@/server/audit/log";
 
 const createBillingRecordSchema = z.object({
   organizationId: z.string().min(1, "Seleccioná una organización."),
@@ -58,6 +59,15 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
     });
 
     revalidatePath("/platform/billing");
+    const actor = await requirePlatformAdmin();
+    await logAudit({
+      event: "billing.record_created",
+      actorId: actor.id,
+      actorEmail: actor.email,
+      entityType: "Organization",
+      entityId: organizationId,
+      metadata: { description, amountARS },
+    });
     return { success: true, message: "Registro de cobro creado correctamente." };
   } catch (error) {
     console.error("[createBillingRecordAction]", error);
@@ -138,6 +148,15 @@ export async function updateBillingStatusAction(
       data: { status: status as BillingStatus },
     });
     revalidatePath("/platform/billing");
+    const actor = await requirePlatformAdmin();
+    await logAudit({
+      event: status === "PAID" ? "billing.paid" : status === "CANCELLED" ? "billing.cancelled" : "billing.status_changed",
+      actorId: actor.id,
+      actorEmail: actor.email,
+      entityType: "OrgBillingRecord",
+      entityId: recordId,
+      metadata: { status, manual: true },
+    });
     return { success: true, message: "Estado actualizado." };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {

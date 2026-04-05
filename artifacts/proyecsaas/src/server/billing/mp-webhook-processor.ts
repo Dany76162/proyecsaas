@@ -3,6 +3,7 @@ import "server-only";
 import { SubscriptionStatus } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
+import { logAudit } from "@/server/audit/log";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -273,6 +274,23 @@ export async function processMPPaymentWebhook(
       newPeriodEnd: newPeriodEnd.toISOString(),
     }),
   );
+
+  await logAudit({
+    event: "billing.paid",
+    entityType: "OrgBillingRecord",
+    entityId: record.id,
+    entityName: record.organizationId,
+    metadata: { paymentId, planId: record.planId ?? null, isRenewal, source: "mercadopago" },
+  });
+
+  if (record.planId) {
+    await logAudit({
+      event: "org.reactivated",
+      entityType: "Organization",
+      entityId: record.organizationId,
+      metadata: { trigger: "payment", recordId: record.id },
+    });
+  }
 
   return { outcome: "processed", organizationId: record.organizationId };
 }

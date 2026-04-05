@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db/prisma";
 import { requirePlatformAdmin } from "@/server/auth/access";
+import { logAudit } from "@/server/audit/log";
 
 export async function updateGlobalSetting(key: string, value: string) {
   await requirePlatformAdmin();
@@ -13,6 +14,14 @@ export async function updateGlobalSetting(key: string, value: string) {
       create: { key, value, updatedAt: new Date() },
     });
     revalidatePath("/platform/settings");
+    await logAudit({
+      event: "settings.updated",
+      actorId: actor.id,
+      actorEmail: actor.email,
+      entityType: "GlobalSetting",
+      entityId: key,
+      metadata: { key },
+    });
     return { success: true };
   } catch (error) {
     console.error(`Error updating global setting ${key}:`, error);
@@ -65,15 +74,33 @@ export async function grantAdminAccess(email: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return { success: false, error: "Usuario no encontrado en el sistema" };
   if (user.isPlatformAdmin) return { success: false, error: "Este usuario ya es administrador" };
+  const actor = await requirePlatformAdmin();
   await prisma.user.update({ where: { id: user.id }, data: { isPlatformAdmin: true } });
   revalidatePath("/platform/settings");
+  await logAudit({
+    event: "admin.access_granted",
+    actorId: actor.id,
+    actorEmail: actor.email,
+    entityType: "User",
+    entityId: user.id,
+    entityName: user.email,
+  });
   return { success: true };
 }
 
 export async function revokeAdminAccess(userId: string) {
   const currentUser = await requirePlatformAdmin();
   if (userId === currentUser.id) return { success: false, error: "No podés revocar tu propio acceso" };
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
   await prisma.user.update({ where: { id: userId }, data: { isPlatformAdmin: false } });
   revalidatePath("/platform/settings");
+  await logAudit({
+    event: "admin.access_revoked",
+    actorId: currentUser.id,
+    actorEmail: currentUser.email,
+    entityType: "User",
+    entityId: userId,
+    entityName: user?.email,
+  });
   return { success: true };
 }

@@ -428,6 +428,21 @@ model GlobalSetting {
   updatedAt   DateTime @updatedAt
 }
 
+model AuditLog {
+  id         String   @id @default(cuid())
+  event      String
+  actorId    String?
+  actorEmail String?
+  entityType String?
+  entityId   String?
+  entityName String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([event])
+}
+
 model WhatsAppChannel {
   id                           String                            @id @default(cuid())
   organizationId               String

@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { CheckCircle2, XCircle, AlertTriangle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, Clock, ShieldCheck } from "lucide-react";
 import { prisma } from "@/server/db/prisma";
 import { getWorkerHeartbeatStatus } from "@/modules/platform/service";
 
@@ -41,7 +41,7 @@ const WORKER_UI = {
 export default async function PlatformHealthPage() {
   const now = new Date();
 
-  const [worker, activeOrgCount, pendingInvites, expiredInvites, pendingBilling, paidBilling] =
+  const [worker, activeOrgCount, pendingInvites, expiredInvites, pendingBilling, paidBilling, auditLogs] =
     await Promise.all([
       getWorkerHeartbeatStatus(),
       prisma.organization.count({ where: { isActive: true } }),
@@ -49,6 +49,10 @@ export default async function PlatformHealthPage() {
       prisma.inviteToken.count({ where: { usedAt: null, expiresAt: { lt: now } } }),
       prisma.orgBillingRecord.count({ where: { status: "PENDING" } }),
       prisma.orgBillingRecord.count({ where: { status: "PAID" } }),
+      prisma.auditLog.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 30,
+      }).catch(() => []),
     ]);
 
   const mpConfigured = !!process.env.MERCADO_PAGO_ACCESS_TOKEN;
@@ -80,6 +84,19 @@ export default async function PlatformHealthPage() {
     alerts.push({ level: "warning", message: `${pendingBilling} cobro${pendingBilling !== 1 ? "s" : ""} pendiente${pendingBilling !== 1 ? "s" : ""} de confirmación.` });
 
   const workerUi = WORKER_UI[worker.status];
+
+  const AUDIT_LABELS: Record<string, { label: string; color: string }> = {
+    "billing.record_created":  { label: "Cobro creado",           color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+    "billing.paid":            { label: "Pago confirmado",        color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+    "billing.cancelled":       { label: "Cobro cancelado",        color: "text-slate-500 bg-slate-50 border-slate-200" },
+    "billing.status_changed":  { label: "Estado cobro cambiado",  color: "text-amber-700 bg-amber-50 border-amber-200" },
+    "billing.mp_link_generated":{ label: "Link MP generado",      color: "text-violet-600 bg-violet-50 border-violet-200" },
+    "org.reactivated":         { label: "Org reactivada",         color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+    "org.suspended":           { label: "Org suspendida",         color: "text-red-600 bg-red-50 border-red-200" },
+    "settings.updated":        { label: "Configuración editada",  color: "text-blue-600 bg-blue-50 border-blue-200" },
+    "admin.access_granted":    { label: "Admin delegado",         color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+    "admin.access_revoked":    { label: "Acceso revocado",        color: "text-red-600 bg-red-50 border-red-200" },
+  };
 
   const integrations = [
     {
@@ -205,6 +222,47 @@ export default async function PlatformHealthPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Audit log */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b bg-slate-50 px-6 py-4 flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-slate-400" />
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Auditoría del Sistema</h3>
+          <span className="ml-auto text-xs text-slate-400">Últimos 30 eventos</span>
+        </div>
+        {auditLogs.length === 0 ? (
+          <div className="px-6 py-10 text-center text-sm text-slate-400">
+            Sin eventos registrados aún. Los eventos se generan automáticamente.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 max-h-[480px] overflow-y-auto">
+            {auditLogs.map((log) => {
+              const ui = AUDIT_LABELS[log.event] ?? { label: log.event, color: "text-slate-600 bg-slate-50 border-slate-200" };
+              return (
+                <div key={log.id} className="flex items-start gap-4 px-6 py-3.5 hover:bg-slate-50 transition-colors">
+                  <span className={`mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${ui.color}`}>
+                    {ui.label}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    {log.entityName && (
+                      <p className="text-sm font-semibold text-slate-800 truncate">{log.entityName}</p>
+                    )}
+                    {log.actorEmail && (
+                      <p className="text-xs text-slate-400 truncate">Por: {log.actorEmail}</p>
+                    )}
+                  </div>
+                  <time className="shrink-0 text-xs text-slate-400 tabular-nums">
+                    {new Date(log.createdAt).toLocaleString("es-AR", {
+                      day: "2-digit", month: "2-digit", year: "2-digit",
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                  </time>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Expired invites footnote */}
