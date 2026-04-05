@@ -221,7 +221,6 @@ export default async function PlatformPage() {
           </div>
         </div>
       </div>
-    </div>
 
       {/* Rendimiento del Sistema */}
       <ImpactSection initial={impactMetrics} />
