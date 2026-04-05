@@ -6,7 +6,7 @@ import { requirePlatformAdmin } from "@/server/auth/access";
 import { logAudit } from "@/server/audit/log";
 
 export async function updateGlobalSetting(key: string, value: string) {
-  await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin();
   try {
     await prisma.globalSetting.upsert({
       where: { key },
