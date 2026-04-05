@@ -316,3 +316,94 @@ export async function setOrgAgentQuotaAction(
 
   return { success: true, message: `Cuota actualizada a ${quota} agente${quota !== 1 ? "s" : ""}.` };
 }
+
+/**
+ * Superadmin Action: Creates a new org + bootstraps first OWNER invite in one step.
+ * The slug is auto-derived from the org name. Returns the invite URL.
+ */
+export async function quickOnboardOrgAction(input: {
+  orgName: string;
+  ownerEmail: string;
+}): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  const orgName = input.orgName.trim();
+  const ownerEmail = input.ownerEmail.trim().toLowerCase();
+
+  if (!orgName || orgName.length < 2) {
+    return { success: false, message: "El nombre de la inmobiliaria es obligatorio." };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(ownerEmail)) {
+    return { success: false, message: "El email del titular no es válido." };
+  }
+
+  // Auto-generate slug from org name
+  const baseSlug = orgName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
+
+  // Find a unique slug (append -2, -3 if taken)
+  let slug = baseSlug;
+  let attempt = 1;
+  while (true) {
+    const existing = await prisma.organization.findUnique({ where: { slug }, select: { id: true } });
+    if (!existing) break;
+    attempt++;
+    slug = `${baseSlug}-${attempt}`;
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 168); // 7 días
+
+  try {
+    const inviteUrl = await prisma.$transaction(async (tx) => {
+      // 1. Crear organización
+      const org = await tx.organization.create({
+        data: { name: orgName, slug, isActive: true },
+      });
+
+      // 2. Crear o reusar usuario
+      const user = await tx.user.upsert({
+        where: { email: ownerEmail },
+        create: { email: ownerEmail, fullName: "Titular", isActive: true },
+        update: {},
+      });
+
+      // Check if already has membership
+      const existingMembership = await tx.membership.findFirst({
+        where: { userId: user.id, organizationId: org.id },
+      });
+      if (!existingMembership) {
+        await tx.membership.create({
+          data: { userId: user.id, organizationId: org.id, role: MembershipRole.OWNER },
+        });
+      }
+
+      // 3. Crear invite token
+      await tx.inviteToken.create({
+        data: { token, userId: user.id, expiresAt },
+      });
+
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      return `${baseUrl}/invite/${token}`;
+    });
+
+    return {
+      success: true,
+      message: `Inmobiliaria "${orgName}" creada. Link de acceso listo.`,
+      data: { inviteUrl, slug },
+    };
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { success: false, message: "El email ya está registrado en otra organización." };
+    }
+    console.error("[quickOnboardOrgAction]", error);
+    return { success: false, message: "Error al crear la inmobiliaria. Intentá nuevamente." };
+  }
+}

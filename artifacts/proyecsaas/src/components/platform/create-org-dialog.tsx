@@ -2,60 +2,65 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { X, Building2 } from "lucide-react";
-import { createOrganizationAction } from "@/modules/platform/actions";
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 60);
-}
+import { X, Building2, Copy, Check, MessageCircle } from "lucide-react";
+import { quickOnboardOrgAction } from "@/modules/platform/actions";
 
 export function CreateOrgDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugManual, setSlugManual] = useState(false);
-  const [city, setCity] = useState("");
-  const [planLabel, setPlanLabel] = useState("");
+  // Form fields
+  const [orgName, setOrgName] = useState("");
+  const [ownerEmail, setOwnerEmail] = useState("");
+  const [ownerPhone, setOwnerPhone] = useState("");
   const [error, setError] = useState("");
 
-  const handleNameChange = (v: string) => {
-    setName(v);
-    if (!slugManual) setSlug(slugify(v));
-  };
-
-  const handleSlugChange = (v: string) => {
-    setSlug(v.toLowerCase().replace(/[^a-z0-9-]/g, ""));
-    setSlugManual(true);
-  };
+  // Result state
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const resetForm = () => {
-    setName(""); setSlug(""); setSlugManual(false);
-    setCity(""); setPlanLabel(""); setError("");
+    setOrgName("");
+    setOwnerEmail("");
+    setOwnerPhone("");
+    setError("");
+    setInviteUrl(null);
+    setCopied(false);
   };
 
-  const handleClose = () => { resetForm(); setOpen(false); };
+  const handleClose = () => {
+    resetForm();
+    setOpen(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     startTransition(async () => {
-      const res = await createOrganizationAction({ name, slug, city: city || undefined, planLabel: planLabel || undefined });
-      if (res.success) {
-        handleClose();
+      const res = await quickOnboardOrgAction({ orgName, ownerEmail });
+      if (res.success && res.data?.inviteUrl) {
+        setInviteUrl(res.data.inviteUrl as string);
         router.refresh();
       } else {
         setError(res.message);
       }
     });
+  };
+
+  const handleCopy = () => {
+    if (!inviteUrl) return;
+    navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const buildWhatsAppUrl = () => {
+    if (!inviteUrl) return "#";
+    const phone = ownerPhone.replace(/\D/g, "");
+    const text = `¡Hola! Te envío el acceso a tu panel de gestión en Raíces Pilot.\n\nIngresá con este link y creá tu contraseña:\n${inviteUrl}\n\nEl link es válido por 7 días.`;
+    const encoded = encodeURIComponent(text);
+    return phone ? `https://wa.me/${phone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
   };
 
   return (
@@ -72,95 +77,154 @@ export function CreateOrgDialog() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            {/* Header */}
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Nueva Inmobiliaria</h2>
-              <button onClick={handleClose} className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50">
+                  <Building2 className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Nueva Inmobiliaria</h2>
+                  <p className="text-xs text-slate-500">Se genera el acceso automáticamente</p>
+                </div>
+              </div>
+              <button
+                onClick={handleClose}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 transition"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="mt-1 text-sm text-slate-500">
-              Creá el tenant. El slug es permanente e identifica al workspace.
-            </p>
 
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Nombre de la inmobiliaria <span className="text-red-500">*</span>
-                </label>
-                <input
-                  required
-                  type="text"
-                  value={name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="Ej: Raíces Pilar"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Slug del workspace <span className="text-red-500">*</span>
-                </label>
-                <div className="flex items-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900">
-                  <span className="select-none text-slate-400 mr-1">/</span>
+            {!inviteUrl ? (
+              /* ── Formulario ── */
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                    Nombre de la inmobiliaria <span className="text-red-500">*</span>
+                  </label>
                   <input
                     required
                     type="text"
-                    value={slug}
-                    onChange={(e) => handleSlugChange(e.target.value)}
-                    placeholder="raices-pilar"
-                    className="flex-1 outline-none bg-transparent"
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    placeholder="Ej: Raíces Pilar"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   />
                 </div>
-                <p className="mt-1 text-xs text-slate-400">Solo minúsculas, números y guiones. No se puede cambiar después.</p>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ciudad</label>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                    Email del titular <span className="text-red-500">*</span>
+                  </label>
                   <input
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Ej: Pilar"
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                    required
+                    type="email"
+                    value={ownerEmail}
+                    onChange={(e) => setOwnerEmail(e.target.value)}
+                    placeholder="titular@ejemplo.com"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   />
+                  <p className="mt-1 text-xs text-slate-400">El titular usará este email para ingresar.</p>
                 </div>
+
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Plan</label>
-                  <input
-                    type="text"
-                    value={planLabel}
-                    onChange={(e) => setPlanLabel(e.target.value)}
-                    placeholder="Ej: Starter"
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                  />
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                    WhatsApp del titular
+                    <span className="ml-1.5 text-xs font-normal text-slate-400">(opcional, para compartir el link)</span>
+                  </label>
+                  <div className="flex items-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition">
+                    <span className="mr-2 text-slate-400 select-none">+</span>
+                    <input
+                      type="tel"
+                      value={ownerPhone}
+                      onChange={(e) => setOwnerPhone(e.target.value)}
+                      placeholder="549XXXXXXXXXX"
+                      className="flex-1 outline-none bg-transparent"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-400">Código de país + número. Ej: 549341XXXXXXX</p>
+                </div>
+
+                {error && (
+                  <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
+                    {error}
+                  </p>
+                )}
+
+                <div className="flex justify-end gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending || !orgName.trim() || !ownerEmail.trim()}
+                    className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    {isPending ? "Creando acceso..." : "Crear y generar link"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* ── Resultado: link listo ── */
+              <div className="mt-6 space-y-4">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-emerald-800">
+                    ¡Listo! Inmobiliaria creada y link de acceso generado.
+                  </p>
+                  <p className="mt-0.5 text-xs text-emerald-700">
+                    Válido por 7 días. El titular crea su contraseña al entrar.
+                  </p>
+                </div>
+
+                {/* Link con botón copiar */}
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Link de acceso
+                  </p>
+                  <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+                    <p className="flex-1 truncate px-2 text-sm font-mono text-slate-700">
+                      {inviteUrl}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition ${
+                        copied
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                      }`}
+                    >
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <a
+                    href={buildWhatsAppUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#1ebe5c]"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {ownerPhone ? "Enviar por WhatsApp" : "Compartir por WhatsApp"}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Cerrar
+                  </button>
                 </div>
               </div>
-
-              {error && (
-                <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
-                  {error}
-                </p>
-              )}
-
-              <div className="flex justify-end gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending || !name || !slug}
-                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-50"
-                >
-                  {isPending ? "Creando..." : "Crear inmobiliaria"}
-                </button>
-              </div>
-            </form>
+            )}
           </div>
         </div>
       )}
