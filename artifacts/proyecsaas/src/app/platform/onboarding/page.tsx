@@ -58,7 +58,7 @@ export default async function PlatformOnboardingPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Pendientes</p>
           <p className="mt-2 text-3xl font-extrabold text-amber-600">{pending}</p>

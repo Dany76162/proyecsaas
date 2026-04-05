@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import { Search, Send, User, Clock, Check, MoreVertical } from "lucide-react";
+import { Search, Send, User, Clock, Check, MoreVertical, ArrowLeft } from "lucide-react";
 import { formatRelativeTime } from "@/components/platform/platform-ui";
 import { cn } from "@/lib/utils";
 import type { getSupportConversations, getSupportMessages } from "./actions/support-actions";
@@ -24,6 +24,7 @@ export default function SupportChatUI({
   const [inputText, setInputText] = useState("");
   const [isPending, startTransition] = useTransition();
   const [isFetchingMsgs, setIsFetchingMsgs] = useState(false);
+  const [mobileShowChat, setMobileShowChat] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch messages when active conversation changes
@@ -63,28 +64,32 @@ export default function SupportChatUI({
   };
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] w-full overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-2xl">
+    <div className="flex h-[calc(100vh-10rem)] w-full overflow-hidden rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white shadow-2xl">
       {/* Sidebar de Chats */}
-      <aside className="flex w-80 flex-col border-r border-slate-100 bg-slate-50/50">
-        <div className="p-6 border-b border-slate-100 bg-white">
-          <h2 className="text-lg font-black tracking-tight text-slate-900">Mensajes de Soporte</h2>
-          <div className="mt-4 relative">
+      <aside className={cn(
+        "flex flex-col border-r border-slate-100 bg-slate-50/50",
+        "w-full sm:w-80 sm:flex",
+        mobileShowChat ? "hidden sm:flex" : "flex"
+      )}>
+        <div className="p-4 sm:p-6 border-b border-slate-100 bg-white">
+          <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-900">Mensajes de Soporte</h2>
+          <div className="mt-3 sm:mt-4 relative">
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-             <input 
-               type="text" 
-               placeholder="Buscar cliente..." 
+             <input
+               type="text"
+               placeholder="Buscar cliente..."
                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-xs font-medium outline-none focus:border-indigo-500 focus:bg-white transition-all"
              />
           </div>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto divide-y divide-slate-50">
           {conversations.map((conv) => (
             <button
               key={conv.id}
-              onClick={() => setActiveId(conv.id)}
+              onClick={() => { setActiveId(conv.id); setMobileShowChat(true); }}
               className={cn(
-                "w-full px-6 py-5 text-left transition-all hover:bg-slate-100/50 border-l-4",
+                "w-full px-4 sm:px-6 py-4 sm:py-5 text-left transition-all hover:bg-slate-100/50 border-l-4",
                 activeId === conv.id ? "bg-white border-indigo-600 shadow-sm" : "border-transparent"
               )}
             >
@@ -102,12 +107,23 @@ export default function SupportChatUI({
       </aside>
 
       {/* Area de Chat */}
-      <main className="flex flex-1 flex-col bg-white overflow-hidden">
+      <main className={cn(
+        "flex flex-1 flex-col bg-white overflow-hidden",
+        !mobileShowChat ? "hidden sm:flex" : "flex"
+      )}>
         {activeId ? (
           <>
             {/* Header del Chat */}
-            <header className="flex h-16 items-center justify-between border-b border-slate-100 px-6 shrink-0 bg-white/80 backdrop-blur-md z-10">
+            <header className="flex h-16 items-center justify-between border-b border-slate-100 px-4 sm:px-6 shrink-0 bg-white/80 backdrop-blur-md z-10">
               <div className="flex items-center gap-3">
+                {/* Back button — mobile only */}
+                <button
+                  type="button"
+                  onClick={() => setMobileShowChat(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition sm:hidden"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
                   <User className="h-5 w-5" />
                 </div>

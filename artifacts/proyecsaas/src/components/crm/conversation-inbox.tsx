@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
+import { ArrowLeft } from "lucide-react";
 
 import { confirmLeadPropertyAction } from "@/modules/leads/actions";
 import {
@@ -691,6 +692,7 @@ export function ConversationInbox({
       ? initialSelectedId
       : conversations[0]?.id ?? null,
   );
+  const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
   const prioritized = useMemo(() => {
     return [...conversations].sort((a, b) => {
@@ -713,9 +715,9 @@ export function ConversationInbox({
   const failedCount = prioritized.filter(hasFailedDelivery).length;
 
   return (
-    <div className="grid h-[calc(100vh-160px)] min-h-[700px] gap-4 lg:grid-cols-[340px_1fr]">
+    <div className="grid h-[calc(100vh-160px)] min-h-[500px] gap-4 lg:grid-cols-[340px_1fr]">
       {/* ─── List Panel ─── */}
-      <div className="flex flex-col gap-3 overflow-hidden">
+      <div className={cn("flex flex-col gap-3 overflow-hidden", mobileShowDetail ? "hidden lg:flex" : "flex")}>
         {/* Navigation Filters */}
         <div className="flex gap-1 rounded-xl bg-slate-100/50 p-1 ring-1 ring-slate-200/50">
           {[
@@ -776,7 +778,7 @@ export function ConversationInbox({
                 key={conv.id}
                 conv={conv}
                 isSelected={conv.id === selectedId || (!selectedId && conv.id === filtered[0]?.id)}
-                onClick={() => setSelectedId(conv.id)}
+                onClick={() => { setSelectedId(conv.id); setMobileShowDetail(true); }}
               />
             ))
           )}
@@ -784,9 +786,23 @@ export function ConversationInbox({
       </div>
 
       {/* ─── Detail Panel ─── */}
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50/30 p-8 shadow-inner">
+      <div className={cn(
+        "overflow-hidden rounded-3xl border border-slate-200 bg-slate-50/30 p-4 sm:p-8 shadow-inner",
+        !mobileShowDetail ? "hidden lg:block" : "block"
+      )}>
         {selected ? (
-          <ConversationDetail conv={selected} orgSlug={orgSlug} currentCursor={currentCursor} />
+          <>
+            {/* Back button — mobile only */}
+            <button
+              type="button"
+              onClick={() => setMobileShowDetail(false)}
+              className="mb-4 flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition lg:hidden"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Volver a conversaciones
+            </button>
+            <ConversationDetail conv={selected} orgSlug={orgSlug} currentCursor={currentCursor} />
+          </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-center opacity-40">
             <div className="h-10 w-10 rounded-full border-4 border-slate-200 border-t-brand-500 animate-spin mb-4" />

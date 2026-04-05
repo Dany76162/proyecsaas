@@ -98,7 +98,7 @@ export default async function OrganizationHomePage({
             description="Estado actual de las oportunidades y operaciones de la inmobiliaria."
           >
             {/* Etapas */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Contacto</p>
                 <p className="mt-2 text-4xl font-extrabold tracking-tight text-slate-900">{leadSummary.total}</p>
@@ -150,7 +150,7 @@ export default async function OrganizationHomePage({
             title="Actividad Autopilot vs Equipo"
             description="Distribución de carga entre automatizaciones IA y operadores humanos."
           >
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col rounded-xl border border-indigo-100 bg-indigo-50 p-5">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

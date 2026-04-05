@@ -79,7 +79,7 @@ export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
       </div>
 
       {/* Global KPIs */}
-      <div className="grid grid-cols-3 gap-4 relative">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
         {isPending && (
           <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/70 z-10">
             <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />

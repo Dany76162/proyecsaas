@@ -279,7 +279,7 @@ export default function PlatformSettingsUI({
         <div className="lg:col-span-2 space-y-8">
 
           {/* 1. Perfil del Operador */}
-          <section className="rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm hover:shadow-md transition-shadow">
+          <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
             <h2 className="text-xl font-bold text-slate-900 mb-8">Perfil del Operador</h2>
 
             <EditableSetting
@@ -313,7 +313,7 @@ export default function PlatformSettingsUI({
           </section>
 
           {/* 2. Parámetros Operativos */}
-          <section className="rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm hover:shadow-md transition-shadow">
+          <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
             <h2 className="text-xl font-bold text-slate-900 mb-8">Parámetros Operativos</h2>
 
             <EditableSetting
@@ -333,14 +333,14 @@ export default function PlatformSettingsUI({
           </section>
 
           {/* 3. Administración Delegada */}
-          <section className="rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm hover:shadow-md transition-shadow">
+          <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
             <DelegatedAdminSection initial={delegatedAdmins} />
           </section>
         </div>
 
         {/* Sidebar: Integridad del Sistema */}
         <aside>
-          <section className="rounded-[2.5rem] border border-slate-900/10 bg-slate-950 p-8 shadow-2xl text-white relative overflow-hidden group sticky top-6">
+          <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-900/10 bg-slate-950 p-5 sm:p-8 shadow-2xl text-white relative overflow-hidden group sticky top-6">
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
               <Loader2 className="h-24 w-24" />
             </div>
