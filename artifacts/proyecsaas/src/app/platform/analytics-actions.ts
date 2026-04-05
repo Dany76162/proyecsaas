@@ -54,10 +54,20 @@ export async function getImpactMetrics(period: ImpactPeriod): Promise<ImpactMetr
         organizationId: true,
         name: true,
         status: true,
-        whatsappChannel: { select: { displayPhoneNumber: true } },
+        whatsappChannelId: true,
       },
     }),
   ]);
+
+  // Fetch WhatsApp phone numbers for agents that have a channel linked
+  const channelIds = agents.map((a) => a.whatsappChannelId).filter(Boolean) as string[];
+  const channels = channelIds.length > 0
+    ? await prisma.whatsAppChannel.findMany({
+        where: { id: { in: channelIds } },
+        select: { id: true, displayPhoneNumber: true },
+      })
+    : [];
+  const channelPhoneMap = new Map(channels.map((c) => [c.id, c.displayPhoneNumber]));
 
   const leadsMap = new Map(leads.map((r) => [r.organizationId, r._count._all]));
   const visitsMap = new Map(visits.map((r) => [r.organizationId, r._count._all]));
@@ -75,7 +85,9 @@ export async function getImpactMetrics(period: ImpactPeriod): Promise<ImpactMetr
         conversations: convsMap.get(org.id) ?? 0,
         agentName: agent?.name ?? null,
         agentStatus: (agent?.status as OrgImpactRow["agentStatus"]) ?? null,
-        whatsappPhone: agent?.whatsappChannel?.displayPhoneNumber ?? null,
+        whatsappPhone: agent?.whatsappChannelId
+          ? (channelPhoneMap.get(agent.whatsappChannelId) ?? null)
+          : null,
       };
     })
     .sort((a, b) => b.leads + b.visits + b.conversations - (a.leads + a.visits + a.conversations));
