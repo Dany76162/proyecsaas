@@ -31,7 +31,7 @@ export async function logAudit(params: {
         entityType: params.entityType ?? null,
         entityId: params.entityId ?? null,
         entityName: params.entityName ?? null,
-        metadata: params.metadata ?? undefined,
+        metadata: params.metadata ? JSON.parse(JSON.stringify(params.metadata)) : undefined,
       },
     });
   } catch {
