@@ -421,6 +421,13 @@ model WorkerHeartbeat {
   updatedAt  DateTime @updatedAt
 }
 
+model GlobalSetting {
+  key         String   @id // e.g. "PLATFORM_WHATSAPP_NUMBER"
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
 model WhatsAppChannel {
   id                           String                            @id @default(cuid())
   organizationId               String
