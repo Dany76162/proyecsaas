@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { AlertTriangle, Phone, ArrowLeft } from "lucide-react";
 
-export default function SuspendedPage({
+export default async function SuspendedPage({
   searchParams,
 }: {
-  searchParams: { org?: string; name?: string };
+  searchParams: Promise<{ org?: string; name?: string }>;
 }) {
-  const orgName = searchParams.name ?? "tu workspace";
+  const { name } = await searchParams;
+  const orgName = name ?? "tu workspace";
   const waContact = process.env.PLATFORM_WHATSAPP_CONTACT ?? "";
   const waLink = waContact
     ? `https://wa.me/${waContact.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quisiera reactivar la cuenta de ${orgName} en Raíces Pilot.`)}`
