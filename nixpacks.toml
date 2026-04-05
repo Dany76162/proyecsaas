@@ -22,7 +22,9 @@ cmds = ["pnpm install --no-frozen-lockfile --prefer-offline"]
 
 [phases.build]
 cmds = [
-  "pnpm --filter @workspace/proyecsaas exec prisma generate && pnpm --filter @workspace/proyecsaas run build"
+  "pnpm --filter @workspace/proyecsaas exec prisma generate",
+  "pnpm --filter @workspace/proyecsaas exec prisma migrate resolve --rolled-back 0_init || true",
+  "pnpm --filter @workspace/proyecsaas run build"
 ]
 
 [start]
