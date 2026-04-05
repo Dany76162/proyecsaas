@@ -85,20 +85,22 @@ export function WorkspaceSidebar({
       <Link
         href="/"
         onClick={onClose}
-        className="m-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10 group"
+        className="m-4 flex items-center justify-between gap-6 p-2 transition hover:opacity-80 group"
       >
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
             RaicesPilot
           </p>
-          <h2 className="mt-1 text-lg font-bold tracking-tight text-white truncate">{organization.name}</h2>
-          <div className="mt-2 inline-block rounded bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+          <h2 className="mt-1 text-xl font-extrabold tracking-tight text-white leading-none truncate">{organization.name}</h2>
+          <div className="mt-3 inline-block rounded-full bg-indigo-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-indigo-400 border border-indigo-500/20">
             Panel de Inmobiliaria
           </div>
         </div>
-        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/5 bg-black/10 p-0.5 group-hover:scale-105 transition-transform">
-          <img src="/brand/logo_full.png" alt="Logo" className="h-full w-full object-contain" />
-        </div>
+        <img 
+          src="/brand/logo_sidebar.png" 
+          alt="Logo Raíces Pilot" 
+          className="h-20 w-20 shrink-0 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.3)] group-hover:scale-110 transition-transform duration-300" 
+        />
       </Link>
 
       {/* Operación */}
