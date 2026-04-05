@@ -6,7 +6,7 @@
     "dev": "next dev --port ${PORT:-25195} --hostname 0.0.0.0",
     "worker:dev": "npx tsx --conditions=react-server src/server/workers/start.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "prisma migrate deploy || (echo 'Migration failed, but proceeding to start application...' && next start)",
     "typecheck": "prisma generate && tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
