@@ -5,11 +5,14 @@ import { AlertTriangle, UserPlus, Activity, Database, ArrowRight } from "lucide-
 
 import { listOrganizationsForPlatform, getWorkerHeartbeatStatus } from "@/modules/platform/service";
 import { HealthBadge, formatRelativeTime } from "@/components/platform/platform-ui";
+import { getImpactMetrics } from "./analytics-actions";
+import ImpactSection from "./ImpactSection";
 
 export default async function PlatformPage() {
-  const [orgs, workerStatus] = await Promise.all([
+  const [orgs, workerStatus, impactMetrics] = await Promise.all([
     listOrganizationsForPlatform(),
     getWorkerHeartbeatStatus(),
+    getImpactMetrics("30d"),
   ]);
 
   const criticalCount = orgs.filter((o) => o.health === "critical").length;
@@ -218,6 +221,10 @@ export default async function PlatformPage() {
           </div>
         </div>
       </div>
+    </div>
+
+      {/* Rendimiento del Sistema */}
+      <ImpactSection initial={impactMetrics} />
     </div>
   );
 }
