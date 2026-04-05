@@ -7,6 +7,8 @@ import type { MembershipRole } from "@prisma/client";
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
 import type { OrganizationSummary } from "@/modules/organizations/types";
 
+import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
+
 export function WorkspaceShell({
   organization,
   role,
@@ -24,6 +26,7 @@ export function WorkspaceShell({
 
   return (
     <div className="flex min-h-screen bg-slate-100">
+      <OnboardingManager />
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
