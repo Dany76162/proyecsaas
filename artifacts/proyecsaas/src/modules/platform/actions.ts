@@ -145,6 +145,45 @@ export async function deactivateOrganizationAction(orgSlug: string): Promise<Act
 }
 
 /**
+ * Superadmin Action: Reactivates a previously deactivated organization.
+ * Restores workspace access for all existing members.
+ */
+export async function reactivateOrganizationAction(orgSlug: string): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: { id: true, name: true, isActive: true },
+    });
+
+    if (!org) {
+      return { success: false, message: "Inmobiliaria no encontrada." };
+    }
+
+    if (org.isActive) {
+      return { success: false, message: "Esta cuenta ya está activa." };
+    }
+
+    await prisma.organization.update({
+      where: { id: org.id },
+      data: { isActive: true },
+    });
+
+    return {
+      success: true,
+      message: `La cuenta "${org.name}" fue reactivada. Los usuarios ya pueden acceder al workspace.`,
+    };
+  } catch (error) {
+    console.error("[reactivateOrganizationAction] Falló:", error);
+    return {
+      success: false,
+      message: "Hubo un error al reactivar la cuenta. Verifica los logs.",
+    };
+  }
+}
+
+/**
  * Superadmin Action: Bootstraps the first user (OWNER) for an organization
  * and generates a direct invite link for them to set their password.
  */

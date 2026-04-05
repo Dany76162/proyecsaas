@@ -36,6 +36,22 @@ export async function requirePlatformAdmin() {
 export async function requireOrganizationMembership(orgSlug: string) {
   const sessionUser = await requireSessionUser(`/${orgSlug}`);
 
+  // First check: does the org exist at all?
+  const org = await prisma.organization.findUnique({
+    where: { slug: orgSlug },
+    select: { id: true, isActive: true, name: true },
+  });
+
+  if (!org) {
+    notFound();
+  }
+
+  // Second check: is it suspended? Show a clear suspension page.
+  if (!org.isActive) {
+    redirect(`/suspended?org=${encodeURIComponent(orgSlug)}&name=${encodeURIComponent(org.name)}`);
+  }
+
+  // Third check: does the user have membership?
   const membership = await prisma.membership.findFirst({
     where: {
       userId: sessionUser.id,
@@ -44,7 +60,6 @@ export async function requireOrganizationMembership(orgSlug: string) {
       },
       organization: {
         slug: orgSlug,
-        isActive: true,
       },
     },
     select: {

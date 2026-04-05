@@ -8,9 +8,10 @@ import {
   clearOrganizationMembershipsAction,
   generateInitialAdminInviteAction,
   deactivateOrganizationAction,
+  reactivateOrganizationAction,
   setOrgAgentQuotaAction,
 } from "@/modules/platform/actions";
-import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle, PowerOff, Bot } from "lucide-react";
+import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle, PowerOff, Bot, Power } from "lucide-react";
 
 type MenuCoords = { top: number; right: number };
 
@@ -55,6 +56,9 @@ export function OnboardingControls({
   const [inviteName, setInviteName] = useState("");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState("");
+
+  // Reactivate modal
+  const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
 
   // Deactivate form
   const [deactivateConfirmText, setDeactivateConfirmText] = useState("");
@@ -151,6 +155,16 @@ export function OnboardingControls({
     });
   };
 
+  const handleReactivate = () => {
+    startTransition(async () => {
+      const res = await reactivateOrganizationAction(orgSlug);
+      if (res.success) {
+        setReactivateModalOpen(false);
+        router.refresh();
+      }
+    });
+  };
+
   const copyInvite = () => {
     if (inviteUrl) {
       navigator.clipboard.writeText(inviteUrl);
@@ -216,9 +230,9 @@ export function OnboardingControls({
               )}
             </div>
 
-            {/* Dar de baja */}
-            {isActive && (
-              <div className="border-t border-slate-100 py-1">
+            {/* Suspender / Reactivar */}
+            <div className="border-t border-slate-100 py-1">
+              {isActive ? (
                 <button
                   onClick={() => {
                     setMenuOpen(false);
@@ -227,10 +241,21 @@ export function OnboardingControls({
                   className="flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors"
                 >
                   <PowerOff className="h-4 w-4 shrink-0" />
-                  <span>Dar de baja</span>
+                  <span>Suspender</span>
                 </button>
-              </div>
-            )}
+              ) : (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setReactivateModalOpen(true);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                >
+                  <Power className="h-4 w-4 shrink-0" />
+                  <span>Reactivar</span>
+                </button>
+              )}
+            </div>
 
             {/* Agentes IA */}
             <div className="border-t border-slate-100 py-1">
@@ -291,14 +316,24 @@ export function OnboardingControls({
           </button>
         )}
 
-        {/* Dar de baja — secundaria, tono muted hasta hover */}
-        {isActive && (
+        {/* Suspender / Reactivar */}
+        {isActive ? (
           <button
             type="button"
             onClick={() => setDeactivateModalOpen(true)}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
           >
-            Dar de baja
+            <PowerOff className="h-3 w-3" />
+            Suspender
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setReactivateModalOpen(true)}
+            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap border border-emerald-200"
+          >
+            <Power className="h-3 w-3" />
+            Reactivar
           </button>
         )}
 
@@ -610,6 +645,50 @@ export function OnboardingControls({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── REACTIVATE MODAL ─────────────────────────────────────────────────── */}
+      {reactivateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                <Power className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Reactivar Cuenta</h2>
+                <p className="text-xs text-slate-500">{orgName}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+              <p className="text-sm font-semibold text-emerald-800">
+                Vas a restaurar el acceso completo al workspace.
+              </p>
+              <p className="mt-1 text-xs text-emerald-700">
+                Todos los usuarios con membresía activa podrán ingresar nuevamente.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setReactivateModalOpen(false)}
+                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleReactivate}
+                className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {isPending ? "Reactivando..." : "Confirmar reactivación"}
+              </button>
+            </div>
           </div>
         </div>
       )}
