@@ -30,4 +30,4 @@ cmds = [
 [start]
 # PORT is injected by Railway; next start reads it from process.env.
 # HOSTNAME=0.0.0.0 ensures Next.js binds properly on all interfaces instead of ipv6 ::
-cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate resolve --rolled-back \"0_init\" || true && HOSTNAME=0.0.0.0 pnpm --filter @workspace/proyecsaas exec next start"
+cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate resolve --rolled-back \"0_init\" || true && pnpm --filter @workspace/proyecsaas exec prisma db push --accept-data-loss && HOSTNAME=0.0.0.0 pnpm --filter @workspace/proyecsaas exec next start"
