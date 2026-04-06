@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { SectionCard } from "@/components/workspace/section-card";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import { getPlatformWhatsAppStatus } from "@/server/whatsapp/platform-channel-status";
 
 import { WhatsAppConnectionForm } from "./whatsapp-connection-form";
 
@@ -13,16 +14,14 @@ export default async function WhatsAppIntegrationPage({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  const organization = await getOrganizationWorkspace(orgSlug);
+  const [organization, channelStatus] = await Promise.all([
+    getOrganizationWorkspace(orgSlug),
+    getPlatformWhatsAppStatus(),
+  ]);
 
   if (!organization) {
     notFound();
   }
-
-  // Platform phone number configured by superadmin (e.g. "5491112345678")
-  // Used to build wa.me links for agencies. No "+" prefix needed.
-  const platformPhone =
-    process.env.WHATSAPP_PLATFORM_PHONE_DISPLAY?.trim() || null;
 
   return (
     <>
@@ -36,7 +35,8 @@ export default async function WhatsAppIntegrationPage({
         <WhatsAppConnectionForm
           orgSlug={orgSlug}
           orgName={organization.name}
-          platformPhone={platformPhone}
+          platformPhone={channelStatus.platformPhone}
+          metaStatus={channelStatus.metaStatus}
         />
       </SectionCard>
     </>

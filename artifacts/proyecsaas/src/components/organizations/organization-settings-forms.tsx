@@ -247,6 +247,8 @@ export type PropertySourceInitial = {
   propertySourceType: string | null;
   propertySourceStatus: string;
   propertySourceSyncedAt: string | null;
+  /** Website URL from the org profile — used as pre-fill when no source URL is set yet */
+  websiteFallback: string | null;
 };
 
 const SOURCE_STATUS_UI: Record<string, { label: string; cls: string }> = {
@@ -281,13 +283,30 @@ export function PropertySourceForm({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  const [url, setUrl] = useState(initial.propertySourceUrl ?? "");
+  // Pre-fill from the org website if no source URL has been configured yet
+  const [url, setUrl] = useState(
+    initial.propertySourceUrl ?? initial.websiteFallback ?? ""
+  );
   const [type, setType] = useState(initial.propertySourceType ?? "website");
 
   const handleSync = async () => {
+    if (!url.trim()) return;
     setSyncResult(null);
+    setError("");
     setIsSyncing(true);
     try {
+      // Auto-save the URL before syncing so the API can read it from DB.
+      // This removes the two-step "save first, then sync" trap.
+      const saveRes = await updatePropertySourceAction(orgSlug, {
+        propertySourceUrl: url.trim(),
+        propertySourceType: type,
+      });
+      if (!saveRes.success) {
+        setSyncResult({ success: false, message: saveRes.message });
+        setIsSyncing(false);
+        return;
+      }
+
       const res = await fetch("/api/properties/sync-from-source", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -341,6 +360,10 @@ export function PropertySourceForm({
               placeholder="https://www.inmobiliaria.com/propiedades"
             />
           </Field>
+          <p className="mt-1.5 text-xs text-slate-400">
+            Pegá la URL donde tu sitio web publica el listado completo de propiedades
+            (ej: /propiedades, /alquileres). El sistema leerá esa página y extraerá las propiedades con IA.
+          </p>
         </div>
         <Field label="Tipo de fuente">
           <select
@@ -366,10 +389,6 @@ export function PropertySourceForm({
         </div>
       </div>
 
-      <p className="text-xs text-slate-400">
-        Guardá la URL y luego hacé click en &quot;Sincronizar ahora&quot; para importar las propiedades automáticamente. El sistema usará IA para leer el sitio y extraer los datos.
-      </p>
-
       {syncResult && (
         <div className={`rounded-2xl border px-4 py-3 text-sm ${
           syncResult.success
@@ -386,7 +405,7 @@ export function PropertySourceForm({
         <button
           type="button"
           onClick={handleSync}
-          disabled={isSyncing || !url}
+          disabled={isSyncing || !url.trim()}
           className="rounded-2xl border border-brand-100 bg-brand-50 px-5 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {isSyncing ? "Sincronizando con IA..." : "↺ Sincronizar ahora"}

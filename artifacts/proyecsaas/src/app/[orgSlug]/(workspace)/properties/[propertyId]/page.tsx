@@ -232,9 +232,9 @@ export default async function PropertyDetailPage({
                 name="priceCents"
                 type="number"
                 min="0"
-                defaultValue={property.priceCents ?? ""}
+                defaultValue={property.priceCents != null ? property.priceCents / 100 : ""}
                 className={inputClass}
-                placeholder="En centavos (ej. 15000000)"
+                placeholder="Ej: 150000"
               />
             </div>
 
@@ -248,14 +248,14 @@ export default async function PropertyDetailPage({
             </div>
 
             <div>
-              <label className={labelClass}>Expensas (centavos)</label>
+              <label className={labelClass}>Expensas</label>
               <input
                 name="expensesCents"
                 type="number"
                 min="0"
-                defaultValue={property.expensesCents ?? ""}
+                defaultValue={property.expensesCents != null ? property.expensesCents / 100 : ""}
                 className={inputClass}
-                placeholder="Ej. 5000000"
+                placeholder="Ej: 5000"
               />
             </div>
 

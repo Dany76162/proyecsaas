@@ -257,7 +257,7 @@ export default function PlatformSettingsUI({
   delegatedAdmins: { id: string; fullName: string; email: string }[];
 }) {
   return (
-    <div className="mx-auto max-w-5xl space-y-6 sm:space-y-10 pb-20 px-4 pt-4">
+    <div className="mx-auto max-w-5xl space-y-6 sm:space-y-10">
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
@@ -317,11 +317,11 @@ export default function PlatformSettingsUI({
             <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">Parámetros Operativos</h2>
 
             <EditableSetting
-              label="WhatsApp de Soporte"
+              label="Número oficial de WhatsApp (plataforma)"
               settingKey="PLATFORM_WHATSAPP_NUMBER"
               initialValue={settings.waContact}
-              description="Número donde tus clientes te contactarán por soporte. Formato internacional sin símbolos."
-              placeholder="Ej: 5493412345678"
+              description="Número de WhatsApp que los clientes de las inmobiliarias usan para contactarse. Es el número visible en el panel de cada inmobiliaria. Formato internacional sin + ni espacios. Ej: 5491161630205"
+              placeholder="Ej: 5491161630205"
             />
             <EditableSetting
               label="Precio Plan Base (ARS)"
@@ -340,7 +340,7 @@ export default function PlatformSettingsUI({
 
         {/* Sidebar: Integridad del Sistema */}
         <aside>
-          <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-900/10 bg-slate-950 p-5 sm:p-8 shadow-2xl text-white relative overflow-hidden group sticky top-6">
+          <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-900/10 bg-slate-950 p-5 sm:p-8 shadow-2xl text-white relative overflow-hidden group lg:sticky top-6">
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
               <Loader2 className="h-24 w-24" />
             </div>

@@ -21,7 +21,9 @@ function stringNumberToNullableInt(value: unknown) {
     return null;
   }
 
-  const parsed = Number.parseInt(normalized, 10);
+  // Strip dots/commas used as thousands separators (e.g. "300.000" → "300000")
+  const noSep = normalized.replace(/[,.](?=(\d{3})+(?!\d))/g, "");
+  const parsed = Number.parseInt(noSep, 10);
   return Number.isNaN(parsed) ? value : parsed;
 }
 
@@ -79,5 +81,9 @@ export const removePropertyImageSchema = z.object({
 
 export const setPropertyImagePrimarySchema = z.object({
   imageId: z.string().min(1),
+  propertyId: z.string().min(1),
+});
+
+export const deletePropertySchema = z.object({
   propertyId: z.string().min(1),
 });

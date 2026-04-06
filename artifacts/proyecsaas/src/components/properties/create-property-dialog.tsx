@@ -22,7 +22,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
       title: formData.get("title") as string,
       address: formData.get("address") as string,
       city: formData.get("city") as string,
-      priceCents: parseInt(formData.get("priceCents") as string, 10) || 0,
+      priceCents: Math.round(parseFloat(String(formData.get("priceCents") ?? "0").replace(/[,.](?=(\d{3})+(?!\d))/g, "")) * 100) || 0,
     };
 
     startTransition(async () => {

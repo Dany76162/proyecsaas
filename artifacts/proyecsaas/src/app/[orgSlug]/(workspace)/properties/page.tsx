@@ -10,6 +10,7 @@ import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getPropertySummary, listOrganizationProperties } from "@/modules/properties/service";
 import { formatCurrency } from "@/lib/utils";
 import { CreatePropertyDialog } from "@/components/properties/create-property-dialog";
+import { DeletePropertyButton } from "@/components/properties/delete-property-button";
 
 const PROPERTY_STATUS_LABELS: Record<string, string> = {
   AVAILABLE: "Disponible",
@@ -84,41 +85,55 @@ export default async function PropertiesPage({
       >
         <div className="grid gap-4 xl:grid-cols-2">
           {properties.map((property) => (
-            <Link
+            <div
               key={property.id}
-              href={`/${orgSlug}/properties/${property.id}`}
-              className="rounded-[1.5rem] border border-slate-200 p-5 transition hover:-translate-y-0.5"
+              className="group relative rounded-[1.5rem] border border-slate-200 transition hover:-translate-y-0.5 hover:shadow-sm"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-lg font-semibold text-slate-950">{property.title}</p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Ubicación pendiente"}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <StatusBadge
-                    label={PROPERTY_STATUS_LABELS[property.status] ?? property.status}
-                    tone={getPropertyStatusTone(property.status)}
-                  />
-                  <StatusBadge
-                    label={property.publicVisible ? "Público" : "Interno"}
-                    tone={property.publicVisible ? "info" : "neutral"}
-                  />
-                </div>
+              {/* Delete button — top-right, visible on hover */}
+              <div className="absolute right-3 top-3 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+                <DeletePropertyButton
+                  orgSlug={orgSlug}
+                  propertyId={property.id}
+                  propertyTitle={property.title}
+                />
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
-                <span>{property.propertyType || "Propiedad"}</span>
-                {(property.bedrooms ?? 0) > 0 && <span>{property.bedrooms} dorm.</span>}
-                {(property.bathrooms ?? 0) > 0 && <span>{property.bathrooms} baños</span>}
-                {(property.surfaceM2 ?? 0) > 0 && <span>{property.surfaceM2} m²</span>}
-              </div>
+              {/* Card content — navigates to detail */}
+              <Link
+                href={`/${orgSlug}/properties/${property.id}`}
+                className="block p-5"
+              >
+                <div className="flex items-start justify-between gap-4 pr-8">
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-semibold text-slate-950">{property.title}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Ubicación pendiente"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <StatusBadge
+                      label={PROPERTY_STATUS_LABELS[property.status] ?? property.status}
+                      tone={getPropertyStatusTone(property.status)}
+                    />
+                    <StatusBadge
+                      label={property.publicVisible ? "Público" : "Interno"}
+                      tone={property.publicVisible ? "info" : "neutral"}
+                    />
+                  </div>
+                </div>
 
-              <p className="mt-5 text-2xl font-semibold text-slate-950">
-                {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Precio a consultar"}
-              </p>
-            </Link>
+                <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
+                  <span>{property.propertyType || "Propiedad"}</span>
+                  {(property.bedrooms ?? 0) > 0 && <span>{property.bedrooms} dorm.</span>}
+                  {(property.bathrooms ?? 0) > 0 && <span>{property.bathrooms} baños</span>}
+                  {(property.surfaceM2 ?? 0) > 0 && <span>{property.surfaceM2} m²</span>}
+                </div>
+
+                <p className="mt-5 text-2xl font-semibold text-slate-950">
+                  {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Precio a consultar"}
+                </p>
+              </Link>
+            </div>
           ))}
         </div>
 

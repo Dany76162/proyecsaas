@@ -91,7 +91,7 @@ export default async function OrganizationSettingsPage({
       <SectionCard
         eyebrow="Inventario"
         title="Fuente de propiedades"
-        description="URL desde donde se leerá el inventario publicado en el sitio de la inmobiliaria. Base para la sincronización automática."
+        description="Pegá la URL del listado de propiedades de tu sitio web y hacé clic en 'Sincronizar ahora'. El sistema importará todas las propiedades automáticamente usando IA."
       >
         <PropertySourceForm
           orgSlug={orgSlug}
@@ -100,6 +100,7 @@ export default async function OrganizationSettingsPage({
             propertySourceType: orgProfile.propertySourceType,
             propertySourceStatus: orgProfile.propertySourceStatus,
             propertySourceSyncedAt: orgProfile.propertySourceSyncedAt?.toISOString() ?? null,
+            websiteFallback: orgProfile.website,
           }}
         />
       </SectionCard>

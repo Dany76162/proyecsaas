@@ -8,6 +8,7 @@ import type { ActionResult } from "@/modules/types";
 import {
   addPropertyImageSchema,
   createPropertySchema,
+  deletePropertySchema,
   removePropertyImageSchema,
   setPropertyImagePrimarySchema,
   setPropertyVideoSchema,
@@ -60,6 +61,21 @@ function redirectToPropertyResult(
   redirect(`/${orgSlug}/properties/${propertyId}?${search.toString()}`);
 }
 
+// Parse a user-entered money amount (in major currency units, e.g. dollars/pesos)
+// stripping Spanish thousands separators and converting to cents (integer).
+// Returns an empty string if the input is blank (schema will coerce to null).
+function parseMajorUnitToCentsStr(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed === "") return "";
+  // Strip thousands separators: dot or comma followed by exactly 3 digits
+  const noThousands = trimmed.replace(/[,.](?=(\d{3})+(?!\d))/g, "");
+  // Normalize comma-as-decimal to dot (e.g. "1500,50" → "1500.50")
+  const normalized = noThousands.replace(",", ".");
+  const major = parseFloat(normalized);
+  if (isNaN(major)) return "";
+  return String(Math.round(major * 100));
+}
+
 export async function updatePropertyAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
   const { membership } = await requireOrganizationMembership(orgSlug);
@@ -73,9 +89,9 @@ export async function updatePropertyAction(formData: FormData) {
     title: String(formData.get("title") ?? ""),
     operationType: String(formData.get("operationType") ?? ""),
     propertyType: String(formData.get("propertyType") ?? ""),
-    priceCents: String(formData.get("priceCents") ?? ""),
+    priceCents: parseMajorUnitToCentsStr(String(formData.get("priceCents") ?? "")),
     currency: String(formData.get("currency") ?? ""),
-    expensesCents: String(formData.get("expensesCents") ?? ""),
+    expensesCents: parseMajorUnitToCentsStr(String(formData.get("expensesCents") ?? "")),
     status: String(formData.get("status") ?? ""),
     publicVisible: formData.get("publicVisible") === "on",
     // Ubicación
@@ -144,6 +160,75 @@ export async function updatePropertyAction(formData: FormData) {
   revalidatePath(`/${orgSlug}/visits`);
 
   redirectToPropertyResult(orgSlug, property.id, { success: "property-updated" });
+}
+
+// ─── Delete action ───────────────────────────────────────────────────────────
+
+/**
+ * Permanently deletes a property and cleans up all related records.
+ *
+ * Cascade behavior:
+ *   - PropertyImage   → deleted via DB cascade (onDelete: Cascade)
+ *   - Visit           → deleted via DB cascade (onDelete: Cascade)
+ *   - Lead.propertyId → nulled (onDelete: Restrict — leads are decoupled, not deleted)
+ *   - Conversation.propertyId → nulled (onDelete: Restrict — conversations preserved)
+ *   - AvailabilitySlot.propertyId → nulled (onDelete: Restrict — slots preserved without property context)
+ *
+ * Auth: requires ADMIN role. Agents can edit but not delete.
+ */
+export async function deletePropertyAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+  const parsed = deletePropertySchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "ID de propiedad inválido." };
+  }
+
+  // Verify property belongs to this org (multi-tenant guard)
+  const property = await prisma.property.findFirst({
+    where: {
+      id: parsed.data.propertyId,
+      organizationId: membership.organization.id,
+    },
+    select: { id: true },
+  });
+
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  // Use a transaction: null out Restrict relations first, then delete.
+  await prisma.$transaction([
+    // Decouple leads (preserve lead records, just remove the property reference)
+    prisma.lead.updateMany({
+      where: { propertyId: property.id, organizationId: membership.organization.id },
+      data: { propertyId: null },
+    }),
+    // Decouple conversations (preserve conversation history)
+    prisma.conversation.updateMany({
+      where: { propertyId: property.id, organizationId: membership.organization.id },
+      data: { propertyId: null },
+    }),
+    // Decouple availability slots (keep agent availability, remove property context)
+    prisma.availabilitySlot.updateMany({
+      where: { propertyId: property.id, organizationId: membership.organization.id },
+      data: { propertyId: null },
+    }),
+    // Delete the property — images and visits cascade automatically
+    prisma.property.delete({
+      where: { id: property.id },
+    }),
+  ]);
+
+  revalidatePath(`/${orgSlug}/properties`);
+  revalidatePath(`/${orgSlug}/leads`);
+  revalidatePath(`/${orgSlug}/visits`);
+
+  return { success: true, message: "Propiedad eliminada correctamente." };
 }
 
 // ─── Video action ─────────────────────────────────────────────────────────────
