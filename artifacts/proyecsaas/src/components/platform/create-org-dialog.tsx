@@ -68,7 +68,7 @@ export function CreateOrgDialog() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 sm:w-auto sm:justify-start"
       >
         <Building2 className="h-4 w-4" />
         Nueva Inmobiliaria

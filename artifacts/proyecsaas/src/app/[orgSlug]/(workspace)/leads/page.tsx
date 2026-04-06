@@ -22,6 +22,21 @@ const stageOrder: LeadStage[] = [
   "CLOSED",
 ];
 
+const LEAD_STATUS_LABELS: Record<string, string> = {
+  NEW: "Nuevo",
+  CONTACTED: "Contactado",
+  INTERESTED: "Interesado",
+  VISIT: "En Visita",
+  CLOSED: "Cerrado",
+};
+
+const TEMPERATURE_LABELS: Record<string, string> = {
+  hot: "Caliente",
+  warm: "Tibio",
+  cold: "Frío",
+  unclear: "Indefinido",
+};
+
 function getTemperatureTone(temperature: "hot" | "warm" | "cold" | "unclear") {
   if (temperature === "hot") {
     return "warning" as const;
@@ -141,7 +156,7 @@ export default async function LeadsPage({
         </SectionCard>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <MetricCard label="Nuevos" value={String(summary.newCount)} hint="Demanda entrante reciente." />
         <MetricCard
           label="Contactados"
@@ -206,21 +221,21 @@ export default async function LeadsPage({
         description="Visualización tradicional de la cartera de leads."
       >
         <div className="overflow-x-auto">
-          <table className="min-w-full text-left">
+          <table className="min-w-[680px] w-full text-left">
             <thead className="text-sm text-slate-500">
-              <tr>
-                <th className="pb-3 font-medium">Lead</th>
-                <th className="pb-3 font-medium">Propiedad</th>
-                <th className="pb-3 font-medium">Responsable</th>
-                <th className="pb-3 font-medium">Origen</th>
-                <th className="pb-3 font-medium">Etapa</th>
-                <th className="pb-3 font-medium">Último contacto</th>
+              <tr className="border-b border-slate-100">
+                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Lead</th>
+                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Propiedad</th>
+                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Responsable</th>
+                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Origen</th>
+                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Etapa</th>
+                <th className="pb-3 font-semibold text-xs uppercase tracking-wider text-slate-400">Último contacto</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-100">
               {leads.map((lead) => (
-                <tr key={lead.id}>
-                  <td className="py-4">
+                <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-4 pr-4">
                     <Link
                       href={`/${orgSlug}/leads/${lead.id}`}
                       className="font-semibold text-slate-950 hover:text-brand-600"
@@ -242,7 +257,7 @@ export default async function LeadsPage({
                       </a>
                     </div>
                   </td>
-                  <td className="py-4 text-sm text-slate-600">
+                  <td className="py-4 pr-4 text-sm text-slate-600">
                     {lead.propertyId ? (
                       <Link
                         href={`/${orgSlug}/properties/${lead.propertyId}`}
@@ -251,14 +266,14 @@ export default async function LeadsPage({
                         {lead.propertyTitle}
                       </Link>
                     ) : (
-                      lead.propertyTitle
+                      lead.propertyTitle ?? "—"
                     )}
                   </td>
-                  <td className="py-4 text-sm text-slate-600">{lead.ownerName}</td>
-                  <td className="py-4 text-sm text-slate-600">{lead.source}</td>
-                  <td className="py-4">
+                  <td className="py-4 pr-4 text-sm text-slate-600">{lead.ownerName}</td>
+                  <td className="py-4 pr-4 text-sm text-slate-600">{lead.source}</td>
+                  <td className="py-4 pr-4">
                     <StatusBadge
-                      label={lead.status}
+                      label={LEAD_STATUS_LABELS[lead.status] ?? lead.status}
                       tone={
                         lead.status === "CLOSED"
                           ? "success"
@@ -269,7 +284,7 @@ export default async function LeadsPage({
                     />
                     <div className="mt-2">
                       <StatusBadge
-                        label={lead.leadTemperature}
+                        label={TEMPERATURE_LABELS[lead.leadTemperature] ?? lead.leadTemperature}
                         tone={getTemperatureTone(lead.leadTemperature)}
                       />
                     </div>

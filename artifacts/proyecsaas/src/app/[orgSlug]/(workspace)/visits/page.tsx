@@ -12,6 +12,13 @@ import { getVisitSummary, listOrganizationVisits } from "@/modules/visits/servic
 import { prisma } from "@/server/db/prisma";
 import { formatDate } from "@/lib/utils";
 
+const VISIT_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pendiente",
+  CONFIRMED: "Confirmada",
+  COMPLETED: "Completada",
+  CANCELED: "Cancelada",
+};
+
 function getVisitStatusTone(status: string) {
   if (status === "CONFIRMED" || status === "COMPLETED") {
     return "success" as const;
@@ -161,7 +168,7 @@ export default async function VisitsPage({
 
                 <div className="flex flex-col items-start gap-2 lg:items-end">
                   <StatusBadge
-                    label={visit.status}
+                    label={VISIT_STATUS_LABELS[visit.status] ?? visit.status}
                     tone={getVisitStatusTone(visit.status)}
                   />
                   <p className="text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>

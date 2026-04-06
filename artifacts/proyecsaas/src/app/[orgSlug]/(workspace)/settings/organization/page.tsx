@@ -57,12 +57,12 @@ export default async function OrganizationSettingsPage({
         />
         <MetricCard
           label="Plan"
-          value={organization.planLabel}
+          value={organization.planLabel || "Sin asignar"}
           hint="Plan comercial asignado desde el panel superadmin."
         />
         <MetricCard
           label="Mercado"
-          value={organization.city}
+          value={organization.city || "Sin definir"}
           hint="Ciudad o zona principal de operación."
         />
       </section>

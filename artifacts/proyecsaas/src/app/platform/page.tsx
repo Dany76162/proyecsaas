@@ -137,23 +137,23 @@ export default async function PlatformPage() {
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Cuentas en Riesgo */}
         <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b bg-slate-50 px-6 py-5 flex items-center justify-between">
+          <div className="border-b bg-slate-50 px-4 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-2">
             <h3 className="text-base font-bold text-slate-800">Cuentas en Riesgo</h3>
-            <span className="rounded-full bg-red-100 px-3 py-0.5 text-xs font-bold text-red-700">
+            <span className="shrink-0 rounded-full bg-red-100 px-3 py-0.5 text-xs font-bold text-red-700">
               Requiere Atención
             </span>
           </div>
           <div className="divide-y divide-slate-100 flex-1">
             {riskAccounts.map((org) => (
-              <div key={org.id} className="flex items-center justify-between px-6 py-4">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{org.name}</p>
+              <div key={org.id} className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-slate-900">{org.name}</p>
                   <p className="text-xs text-slate-400 mt-0.5">
                     Última msg:{" "}
                     {org.lastActivityAt ? formatRelativeTime(org.lastActivityAt) : "Sin histórico"}
                   </p>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex shrink-0 flex-col items-end gap-2">
                   <HealthBadge status={org.health} />
                   <Link
                     href="/platform/organizations"
@@ -170,7 +170,7 @@ export default async function PlatformPage() {
               </div>
             )}
           </div>
-          <div className="border-t bg-slate-50 px-6 py-3">
+          <div className="border-t bg-slate-50 px-4 py-3 sm:px-6">
             <Link
               href="/platform/organizations"
               className="text-xs font-semibold text-slate-600 flex items-center gap-1.5 hover:text-slate-900 transition"
@@ -182,20 +182,20 @@ export default async function PlatformPage() {
 
         {/* Onboarding Pipeline */}
         <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b bg-slate-50 px-6 py-5 flex items-center justify-between">
+          <div className="border-b bg-slate-50 px-4 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-2">
             <h3 className="text-base font-bold text-slate-800">Pipeline de Onboarding</h3>
-            <span className="rounded-full bg-cyan-100 px-3 py-0.5 text-xs font-bold text-cyan-700">
+            <span className="shrink-0 rounded-full bg-cyan-100 px-3 py-0.5 text-xs font-bold text-cyan-700">
               Pendientes
             </span>
           </div>
           <div className="divide-y divide-slate-100 flex-1">
             {onboardingAccounts.map((org) => (
-              <div key={org.id} className="flex items-center justify-between px-6 py-4">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{org.name}</p>
+              <div key={org.id} className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-slate-900">{org.name}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{org.onboardingStatus}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="shrink-0">
                   <Link
                     href="/platform/organizations"
                     className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm"
@@ -211,7 +211,7 @@ export default async function PlatformPage() {
               </div>
             )}
           </div>
-          <div className="border-t bg-slate-50 px-6 py-3">
+          <div className="border-t bg-slate-50 px-4 py-3 sm:px-6">
             <Link
               href="/platform/onboarding"
               className="text-xs font-semibold text-slate-600 flex items-center gap-1.5 hover:text-slate-900 transition"

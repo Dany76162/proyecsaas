@@ -11,6 +11,13 @@ import { getPropertySummary, listOrganizationProperties } from "@/modules/proper
 import { formatCurrency } from "@/lib/utils";
 import { CreatePropertyDialog } from "@/components/properties/create-property-dialog";
 
+const PROPERTY_STATUS_LABELS: Record<string, string> = {
+  AVAILABLE: "Disponible",
+  DRAFT: "Borrador",
+  RESERVED: "Reservada",
+  SOLD: "Vendida",
+};
+
 function getPropertyStatusTone(status: string) {
   if (status === "AVAILABLE") {
     return "success" as const;
@@ -91,7 +98,7 @@ export default async function PropertiesPage({
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <StatusBadge
-                    label={property.status}
+                    label={PROPERTY_STATUS_LABELS[property.status] ?? property.status}
                     tone={getPropertyStatusTone(property.status)}
                   />
                   <StatusBadge
@@ -103,9 +110,9 @@ export default async function PropertiesPage({
 
               <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
                 <span>{property.propertyType || "Propiedad"}</span>
-                <span>{property.bedrooms ?? 0} dor</span>
-                <span>{property.bathrooms ?? 0} ba</span>
-                <span>{property.surfaceM2 ?? 0} m2</span>
+                {(property.bedrooms ?? 0) > 0 && <span>{property.bedrooms} dorm.</span>}
+                {(property.bathrooms ?? 0) > 0 && <span>{property.bathrooms} baños</span>}
+                {(property.surfaceM2 ?? 0) > 0 && <span>{property.surfaceM2} m²</span>}
               </div>
 
               <p className="mt-5 text-2xl font-semibold text-slate-950">

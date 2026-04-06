@@ -32,29 +32,34 @@ export function OrgTable({ orgs }: { orgs: OrgPlatformSummary[] }) {
     <div className="space-y-4">
       {/* Toolbox */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3 w-full">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre o ciudad..."
-              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm font-medium outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre o ciudad..."
+                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm font-medium outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition shrink-0 ${
+                showFilters || healthFilter !== "all"
+                  ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="hidden sm:inline">Filtros{healthFilter !== "all" && " •"}</span>
+              {healthFilter !== "all" && <span className="sm:hidden">•</span>}
+            </button>
           </div>
-          <button
-            onClick={() => setShowFilters((v) => !v)}
-            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-              showFilters || healthFilter !== "all"
-                ? "border-indigo-300 bg-indigo-50 text-indigo-700"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-            }`}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filtros{healthFilter !== "all" && " •"}
-          </button>
-          <CreateOrgDialog />
+          <div className="w-full sm:w-auto">
+            <CreateOrgDialog />
+          </div>
         </div>
 
         {/* Filter panel */}

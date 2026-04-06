@@ -68,10 +68,10 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
             Plataforma
           </div>
         </div>
-        <img 
-          src="/brand/logo_sidebar.png" 
-          alt="Logo" 
-          className="h-16 w-16 shrink-0 object-contain group-hover:scale-105 transition-transform" 
+        <img
+          src="/brand/raices_pilot_logo_clean.png"
+          alt="Logo"
+          className="h-16 w-16 shrink-0 object-contain group-hover:scale-105 transition-transform"
         />
       </Link>
 
