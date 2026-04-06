@@ -23,9 +23,9 @@ export default async function IntegrationsPage({
       <WorkspaceHeader organization={organization} />
 
       <SectionCard
-        eyebrow="Integrations"
-        title="Connected channels"
-        description="Manage your external communication channels. Connect a WhatsApp Business number to start receiving and responding to leads automatically."
+        eyebrow="Integraciones"
+        title="Canales conectados"
+        description="Gestioná tus canales de comunicación externos. Conectá un número de WhatsApp Business para empezar a recibir y responder consultas de leads automáticamente."
       >
         <Link
           href={`/${orgSlug}/settings/integrations/whatsapp`}
@@ -44,7 +44,7 @@ export default async function IntegrationsPage({
             <div>
               <p className="font-semibold text-slate-950">WhatsApp</p>
               <p className="mt-0.5 text-sm text-slate-500">
-                Connect your WhatsApp Business number via Meta Cloud API.
+                Conectá tu número de WhatsApp Business vía Meta Cloud API.
               </p>
             </div>
           </div>

@@ -69,7 +69,7 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
           </div>
         </div>
         <img
-          src="/brand/raices_pilot_logo_clean.png"
+          src="/brand/Logo%20minimalista%20de%20crecimiento%20inmobiliario.png"
           alt="Logo"
           className="h-16 w-16 shrink-0 object-contain group-hover:scale-105 transition-transform"
         />

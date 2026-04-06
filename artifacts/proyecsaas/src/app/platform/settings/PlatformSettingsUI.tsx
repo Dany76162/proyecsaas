@@ -209,13 +209,13 @@ function DelegatedAdminSection({
               key={admin.id}
               className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 last:border-0 bg-white hover:bg-slate-50 transition-colors"
             >
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100">
                   <Shield className="h-4 w-4 text-indigo-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">{admin.fullName}</p>
-                  <p className="text-xs text-slate-500">{admin.email}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{admin.fullName}</p>
+                  <p className="text-xs text-slate-500 truncate">{admin.email}</p>
                 </div>
               </div>
               <button
@@ -257,7 +257,7 @@ export default function PlatformSettingsUI({
   delegatedAdmins: { id: string; fullName: string; email: string }[];
 }) {
   return (
-    <div className="mx-auto max-w-5xl space-y-10 pb-20 px-4 pt-4">
+    <div className="mx-auto max-w-5xl space-y-6 sm:space-y-10 pb-20 px-4 pt-4">
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
@@ -280,7 +280,7 @@ export default function PlatformSettingsUI({
 
           {/* 1. Perfil del Operador */}
           <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-bold text-slate-900 mb-8">Perfil del Operador</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">Perfil del Operador</h2>
 
             <EditableSetting
               label="Nombre"
@@ -314,7 +314,7 @@ export default function PlatformSettingsUI({
 
           {/* 2. Parámetros Operativos */}
           <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-bold text-slate-900 mb-8">Parámetros Operativos</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">Parámetros Operativos</h2>
 
             <EditableSetting
               label="WhatsApp de Soporte"

@@ -28,6 +28,36 @@ const leadStageLabels: Record<string, string> = {
   CLOSED: "Cerrado",
 };
 
+const TEMPERATURE_LABELS: Record<string, string> = {
+  hot: "Caliente",
+  warm: "Tibio",
+  cold: "Frío",
+  unclear: "Indefinido",
+};
+
+const CONVERSATION_STATUS_LABELS: Record<string, string> = {
+  OPEN: "Abierta",
+  CLOSED: "Cerrada",
+  PENDING: "Pendiente",
+  RESOLVED: "Resuelta",
+  HUMAN_CONTROLLED: "Control humano",
+};
+
+const DELIVERY_STATUS_LABELS: Record<string, string> = {
+  SENT: "Enviado",
+  RECEIVED: "Recibido",
+  FAILED: "Fallido",
+  PENDING: "Pendiente",
+  SKIPPED: "Omitido",
+};
+
+const VISIT_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pendiente",
+  CONFIRMED: "Confirmada",
+  COMPLETED: "Completada",
+  CANCELED: "Cancelada",
+};
+
 function getTemperatureTone(temperature: "hot" | "warm" | "cold" | "unclear") {
   if (temperature === "hot") return "warning" as const;
   if (temperature === "warm") return "info" as const;
@@ -164,7 +194,7 @@ export default async function LeadDetailPage({
                 }
               />
               <StatusBadge
-                label={lead.leadTemperature}
+                label={TEMPERATURE_LABELS[lead.leadTemperature] ?? lead.leadTemperature}
                 tone={getTemperatureTone(lead.leadTemperature)}
               />
               <StatusBadge label={lead.interestLabel} />
@@ -395,7 +425,7 @@ export default async function LeadDetailPage({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge label={lead.conversationContext.status} />
+              <StatusBadge label={CONVERSATION_STATUS_LABELS[lead.conversationContext.status] ?? lead.conversationContext.status} />
               {lead.conversationContext.followUpActive ? (
                 <StatusBadge
                   label={getFollowUpLabel(lead.conversationContext.followUpCategory)}
@@ -433,7 +463,7 @@ export default async function LeadDetailPage({
                     <StatusBadge label={message.direction === "OUTBOUND" ? "Enviado" : "Recibido"} tone="neutral" />
                     {message.direction === "OUTBOUND" ? (
                       <StatusBadge
-                        label={message.deliveryStatus}
+                        label={DELIVERY_STATUS_LABELS[message.deliveryStatus] ?? message.deliveryStatus}
                         tone={getDeliveryStatusTone(message.deliveryStatus)}
                       />
                     ) : null}
@@ -625,7 +655,7 @@ export default async function LeadDetailPage({
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold text-slate-950">{visit.propertyTitle}</p>
                     <StatusBadge
-                      label={visit.status}
+                      label={VISIT_STATUS_LABELS[visit.status] ?? visit.status}
                       tone={getVisitStatusTone(visit.status)}
                     />
                   </div>

@@ -20,6 +20,21 @@ const STATUS_LABEL: Record<string, string> = {
   RENTED: "Alquilada",
 };
 
+const LEAD_STATUS_LABEL: Record<string, string> = {
+  NEW: "Nuevo",
+  CONTACTED: "Contactado",
+  INTERESTED: "Interesado",
+  VISIT: "En visita",
+  CLOSED: "Cerrado",
+};
+
+const VISIT_STATUS_LABEL: Record<string, string> = {
+  PENDING: "Pendiente",
+  CONFIRMED: "Confirmada",
+  COMPLETED: "Completada",
+  CANCELED: "Cancelada",
+};
+
 const OPERATION_TYPE_LABEL: Record<string, string> = {
   SALE: "Venta",
   RENT: "Alquiler",
@@ -476,7 +491,7 @@ export default async function PropertyDetailPage({
                     <p className="mt-0.5 text-sm text-slate-500">{lead.ownerName}</p>
                   </div>
                   <StatusBadge
-                    label={lead.status}
+                    label={LEAD_STATUS_LABEL[lead.status] ?? lead.status}
                     tone={
                       lead.status === "VISIT"
                         ? "warning"
@@ -504,7 +519,7 @@ export default async function PropertyDetailPage({
                 <div key={visit.id} className="rounded-2xl border border-slate-200 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold text-slate-950">{visit.leadName}</p>
-                    <StatusBadge label={visit.status} tone={getVisitStatusTone(visit.status)} />
+                    <StatusBadge label={VISIT_STATUS_LABEL[visit.status] ?? visit.status} tone={getVisitStatusTone(visit.status)} />
                   </div>
                   <p className="mt-1.5 text-sm text-slate-500">{formatDate(visit.scheduledAt)}</p>
                 </div>
