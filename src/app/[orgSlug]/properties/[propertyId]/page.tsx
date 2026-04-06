@@ -10,6 +10,7 @@ import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { SharePropertyButton } from "@/components/workspace/share-property-button";
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Borrador",
@@ -115,12 +116,15 @@ export default async function PropertyDetailPage({
           </div>
           <div className="flex flex-wrap gap-3">
             {property.publicVisible && (
-              <Link
-                href={`/map/${property.id}`}
-                className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-              >
-                Ver publicación
-              </Link>
+              <>
+                <SharePropertyButton orgSlug={orgSlug} propertyId={property.id} />
+                <Link
+                  href={`/catalogo/${orgSlug}/${property.id}`}
+                  className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Ver publicación
+                </Link>
+              </>
             )}
             <Link
               href={`/${orgSlug}/leads`}

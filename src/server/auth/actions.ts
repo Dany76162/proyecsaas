@@ -180,7 +180,8 @@ export async function loginAction(formData: FormData) {
     if (user?.isPlatformAdmin) {
       clearLoginAttempts(clientId);
       await createSession(user.id);
-      redirect(sanitizeRedirectPath(parsed.data.next || undefined, "/platform"));
+      const dest = sanitizeRedirectPath(parsed.data.next || undefined, "/platform");
+      redirect(`/transition?next=${encodeURIComponent(dest)}`);
     }
     // Regular users with no active memberships are blocked.
     redirect(buildLoginRedirect("no-memberships", parsed.data.next || undefined));
@@ -190,9 +191,11 @@ export async function loginAction(formData: FormData) {
   clearLoginAttempts(clientId);
   await createSession(user.id);
 
-  redirect(
-    sanitizeRedirectPath(parsed.data.next || undefined, `/${firstMembership.organization.slug}`),
+  const dest = sanitizeRedirectPath(
+    parsed.data.next || undefined,
+    `/${firstMembership.organization.slug}`,
   );
+  redirect(`/transition?next=${encodeURIComponent(dest)}`);
 }
 
 export async function logoutAction() {

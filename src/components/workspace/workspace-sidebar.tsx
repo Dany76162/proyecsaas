@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
 import type { OrganizationSummary } from "@/modules/organizations/types";
+import { logoutAction } from "@/server/auth/actions";
 import { cn } from "@/lib/utils";
 
 type WorkspaceSidebarProps = {
@@ -136,8 +137,8 @@ export function WorkspaceSidebar({
         </div>
       )}
 
-      {/* Footer — user + role */}
-      <div className="mt-auto p-4">
+      {/* Footer — user + role + logout */}
+      <div className="mt-auto p-4 space-y-2">
         <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">
             {userName.charAt(0).toUpperCase()}
@@ -147,6 +148,15 @@ export function WorkspaceSidebar({
             <p className="text-[10px] text-slate-400">{roleDisplay.label}</p>
           </div>
         </div>
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </button>
+        </form>
       </div>
     </aside>
   );

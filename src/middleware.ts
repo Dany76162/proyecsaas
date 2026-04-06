@@ -7,6 +7,7 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   "/favicon.ico",
   "/map",
   /^\/map\/.+/,
+  /^\/catalogo\/.+/,
   /^\/api\/webhooks\//,
   /^\/api\/internal\/automation-simulate(\/|$)/,
 ];

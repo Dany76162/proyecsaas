@@ -1,27 +1,39 @@
 export const dynamic = "force-dynamic";
 
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Search } from "lucide-react";
 
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { listPublicProperties } from "@/modules/properties/service";
+import { getPublicOrgForCatalog, listPublicPropertiesByOrg } from "@/modules/properties/service";
 import { formatCurrency } from "@/lib/utils";
 
-export default async function PublicMapPage({
+export default async function OrgCatalogPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ orgSlug: string }>;
   searchParams: Promise<{ q?: string }>;
 }) {
+  const { orgSlug } = await params;
   const { q } = await searchParams;
   const query = q?.trim() || undefined;
-  const properties = await listPublicProperties(query);
+
+  const [organization, properties] = await Promise.all([
+    getPublicOrgForCatalog(orgSlug),
+    listPublicPropertiesByOrg(orgSlug, query),
+  ]);
+
+  if (!organization) {
+    notFound();
+  }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-          Catálogo de propiedades
+          {organization.name}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {properties.length} propiedad{properties.length !== 1 ? "es" : ""} disponible{properties.length !== 1 ? "s" : ""}
@@ -50,7 +62,7 @@ export default async function PublicMapPage({
           </button>
           {query && (
             <Link
-              href="/map"
+              href={`/catalogo/${orgSlug}`}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-50"
             >
               Limpiar
@@ -62,9 +74,14 @@ export default async function PublicMapPage({
       {/* Property grid */}
       {properties.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center">
-          <p className="text-sm text-slate-500">No se encontraron propiedades{query ? ` para "${query}"` : ""}.</p>
+          <p className="text-sm text-slate-500">
+            No se encontraron propiedades{query ? ` para "${query}"` : ""}.
+          </p>
           {query && (
-            <Link href="/map" className="mt-3 inline-block text-sm font-medium text-slate-700 underline underline-offset-2">
+            <Link
+              href={`/catalogo/${orgSlug}`}
+              className="mt-3 inline-block text-sm font-medium text-slate-700 underline underline-offset-2"
+            >
               Ver todas las propiedades
             </Link>
           )}
@@ -74,7 +91,7 @@ export default async function PublicMapPage({
           {properties.map((property) => (
             <Link
               key={property.id}
-              href={`/map/${property.id}`}
+              href={`/catalogo/${orgSlug}/${property.id}`}
               className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:shadow-md"
             >
               {/* Thumbnail */}

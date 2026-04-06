@@ -2,7 +2,6 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useUploadThing } from "@/lib/uploadthing";
 import {
   addPropertyImageAction,
   removePropertyImageAction,
@@ -18,13 +17,9 @@ interface PropertyImageGalleryProps {
 
 type ActiveTab = "upload" | "url";
 
-// Convert a Google Drive share URL to a direct-access URL.
-// Works for "Anyone with the link" public files.
 function convertDriveUrl(input: string): string {
-  // https://drive.google.com/file/d/{id}/view...
   const fileMatch = input.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (fileMatch) return `https://drive.google.com/uc?export=view&id=${fileMatch[1]}`;
-  // https://drive.google.com/open?id={id}
   const openMatch = input.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
   if (openMatch) return `https://drive.google.com/uc?export=view&id=${openMatch[1]}`;
   return input;
@@ -32,6 +27,11 @@ function convertDriveUrl(input: string): string {
 
 function isDriveUrl(input: string) {
   return input.includes("drive.google.com");
+}
+
+interface PendingPreview {
+  objectUrl: string;
+  name: string;
 }
 
 export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyImageGalleryProps) {
@@ -43,35 +43,65 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
   const [altInput, setAltInput] = useState("");
   const [urlError, setUrlError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingPreviews, setPendingPreviews] = useState<PendingPreview[]>([]);
   const [isPendingUrl, startUrlTransition] = useTransition();
   const [isPendingAction, startActionTransition] = useTransition();
 
-  const { startUpload, isUploading } = useUploadThing("propertyImageUploader", {
-    onClientUploadComplete: async (uploaded) => {
-      setUploadError(null);
+  async function uploadFiles(files: File[]) {
+    setUploadError(null);
+    setIsUploading(true);
+
+    const previews: PendingPreview[] = files.map((f) => ({
+      objectUrl: URL.createObjectURL(f),
+      name: f.name,
+    }));
+    setPendingPreviews(previews);
+
+    try {
       const isFirst = images.length === 0;
-      for (let i = 0; i < uploaded.length; i++) {
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("orgSlug", orgSlug);
+        fd.append("propertyId", propertyId);
+
+        const res = await fetch("/api/properties/upload-image", {
+          method: "POST",
+          body: fd,
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setUploadError((data as { error?: string }).error ?? "Error al subir imagen.");
+          break;
+        }
+
+        const { url } = (await res.json()) as { url: string };
+
         await addPropertyImageAction(orgSlug, {
           propertyId,
-          url: uploaded[i].url,
-          altText: uploaded[i].name,
+          url,
+          altText: file.name,
           isPrimary: isFirst && i === 0,
         });
       }
+
       router.refresh();
-    },
-    onUploadError: (error) => {
-      setUploadError(error.message ?? "Error al subir imágenes.");
-    },
-  });
+    } finally {
+      previews.forEach((p) => URL.revokeObjectURL(p.objectUrl));
+      setPendingPreviews([]);
+      setIsUploading(false);
+    }
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    setUploadError(null);
-    startUpload(files);
-    // reset so same file can be selected again
     e.target.value = "";
+    void uploadFiles(files);
   }
 
   function handleUrlAdd(e: React.FormEvent) {
@@ -113,16 +143,15 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
 
   return (
     <div className="space-y-5">
-      {/* ── Image grid ─────────────────────────────────────── */}
-      {images.length > 0 ? (
+      {/* ── Image grid (saved + pending previews) ──────────────────────────────── */}
+      {(images.length > 0 || pendingPreviews.length > 0) && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {/* Saved images */}
           {images.map((img) => (
             <div
               key={img.id}
               className={`group relative overflow-hidden rounded-2xl border bg-slate-100 ${
-                img.isPrimary
-                  ? "border-brand-400 ring-2 ring-brand-200"
-                  : "border-slate-200"
+                img.isPrimary ? "border-brand-400 ring-2 ring-brand-200" : "border-slate-200"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -162,38 +191,46 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
               </div>
             </div>
           ))}
+
+          {/* Pending previews (uploading) */}
+          {pendingPreviews.map((p) => (
+            <div
+              key={p.objectUrl}
+              className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.objectUrl} alt={p.name} className="h-32 w-full object-cover opacity-60" />
+              <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+              </div>
+            </div>
+          ))}
         </div>
-      ) : (
+      )}
+
+      {images.length === 0 && pendingPreviews.length === 0 && (
         <p className="text-sm text-slate-400">Sin imágenes todavía. Subí la primera desde abajo.</p>
       )}
 
-      {/* ── Tab switcher ───────────────────────────────────── */}
+      {/* ── Tab switcher ────────────────────────────────────────────────────────── */}
       <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 w-fit">
-        <button
-          type="button"
-          onClick={() => setActiveTab("upload")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-            activeTab === "upload"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Subir archivo
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("url")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-            activeTab === "url"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          URL / Google Drive
-        </button>
+        {(["upload", "url"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              activeTab === tab
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {tab === "upload" ? "Subir archivo" : "URL / Google Drive"}
+          </button>
+        ))}
       </div>
 
-      {/* ── Upload tab ─────────────────────────────────────── */}
+      {/* ── Upload tab ──────────────────────────────────────────────────────────── */}
       {activeTab === "upload" && (
         <div className="space-y-3">
           {uploadError && (
@@ -232,20 +269,18 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
                 <span className="text-sm font-medium text-slate-600">
                   Hacé click para seleccionar imágenes
                 </span>
-                <span className="text-xs text-slate-400">
-                  JPG, PNG, WEBP · máx. 4 MB por imagen · hasta 8 a la vez
-                </span>
+                <span className="text-xs text-slate-400">JPG, PNG, WEBP · máx. 8 MB · múltiples archivos</span>
               </>
             )}
           </button>
           <p className="text-xs text-slate-400">
-            Funciona desde PC y celular. Las imágenes se suben al CDN y quedan vinculadas a esta
-            propiedad.
+            Las imágenes se guardan directamente en el servidor y quedan vinculadas a esta propiedad.
+            Funciona desde PC y celular.
           </p>
         </div>
       )}
 
-      {/* ── URL / Drive tab ────────────────────────────────── */}
+      {/* ── URL / Drive tab ─────────────────────────────────────────────────────── */}
       {activeTab === "url" && (
         <div className="space-y-3">
           {urlError && (
@@ -289,13 +324,10 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
           </form>
           {urlInput && isDriveUrl(urlInput) && (
             <p className="text-xs text-emerald-600">
-              Link de Google Drive detectado — se convertirá automáticamente a URL directa.
-              El archivo debe estar compartido como "Cualquiera con el enlace".
+              Link de Google Drive detectado — se convertirá automáticamente. El archivo debe estar compartido
+              como "Cualquiera con el enlace".
             </p>
           )}
-          <p className="text-xs text-slate-400">
-            Pegá la URL de una imagen alojada externamente, o un link compartido de Google Drive.
-          </p>
         </div>
       )}
     </div>

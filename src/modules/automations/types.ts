@@ -28,6 +28,9 @@ export type PreparedConversationContext = {
         status: string;
         priceCents: number | null;
         currency: string | null;
+        publicUrl?: string | null;
+        imageCount?: number;
+        imageUrls?: string[];
       }
     | null;
   propertyMatch:
@@ -43,6 +46,7 @@ export type PreparedConversationContext = {
         consideredSignals: string[];
       }
     | null;
+  catalogUrl: string | null;
   availability: Array<{
     id: string;
     label: string;

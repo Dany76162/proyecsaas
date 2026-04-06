@@ -18,6 +18,7 @@ export type PropertyListItem = {
   bathrooms: number | null;
   surfaceM2: number | null;
   parkingSpots: number | null;
+  thumbnailUrl: string | null;
 };
 
 export type PropertySummary = {

@@ -2,21 +2,59 @@ import OpenAI from "openai";
 import { z } from "zod";
 
 import type { AutomationDecision, PreparedConversationContext } from "@/modules/automations/types";
+import { formatCurrency } from "@/lib/utils";
 
 const AI_REQUEST_TIMEOUT_MS = 15_000;
 const FALLBACK_VISIT_KEYWORDS = [
   "visita",
   "visitar",
-  "ver",
-  "verlo",
   "recorrido",
   "agenda",
   "agendar",
   "turno",
-  "mostrar",
+  "coordinar",
+  "ir a ver",
 ];
 const FALLBACK_BUDGET_HINTS = ["usd", "ars", "$", "dolar", "presupuesto", "millon"];
 const FALLBACK_INVESTMENT_HINTS = ["inversion", "renta", "rentabilidad", "airbnb"];
+
+// ─── Intent detection ────────────────────────────────────────────────────────
+const PHOTO_INTENT_KEYWORDS = [
+  "foto", "fotos", "fotografia", "imagen", "imagenes", "pic", "pics",
+  "pasame fotos", "tenes fotos", "hay fotos", "manda fotos",
+];
+const CATALOG_INTENT_KEYWORDS = [
+  "catalogo", "catálogo", "que tenes", "qué tenés", "que tienen", "inventario",
+  "otras propiedades", "mas opciones", "más opciones", "ver propiedades",
+  "listado", "todas las propiedades",
+];
+const ZONE_INTENT_KEYWORDS = [
+  "zona", "barrio",
+  "palermo", "belgrano", "recoleta", "nuñez", "caballito",
+  "villa crespo", "villa urquiza", "villa devoto", "villa del parque",
+  "flores", "floresta", "devoto", "urquiza", "almagro", "boedo",
+  "san telmo", "puerto madero", "retiro", "microcentro", "once",
+  "chacarita", "colegiales", "saavedra", "parque patricios",
+];
+
+export type LeadDetectedIntents = {
+  pide_fotos: boolean;
+  pide_catalogo: boolean;
+  quiere_visita: boolean;
+  pide_precio: boolean;
+  busca_zona: boolean;
+};
+
+export function detectLeadIntents(body: string): LeadDetectedIntents {
+  const n = body.toLowerCase();
+  return {
+    pide_fotos: PHOTO_INTENT_KEYWORDS.some((k) => n.includes(k)),
+    pide_catalogo: CATALOG_INTENT_KEYWORDS.some((k) => n.includes(k)),
+    quiere_visita: FALLBACK_VISIT_KEYWORDS.some((k) => n.includes(k)),
+    pide_precio: /precio|valor|costo|cuánto|cuanto|sale\?|cuesta/.test(n),
+    busca_zona: ZONE_INTENT_KEYWORDS.some((k) => n.includes(k)),
+  };
+}
 const WEEKDAY_LABELS = [
   "domingo",
   "lunes",
@@ -434,61 +472,141 @@ function getDecisionModel() {
 function buildPrompt(context: PreparedConversationContext) {
   const availabilitySummary = getAvailabilitySummary(context);
   const doubleOptionSummary = getDoubleOptionVisitSummary(context);
+  const latestBody = getLatestInboundMessage(context)?.body ?? "";
+  const intents = detectLeadIntents(latestBody);
+  const hasPropertyMatch = hasMatchedPropertyContext(context);
+  const propertyHasImages = (context.property?.imageCount ?? 0) > 0;
+  const propertyPublicUrl = context.property?.publicUrl ?? null;
+  const catalogUrl = context.catalogUrl ?? null;
+
+  const system = [
+    "Sos un asesor comercial inmobiliario de Argentina atendiendo consultas por WhatsApp.",
+    "Idioma: espanol de Argentina. Tono: profesional, cercano, sin presionar. Longitud: maximo 3 oraciones.",
+    "",
+    "=== REGLA FUNDAMENTAL ===",
+    "NUNCA inventes propiedades, fotos ni links. Solo usa datos del campo 'context' que viene en el mensaje del usuario.",
+    "Si un campo no existe o es null, no lo menciones.",
+    "",
+    "=== LECTURA DEL CONTEXTO ===",
+    "El campo 'context' contiene informacion pre-procesada que DEBES leer primero:",
+    "- hasPropertyMatch: si hay una propiedad matcheada confiablemente",
+    "- propertyHasImages: si esa propiedad tiene fotos cargadas",
+    "- propertyPublicUrl: link publico de la propiedad (null si no existe)",
+    "- catalogUrl: link del catalogo de la inmobiliaria (null si no existe)",
+    "- detectedIntents: que quiere el lead en este mensaje",
+    "- hasAvailability: si hay horarios de visita disponibles",
+    "- preferredVisitOptions: dos opciones de horario para proponer",
+    "",
+    "=== REGLAS SEGUN INTENCION ===",
+    "",
+    "SI detectedIntents incluye 'pide_fotos':",
+    "  - Si hasPropertyMatch y propertyPublicUrl existe y propertyHasImages:",
+    "    → Compartí el link. Ej: 'Aca tenes las fotos: [url]'",
+    "  - Si hasPropertyMatch y propertyPublicUrl existe pero NO hay imagenes:",
+    "    → Decí que las fotos están siendo cargadas. Ofrecé visita presencial.",
+    "  - Si hasPropertyMatch y NO hay propertyPublicUrl:",
+    "    → Ofrecé coordinar visita para ver la propiedad en persona.",
+    "  - Si NO hasPropertyMatch y catalogUrl existe:",
+    "    → Compartí el catalogo. Ej: 'Te paso el catalogo completo: [url]'",
+    "",
+    "SI detectedIntents incluye 'pide_catalogo':",
+    "  - Si catalogUrl existe:",
+    "    → Compartí el catalogo: 'Aca esta el catalogo completo: [url]'",
+    "  - Si NO existe catalogUrl:",
+    "    → Pedí zona, presupuesto y tipo para acercarle opciones.",
+    "",
+    "SI detectedIntents incluye 'quiere_visita':",
+    "  - Si hasPropertyMatch y hasAvailability:",
+    "    → Proponé exactamente las dos opciones de preferredVisitOptions.",
+    "  - Si hasPropertyMatch y NO hasAvailability:",
+    "    → Confirmá el interes y preguntá que dia/horario le queda mejor.",
+    "  - Si NO hasPropertyMatch:",
+    "    → Pedí que aclare que propiedad quiere ver antes de proponer fecha.",
+    "",
+    "SI detectedIntents incluye 'pide_precio':",
+    "  - Si hasPropertyMatch y property.priceFormatted no es null:",
+    "    → Usá ese valor exactamente: 'El precio es [priceFormatted]'",
+    "  - Si priceFormatted es null: decí que el precio se coordina con el asesor.",
+    "",
+    "SI detectedIntents incluye 'busca_zona' y NO hasPropertyMatch:",
+    "  - Si catalogUrl existe: compartí el catalogo y pedí mas datos.",
+    "  - Si no: pedí zona, presupuesto y tipo.",
+    "",
+    "=== REGLAS GENERALES ===",
+    "- Si hasPropertyMatch: mantene el foco en esa propiedad, no vayas a cero.",
+    "- Si el lead ya expreso interes alto: no vuelvas a hacer preguntas de calificacion.",
+    "- Si propertyPublicUrl existe y la respuesta gana con un link: incluilo.",
+    "- No presiones leads frios: hace UNA pregunta de calificacion y listo.",
+    "- Derivá a humano si hay negociacion, temas legales, friccion repetida o pedido explicito.",
+    "",
+    "=== TEMPERATURA ===",
+    "HOT: empujá directo a coordinar visita o siguiente paso.",
+    "WARM: respondé con info util y anclá hacia visita.",
+    "COLD: aporta valor, una sola pregunta de calificacion.",
+    "UNCLEAR: clarificá que busca antes de avanzar.",
+    "",
+    "=== FORMATO DE RESPUESTA ===",
+    "Devolvé SOLO JSON valido con exactamente estos campos:",
+    "{",
+    '  "message": string,',
+    '  "intent": string,',
+    '  "shouldScheduleVisit": boolean,',
+    '  "proposedVisitDate": string | null,',
+    '  "needsHumanHandoff": boolean,',
+    '  "confidence": number,',
+    '  "leadTemperature": "hot" | "warm" | "cold" | "unclear",',
+    '  "extractedPreferences": {',
+    '    "budget": string | null,',
+    '    "zones": string[],',
+    '    "rooms": number | null,',
+    '    "purpose": "living" | "investment" | null',
+    "  },",
+    '  "nextBestAction": string,',
+    '  "requiresFollowUp": boolean,',
+    '  "followUpReason": string | null',
+    "}",
+  ].join("\n");
+
+  const userPayload = {
+    // Pre-processed context — read this first
+    context: {
+      hasPropertyMatch,
+      propertyHasImages,
+      propertyPublicUrl,
+      catalogUrl,
+      hasAvailability: context.availability.length > 0,
+      availabilitySummary,
+      preferredVisitOptions: doubleOptionSummary,
+      detectedIntents: Object.entries(intents)
+        .filter(([, v]) => v)
+        .map(([k]) => k),
+    },
+    // Raw data
+    conversation: context.conversation,
+    lead: context.lead,
+    property: context.property
+      ? {
+          id: context.property.id,
+          title: context.property.title,
+          address: context.property.address,
+          city: context.property.city,
+          neighborhood: context.property.neighborhood,
+          propertyType: context.property.propertyType,
+          status: context.property.status,
+          priceFormatted: context.property.priceCents != null
+            ? formatCurrency(context.property.priceCents, context.property.currency ?? "USD")
+            : null,
+          publicUrl: context.property.publicUrl,
+          imageCount: context.property.imageCount,
+        }
+      : null,
+    propertyMatch: context.propertyMatch,
+    recentMessages: context.recentMessages,
+  };
 
   return {
-    system: [
-      "Sos un asesor comercial inmobiliario de Argentina atendiendo por WhatsApp.",
-      "Escribi siempre en espanol de Argentina, con tono profesional, cercano y breve.",
-      "Las respuestas deben ser cortas, naturales y aptas para WhatsApp.",
-      "No inventes datos: solo podes usar el contexto provisto.",
-      "Comportamiento comercial esperado:",
-      "- HOT: empuja directo a coordinar visita.",
-      "- WARM: responde y ancla hacia visita.",
-      "- COLD: aporta valor y hace una pregunta de calificacion.",
-      "- UNCLEAR: aclara contexto o deriva a humano si hace falta.",
-      "Reglas comerciales:",
-      "- Si hay disponibilidad, preferi proponer dos opciones concretas.",
-      "- Si ya hay una propiedad vinculada o matcheada de forma confiable, usala como contexto principal para decidir el siguiente paso.",
-      "- Si hay propiedad matcheada + disponibilidad + senal clara de interes, orienta la respuesta a proponer visita.",
-      "- Si hay propiedad matcheada pero todavia no alcanza para visita, pedi la aclaracion minima util sin volver a cero.",
-      "- Si NO hay property match claro, no inventes una propiedad: pedi zona, presupuesto, ambientes o tipo segun falte.",
-      "- No presiones a leads frios.",
-      "- Si el lead es vago, intenta pedir zona, presupuesto o finalidad.",
-      "- Deriva a humano si aparecen negociacion, temas legales, friccion repetida o pedido explicito de hablar con una persona.",
-      "Debes devolver SOLO JSON valido con esta forma exacta:",
-      "{",
-      '  "message": string,',
-      '  "intent": string,',
-      '  "shouldScheduleVisit": boolean,',
-      '  "proposedVisitDate": string | null,',
-      '  "needsHumanHandoff": boolean,',
-      '  "confidence": number,',
-      '  "leadTemperature": "hot" | "warm" | "cold" | "unclear",',
-      '  "extractedPreferences": {',
-      '    "budget": string | null,',
-      '    "zones": string[],',
-      '    "rooms": number | null,',
-      '    "purpose": "living" | "investment" | null',
-      "  },",
-      '  "nextBestAction": string,',
-      '  "requiresFollowUp": boolean,',
-      '  "followUpReason": string | null',
-      "}",
-    ].join("\n"),
-    user: JSON.stringify(
-      {
-        conversation: context.conversation,
-        lead: context.lead,
-        property: context.property,
-        propertyMatch: context.propertyMatch,
-        availability: context.availability,
-        availabilitySummary,
-        preferredVisitOptions: doubleOptionSummary,
-        recentMessages: context.recentMessages,
-      },
-      null,
-      2,
-    ),
+    system,
+    user: JSON.stringify(userPayload, null, 2),
   };
 }
 
@@ -554,6 +672,31 @@ function mapAiDecisionToAutomationDecision(
   }, context);
 }
 
+// ─── Fallback response builders ──────────────────────────────────────────────
+
+function buildPropertyLinkSuffix(property: PreparedConversationContext["property"]): string {
+  if (!property?.publicUrl) return "";
+  return ` Podés ver la ficha completa acá: ${property.publicUrl}`;
+}
+
+function buildPhotoLine(property: PreparedConversationContext["property"]): string {
+  if (!property) return "";
+  if (property.publicUrl && (property.imageCount ?? 0) > 0) {
+    return ` Tiene fotos disponibles: ${property.publicUrl}`;
+  }
+  if (property.publicUrl) {
+    return ` Podés ver más detalles acá: ${property.publicUrl}`;
+  }
+  return "";
+}
+
+function buildCatalogLine(catalogUrl: string | null): string {
+  if (!catalogUrl) return "";
+  return ` Te paso el catálogo completo: ${catalogUrl}`;
+}
+
+// ─── Deterministic fallback ───────────────────────────────────────────────────
+
 function buildDeterministicFallback(
   context: PreparedConversationContext,
   reason: string,
@@ -564,26 +707,118 @@ function buildDeterministicFallback(
   const availabilitySummary = getAvailabilitySummary(context);
   const doubleOptionSummary = getDoubleOptionVisitSummary(context);
   const concreteScheduledAt = getConcreteScheduledAt(context);
+  const intents = detectLeadIntents(latestBody);
+  const catalogUrl = context.catalogUrl ?? null;
+  const property = context.property;
 
-  if (!context.property) {
+  // ── No property match ────────────────────────────────────────────────────
+  if (!property) {
+    // Lead asks for photos or catalog → share catalog link if available
+    if ((intents.pide_fotos || intents.pide_catalogo) && catalogUrl) {
+      return enrichDecisionWithContext({
+        responseText: `Acá tenés el catálogo de propiedades disponibles: ${catalogUrl} Si me decís zona, presupuesto o cantidad de ambientes, te acerco las mejores opciones.`,
+        qualificationDecision: null,
+        visitIntent: null,
+        ...buildCommercialSignalDefaults(context, {
+          leadTemperature: "cold",
+          nextBestAction: "compartir-catalogo",
+          requiresFollowUp: true,
+          followUpReason: "Lead sin propiedad matcheada. Se compartió catálogo para calificar interes.",
+        }),
+        visitProposal: null,
+        internalNotes: `Fallback (${reason}). pide_fotos/pide_catalogo sin match. Catálogo compartido.`,
+      }, context);
+    }
+
+    // Zone search → offer catalog + ask to narrow
+    if (intents.busca_zona && catalogUrl) {
+      return enrichDecisionWithContext({
+        responseText: `Tenemos propiedades en distintas zonas: ${catalogUrl} ¿Me contás también el presupuesto y si buscás para vivir o invertir?`,
+        qualificationDecision: null,
+        visitIntent: null,
+        ...buildCommercialSignalDefaults(context, {
+          leadTemperature: "cold",
+          nextBestAction: "compartir-catalogo-y-calificar",
+          requiresFollowUp: true,
+          followUpReason: "Lead buscó por zona sin match. Se compartió catálogo.",
+        }),
+        visitProposal: null,
+        internalNotes: `Fallback (${reason}). busca_zona sin match. Catálogo compartido.`,
+      }, context);
+    }
+
+    // Generic clarification
+    const clarifyingQ = buildClarifyingQuestion(extractPreferencesFallback(context), context);
     return enrichDecisionWithContext({
-      responseText: buildClarifyingQuestion(extractPreferencesFallback(context), context),
+      responseText: catalogUrl
+        ? `${clarifyingQ} Mientras tanto, podés ver el catálogo disponible: ${catalogUrl}`
+        : clarifyingQ,
       qualificationDecision: null,
       visitIntent: visitRequested ? { requested: true } : null,
       ...buildCommercialSignalDefaults(context, {
         leadTemperature: "unclear",
-        nextBestAction: "clarificar-propiedad-objetivo",
+        nextBestAction: catalogUrl ? "compartir-catalogo-y-calificar" : "clarificar-propiedad-objetivo",
         requiresFollowUp: false,
       }),
       visitProposal: null,
-      internalNotes: `Fallback activado (${reason}). Falta contexto de propiedad.`,
+      internalNotes: `Fallback (${reason}). Sin propiedad matcheada.`,
     }, context);
   }
 
+  // ── Has property match ───────────────────────────────────────────────────
+
+  // Lead asks for photos → share link if available
+  if (intents.pide_fotos) {
+    if (property.publicUrl && (property.imageCount ?? 0) > 0) {
+      return enrichDecisionWithContext({
+        responseText: `Acá las fotos de ${property.title}: ${property.publicUrl} ¿Querés coordinar una visita para verla en persona?`,
+        qualificationDecision: null,
+        visitIntent: null,
+        ...buildCommercialSignalDefaults(context, {
+          leadTemperature: "warm",
+          nextBestAction: "compartir-fotos-y-proponer-visita",
+          requiresFollowUp: false,
+        }),
+        visitProposal: null,
+        internalNotes: `Fallback (${reason}). pide_fotos con match y imágenes. Link compartido.`,
+      }, context);
+    }
+    if (property.publicUrl) {
+      return enrichDecisionWithContext({
+        responseText: `Podés ver los detalles de ${property.title} acá: ${property.publicUrl} Las fotos se están cargando. ¿Te gustaría coordinar una visita presencial?`,
+        qualificationDecision: null,
+        visitIntent: null,
+        ...buildCommercialSignalDefaults(context, {
+          leadTemperature: "warm",
+          nextBestAction: "compartir-ficha-y-proponer-visita",
+          requiresFollowUp: false,
+        }),
+        visitProposal: null,
+        internalNotes: `Fallback (${reason}). pide_fotos con match sin imágenes pero con URL.`,
+      }, context);
+    }
+    // No public URL at all
+    return enrichDecisionWithContext({
+      responseText: `Para ${property.title} te recomiendo coordinar una visita presencial para que puedas ver la propiedad en detalle. ¿Qué día te queda mejor?`,
+      qualificationDecision: null,
+      visitIntent: { requested: true },
+      ...buildCommercialSignalDefaults(context, {
+        leadTemperature: "warm",
+        nextBestAction: "proponer-visita-sin-fotos",
+        requiresFollowUp: true,
+        followUpReason: "Lead pidió fotos pero la propiedad no tiene URL pública.",
+      }),
+      visitProposal: null,
+      internalNotes: `Fallback (${reason}). pide_fotos sin URL pública.`,
+    }, context);
+  }
+
+  // Lead asks for visit
   if (visitRequested) {
     if (availabilitySummary) {
+      const linkSuffix = buildPropertyLinkSuffix(property);
       return enrichDecisionWithContext({
-        responseText: `Gracias por tu interes en ${context.property.title}. Podemos coordinar visita. Tengo ${doubleOptionSummary ?? availabilitySummary}. Te sirve alguna?`,
+        responseText: `¡Perfecto! Podemos coordinar la visita a ${property.title}.${linkSuffix} Tengo disponibilidad ${doubleOptionSummary ?? availabilitySummary}. ¿Te sirve alguna?`,
         qualificationDecision: "QUALIFIED",
         visitIntent: { requested: true },
         ...buildCommercialSignalDefaults(context, {
@@ -596,47 +831,51 @@ function buildDeterministicFallback(
           slotSummary: doubleOptionSummary ?? availabilitySummary,
           scheduledAt: concreteScheduledAt,
         },
-        internalNotes: `Fallback activado (${reason}). Intencion de visita detectada con disponibilidad.`,
+        internalNotes: `Fallback (${reason}). quiere_visita con disponibilidad.`,
       }, context);
     }
 
     return enrichDecisionWithContext({
-      responseText: `Gracias por tu interes en ${context.property.title}. Quiero ayudarte a coordinar visita. Que dia y horario te quedan mejor?`,
+      responseText: `Me alegra tu interés en ${property.title}. ¿Qué día y horario te quedan mejor para coordinar la visita?`,
       qualificationDecision: "QUALIFIED",
       visitIntent: { requested: true },
       ...buildCommercialSignalDefaults(context, {
         leadTemperature: "warm",
         nextBestAction: "pedir-horario-preferido",
         requiresFollowUp: true,
-        followUpReason: "Falta disponibilidad concreta para cerrar la visita.",
+        followUpReason: "Sin disponibilidad activa para cerrar la visita.",
       }),
       visitProposal: {
         proposed: false,
         slotSummary: "Sin disponibilidad activa confirmada.",
         scheduledAt: null,
       },
-      internalNotes: `Fallback activado (${reason}). Intencion de visita detectada sin disponibilidad activa.`,
+      internalNotes: `Fallback (${reason}). quiere_visita sin disponibilidad.`,
     }, context);
   }
 
+  // Lead is new — qualify
   if (context.lead.status === "NEW") {
+    const linkSuffix = buildPropertyLinkSuffix(property);
     return enrichDecisionWithContext({
-      responseText: `Gracias por tu interes en ${context.property.title}. Estas buscando para vivir o como inversion? Y en que zona te gustaria enfocarte?`,
+      responseText: `Gracias por tu interés en ${property.title}.${linkSuffix} ¿Estás buscando para vivir o como inversión?`,
       qualificationDecision: null,
       visitIntent: null,
       ...buildCommercialSignalDefaults(context, {
         leadTemperature: "cold",
         nextBestAction: "calificar-necesidad",
         requiresFollowUp: true,
-        followUpReason: "Faltan datos comerciales basicos del lead.",
+        followUpReason: "Lead nuevo, faltan datos comerciales básicos.",
       }),
       visitProposal: null,
-      internalNotes: `Fallback activado (${reason}). Lead nuevo, se envia pregunta comercial de calificacion.`,
+      internalNotes: `Fallback (${reason}). Lead nuevo con propiedad matcheada.`,
     }, context);
   }
 
+  // Default: warm follow-up with property link
+  const linkSuffix = buildPropertyLinkSuffix(property);
   return enrichDecisionWithContext({
-    responseText: `Gracias por tu mensaje sobre ${context.property.title}. Si queres, contame presupuesto, zona ideal o si te interesa coordinar una visita.`,
+    responseText: `Seguimos con ${property.title}.${linkSuffix} ¿Querés que coordine una visita o necesitás más información?`,
     qualificationDecision: null,
     visitIntent: null,
     ...buildCommercialSignalDefaults(context, {
@@ -645,7 +884,7 @@ function buildDeterministicFallback(
       requiresFollowUp: false,
     }),
     visitProposal: null,
-    internalNotes: `Fallback activado (${reason}). Seguimiento comercial seguro con contexto de propiedad.`,
+    internalNotes: `Fallback (${reason}). Seguimiento con contexto de propiedad.`,
   }, context);
 }
 

@@ -10,6 +10,7 @@ type MatchableProperty = {
   neighborhood: string | null;
   propertyType: string | null;
   status: PropertyStatus;
+  publicVisible: boolean;
   priceCents: number | null;
   currency: string | null;
   bedrooms: number | null;
@@ -220,6 +221,7 @@ function mapProperty(property: MatchableProperty) {
     neighborhood: property.neighborhood,
     propertyType: property.propertyType,
     status: property.status,
+    publicVisible: property.publicVisible,
     priceCents: property.priceCents,
     currency: property.currency,
     bedrooms: property.bedrooms,
@@ -263,6 +265,7 @@ export async function matchLeadToProperty(
         neighborhood: true,
         propertyType: true,
         status: true,
+        publicVisible: true,
         priceCents: true,
         currency: true,
         bedrooms: true,
@@ -301,6 +304,7 @@ export async function matchLeadToProperty(
       neighborhood: true,
       propertyType: true,
       status: true,
+      publicVisible: true,
       priceCents: true,
       currency: true,
       bedrooms: true,

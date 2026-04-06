@@ -35,6 +35,7 @@ import {
   readLeadCommercialSignals,
 } from "@/modules/leads/commercial-signals";
 import { matchLeadToProperty } from "@/modules/properties/matching";
+import { getCatalogUrl, getPropertyPublicUrl } from "@/lib/catalog-urls";
 
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 
@@ -332,7 +333,7 @@ export async function processWhatsAppInboundJob(
     result.conversation.propertyId = propertyMatch.property.id;
   }
 
-  const [availability, recentMessages] = await Promise.all([
+  const [availability, recentMessages, orgSlugResult, propertyImages] = await Promise.all([
     propertyMatch.property
       ? prisma.availabilitySlot.findMany({
           where: {
@@ -375,6 +376,18 @@ export async function processWhatsAppInboundJob(
       },
       take: 8,
     }),
+    prisma.organization.findUnique({
+      where: { id: channel.organizationId },
+      select: { slug: true },
+    }),
+    propertyMatch.property
+      ? prisma.propertyImage.findMany({
+          where: { propertyId: propertyMatch.property.id },
+          select: { url: true },
+          orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+          take: 6,
+        })
+      : Promise.resolve([]),
   ]);
 
   const decision: AutomationDecision = await generateAutomationDecision({
@@ -394,6 +407,7 @@ export async function processWhatsAppInboundJob(
       email: result.lead.email,
       propertyId: propertyMatch.property?.id ?? result.lead.propertyId,
     },
+    catalogUrl: orgSlugResult?.slug ? getCatalogUrl(orgSlugResult.slug) : null,
     property: propertyMatch.property
       ? {
           id: propertyMatch.property.id,
@@ -405,6 +419,11 @@ export async function processWhatsAppInboundJob(
           status: propertyMatch.property.status,
           priceCents: propertyMatch.property.priceCents,
           currency: propertyMatch.property.currency,
+          publicUrl: orgSlugResult?.slug && propertyMatch.property.publicVisible
+            ? getPropertyPublicUrl(orgSlugResult.slug, propertyMatch.property.id)
+            : null,
+          imageCount: propertyImages.length,
+          imageUrls: propertyImages.map((img) => img.url),
         }
       : null,
     propertyMatch: {

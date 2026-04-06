@@ -9,6 +9,7 @@ import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getPropertySummary, listOrganizationProperties } from "@/modules/properties/service";
 import { formatCurrency } from "@/lib/utils";
 import { CreatePropertyDialog } from "@/components/properties/create-property-dialog";
+import { ShareCatalogButton } from "@/components/workspace/share-catalog-button";
 
 function getPropertyStatusTone(status: string) {
   if (status === "AVAILABLE") {
@@ -41,6 +42,7 @@ export default async function PropertiesPage({
   return (
     <>
       <WorkspaceHeader organization={organization}>
+        <ShareCatalogButton orgSlug={orgSlug} />
         <CreatePropertyDialog orgSlug={orgSlug} />
       </WorkspaceHeader>
 
@@ -72,16 +74,33 @@ export default async function PropertiesPage({
             <Link
               key={property.id}
               href={`/${orgSlug}/properties/${property.id}`}
-              className="rounded-[1.5rem] border border-slate-200 p-5 transition hover:-translate-y-0.5"
+              className="overflow-hidden rounded-[1.5rem] border border-slate-200 transition hover:-translate-y-0.5"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-lg font-semibold text-slate-950">{property.title}</p>
-                  <p className="mt-1 text-sm text-slate-500">
+              {property.thumbnailUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={property.thumbnailUrl}
+                  alt={property.title}
+                  className="h-44 w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-28 w-full items-center justify-center bg-slate-100">
+                  <svg className="h-8 w-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 19.5h18M3.75 4.5h16.5A.75.75 0 0121 5.25v13.5a.75.75 0 01-.75.75H3.75A.75.75 0 013 18.75V5.25A.75.75 0 013.75 4.5z" />
+                  </svg>
+                </div>
+              )}
+              <div className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-lg font-semibold leading-snug text-slate-950">
+                    {property.title}
+                  </p>
+                  <p className="mt-1 line-clamp-1 text-sm text-slate-500">
                     {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Ubicación pendiente"}
                   </p>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex shrink-0 flex-col items-end gap-2">
                   <StatusBadge
                     label={property.status}
                     tone={getPropertyStatusTone(property.status)}
@@ -93,16 +112,17 @@ export default async function PropertiesPage({
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-500">
+              <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-500">
                 <span>{property.propertyType || "Propiedad"}</span>
                 <span>{property.bedrooms ?? 0} dor</span>
                 <span>{property.bathrooms ?? 0} ba</span>
-                <span>{property.surfaceM2 ?? 0} m2</span>
+                <span>{property.surfaceM2 ?? 0} m²</span>
               </div>
 
-              <p className="mt-5 text-2xl font-semibold text-slate-950">
+              <p className="mt-4 text-xl font-semibold text-slate-950">
                 {property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Precio a consultar"}
               </p>
+              </div>
             </Link>
           ))}
         </div>

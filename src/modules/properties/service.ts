@@ -14,9 +14,12 @@ export async function listOrganizationProperties(
   orgSlug: string,
 ): Promise<PropertyListItem[]> {
   const properties = await prisma.property.findMany({
-    where: {
-      organization: {
-        slug: orgSlug,
+    where: { organization: { slug: orgSlug } },
+    include: {
+      images: {
+        where: { isPrimary: true },
+        take: 1,
+        select: { url: true },
       },
     },
     orderBy: [{ publicVisible: "desc" }, { createdAt: "desc" }],
@@ -41,6 +44,7 @@ export async function listOrganizationProperties(
     bathrooms: property.bathrooms,
     surfaceM2: property.surfaceM2,
     parkingSpots: property.parkingSpots,
+    thumbnailUrl: property.images[0]?.url ?? null,
   }));
 }
 
@@ -157,36 +161,107 @@ export async function getPropertyDetail(
   };
 }
 
-export async function listPublicProperties() {
-  return prisma.property
-    .findMany({
-      where: {
-        publicVisible: true,
+export async function listPublicProperties(q?: string) {
+  const properties = await prisma.property.findMany({
+    where: {
+      publicVisible: true,
+      ...(q
+        ? {
+            OR: [
+              { city: { contains: q, mode: "insensitive" } },
+              { neighborhood: { contains: q, mode: "insensitive" } },
+              { address: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      images: {
+        where: { isPrimary: true },
+        take: 1,
+        select: { url: true },
       },
-      orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
-      take: 400,
-    })
-    .then((properties) =>
-      properties.map((property) => ({
-        id: property.id,
-        title: property.title,
-        address: property.address,
-        city: property.city,
-        neighborhood: property.neighborhood,
-        propertyType: property.propertyType,
-        operationType: property.operationType,
-        status: property.status,
-        publicVisible: property.publicVisible,
-        priceCents: property.priceCents,
-        currency: property.currency,
-        expensesCents: property.expensesCents,
-        rooms: property.rooms,
-        bedrooms: property.bedrooms,
-        bathrooms: property.bathrooms,
-        surfaceM2: property.surfaceM2,
-        parkingSpots: property.parkingSpots,
-      })),
-    );
+    },
+    orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
+    take: 400,
+  });
+
+  return properties.map((property) => ({
+    id: property.id,
+    title: property.title,
+    address: property.address,
+    city: property.city,
+    neighborhood: property.neighborhood,
+    propertyType: property.propertyType,
+    operationType: property.operationType,
+    status: property.status,
+    publicVisible: property.publicVisible,
+    priceCents: property.priceCents,
+    currency: property.currency,
+    expensesCents: property.expensesCents,
+    rooms: property.rooms,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    surfaceM2: property.surfaceM2,
+    parkingSpots: property.parkingSpots,
+    thumbnailUrl: property.images[0]?.url ?? null,
+  }));
+}
+
+export async function getPublicOrgForCatalog(orgSlug: string) {
+  return prisma.organization.findUnique({
+    where: { slug: orgSlug },
+    select: { id: true, name: true, slug: true },
+  });
+}
+
+export async function listPublicPropertiesByOrg(orgSlug: string, q?: string) {
+  const properties = await prisma.property.findMany({
+    where: {
+      publicVisible: true,
+      organization: { slug: orgSlug },
+      ...(q
+        ? {
+            OR: [
+              { city: { contains: q, mode: "insensitive" } },
+              { neighborhood: { contains: q, mode: "insensitive" } },
+              { address: { contains: q, mode: "insensitive" } },
+              { title: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      images: {
+        where: { isPrimary: true },
+        take: 1,
+        select: { url: true },
+      },
+    },
+    orderBy: [{ createdAt: "desc" }],
+    take: 400,
+  });
+
+  return properties.map((property) => ({
+    id: property.id,
+    title: property.title,
+    address: property.address,
+    city: property.city,
+    neighborhood: property.neighborhood,
+    propertyType: property.propertyType,
+    operationType: property.operationType,
+    status: property.status,
+    publicVisible: property.publicVisible,
+    priceCents: property.priceCents,
+    currency: property.currency,
+    expensesCents: property.expensesCents,
+    rooms: property.rooms,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    surfaceM2: property.surfaceM2,
+    parkingSpots: property.parkingSpots,
+    thumbnailUrl: property.images[0]?.url ?? null,
+  }));
 }
 
 export async function getPublicPropertyDetail(propertyId: string): Promise<PropertyDetail | null> {
