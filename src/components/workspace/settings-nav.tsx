@@ -11,6 +11,7 @@ type SettingsNavProps = {
 
 const NAV_ITEMS = [
   { label: "Organization", path: "/settings/organization" },
+  { label: "Agente IA", path: "/settings/agent" },
   { label: "Users", path: "/settings/users" },
   { label: "Integrations", path: "/settings/integrations" },
 ] as const;

@@ -333,7 +333,7 @@ export async function processWhatsAppInboundJob(
     result.conversation.propertyId = propertyMatch.property.id;
   }
 
-  const [availability, recentMessages, orgSlugResult, propertyImages] = await Promise.all([
+  const [availability, recentMessages, orgSlugResult, propertyImages, aiAgent] = await Promise.all([
     propertyMatch.property
       ? prisma.availabilitySlot.findMany({
           where: {
@@ -388,9 +388,26 @@ export async function processWhatsAppInboundJob(
           take: 6,
         })
       : Promise.resolve([]),
+    prisma.aiAgent.findUnique({
+      where: { organizationId: channel.organizationId },
+      select: { name: true, tone: true, persona: true, isActive: true },
+    }),
   ]);
 
+  // If the agent is explicitly paused, skip AI response
+  if (aiAgent && !aiAgent.isActive) {
+    return { status: "ignored" as const, reason: "agent-paused" };
+  }
+
   const decision: AutomationDecision = await generateAutomationDecision({
+    agentConfig: aiAgent
+      ? {
+          name: aiAgent.name,
+          tone: aiAgent.tone as "FORMAL" | "FRIENDLY" | "NEUTRAL",
+          persona: aiAgent.persona,
+          isActive: aiAgent.isActive,
+        }
+      : undefined,
     conversation: {
       id: result.conversation.id,
       channel: "whatsapp",

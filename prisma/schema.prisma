@@ -168,7 +168,7 @@ model Organization {
   automations            AutomationRule[]
   whatsappChannels       WhatsAppChannel[]
   billingRecords         OrgBillingRecord[]
-  aiAgents               AiAgent[]
+  aiAgent                AiAgent?
   subscription           Subscription?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
@@ -516,15 +516,20 @@ model Subscription {
   @@index([currentPeriodEnd, status])
 }
 
+enum AgentTone {
+  FORMAL
+  FRIENDLY
+  NEUTRAL
+}
+
 model AiAgent {
   id             String       @id @default(cuid())
-  organizationId String
-  name           String
-  type           String
+  organizationId String       @unique // ONE agent per org
+  name           String       @default("Asistente IA")
+  tone           AgentTone    @default(FRIENDLY)
+  persona        String?      @db.Text
   isActive       Boolean      @default(true)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-
-  @@index([organizationId, isActive])
 }

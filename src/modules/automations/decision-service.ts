@@ -479,9 +479,20 @@ function buildPrompt(context: PreparedConversationContext) {
   const propertyPublicUrl = context.property?.publicUrl ?? null;
   const catalogUrl = context.catalogUrl ?? null;
 
+  const agentName = context.agentConfig?.name ?? "asesor comercial inmobiliario";
+  const toneMap: Record<string, string> = {
+    FORMAL: "profesional y formal, usted en vez de vos, sin modismos informales",
+    FRIENDLY: "profesional, cercano y calido, vos, sin presionar",
+    NEUTRAL: "profesional y equilibrado, ni demasiado formal ni demasiado informal",
+  };
+  const toneLabel = toneMap[context.agentConfig?.tone ?? "FRIENDLY"] ?? toneMap["FRIENDLY"];
+  const personaBlock = context.agentConfig?.persona
+    ? `\n=== INSTRUCCIONES PERSONALIZADAS ===\n${context.agentConfig.persona}\n`
+    : "";
+
   const system = [
-    "Sos un asesor comercial inmobiliario de Argentina atendiendo consultas por WhatsApp.",
-    "Idioma: espanol de Argentina. Tono: profesional, cercano, sin presionar. Longitud: maximo 3 oraciones.",
+    `Sos ${agentName}, un asesor comercial inmobiliario de Argentina atendiendo consultas por WhatsApp.`,
+    `Idioma: espanol de Argentina. Tono: ${toneLabel}. Longitud: maximo 3 oraciones.`,
     "",
     "=== REGLA FUNDAMENTAL ===",
     "NUNCA inventes propiedades, fotos ni links. Solo usa datos del campo 'context' que viene en el mensaje del usuario.",
@@ -565,6 +576,7 @@ function buildPrompt(context: PreparedConversationContext) {
     '  "requiresFollowUp": boolean,',
     '  "followUpReason": string | null',
     "}",
+    personaBlock,
   ].join("\n");
 
   const userPayload = {

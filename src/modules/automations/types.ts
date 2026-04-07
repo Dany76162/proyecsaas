@@ -1,6 +1,14 @@
 import type { ConversationStatus, LeadStatus, MessageDirection } from "@prisma/client";
 
+export type AgentConfig = {
+  name: string;
+  tone: "FORMAL" | "FRIENDLY" | "NEUTRAL";
+  persona: string | null;
+  isActive: boolean;
+};
+
 export type PreparedConversationContext = {
+  agentConfig?: AgentConfig;
   conversation: {
     id: string;
     channel: string;

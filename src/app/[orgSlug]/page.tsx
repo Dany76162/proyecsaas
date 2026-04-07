@@ -50,6 +50,43 @@ export default async function OrganizationHomePage({
     listWorkspaceNotifications(orgSlug),
   ]);
 
+  // Compute real AI agent status
+  let aiStatusLabel = "Sin configuracion IA";
+  let aiStatusTone: "success" | "warning" | "info" = "warning";
+  let aiCoverageLabel = "Atencion automatizada inactiva";
+
+  if (organization) {
+    const [aiAgent, whatsappChannel] = await Promise.all([
+      prisma.aiAgent.findUnique({
+        where: { organizationId: organization.id },
+        select: { isActive: true },
+      }),
+      prisma.whatsAppChannel.findFirst({
+        where: { organizationId: organization.id, status: "ACTIVE" },
+        select: { id: true },
+      }),
+    ]);
+    const hasOpenAi = !!process.env.OPENAI_API_KEY;
+
+    if (!hasOpenAi) {
+      aiStatusLabel = "Sin configuracion IA";
+      aiStatusTone = "warning";
+      aiCoverageLabel = "Atencion automatizada inactiva";
+    } else if (!whatsappChannel) {
+      aiStatusLabel = "Sin canal WhatsApp";
+      aiStatusTone = "warning";
+      aiCoverageLabel = "Canal de comunicacion pendiente";
+    } else if (aiAgent && !aiAgent.isActive) {
+      aiStatusLabel = "Agente pausado";
+      aiStatusTone = "warning";
+      aiCoverageLabel = "Atencion automatizada pausada";
+    } else {
+      aiStatusLabel = "Activo y operando";
+      aiStatusTone = "success";
+      aiCoverageLabel = "Atencion automatizada activa";
+    }
+  }
+
   if (!organization) {
     notFound();
   }
@@ -156,9 +193,9 @@ export default async function OrganizationHomePage({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267a8.25 8.25 0 1113.803-3.7l3.181 3.182m0-4.991v4.99" />
                   </svg>
                 </div>
-                <p className="mt-4 text-base font-bold text-slate-900">Atención Inicial IA</p>
-                <p className="mt-1 text-sm text-slate-600">100% de cobertura inicial</p>
-                <StatusBadge label="Activo y operando" tone="success" />
+                <p className="mt-4 text-base font-bold text-slate-900">Atencion Inicial IA</p>
+                <p className="mt-1 text-sm text-slate-600">{aiCoverageLabel}</p>
+                <StatusBadge label={aiStatusLabel} tone={aiStatusTone} />
               </div>
               <div className="flex flex-col rounded-xl border border-amber-100 bg-amber-50 p-5">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-600">
