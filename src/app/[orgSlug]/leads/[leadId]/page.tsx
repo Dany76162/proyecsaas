@@ -152,24 +152,24 @@ export default async function LeadDetailPage({
 
   const successMessage =
     success === "lead-created"
-      ? "Lead created successfully."
+      ? "Lead creado correctamente."
       : success === "lead-updated"
-        ? "Lead updated successfully."
+        ? "Lead actualizado correctamente."
         : success === "visit-created"
-          ? "Visit scheduled successfully."
+          ? "Visita agendada correctamente."
           : null;
 
   const errorMessage =
     error === "missing-property"
-      ? "Assign a property before creating a visit."
+      ? "Asigná una propiedad antes de crear la visita."
       : error === "invalid-visit"
-        ? "Enter a valid visit date and status."
+        ? "Ingresá una fecha válida para la visita."
         : error === "property-unavailable"
-          ? "The selected property is no longer available for this lead."
+          ? "La propiedad seleccionada ya no está disponible para este lead."
           : error === "missing-owner"
-            ? "No assigned user is available to create this visit."
+            ? "No hay un usuario asignado disponible para crear esta visita."
             : error === "visit-create-failed"
-              ? "The visit could not be created. Please try again."
+              ? "No se pudo crear la visita. Intentá de nuevo."
               : null;
 
   return (
@@ -217,14 +217,14 @@ export default async function LeadDetailPage({
                 href={`/${orgSlug}/properties/${lead.propertyId}`}
                 className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
               >
-                Open related property
+                Ver propiedad vinculada
               </Link>
             ) : null}
             <Link
               href={`/${orgSlug}/visits`}
               className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             >
-              Open visit schedule
+              Ver agenda de visitas
             </Link>
           </div>
         </div>
@@ -300,7 +300,7 @@ export default async function LeadDetailPage({
                 href={`/${orgSlug}/properties/${lead.propertyMatch.propertyId}`}
                 className="mt-2 inline-flex rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
               >
-                Open matched property
+                Ver propiedad vinculada
               </Link>
             ) : null}
           </div>
@@ -353,7 +353,7 @@ export default async function LeadDetailPage({
                       href={`/${orgSlug}/properties/${candidate.propertyId}`}
                       className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                     >
-                      Open property
+                      Ver propiedad
                     </Link>
                     <form action={confirmLeadPropertyAction}>
                       <input type="hidden" name="orgSlug" value={orgSlug} />
@@ -442,7 +442,7 @@ export default async function LeadDetailPage({
                 href={`/${orgSlug}/conversations`}
                 className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
               >
-                Open full inbox
+                Ver bandeja completa
               </Link>
             </div>
           </div>
@@ -564,20 +564,20 @@ export default async function LeadDetailPage({
                 type="submit"
                 className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
               >
-                Save Lead
+                Guardar
               </button>
               <a
                 href={`tel:${lead.phone}`}
                 className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
               >
-                Call Lead
+                Llamar
               </a>
               {lead.email ? (
                 <a
                   href={`mailto:${lead.email}`}
                   className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                 >
-                  Email Lead
+                  Enviar email
                 </a>
               ) : null}
             </div>
@@ -585,15 +585,15 @@ export default async function LeadDetailPage({
         </SectionCard>
 
         <SectionCard
-          eyebrow="Visits"
-          title="Add visit"
-          description="Create a visit in context without leaving the lead."
+          eyebrow="Visitas"
+          title="Agendar visita"
+          description="Creá una visita desde el lead sin salir de esta pantalla."
         >
           <form action={createVisitAction} className="space-y-4">
             <input type="hidden" name="orgSlug" value={orgSlug} />
             <input type="hidden" name="leadId" value={leadId} />
             <label className="space-y-2 text-sm text-slate-600 block">
-              <span>Date and time</span>
+              <span>Fecha y hora</span>
               <input
                 name="scheduledAt"
                 type="datetime-local"
@@ -604,14 +604,14 @@ export default async function LeadDetailPage({
               />
             </label>
             <label className="space-y-2 text-sm text-slate-600 block">
-              <span>Status</span>
+              <span>Estado</span>
               <select
                 name="status"
                 defaultValue="PENDING"
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
               >
-                <option value="PENDING">PENDING</option>
-                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="PENDING">Pendiente</option>
+                <option value="CONFIRMED">Confirmada</option>
               </select>
             </label>
             <button
@@ -619,11 +619,11 @@ export default async function LeadDetailPage({
               disabled={!lead.propertyId}
               className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
-              + Add Visit
+              + Agendar visita
             </button>
             {!lead.propertyId ? (
               <p className="text-sm text-slate-500">
-                Assign a property first so the visit is linked correctly.
+                Asigná una propiedad primero para vincular la visita correctamente.
               </p>
             ) : null}
           </form>
@@ -632,9 +632,9 @@ export default async function LeadDetailPage({
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
-          eyebrow="Activity"
-          title="Lead history"
-          description="Simple placeholder history so the CRM already feels timeline-oriented."
+          eyebrow="Actividad"
+          title="Historial del lead"
+          description="Seguimiento cronológico de las acciones del equipo y el sistema."
         >
           <div className="space-y-4">
             {lead.activity.map((item) => (
@@ -650,9 +650,9 @@ export default async function LeadDetailPage({
         </SectionCard>
 
         <SectionCard
-          eyebrow="Visits"
-          title="Scheduled visits"
-          description="Visits are now directly attached to the lead and the selected property."
+          eyebrow="Visitas"
+          title="Visitas programadas"
+          description="Visitas vinculadas al lead y la propiedad seleccionada."
         >
           <div className="space-y-4">
             {lead.visits.length ? (
@@ -672,7 +672,7 @@ export default async function LeadDetailPage({
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No visits scheduled yet.</p>
+              <p className="text-sm text-slate-500">Sin visitas agendadas todavía.</p>
             )}
           </div>
         </SectionCard>
