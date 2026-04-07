@@ -43,8 +43,8 @@ export function LeadMiniCard({
       className="block rounded-[1.25rem] border border-slate-200 p-4 transition hover:-translate-y-0.5 hover:border-slate-300"
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="font-semibold text-slate-950">{fullName}</p>
-        <div className="flex flex-wrap items-center gap-2">
+        <p className="min-w-0 flex-1 truncate font-semibold text-slate-950">{fullName}</p>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <StatusBadge label={leadTemperature} tone={getTemperatureTone(leadTemperature)} />
           <StatusBadge label={stageLabel} tone="info" />
         </div>
