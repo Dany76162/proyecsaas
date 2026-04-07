@@ -14,12 +14,23 @@ import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { formatDate } from "@/lib/utils";
 
 const stageOrder: LeadStage[] = [
-  "NEW",
-  "CONTACTED",
-  "INTERESTED",
-  "VISIT",
   "CLOSED",
 ];
+
+const TEMPERATURE_LABELS: Record<string, string> = {
+  hot: "Caliente",
+  warm: "Tibio",
+  cold: "Frío",
+  unclear: "Sin definir",
+};
+
+const STAGE_LABELS: Record<string, string> = {
+  NEW: "Nuevo",
+  CONTACTED: "Contactado",
+  INTERESTED: "Interesado",
+  VISIT: "En Visita",
+  CLOSED: "Cerrado",
+};
 
 function getTemperatureTone(temperature: "hot" | "warm" | "cold" | "unclear") {
   if (temperature === "hot") {
@@ -257,7 +268,7 @@ export default async function LeadsPage({
                   <td className="py-4 text-sm text-slate-600">{lead.source}</td>
                   <td className="py-4">
                     <StatusBadge
-                      label={lead.status}
+                      label={STAGE_LABELS[lead.status] ?? lead.status}
                       tone={
                         lead.status === "CLOSED"
                           ? "success"
@@ -268,7 +279,7 @@ export default async function LeadsPage({
                     />
                     <div className="mt-2">
                       <StatusBadge
-                        label={lead.leadTemperature}
+                        label={TEMPERATURE_LABELS[lead.leadTemperature] ?? lead.leadTemperature}
                         tone={getTemperatureTone(lead.leadTemperature)}
                       />
                     </div>

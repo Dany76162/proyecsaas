@@ -9,6 +9,13 @@ function statusChip(usedAt: Date | null, expiresAt: Date) {
   return { label: "Pendiente", cls: "bg-amber-50 text-amber-700" };
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  OWNER: "Titular",
+  ADMIN: "Administrador",
+  AGENT: "Agente",
+  ASSISTANT: "Asistente",
+};
+
 export default async function PlatformOnboardingPage() {
   const invites = await prisma.inviteToken.findMany({
     orderBy: { createdAt: "desc" },
@@ -100,7 +107,7 @@ export default async function PlatformOnboardingPage() {
                       {membership ? (
                         <div>
                           <p className="font-medium text-slate-800">{membership.organization.name}</p>
-                          <p className="text-xs text-slate-400">{membership.role}</p>
+                          <p className="text-xs text-slate-400">{ROLE_LABELS[membership.role] ?? membership.role}</p>
                         </div>
                       ) : (
                         <span className="text-xs text-slate-400">—</span>

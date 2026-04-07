@@ -84,7 +84,7 @@ export default async function PlatformOrganizationsPage() {
                     }`}>
                       {org.onboardingStatus}
                     </span>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">{org.memberCount} users</span>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">{org.memberCount} {org.memberCount === 1 ? 'usuario' : 'usuarios'}</span>
                   </div>
                 </td>
 

@@ -11,6 +11,14 @@ import { formatCurrency } from "@/lib/utils";
 import { CreatePropertyDialog } from "@/components/properties/create-property-dialog";
 import { ShareCatalogButton } from "@/components/workspace/share-catalog-button";
 
+const PROPERTY_STATUS_LABELS: Record<string, string> = {
+  AVAILABLE: "Disponible",
+  DRAFT: "Borrador",
+  RESERVED: "Reservada",
+  SOLD: "Vendida",
+  RENTED: "Alquilada",
+};
+
 function getPropertyStatusTone(status: string) {
   if (status === "AVAILABLE") {
     return "success" as const;
@@ -102,7 +110,7 @@ export default async function PropertiesPage({
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2">
                   <StatusBadge
-                    label={property.status}
+                    label={PROPERTY_STATUS_LABELS[property.status] ?? property.status}
                     tone={getPropertyStatusTone(property.status)}
                   />
                   <StatusBadge

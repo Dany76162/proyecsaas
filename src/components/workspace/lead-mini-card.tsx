@@ -12,6 +12,21 @@ type LeadMiniCardProps = {
   stageLabel: string;
 };
 
+const TEMPERATURE_LABELS: Record<string, string> = {
+  hot: "Caliente",
+  warm: "Tibio",
+  cold: "Frío",
+  unclear: "Sin definir",
+};
+
+const STAGE_LABELS: Record<string, string> = {
+  NEW: "Nuevo",
+  CONTACTED: "Contactado",
+  INTERESTED: "Interesado",
+  VISIT: "En Visita",
+  CLOSED: "Cerrado",
+};
+
 function getTemperatureTone(leadTemperature: LeadMiniCardProps["leadTemperature"]) {
   if (leadTemperature === "hot") {
     return "warning" as const;
@@ -45,8 +60,14 @@ export function LeadMiniCard({
       <div className="flex items-start justify-between gap-3">
         <p className="min-w-0 flex-1 truncate font-semibold text-slate-950">{fullName}</p>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <StatusBadge label={leadTemperature} tone={getTemperatureTone(leadTemperature)} />
-          <StatusBadge label={stageLabel} tone="info" />
+          <StatusBadge
+            label={TEMPERATURE_LABELS[leadTemperature] ?? leadTemperature}
+            tone={getTemperatureTone(leadTemperature)}
+          />
+          <StatusBadge
+            label={STAGE_LABELS[stageLabel] ?? stageLabel}
+            tone="info"
+          />
         </div>
       </div>
       <p className="mt-2 text-sm text-slate-600">{interestLabel}</p>
