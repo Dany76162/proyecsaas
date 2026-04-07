@@ -61,7 +61,7 @@ export function WorkspaceSidebar({
   return (
     <aside
       className={cn(
-        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950 overflow-y-auto",
+        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
@@ -76,11 +76,11 @@ export function WorkspaceSidebar({
         <X className="h-4 w-4" />
       </button>
 
-      {/* Brand card */}
+      {/* Brand card — fixed at top, never scrolls */}
       <Link
         href="/"
         onClick={onClose}
-        className="m-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
+        className="m-4 shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
       >
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
           RaicesPilot
@@ -91,8 +91,8 @@ export function WorkspaceSidebar({
         </div>
       </Link>
 
-      {/* Operación */}
-      <div className="px-4 space-y-1">
+      {/* Nav — scrollable middle section */}
+      <div className="flex-1 overflow-y-auto px-4 space-y-1 pb-2">
         <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
           Operación
         </p>
@@ -111,34 +111,34 @@ export function WorkspaceSidebar({
             {item.label}
           </Link>
         ))}
+
+        {/* Administración — solo ADMIN / OWNER */}
+        {isAdminOrOwner(role) && (
+          <div className="mt-6 space-y-1">
+            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Administración
+            </p>
+            {MANAGEMENT_NAV.map((item) => (
+              <Link
+                key={item.path}
+                href={`/${organization.slug}${item.path}`}
+                onClick={onClose}
+                className={cn(
+                  "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
+                  isActive(organization.slug, item.path)
+                    ? "bg-white text-slate-950"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Administración — solo ADMIN / OWNER */}
-      {isAdminOrOwner(role) && (
-        <div className="mt-6 px-4 space-y-1">
-          <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Administración
-          </p>
-          {MANAGEMENT_NAV.map((item) => (
-            <Link
-              key={item.path}
-              href={`/${organization.slug}${item.path}`}
-              onClick={onClose}
-              className={cn(
-                "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
-                isActive(organization.slug, item.path)
-                  ? "bg-white text-slate-950"
-                  : "text-slate-300 hover:bg-white/10 hover:text-white",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* Footer — user + role + logout */}
-      <div className="mt-auto p-4 space-y-2">
+      {/* Footer — always visible at the bottom, never scrolls away */}
+      <div className="shrink-0 border-t border-white/10 p-4 space-y-2">
         <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">
             {userName.charAt(0).toUpperCase()}
