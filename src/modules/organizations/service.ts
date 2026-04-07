@@ -181,15 +181,21 @@ export async function listWorkspaceNotifications(
     orderBy: {
       createdAt: "desc",
     },
-    take: 5,
+    take: 12,
   });
 
-  return notifications.map((notification) => ({
+  const parsed = notifications.map((notification) => ({
     id: notification.id,
     type: notification.type,
     title: notification.title,
     body: notification.body,
     link: notification.link ?? undefined,
     createdAt: notification.createdAt.toISOString(),
+    isRead: notification.readAt !== null,
   }));
+
+  return parsed.sort((a, b) => {
+    if (a.isRead === b.isRead) return 0;
+    return a.isRead ? 1 : -1;
+  });
 }

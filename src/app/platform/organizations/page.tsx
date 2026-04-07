@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import { Search, SlidersHorizontal } from "lucide-react";
 
 import { listOrganizationsForPlatform } from "@/modules/platform/service";
 import { HealthBadge, WhatsAppStatus, formatRelativeTime } from "@/components/platform/platform-ui";
@@ -22,19 +21,7 @@ export default async function PlatformOrganizationsPage() {
       </div>
 
       {/* Toolbox */}
-      <div className="flex items-center gap-3 w-full">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Buscar inmobiliaria, ciudad o correo..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm font-medium outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-          />
-        </div>
-        <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-          <SlidersHorizontal className="h-4 w-4 text-slate-400" />
-          Filtros
-        </button>
+      <div className="flex items-center justify-end w-full">
         <CreateOrgDialog />
       </div>
 

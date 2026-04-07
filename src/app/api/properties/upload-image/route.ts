@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 
 import { getSessionUser } from "@/server/auth/session";
 import { prisma } from "@/server/db/prisma";
+import { isStorageConfigured, uploadToStorage } from "@/server/storage/s3-client";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8 MB
 const ALLOWED_TYPES = new Set([
@@ -83,15 +84,36 @@ export async function POST(req: NextRequest) {
   // ── Save file ─────────────────────────────────────────────────────────────────
   const ext = extname(file.name).toLowerCase() || ".jpg";
   const filename = `${randomUUID()}${ext}`;
-  // Use forward slashes for the URL; join handles OS-specific path for FS operations.
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  // Prefer S3-compatible storage when configured; fall back to local filesystem for dev
+  if (isStorageConfigured()) {
+    try {
+      const key = `properties/${membership.organization.id}/${filename}`;
+      const url = await uploadToStorage({
+        key,
+        body: buffer,
+        contentType: file.type,
+      });
+      return NextResponse.json({ url });
+    } catch (err) {
+      console.error("[upload-image] S3 upload error:", err);
+      return NextResponse.json(
+        { error: "Error interno al subir el archivo al almacenamiento." },
+        { status: 500 },
+      );
+    }
+  }
+
+  // Local filesystem fallback (dev / no storage configured)
   const relDir = `uploads/properties/${property.id}`;
   const absDir = join(process.cwd(), "public", relDir);
   const absPath = join(absDir, filename);
 
   try {
     await mkdir(absDir, { recursive: true });
-    const bytes = await file.arrayBuffer();
-    await writeFile(absPath, Buffer.from(bytes));
+    await writeFile(absPath, buffer);
   } catch (err) {
     console.error("[upload-image] Error al guardar archivo:", err);
     return NextResponse.json(

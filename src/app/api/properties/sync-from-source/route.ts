@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/server/db/prisma";
 import { getSessionUser } from "@/server/auth/session";
 import { syncPropertiesFromUrl } from "@/server/property-sync";
+import { getOrgSubscriptionStatus } from "@/server/billing/subscription-guard";
 
 const SyncSchema = z.object({
   orgSlug: z.string().min(1),
@@ -65,6 +66,18 @@ async function handleSync(req: NextRequest) {
 
   if (!org) {
     return NextResponse.json({ error: "Organización no encontrada." }, { status: 404 });
+  }
+
+  // ── Subscription enforcement ─────────────────────────────────────────────────
+  const { isActive } = await getOrgSubscriptionStatus(org.id);
+  if (!isActive) {
+    return NextResponse.json(
+      {
+        error:
+          "Tu suscripción no está activa. La sincronización de propiedades está pausada. Renovála para continuar.",
+      },
+      { status: 403 },
+    );
   }
 
   const sourceUrl = org.propertySourceUrl || org.website;

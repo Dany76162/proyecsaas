@@ -11,7 +11,7 @@ export default async function AutomationsPage({
     <WorkspaceIntro
       title="Automations"
       orgSlug={orgSlug}
-      description="Lightweight automation surface prepared for queue-backed jobs, triggers, and rule execution later."
+      description="Esta funcionalidad se encuentra en desarrollo. Próximamente podrás configurar flujos y reglas automáticas desde aquí."
     />
   );
 }

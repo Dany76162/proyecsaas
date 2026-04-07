@@ -16,8 +16,13 @@ const FETCH_HEADERS = {
   "Accept-Language": "es-AR,es;q=0.9",
 };
 
-function extractPropertyBlocks(html: string): string[] {
-  const blocks: string[] = [];
+interface HtmlBlock {
+  text: string;
+  rawHtml: string;
+}
+
+function extractPropertyBlocks(html: string): HtmlBlock[] {
+  const blocks: HtmlBlock[] = [];
   const containerPatterns = [
     /<article[^>]*>([\s\S]*?)<\/article>/gi,
     /<div[^>]*class="[^"]*(?:property|listing|inmueble|propiedad|card)[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
@@ -25,12 +30,12 @@ function extractPropertyBlocks(html: string): string[] {
   ];
 
   for (const pattern of containerPatterns) {
-    const found: string[] = [];
+    const found: HtmlBlock[] = [];
     pattern.lastIndex = 0;
     let match;
     while ((match = pattern.exec(html)) !== null) {
       const text = stripHtml(match[0]).trim();
-      if (text.length > 50) found.push(text);
+      if (text.length > 50) found.push({ text, rawHtml: match[0] });
     }
     if (found.length >= 3) {
       blocks.push(...found);
@@ -41,7 +46,24 @@ function extractPropertyBlocks(html: string): string[] {
   return blocks;
 }
 
-function textBlockToProperty(text: string, link: string | null, sourceUrl: string): SyncProperty | null {
+function extractOgImage(html: string): string | null {
+  const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+  return ogMatch?.[1] ?? null;
+}
+
+function extractImageFromBlock(rawHtml: string, sourceUrl: string): string | null {
+  const imgMatch = rawHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (!imgMatch) return null;
+  const src = imgMatch[1];
+  try {
+    return new URL(src, sourceUrl).href;
+  } catch {
+    return null;
+  }
+}
+
+function textBlockToProperty(text: string, link: string | null, imageUrl: string | null, sourceUrl: string): SyncProperty | null {
   const priceData = parsePrice(text);
   const surfaceM2 = parseSurfaceM2(text);
   if (!priceData && !surfaceM2) return null;
@@ -74,7 +96,7 @@ function textBlockToProperty(text: string, link: string | null, sourceUrl: strin
     bathrooms,
     surfaceM2,
     externalLink,
-    imageUrl: null,
+    imageUrl,
     externalId,
   };
 }
@@ -92,13 +114,18 @@ export async function extractFromHtmlStatic(sourceUrl: string): Promise<SyncProp
   const blocks = extractPropertyBlocks(html);
   if (blocks.length < 3) return null;
 
+  // Extract og:image as a fallback image for all properties on this page
+  const ogImage = extractOgImage(html);
+
   const seen = new Set<string>();
   const properties: SyncProperty[] = [];
 
   for (const block of blocks) {
-    const linkMatch = block.match(/href=["'](https?:\/\/[^"']+)["']/i);
+    const linkMatch = block.rawHtml.match(/href=["'](https?:\/\/[^"']+)["']/i);
     const link = linkMatch ? linkMatch[1] : null;
-    const prop = textBlockToProperty(block, link, sourceUrl);
+    const blockImage = extractImageFromBlock(block.rawHtml, sourceUrl);
+    const imageUrl = blockImage ?? ogImage;
+    const prop = textBlockToProperty(block.text, link, imageUrl, sourceUrl);
     if (!prop) continue;
     if (seen.has(prop.externalId)) continue;
     seen.add(prop.externalId);

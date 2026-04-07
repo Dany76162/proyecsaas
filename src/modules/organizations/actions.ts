@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { MembershipRole } from "@prisma/client";
 
 import type { ActionResult } from "@/modules/types";
@@ -67,4 +68,43 @@ export async function updatePropertySourceAction(
   });
 
   return { success: true, message: "Fuente de propiedades guardada." };
+}
+
+export async function actionMarkNotificationAsRead(
+  orgSlug: string,
+  notificationId: string,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  
+  await prisma.notification.updateMany({
+    where: { 
+      id: notificationId,
+      organizationId: membership.organization.id,
+    },
+    data: {
+      readAt: new Date(),
+    },
+  });
+
+  revalidatePath(`/${orgSlug}`);
+  return { success: true, message: "Notificación leída." };
+}
+
+export async function actionMarkAllNotificationsAsRead(
+  orgSlug: string,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  
+  await prisma.notification.updateMany({
+    where: { 
+      organizationId: membership.organization.id,
+      readAt: null,
+    },
+    data: {
+      readAt: new Date(),
+    },
+  });
+
+  revalidatePath(`/${orgSlug}`);
+  return { success: true, message: "Todas marcadas como leídas." };
 }

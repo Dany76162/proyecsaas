@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { loginAction } from "@/server/auth/actions";
@@ -86,6 +87,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           >
             Continuar
           </button>
+
+          <p className="text-center text-sm">
+            <Link
+              href="/auth/forgot-password"
+              className="font-medium text-slate-500 hover:text-slate-700 underline"
+            >
+              Olvidé mi contraseña
+            </Link>
+          </p>
         </form>
       </div>
     </main>

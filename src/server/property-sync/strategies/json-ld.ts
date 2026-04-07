@@ -112,6 +112,12 @@ function jsonLdToProperty(item: JsonLdGraph, sourceUrl: string): SyncProperty | 
   };
 }
 
+function extractOgImage(html: string): string | null {
+  const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+  return ogMatch?.[1] ?? null;
+}
+
 export async function extractFromJsonLd(sourceUrl: string): Promise<SyncProperty[] | null> {
   let html: string;
   try {
@@ -124,5 +130,18 @@ export async function extractFromJsonLd(sourceUrl: string): Promise<SyncProperty
 
   const blocks = extractJsonLdBlocks(html);
   const properties = blocks.map((b) => jsonLdToProperty(b, sourceUrl)).filter((p): p is SyncProperty => p !== null);
+
+  // If any properties lack images, try og:image as fallback
+  if (properties.length > 0) {
+    const ogImage = extractOgImage(html);
+    if (ogImage) {
+      for (const prop of properties) {
+        if (!prop.imageUrl) {
+          prop.imageUrl = ogImage;
+        }
+      }
+    }
+  }
+
   return properties.length > 0 ? properties : null;
 }

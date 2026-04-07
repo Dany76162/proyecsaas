@@ -24,6 +24,7 @@ export type WorkspaceNotification = {
   body: string;
   link?: string;
   createdAt: string;
+  isRead: boolean;
 };
 
 export type SetupChecklistStatus = {

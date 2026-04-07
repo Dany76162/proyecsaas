@@ -30,6 +30,14 @@ export default async function OrgCatalogPage({
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-8 sm:px-6">
+      {/* Back to platform */}
+      <Link
+        href={`/${orgSlug}`}
+        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-600 transition hover:text-slate-900"
+      >
+        <span aria-hidden="true">&larr;</span> Volver a la plataforma
+      </Link>
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">

@@ -256,6 +256,7 @@ export async function matchLeadToProperty(
       where: {
         id: params.currentPropertyId,
         organizationId: params.organizationId,
+        status: PropertyStatus.AVAILABLE,
       },
       select: {
         id: true,

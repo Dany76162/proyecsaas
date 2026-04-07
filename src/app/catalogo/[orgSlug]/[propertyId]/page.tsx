@@ -28,7 +28,13 @@ export default async function OrgPropertyDetailPage({
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-8 sm:px-6">
       {/* Back navigation */}
-      <div className="mb-6">
+      <div className="mb-6 flex flex-col gap-2">
+        <Link
+          href={`/${orgSlug}`}
+          className="inline-flex items-center gap-1 text-sm text-slate-600 transition hover:text-slate-900"
+        >
+          <span aria-hidden="true">&larr;</span> Volver a la plataforma
+        </Link>
         <Link
           href={catalogPath}
           className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900"

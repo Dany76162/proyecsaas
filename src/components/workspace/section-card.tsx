@@ -12,7 +12,7 @@ export function SectionCard({
   children,
 }: SectionCardProps) {
   return (
-    <section className="rounded-[1.5rem] border bg-white p-6 shadow-soft">
+    <section className="rounded-[1.5rem] border bg-white p-4 sm:p-6 shadow-soft overflow-hidden">
       <div className="mb-5">
         {eyebrow ? (
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">

@@ -75,7 +75,7 @@ export default async function PlatformPage() {
             <p className="text-xs font-bold uppercase tracking-wider">Cuentas Activas</p>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-slate-900">
+            <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
               {orgs.length}
             </span>
             <span className="text-sm text-slate-400">total</span>
@@ -89,7 +89,7 @@ export default async function PlatformPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <span
-              className={`text-4xl font-extrabold tracking-tight ${
+              className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${
                 criticalCount > 0 ? "text-red-600" : "text-slate-900"
               }`}
             >
@@ -105,7 +105,7 @@ export default async function PlatformPage() {
             <p className="text-xs font-bold uppercase tracking-wider">Tráfico Leads (7d)</p>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-slate-900">
+            <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
               {totalLeads7d}
             </span>
             <span className="text-sm text-slate-400">capturados</span>
@@ -119,7 +119,7 @@ export default async function PlatformPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <span
-              className={`text-4xl font-extrabold tracking-tight ${
+              className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${
                 totalFailed7d > 0 ? "text-amber-600" : "text-emerald-600"
               }`}
             >

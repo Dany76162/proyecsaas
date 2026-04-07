@@ -46,6 +46,8 @@ import {
 
 import { getQueueConnection } from "@/server/queues/connection";
 import { resolveInboundByPhoneNumberId } from "@/server/whatsapp/channel-resolver";
+import { isOrgSubscriptionActiveForWorker } from "@/server/billing/subscription-guard-worker";
+import { notifyHumanInterventionRequired } from "@/server/notifications/email-service";
 
 import {
   processPostVisitFollowUp,
@@ -245,6 +247,22 @@ export async function processWhatsAppInboundJob(
     return { status: "ignored" as const, reason: "human-controlled" };
   }
 
+  // 2.6 — Subscription enforcement: skip AI processing if subscription is not active
+  //        (message is already stored in DB above, so no data is lost)
+  const isSubscriptionActive = await isOrgSubscriptionActiveForWorker(channel.organizationId);
+  if (!isSubscriptionActive) {
+    console.log(
+      JSON.stringify({
+        scope: "worker",
+        event: "subscription-inactive",
+        organizationId: channel.organizationId,
+        conversationId: result.conversation.id,
+        message: "AI processing skipped — subscription not active. Inbound message was stored.",
+      }),
+    );
+    return { status: "ignored" as const, reason: "subscription-inactive" };
+  }
+
   // 3. Prepare context with real inventory matching before generating the decision
   const priorSignals = readLeadCommercialSignals({
     notes: result.lead.notes,
@@ -338,7 +356,10 @@ export async function processWhatsAppInboundJob(
       ? prisma.availabilitySlot.findMany({
           where: {
             organizationId: channel.organizationId,
-            propertyId: propertyMatch.property.id,
+            OR: [
+              { propertyId: propertyMatch.property.id },
+              { propertyId: null },
+            ],
             isActive: true,
           },
           select: {
@@ -662,6 +683,62 @@ export async function processWhatsAppInboundJob(
         entityId: result.conversation.id,
       },
     });
+
+    // ── External email notification for human intervention ──────────────────────
+    // Deduplication: check if we already sent an external notification for this
+    // conversation in the last hour (same entityId + type + recent createdAt).
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentExternalNotification = await prisma.notification.findFirst({
+      where: {
+        organizationId: channel.organizationId,
+        type: NotificationType.OPERATOR_ACTION_REQUIRED,
+        entityType: "conversation",
+        entityId: result.conversation.id,
+        createdAt: { gte: oneHourAgo },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: 1, // skip the one we just created above
+    });
+
+    if (!recentExternalNotification) {
+      try {
+        const admins = await prisma.membership.findMany({
+          where: {
+            organizationId: channel.organizationId,
+            role: { in: ["OWNER", "ADMIN"] },
+          },
+          select: { user: { select: { email: true, fullName: true } } },
+        });
+
+        const adminEmails = admins
+          .map((m) => m.user.email)
+          .filter((e): e is string => !!e);
+
+        if (adminEmails.length > 0) {
+          const orgRecord = await prisma.organization.findUnique({
+            where: { id: channel.organizationId },
+            select: { name: true },
+          });
+
+          await notifyHumanInterventionRequired({
+            orgName: orgRecord?.name ?? "Organización",
+            leadName: result.conversation.participantName || participantPhone,
+            conversationId: result.conversation.id,
+            adminEmails,
+          });
+        }
+      } catch (emailError) {
+        // Don't let email failures break the worker pipeline
+        console.error(
+          JSON.stringify({
+            scope: "worker",
+            event: "external-notification-error",
+            conversationId: result.conversation.id,
+            error: emailError instanceof Error ? emailError.message : "unknown",
+          }),
+        );
+      }
+    }
   }
 
   return {
