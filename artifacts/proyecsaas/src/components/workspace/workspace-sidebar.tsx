@@ -25,7 +25,13 @@ const OPERATION_NAV = [
   { label: "Propiedades", path: "/properties" },
 ] as const;
 
+const AUTOMATION_NAV = [
+  { label: "Agentes IA", path: "/agents" },
+  { label: "Automatizaciones", path: "/automations" },
+] as const;
+
 const MANAGEMENT_NAV = [
+  { label: "Disponibilidad", path: "/settings/availability" },
   { label: "Equipo", path: "/settings/users" },
   { label: "Organización", path: "/settings/organization" },
 ] as const;
@@ -78,16 +84,25 @@ export function WorkspaceSidebar({
 
       {/* Brand card — fixed at top, never scrolls */}
       <Link
-        href="/"
+        href={`/${organization.slug}`}
         onClick={onClose}
-        className="m-4 shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
+        className="m-4 shrink-0 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10 group"
       >
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-          RaicesPilot
-        </p>
-        <h2 className="mt-2 text-lg font-bold tracking-tight text-white">{organization.name}</h2>
-        <div className="mt-2.5 inline-block rounded bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
-          Panel de Inmobiliaria
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            RaicesPilot
+          </p>
+          <h2 className="mt-1 text-lg font-bold tracking-tight text-white truncate">{organization.name}</h2>
+          <div className="mt-2.5 inline-block rounded bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+            Panel de Inmobiliaria
+          </div>
+        </div>
+        <div className="relative h-16 w-16 shrink-0">
+          <img
+            src="/brand/Logo%20minimalista%20de%20crecimiento%20inmobiliario.png"
+            alt="Logo"
+            className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain transition-transform group-hover:scale-110"
+          />
         </div>
       </Link>
 
@@ -111,6 +126,30 @@ export function WorkspaceSidebar({
             {item.label}
           </Link>
         ))}
+
+        {/* Automatización — solo ADMIN / OWNER */}
+        {isAdminOrOwner(role) && (
+          <div className="mt-6 space-y-1">
+            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Automatización
+            </p>
+            {AUTOMATION_NAV.map((item) => (
+              <Link
+                key={item.path}
+                href={`/${organization.slug}${item.path}`}
+                onClick={onClose}
+                className={cn(
+                  "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
+                  isActive(organization.slug, item.path)
+                    ? "bg-white text-slate-950"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Administración — solo ADMIN / OWNER */}
         {isAdminOrOwner(role) && (

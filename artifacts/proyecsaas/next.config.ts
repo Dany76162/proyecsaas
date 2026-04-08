@@ -9,5 +9,13 @@ export default function nextConfig(phase: string): NextConfig {
     // Use default .next for production (Railway compatibility).
     // Dev uses .next-dev to keep artifacts separate from production build.
     distDir: isDev ? ".next-dev" : ".next",
+    images: {
+      remotePatterns: [
+        {
+          protocol: "https",
+          hostname: "res.cloudinary.com",
+        },
+      ],
+    },
   };
 }

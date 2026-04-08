@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useUploadThing } from "@/lib/uploadthing";
+import { CldUploadWidget } from "next-cloudinary";
 import { setPropertyVideoAction } from "@/modules/properties/actions";
 
 interface PropertyVideoUploadProps {
@@ -14,7 +14,7 @@ interface PropertyVideoUploadProps {
 type VideoKind = "uploaded" | "youtube" | "vimeo" | "drive" | "external";
 
 function detectKind(url: string): VideoKind {
-  if (url.includes("utfs.io")) return "uploaded";
+  if (url.includes("utfs.io") || url.includes("cloudinary.com")) return "uploaded";
   if (/youtube\.com|youtu\.be/.test(url)) return "youtube";
   if (/vimeo\.com\/\d/.test(url)) return "vimeo";
   if (/drive\.google\.com/.test(url)) return "drive";
@@ -65,30 +65,20 @@ export function PropertyVideoUpload({
   const kind = videoUrl ? detectKind(videoUrl) : null;
   const embedUrl = videoUrl && kind ? getEmbedUrl(videoUrl, kind) : null;
 
-  const { startUpload, isUploading } = useUploadThing("propertyVideoUploader", {
-    onClientUploadComplete: async (uploaded) => {
+  async function handleUploadSuccess(result: any) {
+    if (result.event === "success") {
+      const info = result.info;
       setError(null);
-      const result = await setPropertyVideoAction(orgSlug, {
+      const res = await setPropertyVideoAction(orgSlug, {
         propertyId,
-        url: uploaded[0].url,
+        url: info.secure_url,
       });
-      if (result.success) {
+      if (res.success) {
         router.refresh();
       } else {
-        setError(result.message ?? "Error al guardar el video.");
+        setError(res.message ?? "Error al guardar el video.");
       }
-    },
-    onUploadError: (err) => {
-      setError(err.message ?? "Error al subir el video.");
-    },
-  });
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-    setError(null);
-    startUpload(files);
-    e.target.value = "";
+    }
   }
 
   function handleDelete() {
@@ -103,7 +93,7 @@ export function PropertyVideoUpload({
     });
   }
 
-  const isBusy = isUploading || isPending;
+  const isBusy = isPending;
 
   return (
     <div className="space-y-4">
@@ -151,21 +141,26 @@ export function PropertyVideoUpload({
 
           {/* Actions row */}
           <div className="flex flex-wrap gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="video/mp4,video/quicktime,video/webm,video/x-m4v,video/*"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            <CldUploadWidget
+              uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+              onSuccess={handleUploadSuccess}
+              options={{
+                resourceType: "video",
+                clientAllowedFormats: ["mp4", "mov", "webm"],
+                maxFileSize: 100000000, // 100MB approx (Cloudinary free tier limit for unsigned)
+              }}
             >
-              {isUploading ? "Subiendo…" : "Reemplazar video"}
-            </button>
+              {({ open }) => (
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => open()}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Reemplazar video
+                </button>
+              )}
+            </CldUploadWidget>
             <button
               type="button"
               disabled={isBusy}
@@ -179,33 +174,22 @@ export function PropertyVideoUpload({
       ) : (
         /* ── No video yet — upload zone ─────────────────── */
         <div className="space-y-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="video/mp4,video/quicktime,video/webm,video/x-m4v,video/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => fileInputRef.current?.click()}
-            className={`flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-8 text-center transition
-              ${isUploading
-                ? "border-brand-300 bg-brand-50"
-                : "border-slate-200 bg-slate-50 hover:border-brand-300 hover:bg-brand-50"
-              } disabled:cursor-not-allowed disabled:opacity-60`}
+          <CldUploadWidget
+            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+            onSuccess={handleUploadSuccess}
+            options={{
+              resourceType: "video",
+              clientAllowedFormats: ["mp4", "mov", "webm"],
+              maxFileSize: 100000000, // 100MB
+            }}
           >
-            {isUploading ? (
-              <>
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-                <span className="text-sm font-medium text-brand-600">Subiendo video…</span>
-                <span className="text-xs text-brand-400">
-                  Los videos pueden tardar unos segundos según el tamaño.
-                </span>
-              </>
-            ) : (
-              <>
+            {({ open }) => (
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => open()}
+                className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-8 text-center transition hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <svg className="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9A2.25 2.25 0 0013.5 5.25h-9A2.25 2.25 0 002.25 8.25v9A2.25 2.25 0 004.5 18.75z" />
                 </svg>
@@ -213,11 +197,11 @@ export function PropertyVideoUpload({
                   Hacé click para subir un video
                 </span>
                 <span className="text-xs text-slate-400">
-                  MP4 · MOV · WebM · máx. 128 MB
+                  MP4 · MOV · WebM · máx. 100 MB
                 </span>
-              </>
+              </button>
             )}
-          </button>
+          </CldUploadWidget>
           <p className="text-xs text-slate-400">
             Para videos más pesados, subílos a YouTube o Vimeo y pegá el link en el campo
             "Video / Tour virtual" de la sección Descripción.

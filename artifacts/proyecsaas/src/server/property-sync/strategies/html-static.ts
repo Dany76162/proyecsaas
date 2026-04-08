@@ -63,6 +63,30 @@ function extractLinkFromBlock(block: string): string | null {
   return match ? match[1] : null;
 }
 
+/**
+ * Extracts the best available image URL from an HTML block.
+ * Priority: src → data-src → first srcset URL.
+ * Only returns http(s) URLs — ignores data: URIs and relative paths.
+ */
+function extractImageFromBlock(block: string): string | null {
+  // 1. Regular src attribute (absolute URL only)
+  const srcMatch = block.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i);
+  if (srcMatch) return srcMatch[1];
+
+  // 2. data-src (lazy-loading pattern)
+  const dataSrcMatch = block.match(/<img[^>]+data-src=["'](https?:\/\/[^"']+)["']/i);
+  if (dataSrcMatch) return dataSrcMatch[1];
+
+  // 3. srcset — take the first absolute URL listed
+  const srcsetMatch = block.match(/srcset=["']([^"']+)["']/i);
+  if (srcsetMatch) {
+    const firstCandidate = srcsetMatch[1].split(",")[0]?.trim().split(/\s+/)[0];
+    if (firstCandidate?.startsWith("http")) return firstCandidate;
+  }
+
+  return null;
+}
+
 function textBlockToProperty(text: string, link: string | null, sourceUrl: string): SyncProperty | null {
   // Need at least a price or surface to be considered a property listing
   const priceData = parsePrice(text);
@@ -98,7 +122,7 @@ function textBlockToProperty(text: string, link: string | null, sourceUrl: strin
     bathrooms,
     surfaceM2,
     externalLink,
-    imageUrl: null,
+    imageUrl: null,  // populated by caller using raw HTML block
     externalId,
   };
 }
@@ -126,15 +150,17 @@ export async function extractFromHtmlStatic(
   const properties: SyncProperty[] = [];
 
   for (const block of blocks) {
-    // Extract link from the raw HTML block before stripping
+    // Extract link and image from the raw HTML block before stripping
     const linkMatch = block.match(/href=["'](https?:\/\/[^"']+)["']/i);
     const link = linkMatch ? linkMatch[1] : null;
+    const imageUrl = extractImageFromBlock(block);
 
     const prop = textBlockToProperty(block, link, sourceUrl);
     if (!prop) continue;
     if (seen.has(prop.externalId)) continue;
     seen.add(prop.externalId);
-    properties.push(prop);
+    // Inject the image extracted from the raw HTML
+    properties.push({ ...prop, imageUrl });
   }
 
   return properties.length >= 3 ? properties : null;

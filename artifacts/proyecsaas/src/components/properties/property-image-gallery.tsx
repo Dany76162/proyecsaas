@@ -1,8 +1,10 @@
 "use client";
 
+"use client";
+
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useUploadThing } from "@/lib/uploadthing";
+import { CldUploadWidget } from "next-cloudinary";
 import {
   addPropertyImageAction,
   removePropertyImageAction,
@@ -42,36 +44,21 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
   const [urlInput, setUrlInput] = useState("");
   const [altInput, setAltInput] = useState("");
   const [urlError, setUrlError] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isPendingUrl, startUrlTransition] = useTransition();
   const [isPendingAction, startActionTransition] = useTransition();
 
-  const { startUpload, isUploading } = useUploadThing("propertyImageUploader", {
-    onClientUploadComplete: async (uploaded) => {
-      setUploadError(null);
+  async function handleUploadSuccess(result: any) {
+    if (result.event === "success") {
+      const info = result.info;
       const isFirst = images.length === 0;
-      for (let i = 0; i < uploaded.length; i++) {
-        await addPropertyImageAction(orgSlug, {
-          propertyId,
-          url: uploaded[i].url,
-          altText: uploaded[i].name,
-          isPrimary: isFirst && i === 0,
-        });
-      }
+      await addPropertyImageAction(orgSlug, {
+        propertyId,
+        url: info.secure_url,
+        altText: info.original_filename || "Imagen de propiedad",
+        isPrimary: isFirst,
+      });
       router.refresh();
-    },
-    onUploadError: (error) => {
-      setUploadError(error.message ?? "Error al subir imágenes.");
-    },
-  });
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-    setUploadError(null);
-    startUpload(files);
-    // reset so same file can be selected again
-    e.target.value = "";
+    }
   }
 
   function handleUrlAdd(e: React.FormEvent) {
@@ -109,7 +96,7 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
     });
   }
 
-  const isBusy = isUploading || isPendingUrl || isPendingAction;
+  const isBusy = isPendingUrl || isPendingAction;
 
   return (
     <div className="space-y-5">
@@ -196,36 +183,22 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
       {/* ── Upload tab ─────────────────────────────────────── */}
       {activeTab === "upload" && (
         <div className="space-y-3">
-          {uploadError && (
-            <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-600">
-              {uploadError}
-            </p>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => fileInputRef.current?.click()}
-            className={`flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-8 text-center transition
-              ${isUploading
-                ? "border-brand-300 bg-brand-50"
-                : "border-slate-200 bg-slate-50 hover:border-brand-300 hover:bg-brand-50"
-              } disabled:cursor-not-allowed disabled:opacity-60`}
+          <CldUploadWidget
+            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+            onSuccess={handleUploadSuccess}
+            options={{
+              maxFiles: 8,
+              clientAllowedFormats: ["jpg", "png", "webp", "jpeg"],
+              maxFileSize: 4000000, // 4MB
+            }}
           >
-            {isUploading ? (
-              <>
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-                <span className="text-sm font-medium text-brand-600">Subiendo imágenes…</span>
-              </>
-            ) : (
-              <>
+            {({ open }) => (
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => open()}
+                className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-8 text-center transition hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <svg className="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
@@ -235,12 +208,12 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
                 <span className="text-xs text-slate-400">
                   JPG, PNG, WEBP · máx. 4 MB por imagen · hasta 8 a la vez
                 </span>
-              </>
+              </button>
             )}
-          </button>
+          </CldUploadWidget>
           <p className="text-xs text-slate-400">
-            Funciona desde PC y celular. Las imágenes se suben al CDN y quedan vinculadas a esta
-            propiedad.
+            Funciona desde PC y celular. Las imágenes se suben al CDN de Cloudinary y quedan vinculadas
+            a esta propiedad.
           </p>
         </div>
       )}

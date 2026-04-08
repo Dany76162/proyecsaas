@@ -68,11 +68,13 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
             Plataforma
           </div>
         </div>
-        <img
-          src="/brand/Logo%20minimalista%20de%20crecimiento%20inmobiliario.png"
-          alt="Logo"
-          className="h-16 w-16 shrink-0 object-contain group-hover:scale-105 transition-transform"
-        />
+        <div className="relative h-16 w-16 shrink-0">
+          <img
+            src="/brand/Logo%20minimalista%20de%20crecimiento%20inmobiliario.png"
+            alt="Logo"
+            className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain transition-transform group-hover:scale-110"
+          />
+        </div>
       </Link>
 
       {/* Navigation */}

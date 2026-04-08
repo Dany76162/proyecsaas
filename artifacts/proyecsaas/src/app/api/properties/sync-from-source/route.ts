@@ -112,11 +112,41 @@ async function handleSync(req: NextRequest) {
         publicVisible: true,
       };
 
+      // Build image payload if a new one was scraped
+      const imagePayload = prop.imageUrl
+        ? {
+            url: prop.imageUrl,
+            isPrimary: true,
+            sortOrder: 0,
+            // organizationId is handled automatically by the composite relation in schema.prisma
+          }
+        : null;
+
       if (existingProp) {
-        await prisma.property.update({ where: { id: existingProp.id }, data });
+        await prisma.property.update({
+          where: { id: existingProp.id },
+          data: {
+            ...data,
+            images: imagePayload
+              ? {
+                  deleteMany: {}, // Only valid in update to replace existing images
+                  create: [imagePayload],
+                }
+              : undefined,
+          },
+        });
         updated++;
       } else {
-        await prisma.property.create({ data });
+        await prisma.property.create({
+          data: {
+            ...data,
+            images: imagePayload
+              ? {
+                  create: [imagePayload],
+                }
+              : undefined,
+          },
+        });
         created++;
       }
     }
