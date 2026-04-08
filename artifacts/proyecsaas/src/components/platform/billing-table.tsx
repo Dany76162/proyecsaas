@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Plus, X, Receipt, Copy, Check, MessageCircle, Mail, Search } from "lucide-react";
 import type { OrgBillingRecord, Organization } from "@prisma/client";
+import type { PlatformPlanOption } from "@/modules/platform/types";
 import {
   createBillingRecordAction,
   generateMPPaymentLinkAction,
@@ -65,9 +66,11 @@ const formatDate = (d: Date) =>
 export function BillingTable({
   records,
   activeOrgs,
+  plans,
 }: {
   records: RecordWithOrg[];
   activeOrgs: ActiveOrg[];
+  plans: PlatformPlanOption[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -93,6 +96,7 @@ export function BillingTable({
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
+  const [planId, setPlanId] = useState("");
   const [createError, setCreateError] = useState("");
 
   // Invoice dialog
@@ -102,7 +106,7 @@ export function BillingTable({
   const [invoiceError, setInvoiceError] = useState("");
 
   const resetCreate = () => {
-    setOrgId(""); setDesc(""); setAmount(""); setNotes(""); setCreateError("");
+    setOrgId(""); setDesc(""); setAmount(""); setNotes(""); setPlanId(""); setCreateError("");
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -114,6 +118,7 @@ export function BillingTable({
         description: desc,
         amountARS: parseFloat(amount),
         notes: notes || undefined,
+        planId: planId || undefined,
       });
       if (res.success) {
         resetCreate();
@@ -367,6 +372,22 @@ export function BillingTable({
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-slate-700">Monto en ARS <span className="text-red-500">*</span></label>
                 <input required type="number" min="1" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Ej: 15000" className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Plan a activar</label>
+                <select
+                  value={planId}
+                  onChange={(e) => setPlanId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900"
+                >
+                  <option value="">Solo cobrar, sin activar plan</option>
+                  {plans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>{plan.name}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-slate-400">
+                  Si elegís un plan, el webhook de Mercado Pago renovará la suscripción al acreditarse.
+                </p>
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-slate-700">Notas internas</label>

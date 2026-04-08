@@ -1,6 +1,6 @@
 import "server-only";
 
-import { SubscriptionStatus } from "@prisma/client";
+import { BillingMode, SubscriptionStatus } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
 import { logAudit } from "@/server/audit/log";
@@ -210,6 +210,11 @@ export async function processMPPaymentWebhook(
 
   // ── 6. Transactional write ────────────────────────────────────────────────
 
+  const nextStatus =
+    existingSubscription?.status === SubscriptionStatus.SUSPENDED
+      ? SubscriptionStatus.SUSPENDED
+      : SubscriptionStatus.ACTIVE;
+
   await prisma.$transaction(async (tx) => {
     // Always mark the billing record as paid
     await tx.orgBillingRecord.update({
@@ -227,7 +232,8 @@ export async function processMPPaymentWebhook(
         create: {
           organizationId: record.organizationId,
           planId: record.planId,
-          status: SubscriptionStatus.ACTIVE,
+          status: nextStatus,
+          billingMode: BillingMode.ONLINE,
           currentPeriodStart: newPeriodStart,
           currentPeriodEnd: newPeriodEnd,
           cancelAtPeriodEnd: false,
@@ -235,19 +241,13 @@ export async function processMPPaymentWebhook(
         },
         update: {
           planId: record.planId,
-          status: SubscriptionStatus.ACTIVE,
+          status: nextStatus,
+          billingMode: BillingMode.ONLINE,
           currentPeriodStart: newPeriodStart,
           currentPeriodEnd: newPeriodEnd,
           cancelAtPeriodEnd: false,
           activatedByRecordId: record.id,
         },
-      });
-
-      // AUTOMATIC REACTIVATION: Always ensure the org is active if they paid.
-      // This "opens the gate" automatically if they were suspended previously.
-      await tx.organization.update({
-        where: { id: record.organizationId },
-        data: { isActive: true },
       });
     } else {
       console.warn(
@@ -283,12 +283,12 @@ export async function processMPPaymentWebhook(
     metadata: { paymentId, planId: record.planId ?? null, isRenewal, source: "mercadopago" },
   });
 
-  if (record.planId) {
+  if (record.planId && nextStatus === SubscriptionStatus.ACTIVE) {
     await logAudit({
       event: "org.reactivated",
       entityType: "Organization",
       entityId: record.organizationId,
-      metadata: { trigger: "payment", recordId: record.id },
+      metadata: { trigger: "payment", recordId: record.id, statusApplied: nextStatus },
     });
   }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { BillingStatus, InvoiceStatus, Prisma } from "@prisma/client";
+import { BillingMode, BillingStatus, InvoiceStatus, Prisma, SubscriptionStatus } from "@prisma/client";
 import { z } from "zod";
 
 import type { ActionResult } from "@/modules/types";
@@ -22,6 +22,22 @@ const createBillingRecordSchema = z.object({
   planId: z.string().trim().min(1).optional(),
 });
 
+const updateCommercialStateSchema = z.object({
+  organizationId: z.string().min(1, "Organización inválida."),
+  planId: z.string().trim().min(1, "Seleccioná un plan."),
+  subscriptionStatus: z.nativeEnum(SubscriptionStatus),
+  billingMode: z.nativeEnum(BillingMode),
+  currentPeriodEnd: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Ingresá una fecha de vencimiento válida."),
+  internalBillingNotes: z.string().trim().max(1000).optional(),
+});
+
+function parseEndOfDayUTC(input: string) {
+  const [year, month, day] = input.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+}
+
 /**
  * Creates a new billing record for an organization.
  */
@@ -40,7 +56,7 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
   const { organizationId, description, amountARS, notes, planId } = parsed.data;
 
   try {
-    const org = await prisma.organization.findUnique({
+    const org = await prisma.organization.findFirst({
       where: { id: organizationId, isActive: true },
       select: { id: true },
     });
@@ -191,5 +207,137 @@ export async function updateInvoiceStatusAction(
       return { success: false, message: "Registro no encontrado." };
     }
     return { success: false, message: "Error al actualizar la factura." };
+  }
+}
+
+export async function setOrganizationCommercialStateAction(input: unknown): Promise<ActionResult> {
+  const actor = await requirePlatformAdmin();
+
+  const parsed = updateCommercialStateSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Datos comerciales inválidos.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const {
+    organizationId,
+    planId,
+    subscriptionStatus,
+    billingMode,
+    currentPeriodEnd: currentPeriodEndInput,
+    internalBillingNotes,
+  } = parsed.data;
+
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      subscription: {
+        select: {
+          currentPeriodStart: true,
+        },
+      },
+    },
+  });
+
+  if (!org) {
+    return { success: false, message: "Organización no encontrada." };
+  }
+
+  const plan = await prisma.plan.findFirst({
+    where: { id: planId, isActive: true },
+    select: { id: true, name: true },
+  });
+
+  if (!plan) {
+    return { success: false, message: "El plan seleccionado no está disponible." };
+  }
+
+  const currentPeriodEnd = parseEndOfDayUTC(currentPeriodEndInput);
+  const now = new Date();
+  const currentPeriodStart = org.subscription?.currentPeriodStart ?? now;
+
+  if (
+    (subscriptionStatus === SubscriptionStatus.ACTIVE ||
+      subscriptionStatus === SubscriptionStatus.TRIALING) &&
+    currentPeriodEnd.getTime() <= now.getTime()
+  ) {
+    return {
+      success: false,
+      message: "La fecha de vencimiento debe quedar en el futuro para una cuenta activa o en trial.",
+    };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.upsert({
+        where: { organizationId: org.id },
+        create: {
+          organizationId: org.id,
+          planId: plan.id,
+          status: subscriptionStatus,
+          billingMode,
+          currentPeriodStart,
+          currentPeriodEnd,
+          cancelAtPeriodEnd: subscriptionStatus === SubscriptionStatus.CANCELLED,
+          internalBillingNotes: internalBillingNotes || null,
+        },
+        update: {
+          planId: plan.id,
+          status: subscriptionStatus,
+          billingMode,
+          currentPeriodEnd,
+          cancelAtPeriodEnd: subscriptionStatus === SubscriptionStatus.CANCELLED,
+          internalBillingNotes: internalBillingNotes || null,
+        },
+      });
+
+      await tx.organization.update({
+        where: { id: org.id },
+        data: {
+          planLabel: plan.name,
+          ...(subscriptionStatus === SubscriptionStatus.ACTIVE ||
+          subscriptionStatus === SubscriptionStatus.TRIALING
+            ? { isActive: true }
+            : {}),
+        },
+      });
+    });
+
+    revalidatePath("/platform/organizations");
+    revalidatePath("/platform/billing");
+    revalidatePath(`/${org.slug}`);
+
+    await logAudit({
+      event: "subscription.updated_manual",
+      actorId: actor.id,
+      actorEmail: actor.email,
+      entityType: "Organization",
+      entityId: org.id,
+      entityName: org.name,
+      metadata: {
+        planId: plan.id,
+        subscriptionStatus,
+        billingMode,
+        currentPeriodEnd: currentPeriodEnd.toISOString(),
+        internalBillingNotes: internalBillingNotes || null,
+      },
+    });
+
+    return {
+      success: true,
+      message:
+        subscriptionStatus === SubscriptionStatus.SUSPENDED
+          ? `La organización "${org.name}" quedó suspendida manualmente.`
+          : `Estado comercial actualizado para "${org.name}".`,
+    };
+  } catch (error) {
+    console.error("[setOrganizationCommercialStateAction]", error);
+    return { success: false, message: "No se pudo actualizar el estado comercial." };
   }
 }

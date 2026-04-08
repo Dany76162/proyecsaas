@@ -6,6 +6,7 @@ import { MembershipRole } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
 import { getSessionUser } from "@/server/auth/session";
+import { resolveEffectiveCommercialState } from "@/server/billing/commercial-access";
 
 function buildLoginRedirectPath(nextPath: string) {
   const safePath = nextPath.startsWith("/") ? nextPath : "/";
@@ -39,15 +40,31 @@ export async function requireOrganizationMembership(orgSlug: string) {
   // First check: does the org exist at all?
   const org = await prisma.organization.findUnique({
     where: { slug: orgSlug },
-    select: { id: true, isActive: true, name: true },
+    select: {
+      id: true,
+      isActive: true,
+      name: true,
+      subscription: {
+        select: {
+          status: true,
+          billingMode: true,
+          currentPeriodEnd: true,
+        },
+      },
+    },
   });
 
   if (!org) {
     notFound();
   }
 
-  // Second check: is it suspended? Show a clear suspension page.
-  if (!org.isActive) {
+  // Second check: is it commercially blocked? Show a clear suspension page.
+  const commercialState = resolveEffectiveCommercialState({
+    isActive: org.isActive,
+    subscription: org.subscription,
+  });
+
+  if (!commercialState.allowed) {
     redirect(`/suspended?org=${encodeURIComponent(orgSlug)}&name=${encodeURIComponent(org.name)}`);
   }
 

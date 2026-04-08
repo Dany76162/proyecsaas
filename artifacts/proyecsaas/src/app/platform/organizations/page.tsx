@@ -1,10 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import { listOrganizationsForPlatform } from "@/modules/platform/service";
+import { listOrganizationsForPlatform, listPlatformPlans } from "@/modules/platform/service";
 import { OrgTable } from "./OrgTable";
 
 export default async function PlatformOrganizationsPage() {
-  const orgs = await listOrganizationsForPlatform();
+  const [orgs, plans] = await Promise.all([
+    listOrganizationsForPlatform(),
+    listPlatformPlans(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -16,7 +19,7 @@ export default async function PlatformOrganizationsPage() {
           {orgs.length} inmobiliaria{orgs.length !== 1 ? "s" : ""} registrada{orgs.length !== 1 ? "s" : ""} en la plataforma.
         </p>
       </div>
-      <OrgTable orgs={orgs} />
+      <OrgTable orgs={orgs} plans={plans} />
     </div>
   );
 }

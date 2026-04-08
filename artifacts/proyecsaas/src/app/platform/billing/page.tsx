@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/server/db/prisma";
 import { BillingTable } from "@/components/platform/billing-table";
+import { listPlatformPlans } from "@/modules/platform/service";
 
 export default async function PlatformBillingPage() {
-  const [records, activeOrgs] = await Promise.all([
+  const [records, activeOrgs, plans] = await Promise.all([
     prisma.orgBillingRecord.findMany({
       orderBy: { createdAt: "desc" },
       include: { organization: { select: { id: true, name: true, slug: true } } },
@@ -14,6 +15,7 @@ export default async function PlatformBillingPage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    listPlatformPlans(),
   ]);
 
   const totalPending = records
@@ -68,7 +70,7 @@ export default async function PlatformBillingPage() {
       </div>
 
       {/* Interactive table + create */}
-      <BillingTable records={records} activeOrgs={activeOrgs} />
+      <BillingTable records={records} activeOrgs={activeOrgs} plans={plans} />
     </div>
   );
 }

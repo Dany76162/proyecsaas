@@ -27,4 +27,18 @@ export type OrgPlatformSummary = {
   maxAiAgents: number;
   aiAgentCount: number;
   agentQuotaNote: string | null;
+  commercialStatus: string;
+  commercialStatusLabel: string;
+  commercialAccess: "allowed" | "blocked";
+  commercialSource: "subscription" | "legacy" | "organization";
+  billingMode: string | null;
+  billingModeLabel: string | null;
+  currentPeriodEnd: string | null;
+  internalBillingNotes: string | null;
+  planId: string | null;
+};
+
+export type PlatformPlanOption = {
+  id: string;
+  name: string;
 };

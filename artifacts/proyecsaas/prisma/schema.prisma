@@ -115,6 +115,15 @@ enum SubscriptionStatus {
   PAST_DUE
   CANCELLED
   EXPIRED
+  SUSPENDED
+}
+
+enum BillingMode {
+  ONLINE
+  CASH
+  TRANSFER
+  COURTESY
+  MANUAL
 }
 
 model User {
@@ -535,10 +544,12 @@ model Subscription {
   organizationId String @unique // enforces one active subscription per org at schema level
   planId         String
 
-  status             SubscriptionStatus @default(TRIALING)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  cancelAtPeriodEnd  Boolean            @default(false)
+  status               SubscriptionStatus @default(TRIALING)
+  billingMode          BillingMode        @default(ONLINE)
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  internalBillingNotes String?
 
   // Nullable traceability link — stores OrgBillingRecord.id that activated this subscription.
   // Stored as plain String (no FK constraint) to avoid touching OrgBillingRecord in this phase.

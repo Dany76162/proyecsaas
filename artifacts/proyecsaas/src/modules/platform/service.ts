@@ -1,7 +1,8 @@
 import "server-only";
 
 import { prisma } from "@/server/db/prisma";
-import type { OrgHealthStatus, OrgPlatformSummary } from "@/modules/platform/types";
+import { BILLING_MODE_LABELS, resolveEffectiveCommercialState } from "@/server/billing/commercial-access";
+import type { OrgHealthStatus, OrgPlatformSummary, PlatformPlanOption } from "@/modules/platform/types";
 
 export type WorkerStatus = "ok" | "stale" | "down";
 
@@ -50,7 +51,6 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
 
   const [orgs, recentLeads, followUps, recentFailures] = await Promise.all([
     prisma.organization.findMany({
-      where: { isActive: true },
       orderBy: { name: "asc" },
       select: {
         id: true,
@@ -61,6 +61,15 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
         isActive: true,
         maxAiAgents: true,
         agentQuotaNote: true,
+        subscription: {
+          select: {
+            status: true,
+            billingMode: true,
+            currentPeriodEnd: true,
+            internalBillingNotes: true,
+            planId: true,
+          },
+        },
         _count: {
           select: { memberships: true, leads: true, properties: true, aiAgents: true },
         },
@@ -114,6 +123,10 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
     const recentLeadCount = recentLeadsMap.get(org.id) ?? 0;
     const pendingFollowUpCount = followUpsMap.get(org.id) ?? 0;
     const recentFailedDeliveries = failuresMap.get(org.id) ?? 0;
+    const commercialState = resolveEffectiveCommercialState({
+      isActive: org.isActive,
+      subscription: org.subscription,
+    });
 
     return {
       id: org.id,
@@ -140,6 +153,15 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
       maxAiAgents: org.maxAiAgents,
       aiAgentCount: org._count.aiAgents,
       agentQuotaNote: org.agentQuotaNote ?? null,
+      commercialStatus: commercialState.effectiveStatus ?? "LEGACY",
+      commercialStatusLabel: commercialState.summary,
+      commercialAccess: commercialState.allowed ? "allowed" : "blocked",
+      commercialSource: commercialState.source,
+      billingMode: org.subscription?.billingMode ?? null,
+      billingModeLabel: org.subscription ? BILLING_MODE_LABELS[org.subscription.billingMode] : null,
+      currentPeriodEnd: org.subscription?.currentPeriodEnd?.toISOString() ?? null,
+      internalBillingNotes: org.subscription?.internalBillingNotes ?? null,
+      planId: org.subscription?.planId ?? null,
       onboardingStatus:
         org._count.memberships === 0
           ? "Sin usuarios"
@@ -155,4 +177,14 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
       }),
     } satisfies OrgPlatformSummary;
   });
+}
+
+export async function listPlatformPlans(): Promise<PlatformPlanOption[]> {
+  const plans = await prisma.plan.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, name: true },
+  });
+
+  return plans;
 }

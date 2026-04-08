@@ -4,8 +4,9 @@ import { useState, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { HealthBadge, WhatsAppStatus, formatRelativeTime } from "@/components/platform/platform-ui";
 import { OnboardingControls } from "@/components/platform/onboarding-controls";
+import { CommercialControls } from "@/components/platform/commercial-controls";
 import { CreateOrgDialog } from "@/components/platform/create-org-dialog";
-import type { OrgPlatformSummary } from "@/modules/platform/types";
+import type { OrgPlatformSummary, PlatformPlanOption } from "@/modules/platform/types";
 
 const HEALTH_FILTERS = [
   { value: "all", label: "Todos" },
@@ -14,7 +15,16 @@ const HEALTH_FILTERS = [
   { value: "critical", label: "Crítico" },
 ];
 
-export function OrgTable({ orgs }: { orgs: OrgPlatformSummary[] }) {
+function formatCommercialDate(isoDate: string | null) {
+  if (!isoDate) return "Sin vencimiento";
+  return new Date(isoDate).toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+export function OrgTable({ orgs, plans }: { orgs: OrgPlatformSummary[]; plans: PlatformPlanOption[] }) {
   const [search, setSearch] = useState("");
   const [healthFilter, setHealthFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
@@ -98,7 +108,7 @@ export function OrgTable({ orgs }: { orgs: OrgPlatformSummary[] }) {
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[980px] text-sm">
             <thead>
               <tr className="border-b bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <th className="px-5 py-3.5">Organización</th>
@@ -107,6 +117,7 @@ export function OrgTable({ orgs }: { orgs: OrgPlatformSummary[] }) {
                 <th className="px-5 py-3.5">Tráfico 7d</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Última acción</th>
                 <th className="px-5 py-3.5">Onboarding</th>
+                <th className="px-5 py-3.5">Comercial</th>
                 <th className="px-5 py-3.5 text-right">Acciones</th>
               </tr>
             </thead>
@@ -114,7 +125,9 @@ export function OrgTable({ orgs }: { orgs: OrgPlatformSummary[] }) {
               {filtered.map((org) => (
                 <tr
                   key={org.id}
-                  className={`transition hover:bg-slate-50/70 group ${!org.isActive ? "bg-slate-50 opacity-60 grayscale" : ""}`}
+                  className={`transition hover:bg-slate-50/70 group ${
+                    !org.isActive || org.commercialAccess === "blocked" ? "bg-slate-50 opacity-60 grayscale" : ""
+                  }`}
                 >
                   <td className="px-5 py-4 align-top">
                     <div className="flex flex-col">
@@ -153,7 +166,27 @@ export function OrgTable({ orgs }: { orgs: OrgPlatformSummary[] }) {
                     </div>
                   </td>
                   <td className="px-5 py-4 align-top">
-                    <div className="flex items-center justify-end">
+                    <div className="flex min-w-[180px] flex-col gap-1">
+                      <span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                        org.commercialAccess === "allowed"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-rose-50 text-rose-700"
+                      }`}>
+                        {org.commercialStatusLabel}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-700">
+                        {org.planId ? `Plan ${org.planId}` : "Sin plan asignado"}
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        {org.billingModeLabel ?? "Sin modo"} · {formatCommercialDate(org.currentPeriodEnd)}
+                      </span>
+                      {org.internalBillingNotes && (
+                        <span className="line-clamp-2 text-[11px] text-slate-400">{org.internalBillingNotes}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 align-top">
+                    <div className="flex flex-col items-end gap-1.5">
                       <OnboardingControls
                         orgSlug={org.slug}
                         orgName={org.name}
@@ -163,13 +196,23 @@ export function OrgTable({ orgs }: { orgs: OrgPlatformSummary[] }) {
                         aiAgentCount={org.aiAgentCount}
                         agentQuotaNote={org.agentQuotaNote}
                       />
+                      <CommercialControls
+                        organizationId={org.id}
+                        orgName={org.name}
+                        planOptions={plans}
+                        currentPlanId={org.planId}
+                        currentStatus={org.commercialStatus}
+                        currentBillingMode={org.billingMode}
+                        currentPeriodEnd={org.currentPeriodEnd}
+                        internalBillingNotes={org.internalBillingNotes}
+                      />
                     </div>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center">
+                  <td colSpan={8} className="px-5 py-12 text-center">
                     {search || healthFilter !== "all" ? (
                       <>
                         <p className="text-base font-semibold text-slate-900">Sin resultados</p>
@@ -177,8 +220,8 @@ export function OrgTable({ orgs }: { orgs: OrgPlatformSummary[] }) {
                       </>
                     ) : (
                       <>
-                        <p className="text-base font-semibold text-slate-900">Sin inmobiliarias activas</p>
-                        <p className="mt-1 text-sm text-slate-500">No hay organizaciones activas en este momento.</p>
+                        <p className="text-base font-semibold text-slate-900">Sin inmobiliarias cargadas</p>
+                        <p className="mt-1 text-sm text-slate-500">Todavía no hay organizaciones para administrar.</p>
                       </>
                     )}
                   </td>
