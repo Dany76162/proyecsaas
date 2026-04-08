@@ -1,8 +1,5 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
   "deploy": {
-    "startCommand": "pnpm --filter @workspace/proyecsaas exec prisma migrate resolve --rolled-back \"0_init\" || true && pnpm --filter @workspace/proyecsaas exec prisma db push --accept-data-loss && HOSTNAME=0.0.0.0 pnpm --filter @workspace/proyecsaas exec next start",
-    "restartPolicyType": "ON_FAILURE",
-    "healthcheckPath": "/api/health"
+    "startCommand": "pnpm --filter @workspace/proyecsaas exec prisma migrate resolve --rolled-back \"0_init\" || true && pnpm --filter @workspace/proyecsaas exec prisma migrate resolve --rolled-back \"20260408113000_add_manual_subscription_controls\" || true && pnpm --filter @workspace/proyecsaas exec prisma db push --accept-data-loss && HOSTNAME=0.0.0.0 pnpm --filter @workspace/proyecsaas exec next start"
   }
 }
