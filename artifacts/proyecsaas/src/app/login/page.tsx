@@ -16,9 +16,11 @@ type LoginPageProps = {
 function getErrorMessage(error: string | undefined) {
   switch (error) {
     case "invalid-credentials":
-      return "Email o clave de acceso inválidos.";
+      return "Email o clave de acceso invalidos.";
+    case "activation-required":
+      return "Tu acceso todavia no fue activado. Abre el link de invitacion para crear tu clave.";
     case "no-memberships":
-      return "Tu usuario no tiene membresías activas.";
+      return "Tu usuario no tiene membresias activas.";
     default:
       return null;
   }
@@ -40,7 +42,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="w-full max-w-md rounded-[2rem] border bg-white/90 p-8 shadow-soft">
         <h1 className="text-2xl font-semibold text-slate-950">Ingresar al workspace</h1>
         <p className="mt-3 text-slate-600">
-          Ingresá con tu email de usuario y la clave interna de acceso para abrir los workspaces donde tenés membresía activa.
+          Ingresa con tu email de usuario y tu clave para abrir los workspaces donde tienes
+          membresia activa.
         </p>
 
         <form action={loginAction} className="mt-6 space-y-4">
@@ -76,7 +79,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           {resolvedSearchParams?.signedOut ? (
             <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              La sesión se cerró correctamente.
+              La sesion se cerro correctamente.
             </p>
           ) : null}
 

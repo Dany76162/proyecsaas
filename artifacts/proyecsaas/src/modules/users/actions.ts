@@ -66,6 +66,7 @@ export async function inviteUserAction(orgSlug: string, input: unknown): Promise
         data: {
           token,
           userId: user.id,
+          organizationId: membership.organization.id,
           expiresAt,
         },
       });

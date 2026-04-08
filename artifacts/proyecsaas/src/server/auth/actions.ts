@@ -132,6 +132,21 @@ export async function loginAction(formData: FormData) {
       id: true,
       isPlatformAdmin: true,
       passwordHash: true,
+      inviteTokens: {
+        where: {
+          usedAt: null,
+          expiresAt: {
+            gte: new Date(),
+          },
+        },
+        select: {
+          token: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+      },
       memberships: {
         where: {
           organization: {
@@ -158,8 +173,10 @@ export async function loginAction(formData: FormData) {
   if (user) {
     if (user.passwordHash) {
       isValidPassword = await verifyPassword(parsed.data.password, user.passwordHash);
+    } else if (user.inviteTokens[0]?.token) {
+      redirect(`/invite/${user.inviteTokens[0].token}`);
     } else {
-      isValidPassword = timingSafePasswordEqual(parsed.data.password, getSharedPassword());
+      redirect(buildLoginRedirect("activation-required", parsed.data.next || undefined));
     }
   } else {
     // If user not found, we still want to spend some time on validation

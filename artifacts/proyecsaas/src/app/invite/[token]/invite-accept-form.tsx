@@ -1,26 +1,48 @@
 "use client";
 
 import { useActionState } from "react";
+
 import { acceptInviteAction } from "./actions";
 
-export function InviteAcceptForm({ token, email }: { token: string; email: string }) {
+type InviteAcceptFormProps = {
+  token: string;
+  email: string;
+  organizationName: string;
+  organizationSlug: string;
+};
+
+export function InviteAcceptForm({
+  token,
+  email,
+  organizationName,
+  organizationSlug,
+}: InviteAcceptFormProps) {
   const [state, action, isPending] = useActionState(acceptInviteAction, null);
 
   return (
     <form action={action} className="mt-8 space-y-6">
       <input type="hidden" name="token" value={token} />
-      
-      <div>
-        <label className="block text-sm font-medium text-slate-700">Email</label>
-        <p className="mt-1.5 text-base font-semibold text-slate-950">{email}</p>
+
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+          Organizacion
+        </p>
+        <p className="mt-1 text-sm font-semibold text-slate-950">{organizationName}</p>
+        <p className="mt-1 text-xs text-slate-500">/{organizationSlug}</p>
       </div>
 
       <div>
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-slate-700"
-        >
-          Password
+        <label className="block text-sm font-medium text-slate-700">Email invitado</label>
+        <p className="mt-1.5 text-base font-semibold text-slate-950">{email}</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Este acceso queda asociado a este email exacto. Si usas otro correo, no vas a poder
+          entrar.
+        </p>
+      </div>
+
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+          Crea tu clave
         </label>
         <input
           id="password"
@@ -28,8 +50,9 @@ export function InviteAcceptForm({ token, email }: { token: string; email: strin
           type="password"
           required
           autoFocus
+          minLength={8}
           className="mt-1.5 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-950 placeholder:text-slate-400 transition-all focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10"
-          placeholder="••••••••"
+          placeholder="Minimo 8 caracteres"
         />
       </div>
 
@@ -60,18 +83,16 @@ export function InviteAcceptForm({ token, email }: { token: string; email: strin
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            Processing...
+            Activando...
           </span>
         ) : (
-          "Activate account"
+          "Activar acceso"
         )}
       </button>
 
-      {state?.success === false && (
-        <p className="mt-4 text-center text-sm font-medium text-red-600">
-          {state.message}
-        </p>
-      )}
+      {state?.success === false ? (
+        <p className="mt-4 text-center text-sm font-medium text-red-600">{state.message}</p>
+      ) : null}
     </form>
   );
 }

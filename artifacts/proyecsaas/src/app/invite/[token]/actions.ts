@@ -1,44 +1,49 @@
 "use server";
 
 import { redirect } from "next/navigation";
+
 import { prisma } from "@/server/db/prisma";
 import { hashPassword } from "@/server/auth/password";
 import { createSession, getSessionUser } from "@/server/auth/session";
 
 export async function acceptInviteAction(prevState: any, formData: FormData) {
-  const token = String(formData.get("token") ?? "");
+  const token = String(formData.get("token") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
   if (!token || !password) {
-    return { success: false, message: "Invalid submission." };
+    return { success: false, message: "Completa los datos para activar el acceso." };
+  }
+
+  if (password.length < 8) {
+    return { success: false, message: "La clave debe tener al menos 8 caracteres." };
   }
 
   const invite = await prisma.inviteToken.findUnique({
     where: { token },
     include: {
+      organization: {
+        select: {
+          slug: true,
+        },
+      },
       user: {
         select: {
           id: true,
-          memberships: {
-            select: {
-              organization: {
-                select: {
-                  slug: true,
-                },
-              },
-            },
-            take: 1,
-            orderBy: {
-                createdAt: 'asc'
-            }
-          },
         },
       },
     },
   });
 
-  if (!invite || invite.usedAt || invite.expiresAt < new Date()) {
-    return { success: false, message: "Invitation no longer valid." };
+  if (!invite) {
+    return { success: false, message: "La invitacion no existe o ya no es valida." };
+  }
+
+  if (invite.usedAt) {
+    return { success: false, message: "Esta invitacion ya fue utilizada. Inicia sesion." };
+  }
+
+  if (invite.expiresAt < new Date()) {
+    return { success: false, message: "La invitacion vencio. Solicita un nuevo enlace." };
   }
 
   const passwordHash = await hashPassword(password);
@@ -54,20 +59,11 @@ export async function acceptInviteAction(prevState: any, formData: FormData) {
     }),
   ]);
 
-  // If the caller is already a platform admin, preserve their session.
-  // Activating the invite (hash + usedAt) was enough — no new session needed.
   const callerSession = await getSessionUser();
   if (callerSession?.isPlatformAdmin) {
     redirect("/platform?invited=ok");
   }
 
   await createSession(invite.userId);
-
-  const orgSlug = invite.user.memberships?.[0]?.organization?.slug;
-
-  if (orgSlug) {
-    redirect(`/${orgSlug}`);
-  }
-
-  redirect("/");
+  redirect(`/${invite.organization.slug}`);
 }

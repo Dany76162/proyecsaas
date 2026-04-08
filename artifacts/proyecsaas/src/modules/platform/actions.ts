@@ -203,6 +203,8 @@ export async function generateInitialAdminInviteAction(
     };
   }
 
+  const normalizedInviteEmail = parsed.success ? parsed.data.email.trim().toLowerCase() : "";
+
   try {
     const org = await prisma.organization.findUnique({
       where: { slug: orgSlug },
@@ -226,9 +228,9 @@ export async function generateInitialAdminInviteAction(
     const { inviteUrl } = await prisma.$transaction(async (tx) => {
       // 1. Crear o actualizar el registro del User global (por si era un invite abandonado)
       const user = await tx.user.upsert({
-        where: { email: parsed.data.email },
+        where: { email: normalizedInviteEmail },
         create: {
-          email: parsed.data.email,
+          email: normalizedInviteEmail,
           fullName: parsed.data.fullName,
           isActive: true,
         },
@@ -251,6 +253,7 @@ export async function generateInitialAdminInviteAction(
         data: {
           token,
           userId: user.id,
+          organizationId: org.id,
           expiresAt,
         },
       });
@@ -387,7 +390,7 @@ export async function quickOnboardOrgAction(input: {
 
       // 3. Crear invite token
       await tx.inviteToken.create({
-        data: { token, userId: user.id, expiresAt },
+        data: { token, userId: user.id, organizationId: org.id, expiresAt },
       });
 
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

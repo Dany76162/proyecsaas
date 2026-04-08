@@ -35,8 +35,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
 
   const handleCopy = () => {
     if (!inviteUrl) return;
-    const fullUrl = `${window.location.origin}${inviteUrl}`;
-    navigator.clipboard.writeText(fullUrl);
+    navigator.clipboard.writeText(inviteUrl);
     alert("Invite link copied to clipboard!");
   };
 
@@ -78,7 +77,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
                     Enlace de invitación
                   </p>
                   <p className="mt-2 break-all text-sm font-medium text-slate-950">
-                    {window.location.origin}{inviteUrl}
+                    {inviteUrl}
                   </p>
                 </div>
                 <button

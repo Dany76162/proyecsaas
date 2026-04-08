@@ -14,18 +14,16 @@ export default async function PlatformOnboardingPage() {
     orderBy: { createdAt: "desc" },
     take: 100,
     include: {
+      organization: {
+        select: {
+          name: true,
+          slug: true,
+        },
+      },
       user: {
         select: {
           email: true,
           fullName: true,
-          memberships: {
-            take: 1,
-            orderBy: { createdAt: "asc" },
-            select: {
-              role: true,
-              organization: { select: { name: true, slug: true } },
-            },
-          },
         },
       },
     },
@@ -89,7 +87,6 @@ export default async function PlatformOnboardingPage() {
             <tbody className="divide-y divide-slate-100">
               {invites.map((invite) => {
                 const chip = statusChip(invite.usedAt, invite.expiresAt);
-                const membership = invite.user.memberships[0];
                 return (
                   <tr key={invite.id} className="hover:bg-slate-50/70 transition">
                     <td className="px-5 py-4">
@@ -97,10 +94,10 @@ export default async function PlatformOnboardingPage() {
                       <p className="text-xs text-slate-500">{invite.user.email}</p>
                     </td>
                     <td className="px-5 py-4">
-                      {membership ? (
+                      {invite.organization ? (
                         <div>
-                          <p className="font-medium text-slate-800">{membership.organization.name}</p>
-                          <p className="text-xs text-slate-400">{membership.role}</p>
+                          <p className="font-medium text-slate-800">{invite.organization.name}</p>
+                          <p className="text-xs text-slate-400">/{invite.organization.slug}</p>
                         </div>
                       ) : (
                         <span className="text-xs text-slate-400">—</span>
