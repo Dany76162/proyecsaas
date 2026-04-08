@@ -99,7 +99,7 @@ export default async function PropertiesPage({
                 </div>
               )}
               <div className="p-5">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-lg font-semibold leading-snug text-slate-950">
                     {property.title}
@@ -108,7 +108,7 @@ export default async function PropertiesPage({
                     {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Ubicación pendiente"}
                   </p>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
+                <div className="flex shrink-0 flex-row gap-2 sm:flex-col sm:items-end">
                   <StatusBadge
                     label={PROPERTY_STATUS_LABELS[property.status] ?? property.status}
                     tone={getPropertyStatusTone(property.status)}

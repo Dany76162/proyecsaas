@@ -61,7 +61,7 @@ export function WorkspaceSidebar({
   return (
     <aside
       className={cn(
-        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950",
+        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950 h-screen h-[100dvh]",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
