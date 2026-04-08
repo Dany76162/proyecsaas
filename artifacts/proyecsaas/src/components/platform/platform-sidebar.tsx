@@ -12,7 +12,7 @@ import {
   Settings,
   LogOut,
   X,
-  BotPulse,
+  Bot,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ import { logoutAction } from "@/server/auth/actions";
 
 const PLATFORM_NAV = [
   { name: "Resumen", href: "/platform", icon: LayoutDashboard, exact: true },
-  { name: "Operaciones IA", href: "/platform/ai-operations", icon: BotPulse },
+  { name: "Operaciones IA", href: "/platform/ai-operations", icon: Bot },
   { name: "Clientes", href: "/platform/organizations", icon: Building2 },
   { name: "Atención a Clientes", href: "/platform/support", icon: MessageSquare },
   { name: "Onboarding", href: "/platform/onboarding", icon: UserPlus },

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { getTenantsAiHealth } from "./actions";
 import { AiOperationsTable } from "./AiOperationsTable";
-import { BotPulse } from "lucide-react";
+import { Bot } from "lucide-react";
 import { requirePlatformAdmin } from "@/server/auth/access";
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export default async function AiOperationsPage() {
         <div>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/20 text-violet-400">
-              <BotPulse className="h-5 w-5" />
+              <Bot className="h-5 w-5" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white">
               Radar de Operaciones IA

@@ -6,7 +6,7 @@ import {
   Building2, 
   ArrowLeft,
   MessageSquare,
-  BotPulse,
+  Bot,
   Home,
   AlertCircle,
   CheckCircle2,
@@ -25,8 +25,13 @@ export const metadata: Metadata = {
   title: "Auditoría de Inquilino | Superadmin",
 };
 
-export default async function OrgAuditPage({ params }: { params: { orgId: string } }) {
-  const audit = await getOrgAiAudit(params.orgId).catch(() => null);
+export default async function OrgAuditPage({
+  params,
+}: {
+  params: Promise<{ orgId: string }>;
+}) {
+  const { orgId } = await params;
+  const audit = await getOrgAiAudit(orgId).catch(() => null);
 
   if (!audit) {
     notFound();
@@ -136,7 +141,7 @@ export default async function OrgAuditPage({ params }: { params: { orgId: string
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                <BotPulse className="w-4 h-4 text-violet-400" />
+                <Bot className="w-4 h-4 text-violet-400" />
                 Agente IA
               </h3>
               {isAiActive ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <XCircle className="w-5 h-5 text-amber-400" />}
@@ -153,7 +158,7 @@ export default async function OrgAuditPage({ params }: { params: { orgId: string
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/5 py-2 px-3 text-xs font-medium text-white transition hover:bg-white/10 w-full"
             target="_blank"
           >
-            <BotPulse className="w-3.5 h-3.5" />
+            <Bot className="w-3.5 h-3.5" />
             Gestionar Agente
           </Link>
         </div>
