@@ -6,9 +6,18 @@ import { StatusBadge } from "@/components/workspace/status-badge";
 type WorkspaceHeaderProps = {
   organization: OrganizationWorkspace;
   children?: React.ReactNode;
+  onboardingIncomplete?: boolean;
+  onboardingProgressLabel?: string;
+  onboardingNextHref?: string | null;
 };
 
-export function WorkspaceHeader({ organization, children }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({
+  organization,
+  children,
+  onboardingIncomplete = false,
+  onboardingProgressLabel,
+  onboardingNextHref,
+}: WorkspaceHeaderProps) {
   return (
     <section className="rounded-2xl border bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -17,6 +26,9 @@ export function WorkspaceHeader({ organization, children }: WorkspaceHeaderProps
             <StatusBadge label={organization.planLabel} tone="info" />
             {organization.city && (
               <StatusBadge label={organization.city} />
+            )}
+            {onboardingIncomplete && onboardingProgressLabel && (
+              <StatusBadge label={onboardingProgressLabel} tone="warning" />
             )}
           </div>
           <div className="mt-3">
@@ -34,18 +46,29 @@ export function WorkspaceHeader({ organization, children }: WorkspaceHeaderProps
 
         <div className="flex shrink-0 flex-wrap gap-3 items-center">
           {children}
-          <Link
-            href={`/${organization.slug}/leads`}
-            className="rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-          >
-            Ver pipeline
-          </Link>
-          <Link
-            href={`/${organization.slug}/properties`}
-            className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            Ver propiedades
-          </Link>
+          {onboardingIncomplete ? (
+            <Link
+              href={onboardingNextHref ?? `/${organization.slug}/settings/organization`}
+              className="rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+            >
+              Continuar configuracion
+            </Link>
+          ) : (
+            <>
+              <Link
+                href={`/${organization.slug}/leads`}
+                className="rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+              >
+                Ver pipeline
+              </Link>
+              <Link
+                href={`/${organization.slug}/properties`}
+                className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Ver propiedades
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </section>

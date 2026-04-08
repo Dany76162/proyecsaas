@@ -28,6 +28,11 @@ export type WorkspaceNotification = {
 
 export type SetupChecklistStatus = {
   profileComplete: boolean;
+  propertiesLoaded: boolean;
+  agentConfigured: boolean;
   whatsappConnected: boolean;
-  teamInvited: boolean;
+  readyToOperate: boolean;
+  completedCount: number;
+  totalCount: number;
+  isComplete: boolean;
 };

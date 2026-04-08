@@ -149,7 +149,16 @@ export async function getSetupChecklistStatus(
     select: {
       name: true,
       city: true,
-      _count: { select: { memberships: true } },
+      _count: { select: { properties: true } },
+      aiAgents: {
+        where: {
+          status: {
+            in: ["ACTIVE", "PAUSED", "DRAFT"],
+          },
+        },
+        select: { id: true },
+        take: 1,
+      },
       whatsappChannels: {
         where: { status: "ACTIVE" },
         select: { id: true },
@@ -159,13 +168,41 @@ export async function getSetupChecklistStatus(
   });
 
   if (!org) {
-    return { profileComplete: false, whatsappConnected: false, teamInvited: false };
+    return {
+      profileComplete: false,
+      propertiesLoaded: false,
+      agentConfigured: false,
+      whatsappConnected: false,
+      readyToOperate: false,
+      completedCount: 0,
+      totalCount: 5,
+      isComplete: false,
+    };
   }
 
+  const profileComplete = Boolean(org.name?.trim() && org.city?.trim());
+  const propertiesLoaded = org._count.properties > 0;
+  const agentConfigured = org.aiAgents.length > 0;
+  const whatsappConnected = org.whatsappChannels.length > 0;
+  const readyToOperate =
+    profileComplete && propertiesLoaded && agentConfigured && whatsappConnected;
+  const completedCount = [
+    profileComplete,
+    propertiesLoaded,
+    agentConfigured,
+    whatsappConnected,
+    readyToOperate,
+  ].filter(Boolean).length;
+
   return {
-    profileComplete: Boolean(org.name?.trim() && org.city?.trim()),
-    whatsappConnected: org.whatsappChannels.length > 0,
-    teamInvited: org._count.memberships > 1,
+    profileComplete,
+    propertiesLoaded,
+    agentConfigured,
+    whatsappConnected,
+    readyToOperate,
+    completedCount,
+    totalCount: 5,
+    isComplete: completedCount === 5,
   };
 }
 
