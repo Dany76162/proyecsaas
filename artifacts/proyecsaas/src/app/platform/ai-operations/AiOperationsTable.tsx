@@ -2,43 +2,75 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { 
-  Building2, 
-  MessageSquare, 
-  Bot, 
+import {
+  Building2,
+  MessageSquare,
+  Bot,
   AlertCircle,
   ArrowRight,
   TrendingUp,
   XCircle,
   CheckCircle2,
-  Clock
+  Clock,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { type TenantAiHealth } from "./actions";
 import { cn } from "@/lib/utils";
+
+type TenantAiHealthStatus = TenantAiHealth["healthStatus"];
+
+type StatCardProps = {
+  icon: LucideIcon;
+  label: string;
+  value: number;
+  trend?: "positive" | "negative" | "neutral";
+};
+
+type BadgeProps = {
+  children: React.ReactNode;
+  className?: string;
+};
 
 export function AiOperationsTable({ data }: { data: TenantAiHealth[] }) {
   const stats = useMemo(() => {
     return {
       total: data.length,
-      upsell: data.filter(d => d.healthStatus === "READY_UPSELL").length,
-      atascados: data.filter(d => d.healthStatus === "ATASCADO").length,
-      incomplete: data.filter(d => d.healthStatus === "ONBOARDING_INCOMPLETE").length,
+      upsell: data.filter((d) => d.healthStatus === "READY_UPSELL").length,
+      atascados: data.filter((d) => d.healthStatus === "ATASCADO").length,
+      incomplete: data.filter(
+        (d) => d.healthStatus === "ONBOARDING_INCOMPLETE",
+      ).length,
     };
   }, [data]);
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <StatCard icon={Building2} label="Total Tenants" value={stats.total} />
-        <StatCard icon={TrendingUp} label="Ready for Upsell" value={stats.upsell} trend="positive" />
-        <StatCard icon={AlertCircle} label="Handoffs Atascados" value={stats.atascados} trend="negative" />
-        <StatCard icon={Clock} label="Setup Incompleto" value={stats.incomplete} trend="neutral" />
+        <StatCard
+          icon={TrendingUp}
+          label="Ready for Upsell"
+          value={stats.upsell}
+          trend="positive"
+        />
+        <StatCard
+          icon={AlertCircle}
+          label="Handoffs Atascados"
+          value={stats.atascados}
+          trend="negative"
+        />
+        <StatCard
+          icon={Clock}
+          label="Setup Incompleto"
+          value={stats.incomplete}
+          trend="neutral"
+        />
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-slate-900/50 overflow-hidden backdrop-blur-xl">
+      <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/50 backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-300">
-            <thead className="border-b border-white/5 bg-white/5 uppercase tracking-wider text-xs font-semibold text-slate-400">
+            <thead className="border-b border-white/5 bg-white/5 text-xs font-semibold uppercase tracking-wider text-slate-400">
               <tr>
                 <th className="px-6 py-4">Inmobiliaria</th>
                 <th className="px-6 py-4 text-center">Salud IA</th>
@@ -51,47 +83,80 @@ export function AiOperationsTable({ data }: { data: TenantAiHealth[] }) {
             </thead>
             <tbody className="divide-y divide-white/5">
               {data.map((row) => (
-                <tr key={row.orgId} className="transition-colors hover:bg-white/5">
+                <tr
+                  key={row.orgId}
+                  className="transition-colors hover:bg-white/5"
+                >
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-medium text-white">{row.orgName}</span>
-                      <span className="text-xs text-slate-500 mt-0.5">{row.planLabel}</span>
+                      <span className="font-medium text-white">
+                        {row.orgName}
+                      </span>
+                      <span className="mt-0.5 text-xs text-slate-500">
+                        {row.planLabel}
+                      </span>
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4 text-center">
                     <HealthBadge status={row.healthStatus} />
                   </td>
 
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-3">
-                      <div className="flex flex-col items-center" title={`WhatsApp: ${row.whatsappStatus}`}>
-                        <MessageSquare className={cn("w-4 h-4", row.whatsappStatus === "ACTIVE" ? "text-emerald-400" : "text-slate-600")} />
+                      <div
+                        className="flex flex-col items-center"
+                        title={`WhatsApp: ${row.whatsappStatus}`}
+                      >
+                        <MessageSquare
+                          className={cn(
+                            "h-4 w-4",
+                            row.whatsappStatus === "ACTIVE"
+                              ? "text-emerald-400"
+                              : "text-slate-600",
+                          )}
+                        />
                       </div>
-                      <div className="flex flex-col items-center" title={`IA Agent: ${row.aiStatus}`}>
-                        <Bot className={cn("w-4 h-4", row.aiStatus === "ACTIVE" ? "text-violet-400" : "text-slate-600")} />
+                      <div
+                        className="flex flex-col items-center"
+                        title={`IA Agent: ${row.aiStatus}`}
+                      >
+                        <Bot
+                          className={cn(
+                            "h-4 w-4",
+                            row.aiStatus === "ACTIVE"
+                              ? "text-violet-400"
+                              : "text-slate-600",
+                          )}
+                        />
                       </div>
                     </div>
                   </td>
 
                   <td className="px-6 py-4 text-right tabular-nums">
                     <div className="flex flex-col items-end">
-                      <span className="text-white font-medium">{row.metrics.inbounds}</span>
+                      <span className="font-medium text-white">
+                        {row.metrics.inbounds}
+                      </span>
                       <span className="text-xs text-slate-500">recibidos</span>
                     </div>
                   </td>
 
                   <td className="px-6 py-4 text-right tabular-nums">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-400">
                       {row.metrics.leadsCaptados}
                     </div>
                   </td>
 
                   <td className="px-6 py-4 text-right tabular-nums">
-                    <div className={cn(
-                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium",
-                      row.metrics.conversacionesDerivadas > 0 ? "bg-amber-500/10 text-amber-400" : "bg-white/5 text-slate-400"
-                    )}>
+                    <div
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium",
+                        row.metrics.conversacionesDerivadas > 0
+                          ? "bg-amber-500/10 text-amber-400"
+                          : "bg-white/5 text-slate-400",
+                      )}
+                    >
                       {row.metrics.conversacionesDerivadas}
                     </div>
                   </td>
@@ -110,7 +175,10 @@ export function AiOperationsTable({ data }: { data: TenantAiHealth[] }) {
 
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-12 text-center text-slate-500"
+                  >
                     No hay organizaciones para analizar.
                   </td>
                 </tr>
@@ -123,22 +191,26 @@ export function AiOperationsTable({ data }: { data: TenantAiHealth[] }) {
   );
 }
 
-function StatCard({ icon: Icon, label, value, trend }: any) {
+function StatCard({ icon: Icon, label, value, trend }: StatCardProps) {
   return (
     <div className="rounded-xl border border-white/10 bg-slate-900/50 p-6 backdrop-blur-xl">
       <div className="flex items-center gap-4">
-        <div className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-lg",
-          trend === 'positive' && "bg-emerald-500/20 text-emerald-400",
-          trend === 'negative' && "bg-rose-500/20 text-rose-400",
-          trend === 'neutral' && "bg-amber-500/20 text-amber-400",
-          !trend && "bg-slate-800 text-slate-400"
-        )}>
+        <div
+          className={cn(
+            "flex h-12 w-12 items-center justify-center rounded-lg",
+            trend === "positive" && "bg-emerald-500/20 text-emerald-400",
+            trend === "negative" && "bg-rose-500/20 text-rose-400",
+            trend === "neutral" && "bg-amber-500/20 text-amber-400",
+            !trend && "bg-slate-800 text-slate-400",
+          )}
+        >
           <Icon className="h-6 w-6" />
         </div>
         <div>
           <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
+          <p className="text-2xl font-bold tracking-tight text-white">
+            {value}
+          </p>
         </div>
       </div>
     </div>
@@ -154,13 +226,15 @@ function HealthBadge({ status }: { status: TenantAiHealthStatus }) {
           Operando
         </Badge>
       );
+
     case "READY_UPSELL":
       return (
-        <Badge className="border-violet-500/20 bg-violet-500/10 text-violet-400 animate-pulse">
+        <Badge className="animate-pulse border-violet-500/20 bg-violet-500/10 text-violet-400">
           <TrendingUp className="mr-1.5 h-3 w-3" />
           Up-sell
         </Badge>
       );
+
     case "ATASCADO":
       return (
         <Badge className="border-rose-500/20 bg-rose-500/10 text-rose-400">
@@ -168,6 +242,7 @@ function HealthBadge({ status }: { status: TenantAiHealthStatus }) {
           Fricción
         </Badge>
       );
+
     case "ONBOARDING_INCOMPLETE":
       return (
         <Badge className="border-amber-500/20 bg-amber-500/10 text-amber-400">
@@ -175,6 +250,7 @@ function HealthBadge({ status }: { status: TenantAiHealthStatus }) {
           Setup inc.
         </Badge>
       );
+
     case "ZERO_TRAFFIC":
       return (
         <Badge className="border-slate-500/20 bg-slate-500/10 text-slate-400">
@@ -182,14 +258,20 @@ function HealthBadge({ status }: { status: TenantAiHealthStatus }) {
           Sin tráfico
         </Badge>
       );
+
     default:
       return null;
   }
 }
 
-function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
+function Badge({ children, className }: BadgeProps) {
   return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider", className)}>
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider",
+        className,
+      )}
+    >
       {children}
     </span>
   );
