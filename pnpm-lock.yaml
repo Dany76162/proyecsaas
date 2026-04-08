@@ -418,8 +418,8 @@ importers:
         specifier: 'catalog:'
         version: 2.1.1
       date-fns:
-        specifier: ^3.6.0
-        version: 3.6.0
+        specifier: ^4.1.0
+        version: 4.1.0
       framer-motion:
         specifier: 'catalog:'
         version: 12.35.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)

@@ -19,6 +19,7 @@
     "@uploadthing/react": "^7.3.3",
     "bullmq": "^5.46.1",
     "clsx": "catalog:",
+    "date-fns": "^4.1.0",
     "framer-motion": "catalog:",
     "ioredis": "^5.4.1",
     "lucide-react": "^1.7.0",
