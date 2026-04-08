@@ -11,7 +11,8 @@ export type AuditEvent =
   | "org.suspended"
   | "settings.updated"
   | "admin.access_granted"
-  | "admin.access_revoked";
+  | "admin.access_revoked"
+  | "subscription.updated_manual";
 
 export async function logAudit(params: {
   event: AuditEvent;
@@ -31,7 +32,9 @@ export async function logAudit(params: {
         entityType: params.entityType ?? null,
         entityId: params.entityId ?? null,
         entityName: params.entityName ?? null,
-        metadata: params.metadata ? JSON.parse(JSON.stringify(params.metadata)) : undefined,
+        metadata: params.metadata
+          ? JSON.parse(JSON.stringify(params.metadata))
+          : undefined,
       },
     });
   } catch {
