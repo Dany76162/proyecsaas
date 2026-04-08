@@ -173,10 +173,20 @@ export async function loginAction(formData: FormData) {
   if (user) {
     if (user.passwordHash) {
       isValidPassword = await verifyPassword(parsed.data.password, user.passwordHash);
-    } else if (user.inviteTokens[0]?.token) {
-      redirect(`/invite/${user.inviteTokens[0].token}`);
     } else {
-      redirect(buildLoginRedirect("activation-required", parsed.data.next || undefined));
+      // Fallback estricto SOLO para Superadmins (legacy) que ingresan sin passwordHash
+      if (user.isPlatformAdmin) {
+        isValidPassword = timingSafePasswordEqual(parsed.data.password, getSharedPassword());
+      }
+      
+      // Si falla el password compartido (o es un usuario regular sin hash), es pendiente de invitación
+      if (!isValidPassword) {
+        if (user.inviteTokens[0]?.token) {
+          redirect(`/invite/${user.inviteTokens[0].token}`);
+        } else {
+          redirect(buildLoginRedirect("activation-required", parsed.data.next || undefined));
+        }
+      }
     }
   } else {
     // If user not found, we still want to spend some time on validation

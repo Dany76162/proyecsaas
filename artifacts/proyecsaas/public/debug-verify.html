@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Verification - Layout Fixes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mock some Lucide-like icons */
+        .icon { border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .dvh-fix { height: 100dvh; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans">
+
+    <!-- 1. SIDEBAR VERIFICATION -->
+    <aside id="sidebar-mobile" class="fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950 dvh-fix transition-transform duration-300 translate-x-0 lg:translate-x-0 border-r border-white/10">
+        <!-- Close button (x) -->
+        <button class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-white/10 transition lg:hidden">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
+        <!-- Brand card -->
+        <div class="m-4 shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">RaicesPilot</p>
+            <h2 class="mt-2 text-lg font-bold tracking-tight text-white">Debug Workspace</h2>
+        </div>
+
+        <!-- Nav - scrollable middle section -->
+        <div class="flex-1 overflow-y-auto px-4 space-y-1 pb-2">
+            <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operación</p>
+            <div class="rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10">Leads</div>
+            <div class="rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 font-bold bg-white text-slate-950">Propiedades</div>
+            <div class="h-[1200px] w-full mt-4 flex items-center justify-center text-slate-700 text-xs border border-white/5 bg-white/5 rounded-xl border-dashed opacity-50">
+                (Simulación de contenido largo para probar visibilidad del footer en 100dvh)
+            </div>
+        </div>
+
+        <!-- Footer - FIXED AT BOTTOM (THE FIX) -->
+        <div class="shrink-0 border-t border-white/10 p-4 space-y-2">
+            <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">D</div>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-xs font-bold text-white leading-tight">Daniel Cata</p>
+                    <p class="text-[10px] text-slate-400">Titular</p>
+                </div>
+            </div>
+            <div class="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 border border-red-500/20 bg-red-500/5 text-red-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                Cerrar sesión
+            </div>
+        </div>
+    </aside>
+
+    <!-- 2. PROPERTY CARD VERIFICATION -->
+    <main class="lg:ml-72 p-8">
+        <div class="max-w-[360px] mx-auto space-y-8 bg-white p-4 border-2 border-dashed border-red-300 rounded-2xl">
+            <p class="text-[10px] font-bold text-red-400 uppercase tracking-widest text-center">Mobile Viewport Boundary (360px)</p>
+            
+            <!-- PROPERTY CARD COMPONENT (THE FIX) -->
+            <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white transition shadow-sm">
+                <!-- Thumbnail -->
+                <div class="flex h-32 w-full items-center justify-center bg-sky-50 text-sky-200">
+                    <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                </div>
+                
+                <div class="p-5">
+                    <!-- Title & Header (THE FIX: flex-col vs sm:flex-row) -->
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-lg font-semibold leading-snug text-slate-950">
+                                Casa Quinta Estilo Colonial con Parque de 2000m2 y Piscina
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">Av. Libertador 1234, Pilar, GBA</p>
+                        </div>
+                        
+                        <!-- Badges (The fix: apilación vertical en mobile) -->
+                        <div class="flex shrink-0 flex-row gap-2 sm:flex-col sm:items-end">
+                            <span class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-[10px] font-bold text-green-700 ring-1 ring-inset ring-green-600/20">Disponible</span>
+                            <span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700 ring-1 ring-inset ring-blue-600/20">Público</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+                        <span>Casa</span> • <span>4 dor</span> • <span>3 ba</span> • <span>450 m² tot.</span>
+                    </div>
+
+                    <p class="mt-4 text-xl font-bold text-slate-950">USD 480.000</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>
