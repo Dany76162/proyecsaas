@@ -1,225 +1,57 @@
-# ProyecSaaS
+# RaicesPilot SaaS
 
-Initial professional foundation for a multi-tenant real-estate SaaS focused on CRM, property management, public property visibility, visit scheduling, and commercial automations.
+Plataforma SaaS multi-tenant B2B diseñada para automatizar la captación y calificación de leads en inmobiliarias de Argentina mediante Inteligencia Artificial (WhatsApp API + GPT-4).
 
-## Recommended structure
+## Estructura del Proyecto
 
-The project is organized around three layers:
+El proyecto es un monorepo basado en `pnpm workspaces`:
 
-1. `src/app`
-   Next.js App Router entrypoints and route groups. It keeps page-level concerns separate from business domains.
-2. `src/modules`
-   Domain modules such as `leads`, `properties`, `visits`, and `automations`. This is where feature logic can grow without coupling everything to route files.
-3. `src/server`, `src/lib`, and `src/config`
-   Shared infrastructure, utilities, and application configuration. This avoids duplicating database, queue, tenant, and environment logic across modules.
+- **Raíz (`/`)**: Configuración global del workspace y dependencias compartidas.
+- **App Principal (`artifacts/proyecsaas/`)**: Núcleo de la aplicación Next.js, esquemas de Prisma y worker.
 
-This structure is recommended because it stays small for MVP work, but scales well when each module needs services, repositories, validators, jobs, and UI components later.
+## Rama de Trabajo
 
-## Why this architecture
+- **Rama Actual/Recomendada**: `proyecsaas2`
+- **Flujo de Promoción**: Los desarrollos se estabilizan en `proyecsaas2` antes de ser integrados a `main` para despliegues definitivos.
 
-### 1. Multi-tenant ready without overengineering
+## Guía de Desarrollo Local
 
-- Tenant-aware routes use `/:orgSlug/...` for internal workspaces.
-- Database models include `organizationId` on tenant-owned records.
-- `User` is global, while `Membership` links users to organizations and roles.
-- Public routes like `/map` stay outside the tenant workspace.
-
-This gives a clean base for organization scoping now, while leaving room for stricter authorization and tenant middleware later.
-
-### 2. Modular domain growth
-
-Each initial module has its own folder under `src/modules`:
-
-- `auth`
-- `organizations`
-- `users`
-- `leads`
-- `properties`
-- `conversations`
-- `visits`
-- `automations`
-
-For now, these are lightweight placeholders. As the product grows, each module can add:
-
-- `services`
-- `repositories`
-- `schemas`
-- `jobs`
-- `components`
-
-### 3. Infrastructure separated from features
-
-- Prisma client lives in `src/server/db`
-- Redis client lives in `src/server/cache`
-- BullMQ queues live in `src/server/queues`
-- Tenant helpers live in `src/lib`
-- Module metadata is sourced from `src/modules` and aggregated in `src/config/modules.ts`
-
-This keeps external services centralized and easier to replace, test, or extend.
-
-## Folder structure
-
-```text
-proyecsaas/
-|-- prisma/
-|   `-- schema.prisma
-|-- src/
-|   |-- app/
-|   |   |-- [orgSlug]/
-|   |   |   |-- automations/page.tsx
-|   |   |   |-- conversations/page.tsx
-|   |   |   |-- leads/page.tsx
-|   |   |   |-- properties/page.tsx
-|   |   |   |-- visits/page.tsx
-|   |   |   |-- settings/
-|   |   |   |   |-- organization/page.tsx
-|   |   |   |   `-- users/page.tsx
-|   |   |   |-- layout.tsx
-|   |   |   `-- page.tsx
-|   |   |-- login/page.tsx
-|   |   |-- map/page.tsx
-|   |   |-- globals.css
-|   |   |-- layout.tsx
-|   |   `-- page.tsx
-|   |-- components/
-|   |   |-- ui/
-|   |   `-- workspace/
-|   |-- config/
-|   |   `-- modules.ts
-|   |-- lib/
-|   |   |-- tenant.ts
-|   |   `-- utils.ts
-|   |-- modules/
-|   |   |-- auth/
-|   |   |-- organizations/
-|   |   |-- users/
-|   |   |-- leads/
-|   |   |-- properties/
-|   |   |-- conversations/
-|   |   |-- visits/
-|   |   |-- automations/
-|   |   `-- types.ts
-|   `-- server/
-|       |-- auth/
-|       |-- cache/
-|       |-- db/
-|       `-- queues/
-|-- .env.example
-|-- next.config.ts
-|-- package.json
-|-- postcss.config.js
-|-- tailwind.config.ts
-`-- tsconfig.json
-```
-
-## Stack
-
-- Next.js with App Router
-- TypeScript
-- Tailwind CSS
-- PostgreSQL
-- Prisma
-- Redis
-- BullMQ
-
-## Database foundation
-
-The initial Prisma schema includes:
-
-- `User`
-- `Organization`
-- `Membership`
-- `Lead`
-- `Property`
-- `Conversation`
-- `Visit`
-- `AutomationRule`
-
-Key MVP choices:
-
-- Use one database with shared tables and tenant scoping by `organizationId`
-- Keep membership roles simple: `OWNER`, `ADMIN`, `AGENT`, `ASSISTANT`
-- Store automation configuration as JSON for flexibility in early iterations
-- Keep conversation modeling minimal until channel integrations exist
-- Use composite tenant-aware relations where a child record references another tenant-owned record
-
-## Getting started
-
-1. Install dependencies
+### Comandos Mínimos (desde la raíz)
 
 ```bash
-npm install
+# Instalar dependencias
+pnpm install
+
+# Generar cliente Prisma
+pnpm --filter @workspace/proyecsaas run prisma:generate
+
+# Iniciar Next.js en desarrollo
+pnpm --filter @workspace/proyecsaas run dev
+
+# Iniciar el Worker de IA/WhatsApp en desarrollo
+pnpm --filter @workspace/proyecsaas run worker:dev
 ```
 
-2. Create local environment variables
+## Guía de Deployment
 
-```powershell
-Copy-Item .env.example .env
-```
+### Pipeline de Producción (Railway + Nixpacks)
 
-3. Ensure `.env` contains valid local PostgreSQL credentials
+El sistema opera bajo una política de **estabilidad absoluta**:
 
-```env
-DATABASE_URL="postgresql://<user>:<password>@localhost:5432/proyecsaas"
-DIRECT_URL="postgresql://<user>:<password>@localhost:5432/proyecsaas"
-```
+- **Cero Mutaciones Automáticas**: El pipeline de build y el arranque (`start`) NO ejecutan comandos que alteren la base de datos (`db push`, `migrate`).
+- **Intervenciones**: Cualquier cambio en el esquema debe ser regularizado mediante intervenciones manuales controladas fuera del flujo de despliegue automático.
 
-4. Generate Prisma client
+## Notas de Seguridad
 
-```bash
-npm run prisma:generate
-```
+- **Auth Standard**: Flujo basado en invitaciones (`InviteToken`) que fuerzan la creación de contraseñas seguras.
+- **Fallback Legacy**: El sistema permite el acceso mediante `AUTH_SHARED_PASSWORD` **exclusivamente** para usuarios marcados como `isPlatformAdmin: true` que no poseen un hash de contraseña previo. No debe usarse para usuarios regulares.
 
-5. Push the schema once PostgreSQL is ready
+---
+Para más detalles técnicos, consultar: [AUDITORIA_TECNICA.md](./AUDITORIA_TECNICA.md)
 
-```bash
-npm run db:push
-```
+## Filosofía de Operación
 
-6. Seed the local database with the starter workspace
-
-```bash
-npm run db:seed
-```
-
-7. Start the app
-
-```bash
-npm run dev
-```
-
-8. Start the background worker in a separate terminal when you want to process automation jobs locally
-
-```bash
-npm run worker:dev
-```
-
-## Runtime entrypoints
-
-- Web app (local): `npm run dev`
-- Web app (production): `npm run start:web`
-- Worker (local): `npm run worker:dev`
-- Worker (production): `npm run worker:start`
-- Production migrations: `npm run prisma:migrate:deploy`
-
-Production rollout guidance for web + worker lives in [docs/production-deploy.md](docs/production-deploy.md).
-
-## What is intentionally not implemented yet
-
-- Full authentication flow
-- Full CRUD for modules
-- External integrations
-- Automation builder UI
-- Advanced permissions
-- Public search and map filters
-
-That keeps the foundation focused on a clean MVP starting point.
-
-## Suggested next steps
-
-1. Add authentication and session management.
-2. Implement tenant resolution and authorization guards.
-3. Build CRUD flows for organizations, users, leads, and properties.
-4. Add visit scheduling forms and calendar availability rules.
-5. Add job processors for simple automations like reminders or lead follow-up tasks.
-6. Add audit logging and activity timelines per tenant.
+- El sistema prioriza estabilidad sobre automatización agresiva.
+- No se ejecutan mutaciones de base de datos automáticamente.
+- Cada cambio estructural es explícito, revisado y controlado.
+- La rama `proyecsaas2` actúa como entorno de estabilización previo a producción.

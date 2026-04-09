@@ -18,6 +18,8 @@ const loginSchema = z.object({
 
 const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const DUMMY_PASSWORD_HASH =
+  "c3RhdGljLWR1bW15LXNhbHQ=:SrMNT6ufGZ1E1DGAKiq/4QD9dSjbacGakPcM6rpuBtkVKIy0DuKAK1yak2KqGAqNOjXQt7ScuOdbByQM18dsBw==";
 
 const loginAttempts = new Map<string, { count: number; windowStart: number }>();
 
@@ -56,7 +58,15 @@ function timingSafePasswordEqual(provided: string, expected: string): boolean {
 }
 
 function getSharedPassword() {
-  return process.env.AUTH_SHARED_PASSWORD || "dev-access-password";
+  const password = process.env.AUTH_SHARED_PASSWORD?.trim();
+
+  if (password) {
+    return password;
+  }
+
+  throw new Error(
+    "[auth] Missing AUTH_SHARED_PASSWORD. Login cannot be validated without explicit shared password configuration.",
+  );
 }
 
 function sanitizeRedirectPath(nextPath: string | undefined, fallbackPath: string) {
@@ -123,6 +133,8 @@ export async function loginAction(formData: FormData) {
     } else if (user.isPlatformAdmin) {
       isValidPassword = timingSafePasswordEqual(parsed.data.password, getSharedPassword());
     }
+  } else {
+    await verifyPassword(parsed.data.password, DUMMY_PASSWORD_HASH);
   }
 
   if (!isValidPassword) {

@@ -863,13 +863,6 @@ Eventos registrados:
 │  src/server/auth/ ── Guards, sesiones HMAC-SHA256                   │
 │  src/modules/ ────── Lógica de negocio por dominio                  │
 └──────────────────────────┬─────────────────────────────────────────-┘
-                           │
-              ┌────────────┴────────────┐
-              │                         │
-              ▼                         ▼
-┌─────────────────────┐   ┌──────────────────────────────────────-┐
-│  PostgreSQL          │   │  Redis (BullMQ)                        │
-│  (via Prisma)        │   │                                        │
 │                      │   │  Queue: "automation-jobs"              │
 │  Aislamiento por     │   │  Worker: conversation-worker.ts        │
 │  organizationId en   │   │  Heartbeat: cada 30s                   │
@@ -952,29 +945,27 @@ Jerarquía numérica:
 Si actual < minimum → notFound()
 ```
 
-### Flujo completo de login
-```
-loginAction(formData):
-  1. Rate limit: 10 intentos / 15 min por IP (Map en memoria)
-  2. Validar con Zod: email (string().email()), password (string().min(1))
-  3. Buscar User en DB: { email, isActive: true }
-  4. Verificar password:
-     a) Si user.passwordHash existe:
-        → bcrypt.compare(inputPassword, user.passwordHash)
-     b) Si user.passwordHash es null:
-        → timingSafeEqual(HMAC(inputPassword), HMAC(AUTH_SHARED_PASSWORD))
-     c) Si user no encontrado:
-        → Ejecutar dummy bcrypt.compare() (previene timing attack)
-  5. Si password inválida → error "credenciales inválidas"
-  6. Verificar memberships activas:
-     → Si isPlatformAdmin → redirect /platform
-     → Si sin memberships → error "no-memberships"
-  7. createSession(userId) → generar token + escribir cookie
-  8. Redirect:
-     → Si ?next= param (sanitizado) → redirect allí
-     → Si tiene memberships → redirect /{primerOrgSlug}
-     → Si solo admin → redirect /platform
-```
+### Flujo de Autenticación Moderno (Estabilizado)
+
+**1. Onboarding Estándar (Recomendado)**:
+- El Superadmin genera una invitación desde el panel.
+- El usuario recibe un `InviteToken` único.
+- Al aceptar, se fuerza la creación de un `passwordHash` (bcrypt).
+- ✅ **Resuelto**: Se corrigió el error donde usuarios invitados sin hash quedaban bloqueados.
+
+**2. Fallback Legacy (Excepción Operativa)**:
+- Exclusivo para usuarios con `isPlatformAdmin: true` y `passwordHash: null`.
+- Permite el acceso usando la contraseña maestra `AUTH_SHARED_PASSWORD`.
+- Diseñado para evitar el lockout de cuentas de administración históricas.
+
+**3. Flujo de Transición**:
+- ✅ **Resuelto**: Se eliminó el bypass de splash screens por redirecciones directas.
+- Tras el login exitoso, el usuario pasa por `/login/transition` para una experiencia inmersiva de carga (splash + audio) antes de entrar al workspace.
+
+### Verificación de Seguridad
+- Rate limit: 10 intentos / 15 min por IP (en memoria).
+- Timing-safe comparisons en todos los procesos de validación de hashes y firmas.
+- Cookies `httpOnly`, `secure` y `sameSite: lax`.
 
 ### Flujo de logout
 ```
@@ -1679,18 +1670,30 @@ const plain = decryptToken(encrypted);           // Al usar
 
 ## 14. Puntos Críticos y Riesgos
 
-| # | Componente | Riesgo | Severidad | Solución recomendada |
+El sistema se encuentra en un **estado apto para producción con riesgos residuales acotados**.
+
+### Riesgos Operativos (Activos)
+| # | Componente | Riesgo | Severidad | Mitigación |
 |---|---|---|---|---|
-| 1 | `AUTH_SESSION_SECRET` | Si rota, todas las sesiones activas se invalidan simultáneamente | Alta | Coordinar rotation con deploy, notificar usuarios de re-login |
-| 2 | `WHATSAPP_TOKEN_ENCRYPTION_KEY` | Si se pierde, los access tokens cifrados en DB son irrecuperables | Alta | Backup seguro de la key, nunca cambiarla sin migrar los tokens |
-| 3 | Webhook secrets no seteados | Si `WHATSAPP_APP_SECRET` o `MERCADO_PAGO_WEBHOOK_SECRET` están vacíos, el sistema loguea warning pero **procesa igual** | Alta | CRÍTICO: siempre configurar en producción |
-| 4 | Rate limiting en memoria | Si el proceso Node.js reinicia (Railway restart), los contadores se resetean → ventana de brute force | Media | Implementar rate limiting respaldado en Redis |
-| 5 | BullMQ jobs sin DLQ | Después de 3 intentos fallidos, el job queda en `failed` set sin retry automático ni alerta | Media | Monitorear BullMQ UI o implementar alertas en el evento `failed` |
-| 6 | Worker proceso único | Un solo proceso BullMQ procesa todos los mensajes de todos los tenants en serie. Con muchos tenants concurrentes puede generar latencia | Media | Escalar workers horizontalmente o por tenant |
-| 7 | Property limit hardcoded | `listOrganizationProperties()` tiene `take: 400`. Orgs con más propiedades no las verán todas | Media | Implementar paginación o cursor-based pagination |
-| 8 | AI Prompt injection | Un lead podría enviar instrucciones al sistema prompt del agente | Media | Agregar guardrails explícitos en el system prompt |
-| 9 | `external_reference` MP duplicado | Si se crea dos veces el billing record para la misma org/plan, el segundo pago se ignorará | Baja | Verificar unicidad antes de crear la preference |
-| 10 | Subscription period boundary | Pago recibido exactamente en el límite del período puede generar período incorrecto | Baja | Test unitario del `computeNewPeriod()` con casos borde |
+| 1 | OpenAI GPT-4 | Costos operativos escalables según volumen de mensajes | Media | Monitoreo de cuotas y uso de modelos mini. |
+| 2 | BullMQ / Redis | Latencia en el worker si hay picos de tráfico en múltiples tenants | Media | Escalamiento horizontal de workers. |
+| 3 | Webhook Secrets | Fallo de validación si no se configuran secrets en Railway | Alta | Hard-check en `runtime.config`. |
+| 4 | Rate Limiting | Reseteo de contadores en reinicios de proceso (memoria) | Baja | Migrar contadores a Redis. |
+
+### Problemas Resueltos (Estabilizados)
+- ✅ **Build Pipeline**: Eliminada la inestabilidad de `db push` y `migrate resolve` en runtime.
+- ✅ **Auth Lockout**: Solucionado el acceso para usuarios legacy y flujo de invitaciones.
+- ✅ **UI Transition**: Restaurado el flujo de splash screens post-login.
+- ✅ **Aislamiento Multi-tenant**: Validado el filtrado por `organizationId` en todas las capas.
+
+---
+
+## 15. Operaciones IA y Radar de Salud
+
+Se implementó un módulo avanzado de monitoreo en `/platform/ai-operations`:
+- **Radar de Tenants**: Visualización en tiempo real de la actividad de IA por inmobiliaria.
+- **Detección de Handoffs**: Identificación automática de conversaciones donde el humano no respondió tras la derivación de la IA.
+- **Acciones Tácticas**: Botones de intervención directa para el Superadmin sin salir del panel.
 
 ---
 
@@ -1803,31 +1806,18 @@ Accesibles en: `/platform/health` → sección "Auditoría del Sistema" (último
 
 ## 17. Deployment e Infraestructura
 
-### Railway
+### Railway & Infraestructura
 
-**Archivos de configuración**:
-```toml
-# nixpacks.toml (build)
-[phases.build]
-cmds = [
-  "pnpm --filter @workspace/proyecsaas exec prisma generate",
-  "pnpm --filter @workspace/proyecsaas run build"
-]
+El sistema opera bajo una política de **cero mutaciones automáticas**. No se ejecutan comandos de Prisma (`db push` o `migrate`) durante el proceso de build ni en el arranque (start).
 
-[start]
-cmd = "pnpm --filter @workspace/proyecsaas exec prisma migrate resolve --rolled-back '0_init' || true && pnpm --filter @workspace/proyecsaas exec prisma db push --accept-data-loss && HOSTNAME=0.0.0.0 pnpm --filter @workspace/proyecsaas exec next start"
-```
+**Configuración Limpia**:
+- **Nixpacks**: Se encarga del build estándar (`pnpm build`).
+- **Railway**: Ejecuta exclusivamente `pnpm start` (Next.js production server).
+- **Intervención Manual**: Cualquier cambio de esquema o regularización de migraciones debe realizarse como una tarea administrativa controlada fuera del pipeline de despliegue automático.
 
-```json
-// railway.json
-{
-  "deploy": {
-    "startCommand": "...",
-    "restartPolicyType": "ON_FAILURE",
-    "healthcheckPath": "/api/health"
-  }
-}
-```
+**Health Checks**:
+- Configurado en `/api/health`.
+- Política de reinicio: `ON_FAILURE`.
 
 ### Scripts de desarrollo
 

@@ -71,7 +71,10 @@ export async function inviteUserAction(orgSlug: string, input: unknown): Promise
         },
       });
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+      if (!baseUrl) {
+        throw new Error("[inviteUserAction] NEXT_PUBLIC_APP_URL is not configured.");
+      }
       const inviteUrl = `${baseUrl}/invite/${token}`;
 
       return { inviteUrl };

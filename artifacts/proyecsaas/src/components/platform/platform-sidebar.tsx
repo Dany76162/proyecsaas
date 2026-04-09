@@ -6,13 +6,16 @@ import {
   LayoutDashboard,
   Building2,
   UserPlus,
+  TrendingUp,
   ActivitySquare,
+  BookOpen,
   CreditCard,
   MessageSquare,
   Settings,
   LogOut,
   X,
   Bot,
+  Megaphone,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -22,11 +25,14 @@ const PLATFORM_NAV = [
   { name: "Resumen", href: "/platform", icon: LayoutDashboard, exact: true },
   { name: "Operaciones IA", href: "/platform/ai-operations", icon: Bot },
   { name: "Clientes", href: "/platform/organizations", icon: Building2 },
-  { name: "Atención a Clientes", href: "/platform/support", icon: MessageSquare },
+  { name: "Atencion a Clientes", href: "/platform/support", icon: MessageSquare },
+  { name: "Captacion", href: "/platform/captacion", icon: Megaphone },
   { name: "Onboarding", href: "/platform/onboarding", icon: UserPlus },
+  { name: "Activacion", href: "/platform/activation", icon: TrendingUp },
   { name: "Salud del sistema", href: "/platform/health", icon: ActivitySquare },
+  { name: "Manual Operativo", href: "/platform/manual-operativo", icon: BookOpen },
   { name: "Comercial", href: "/platform/billing", icon: CreditCard },
-  { name: "Configuración", href: "/platform/settings", icon: Settings },
+  { name: "Configuracion", href: "/platform/settings", icon: Settings },
 ];
 
 type PlatformSidebarProps = {
@@ -40,22 +46,20 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950 overflow-y-auto",
+        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950 overflow-y-auto print:hidden",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
     >
-      {/* Close button — mobile only */}
       <button
         type="button"
         onClick={onClose}
         className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-white/10 transition lg:hidden"
-        aria-label="Cerrar menú"
+        aria-label="Cerrar menu"
       >
         <X className="h-4 w-4" />
       </button>
 
-      {/* Brand card — mismo patrón que el sidebar de inmobiliaria */}
       <Link
         href="/platform"
         onClick={onClose}
@@ -65,7 +69,9 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
             RaicesPilot
           </p>
-          <h2 className="mt-1 text-lg font-bold tracking-tight text-white leading-tight">Superadmin</h2>
+          <h2 className="mt-1 text-lg font-bold tracking-tight text-white leading-tight">
+            Superadmin
+          </h2>
           <div className="mt-2.5 inline-block rounded bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-300">
             Plataforma
           </div>
@@ -79,10 +85,9 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
         </div>
       </Link>
 
-      {/* Navigation */}
       <nav className="flex-1 px-4 pb-4">
         <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Administración
+          Administracion
         </p>
         <ul className="space-y-1">
           {PLATFORM_NAV.map((item) => {
@@ -120,7 +125,6 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
         </ul>
       </nav>
 
-      {/* Footer / Logout */}
       <div className="p-4 border-t border-white/10">
         <form action={logoutAction}>
           <button
@@ -128,7 +132,7 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
             className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
           >
             <LogOut className="h-4 w-4" />
-            Cerrar sesión
+            Cerrar sesion
           </button>
         </form>
       </div>

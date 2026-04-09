@@ -210,7 +210,7 @@ export default async function AutomationsPage({
               href={`/${orgSlug}/settings/integrations`}
               className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
             >
-              Configurar WhatsApp
+              Revisar captacion
             </Link>
           </div>
         </div>
@@ -325,14 +325,14 @@ export default async function AutomationsPage({
       {/* Canal WhatsApp */}
       <SectionCard
         eyebrow="Canal"
-        title="WhatsApp Business"
+        title="Canal de WhatsApp"
         description="Estado de los números conectados a la plataforma. Sin canal activo el agente no puede recibir ni enviar mensajes."
       >
         {whatsappChannels.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
             <p className="font-semibold text-slate-700">Sin canales configurados</p>
             <p className="mt-1 text-sm text-slate-400">
-              Configurá un número de WhatsApp Business desde Configuración → Integraciones.
+              Revisá el canal oficial y el enlace compartible desde Configuracion {"->"} Integraciones.
             </p>
             <Link
               href={`/${orgSlug}/settings/integrations`}
@@ -576,9 +576,9 @@ export default async function AutomationsPage({
               <li className="flex items-center gap-2">
                 <span className="text-amber-500">⚠</span>
                 <span>
-                  Conectar un número de WhatsApp Business en{" "}
+                  Revisar el canal de WhatsApp en{" "}
                   <Link href={`/${orgSlug}/settings/integrations`} className="font-semibold underline">
-                    Configuración → Integraciones
+                    Configuracion {"->"} Integraciones
                   </Link>
                 </span>
               </li>

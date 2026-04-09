@@ -183,6 +183,7 @@ model Organization {
   maxAiAgents            Int                @default(1)
   agentQuotaNote         String?
   isActive               Boolean            @default(true)
+  deletedAt              DateTime?
   memberships            Membership[]
   leads                  Lead[]
   properties             Property[]
@@ -197,6 +198,8 @@ model Organization {
   subscription           Subscription?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
+
+  @@index([deletedAt])
 }
 
 model Membership {

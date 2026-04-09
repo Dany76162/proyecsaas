@@ -15,13 +15,15 @@ export default async function PlatformPage() {
     getImpactMetrics("30d"),
   ]);
 
-  const criticalCount = orgs.filter((o) => o.health === "critical").length;
-  const warningCount = orgs.filter((o) => o.health === "warning").length;
-  const totalLeads7d = orgs.reduce((sum, o) => sum + o.recentLeadCount, 0);
-  const totalFailed7d = orgs.reduce((sum, o) => sum + o.recentFailedDeliveries, 0);
+  const activeOrgs = orgs.filter((org) => !org.isTrashed);
 
-  const riskAccounts = orgs.filter((o) => o.health !== "ok").slice(0, 5);
-  const onboardingAccounts = orgs
+  const criticalCount = activeOrgs.filter((o) => o.health === "critical").length;
+  const warningCount = activeOrgs.filter((o) => o.health === "warning").length;
+  const totalLeads7d = activeOrgs.reduce((sum, o) => sum + o.recentLeadCount, 0);
+  const totalFailed7d = activeOrgs.reduce((sum, o) => sum + o.recentFailedDeliveries, 0);
+
+  const riskAccounts = activeOrgs.filter((o) => o.health !== "ok").slice(0, 5);
+  const onboardingAccounts = activeOrgs
     .filter(
       (o) =>
         o.onboardingStatus === "Sin usuarios" || o.onboardingStatus === "Invitación pendiente",
@@ -79,7 +81,7 @@ export default async function PlatformPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold tracking-tight text-slate-900">
-              {orgs.length}
+              {activeOrgs.length}
             </span>
             <span className="text-sm text-slate-400">total</span>
           </div>

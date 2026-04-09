@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import { ACTIVATION_EVENTS, trackActivationEventOnce } from "@/server/activation/events";
 import { getOpenAIClient, AI_MODEL } from "./openai";
 import type { AiAgentTone } from "@prisma/client";
 
@@ -183,11 +184,19 @@ export async function runAgentPipeline(input: PipelineInput): Promise<PipelineRe
     take: 10,
   });
 
+  let createdFirstLead = false;
+
   let lead = await prisma.lead.findFirst({
     where: { organizationId, phone: contactPhone },
   });
 
   if (!lead) {
+    const leadCountBefore = await prisma.lead.count({
+      where: {
+        organizationId,
+      },
+    });
+
     lead = await prisma.lead.create({
       data: {
         organizationId,
@@ -195,6 +204,19 @@ export async function runAgentPipeline(input: PipelineInput): Promise<PipelineRe
         phone: contactPhone,
         source: "whatsapp",
         status: "NEW",
+      },
+    });
+
+    createdFirstLead = leadCountBefore === 0;
+  }
+
+  if (createdFirstLead) {
+    await trackActivationEventOnce(prisma, {
+      event: ACTIVATION_EVENTS.firstLeadCreated,
+      organizationId,
+      metadata: {
+        source: "legacy_pipeline",
+        leadId: lead.id,
       },
     });
   }

@@ -59,9 +59,9 @@ export function buildOnboardingSteps(
       done: status.whatsappConnected,
       href: `/${orgSlug}/settings/integrations`,
       title: "Conectá WhatsApp",
-      explanation: "Vinculá tu número de WhatsApp Business para operar desde la plataforma.",
-      benefit: "Es el canal clave para que el agente IA atienda consultas reales de clientes.",
-      result: "Tu WhatsApp queda conectado y preparado para empezar a operar.",
+      explanation: "Verificá que el canal de WhatsApp de la plataforma esté activo para tu inmobiliaria.",
+      benefit: "Es el punto de entrada principal para que el agente IA atienda consultas reales.",
+      result: "Tu inmobiliaria queda lista para recibir mensajes desde el enlace compartible.",
       cta: "Conectar WhatsApp",
     },
     {
