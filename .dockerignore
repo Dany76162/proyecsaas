@@ -1,0 +1,16 @@
+.git
+.next
+.next-dev
+.next-prod
+node_modules
+coverage
+dist
+.env
+.env.local
+*.log
+*.err.log
+*.out.log
+*.tsbuildinfo
+.codex-sim-output.json
+automation-sim-check.txt
+automation-trace2-check.txt

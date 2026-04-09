@@ -1,0 +1,7 @@
+CREATE TYPE "BillingMode" AS ENUM ('ONLINE', 'CASH', 'TRANSFER', 'COURTESY', 'MANUAL');
+
+ALTER TYPE "SubscriptionStatus" ADD VALUE IF NOT EXISTS 'SUSPENDED';
+
+ALTER TABLE "Subscription"
+ADD COLUMN "billingMode" "BillingMode" NOT NULL DEFAULT 'ONLINE',
+ADD COLUMN "internalBillingNotes" TEXT;

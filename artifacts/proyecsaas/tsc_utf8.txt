@@ -1,0 +1,165 @@
+﻿src/app/[orgSlug]/(workspace)/automations/page.tsx(148,48): error TS7006: Parameter 'ch' implicitly has an 'any' type.
+src/app/[orgSlug]/(workspace)/automations/page.tsx(346,36): error TS7006: Parameter 'channel' implicitly has an 'any' type.
+src/app/[orgSlug]/(workspace)/automations/page.tsx(458,37): error TS7006: Parameter 'conv' implicitly has an 'any' type.
+src/app/[orgSlug]/(workspace)/settings/availability/page.tsx(302,29): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/app/[orgSlug]/(workspace)/settings/availability/page.tsx(315,32): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/[orgSlug]/(workspace)/settings/integrations/whatsapp/actions.ts(5,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/app/[orgSlug]/(workspace)/settings/integrations/whatsapp/actions.ts(5,34): error TS2305: Module '"@prisma/client"' has no exported member 'WhatsAppChannelVerificationStatus'.
+src/app/[orgSlug]/(workspace)/settings/integrations/whatsapp/actions.ts(165,33): error TS2339: Property 'PrismaClientKnownRequestError' does not exist on type 'typeof Prisma'.
+src/app/[orgSlug]/(workspace)/settings/integrations/whatsapp/actions.ts(165,66): error TS18046: 'error' is of type 'unknown'.
+src/app/[orgSlug]/(workspace)/settings/layout.tsx(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/app/[orgSlug]/catalog/page.tsx(115,32): error TS7006: Parameter 'prop' implicitly has an 'any' type.
+src/app/map/page.tsx(22,30): error TS7006: Parameter 'property' implicitly has an 'any' type.
+src/app/platform/billing/page.tsx(20,14): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/app/platform/billing/page.tsx(21,14): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/app/platform/billing/page.tsx(21,19): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/app/platform/billing/page.tsx(24,14): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/app/platform/billing/page.tsx(25,14): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/app/platform/billing/page.tsx(25,19): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/app/platform/onboarding/page.tsx(34,35): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/platform/onboarding/page.tsx(35,37): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/platform/onboarding/page.tsx(36,35): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/platform/onboarding/page.tsx(90,29): error TS7006: Parameter 'invite' implicitly has an 'any' type.
+src/components/platform/billing-table.tsx(6,15): error TS2305: Module '"@prisma/client"' has no exported member 'OrgBillingRecord'.
+src/components/platform/billing-table.tsx(6,33): error TS2305: Module '"@prisma/client"' has no exported member 'Organization'.
+src/components/workspace/workspace-shell.tsx(5,15): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/components/workspace/workspace-sidebar.tsx(6,15): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/components/workspace/workspace-sidebar.tsx(64,23): error TS7053: Element implicitly has an 'any' type because expression of type 'MembershipRole' can't be used to index type '{ readonly OWNER: { readonly label: "Titular"; readonly copy: "Acceso total"; }; readonly ADMIN: { readonly label: "Administrador"; readonly copy: "Gesti├│n y operaci├│n"; }; readonly AGENT: { readonly label: "Agente de ventas"; readonly copy: "Operaci├│n comercial"; }; readonly ASSISTANT: { ...; }; }'.
+src/lib/ai/agent-pipeline.ts(3,15): error TS2305: Module '"@prisma/client"' has no exported member 'AiAgentTone'.
+src/lib/ai/agent-pipeline.ts(157,40): error TS7006: Parameter 'z' implicitly has an 'any' type.
+src/lib/ai/agent-pipeline.ts(247,22): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/modules/agents/service.ts(34,49): error TS7006: Parameter 'ch' implicitly has an 'any' type.
+src/modules/agents/types.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'AiAgent'.
+src/modules/agents/types.ts(1,24): error TS2305: Module '"@prisma/client"' has no exported member 'AiAgentStatus'.
+src/modules/agents/types.ts(1,39): error TS2305: Module '"@prisma/client"' has no exported member 'AiAgentTone'.
+src/modules/automations/types.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ConversationStatus'.
+src/modules/automations/types.ts(1,35): error TS2305: Module '"@prisma/client"' has no exported member 'LeadStatus'.
+src/modules/automations/types.ts(1,47): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDirection'.
+src/modules/availability/actions.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/availability/service.ts(30,21): error TS7006: Parameter 'slot' implicitly has an 'any' type.
+src/modules/conversations/actions.ts(5,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/conversations/actions.ts(70,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/conversations/follow-up.ts(1,10): error TS2305: Module '"@prisma/client"' has no exported member 'NotificationType'.
+src/modules/conversations/follow-up.ts(79,28): error TS2694: Namespace '"C:/Users/Usuario/node_modules/.prisma/client/default".Prisma' has no exported member 'InputJsonValue'.
+src/modules/conversations/service.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'LeadStatus'.
+src/modules/conversations/service.ts(55,36): error TS7006: Parameter 'conversation' implicitly has an 'any' type.
+src/modules/conversations/service.ts(61,8): error TS7006: Parameter 'message' implicitly has an 'any' type.
+src/modules/conversations/service.ts(139,21): error TS7006: Parameter 'slot' implicitly has an 'any' type.
+src/modules/conversations/service.ts(166,29): error TS7006: Parameter 'notification' implicitly has an 'any' type.
+src/modules/conversations/types.ts(2,3): error TS2305: Module '"@prisma/client"' has no exported member 'ConversationStatus'.
+src/modules/conversations/types.ts(3,3): error TS2305: Module '"@prisma/client"' has no exported member 'FollowUpCategory'.
+src/modules/conversations/types.ts(4,3): error TS2305: Module '"@prisma/client"' has no exported member 'LeadStatus'.
+src/modules/conversations/types.ts(5,3): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDeliveryStatus'.
+src/modules/conversations/types.ts(6,3): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDirection'.
+src/modules/conversations/types.ts(7,3): error TS2305: Module '"@prisma/client"' has no exported member 'NotificationType'.
+src/modules/leads/actions.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'LeadStatus'.
+src/modules/leads/actions.ts(8,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/leads/service.ts(46,21): error TS7006: Parameter 'lead' implicitly has an 'any' type.
+src/modules/leads/service.ts(184,35): error TS7006: Parameter 'visit' implicitly has an 'any' type.
+src/modules/leads/service.ts(198,63): error TS7006: Parameter 'conversation' implicitly has an 'any' type.
+src/modules/leads/types.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'FollowUpCategory'.
+src/modules/leads/types.ts(1,33): error TS2305: Module '"@prisma/client"' has no exported member 'VisitStatus'.
+src/modules/leads/types.ts(3,15): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDeliveryStatus'.
+src/modules/leads/types.ts(3,38): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDirection'.
+src/modules/leads/types.ts(3,56): error TS2305: Module '"@prisma/client"' has no exported member 'ConversationStatus'.
+src/modules/organizations/actions.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/organizations/service.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'PropertyStatus'.
+src/modules/organizations/service.ts(61,29): error TS7006: Parameter 'organization' implicitly has an 'any' type.
+src/modules/organizations/service.ts(95,29): error TS7031: Binding element 'organization' implicitly has an 'any' type.
+src/modules/organizations/service.ts(131,49): error TS7006: Parameter 'lead' implicitly has an 'any' type.
+src/modules/organizations/service.ts(132,58): error TS7006: Parameter 'property' implicitly has an 'any' type.
+src/modules/organizations/service.ts(135,8): error TS7006: Parameter 'property' implicitly has an 'any' type.
+src/modules/organizations/service.ts(187,29): error TS7006: Parameter 'notification' implicitly has an 'any' type.
+src/modules/platform/actions.ts(4,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/platform/actions.ts(57,33): error TS2339: Property 'PrismaClientKnownRequestError' does not exist on type 'typeof Prisma'.
+src/modules/platform/actions.ts(57,66): error TS18046: 'error' is of type 'unknown'.
+src/modules/platform/actions.ts(187,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/platform/billing-actions.ts(4,10): error TS2305: Module '"@prisma/client"' has no exported member 'BillingStatus'.
+src/modules/platform/billing-actions.ts(4,25): error TS2305: Module '"@prisma/client"' has no exported member 'InvoiceStatus'.
+src/modules/platform/billing-actions.ts(143,33): error TS2339: Property 'PrismaClientKnownRequestError' does not exist on type 'typeof Prisma'.
+src/modules/platform/billing-actions.ts(143,66): error TS18046: 'error' is of type 'unknown'.
+src/modules/platform/billing-actions.ts(171,33): error TS2339: Property 'PrismaClientKnownRequestError' does not exist on type 'typeof Prisma'.
+src/modules/platform/billing-actions.ts(171,66): error TS18046: 'error' is of type 'unknown'.
+src/modules/platform/service.ts(107,51): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/platform/service.ts(108,47): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/platform/service.ts(109,51): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/platform/service.ts(111,20): error TS7006: Parameter 'org' implicitly has an 'any' type.
+src/modules/platform/service.ts(128,7): error TS2322: Type '{}' is not assignable to type 'number'.
+src/modules/platform/service.ts(129,7): error TS2322: Type '{}' is not assignable to type 'number'.
+src/modules/platform/service.ts(130,7): error TS2322: Type '{}' is not assignable to type 'number'.
+src/modules/platform/service.ts(153,9): error TS2322: Type '{}' is not assignable to type 'number'.
+src/modules/properties/actions.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/properties/actions.ts(111,39): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/modules/properties/matching.ts(1,32): error TS2305: Module '"@prisma/client"' has no exported member 'PropertyStatus'.
+src/modules/properties/matching.ts(345,11): error TS7006: Parameter 'property' implicitly has an 'any' type.
+src/modules/properties/matching.ts(434,12): error TS7006: Parameter 'left' implicitly has an 'any' type.
+src/modules/properties/matching.ts(434,18): error TS7006: Parameter 'right' implicitly has an 'any' type.
+src/modules/properties/matching.ts(439,14): error TS7006: Parameter 'candidate' implicitly has an 'any' type.
+src/modules/properties/matching.ts(441,11): error TS7006: Parameter 'candidate' implicitly has an 'any' type.
+src/modules/properties/schemas.ts(1,10): error TS2305: Module '"@prisma/client"' has no exported member 'PropertyStatus'.
+src/modules/properties/service.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'PropertyStatus'.
+src/modules/properties/service.ts(26,26): error TS7006: Parameter 'property' implicitly has an 'any' type.
+src/modules/properties/service.ts(107,57): error TS7006: Parameter 'lead' implicitly has an 'any' type.
+src/modules/properties/service.ts(114,39): error TS7006: Parameter 'visit' implicitly has an 'any' type.
+src/modules/properties/service.ts(121,39): error TS7006: Parameter 'img' implicitly has an 'any' type.
+src/modules/properties/service.ts(169,12): error TS7006: Parameter 'properties' implicitly has an 'any' type.
+src/modules/properties/service.ts(170,23): error TS7006: Parameter 'property' implicitly has an 'any' type.
+src/modules/properties/types.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'PropertyStatus'.
+src/modules/properties/types.ts(1,31): error TS2305: Module '"@prisma/client"' has no exported member 'VisitStatus'.
+src/modules/users/actions.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/users/actions.ts(35,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/modules/users/service.ts(23,11): error TS7006: Parameter 'membership' implicitly has an 'any' type.
+src/modules/users/service.ts(35,12): error TS7006: Parameter 'left' implicitly has an 'any' type.
+src/modules/users/service.ts(35,18): error TS7006: Parameter 'right' implicitly has an 'any' type.
+src/modules/users/types.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/visits/actions.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'VisitStatus'.
+src/modules/visits/actions.ts(8,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/modules/visits/actions.ts(52,29): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number'.
+src/modules/visits/actions.ts(126,37): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '"upcoming" | "all"'.
+src/modules/visits/actions.ts(143,37): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '"upcoming" | "all"'.
+src/modules/visits/actions.ts(147,37): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '"upcoming" | "all"'.
+src/modules/visits/actions.ts(193,35): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '"upcoming" | "all"'.
+src/modules/visits/actions.ts(194,23): error TS18046: 'parsed.data.nextStatus' is of type 'unknown'.
+src/modules/visits/service.ts(1,10): error TS2305: Module '"@prisma/client"' has no exported member 'LeadStatus'.
+src/modules/visits/service.ts(1,22): error TS2305: Module '"@prisma/client"' has no exported member 'NotificationType'.
+src/modules/visits/service.ts(1,40): error TS2305: Module '"@prisma/client"' has no exported member 'VisitStatus'.
+src/modules/visits/service.ts(47,22): error TS7006: Parameter 'visit' implicitly has an 'any' type.
+src/modules/visits/types.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'VisitStatus'.
+src/server/auth/access.ts(5,10): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/server/billing/mp-webhook-processor.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'SubscriptionStatus'.
+src/server/billing/mp-webhook-processor.ts(90,5): error TS18047: 'existing' is possibly 'null'.
+src/server/billing/mp-webhook-processor.ts(212,36): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/server/demo/workspace-store.ts(4,3): error TS2305: Module '"@prisma/client"' has no exported member 'MembershipRole'.
+src/server/demo/workspace-store.ts(5,3): error TS2305: Module '"@prisma/client"' has no exported member 'PropertyStatus'.
+src/server/demo/workspace-store.ts(6,3): error TS2305: Module '"@prisma/client"' has no exported member 'VisitStatus'.
+src/server/whatsapp/channel-resolver.ts(6,3): error TS2305: Module '"@prisma/client"' has no exported member 'WhatsAppChannelStatus'.
+src/server/whatsapp/channel-resolver.ts(7,3): error TS2305: Module '"@prisma/client"' has no exported member 'WhatsAppChannelVerificationStatus'.
+src/server/whatsapp/channel-resolver.ts(160,33): error TS2339: Property 'PrismaClientKnownRequestError' does not exist on type 'typeof Prisma'.
+src/server/whatsapp/channel-resolver.ts(160,66): error TS18046: 'error' is of type 'unknown'.
+src/server/whatsapp/channel-resolver.ts(246,14): error TS7006: Parameter 'org' implicitly has an 'any' type.
+src/server/workers/conversation-worker.ts(2,3): error TS2305: Module '"@prisma/client"' has no exported member 'ConversationStatus'.
+src/server/workers/conversation-worker.ts(3,3): error TS2305: Module '"@prisma/client"' has no exported member 'FollowUpCategory'.
+src/server/workers/conversation-worker.ts(4,3): error TS2305: Module '"@prisma/client"' has no exported member 'LeadStatus'.
+src/server/workers/conversation-worker.ts(5,3): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDeliveryStatus'.
+src/server/workers/conversation-worker.ts(6,3): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDirection'.
+src/server/workers/conversation-worker.ts(7,3): error TS2305: Module '"@prisma/client"' has no exported member 'NotificationType'.
+src/server/workers/conversation-worker.ts(295,6): error TS18047: 'priorSignals.propertyMatch' is possibly 'null'.
+src/server/workers/conversation-worker.ts(296,7): error TS18047: 'priorSignals.propertyMatch' is possibly 'null'.
+src/server/workers/conversation-worker.ts(300,7): error TS2322: Type '{ propertyId: string | null; propertyTitle: string | null; shortlist: LeadPropertyShortlistItem[]; status?: "matched" | "existing-link" | "manual-confirmed" | "manual-overridden" | "no-match" | undefined; score?: number | ... 1 more ... | undefined; reasons?: string[] | undefined; consideredSignals?: string[] | unde...' is not assignable to type 'LeadPropertyMatchTrace'.
+  Types of property 'status' are incompatible.
+    Type '"matched" | "existing-link" | "manual-confirmed" | "manual-overridden" | "no-match" | undefined' is not assignable to type '"matched" | "existing-link" | "manual-confirmed" | "manual-overridden" | "no-match"'.
+      Type 'undefined' is not assignable to type '"matched" | "existing-link" | "manual-confirmed" | "manual-overridden" | "no-match"'.
+src/server/workers/conversation-worker.ts(302,51): error TS18047: 'priorSignals.propertyMatch' is possibly 'null'.
+src/server/workers/conversation-worker.ts(303,57): error TS18047: 'priorSignals.propertyMatch' is possibly 'null'.
+src/server/workers/conversation-worker.ts(305,11): error TS18047: 'priorSignals.propertyMatch' is possibly 'null'.
+src/server/workers/conversation-worker.ts(306,15): error TS18047: 'priorSignals.propertyMatch' is possibly 'null'.
+src/server/workers/conversation-worker.ts(448,37): error TS7006: Parameter 'slot' implicitly has an 'any' type.
+src/server/workers/post-visit-worker.ts(2,3): error TS2305: Module '"@prisma/client"' has no exported member 'ConversationStatus'.
+src/server/workers/post-visit-worker.ts(3,3): error TS2305: Module '"@prisma/client"' has no exported member 'FollowUpCategory'.
+src/server/workers/post-visit-worker.ts(4,3): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDeliveryStatus'.
+src/server/workers/post-visit-worker.ts(5,3): error TS2305: Module '"@prisma/client"' has no exported member 'MessageDirection'.
+src/server/workers/post-visit-worker.ts(6,3): error TS2305: Module '"@prisma/client"' has no exported member 'NotificationType'.
