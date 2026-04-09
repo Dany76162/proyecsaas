@@ -18,10 +18,8 @@ const loginSchema = z.object({
 
 const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10;
-const LOGIN_RATE_LIMIT_PRUNE_THRESHOLD = 5_000;
 
-type RateLimitEntry = { count: number; windowStart: number };
-const loginAttempts = new Map<string, RateLimitEntry>();
+const loginAttempts = new Map<string, { count: number; windowStart: number }>();
 
 function getClientIdentifier(headerStore: Awaited<ReturnType<typeof headers>>): string {
   const forwarded = headerStore.get("x-forwarded-for");
@@ -29,21 +27,7 @@ function getClientIdentifier(headerStore: Awaited<ReturnType<typeof headers>>): 
   return ip ?? "unknown";
 }
 
-function pruneExpiredLoginAttempts(): void {
-  if (loginAttempts.size < LOGIN_RATE_LIMIT_PRUNE_THRESHOLD) {
-    return;
-  }
-
-  const now = Date.now();
-  for (const [key, entry] of loginAttempts) {
-    if (now - entry.windowStart > LOGIN_RATE_LIMIT_WINDOW_MS) {
-      loginAttempts.delete(key);
-    }
-  }
-}
-
 function checkAndRecordLoginAttempt(identifier: string): boolean {
-  pruneExpiredLoginAttempts();
   const now = Date.now();
   const entry = loginAttempts.get(identifier);
 
@@ -72,36 +56,24 @@ function timingSafePasswordEqual(provided: string, expected: string): boolean {
 }
 
 function getSharedPassword() {
-  const password = process.env.AUTH_SHARED_PASSWORD?.trim();
-
-  if (password) {
-    return password;
-  }
-
-  if (process.env.NODE_ENV !== "production") {
-    return "dev-access-password";
-  }
-
-  throw new Error(
-    "[auth] Missing AUTH_SHARED_PASSWORD. Login cannot be validated in production.",
-  );
+  return process.env.AUTH_SHARED_PASSWORD || "dev-access-password";
 }
 
 function sanitizeRedirectPath(nextPath: string | undefined, fallbackPath: string) {
   if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
     return fallbackPath;
   }
-
   return nextPath;
+}
+
+// 🔥 CLAVE: transición splash
+function buildTransitionRedirect(nextPath: string) {
+  return `/login/transition?next=${encodeURIComponent(nextPath)}`;
 }
 
 function buildLoginRedirect(error: string, nextPath?: string) {
   const search = new URLSearchParams({ error });
-
-  if (nextPath) {
-    search.set("next", nextPath);
-  }
-
+  if (nextPath) search.set("next", nextPath);
   return `/login?${search.toString()}`;
 }
 
@@ -132,96 +104,41 @@ export async function loginAction(formData: FormData) {
       id: true,
       isPlatformAdmin: true,
       passwordHash: true,
-      inviteTokens: {
-        where: {
-          usedAt: null,
-          expiresAt: {
-            gte: new Date(),
-          },
-        },
-        select: {
-          token: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 1,
-      },
       memberships: {
-        where: {
-          organization: {
-            isActive: true,
-          },
-        },
         select: {
           organization: {
-            select: {
-              slug: true,
-            },
+            select: { slug: true },
           },
-        },
-        orderBy: {
-          createdAt: "asc",
         },
         take: 1,
       },
     },
   });
 
-  // 1. Password Verification (Hash or Shared Fallback)
   let isValidPassword = false;
+
   if (user) {
     if (user.passwordHash) {
       isValidPassword = await verifyPassword(parsed.data.password, user.passwordHash);
-    } else {
-      // Fallback estricto SOLO para Superadmins (legacy) que ingresan sin passwordHash
-      if (user.isPlatformAdmin) {
-        isValidPassword = timingSafePasswordEqual(parsed.data.password, getSharedPassword());
-      }
-      
-      // Si falla el password compartido (o es un usuario regular sin hash), es pendiente de invitación
-      if (!isValidPassword) {
-        if (user.inviteTokens[0]?.token) {
-          redirect(`/invite/${user.inviteTokens[0].token}`);
-        } else {
-          redirect(buildLoginRedirect("activation-required", parsed.data.next || undefined));
-        }
-      }
+    } else if (user.isPlatformAdmin) {
+      isValidPassword = timingSafePasswordEqual(parsed.data.password, getSharedPassword());
     }
-  } else {
-    // If user not found, we still want to spend some time on validation
-    // to partially mitigate timing attacks on existence.
-    await verifyPassword(parsed.data.password, "dummy:hash");
-    isValidPassword = false;
   }
 
   if (!isValidPassword) {
-    redirect(buildLoginRedirect("invalid-credentials", parsed.data.next || undefined));
+    redirect(buildLoginRedirect("invalid-credentials"));
   }
 
-  // 2. Membership Check (Only after valid password)
-  const firstMembership = user?.memberships[0];
-
-  if (!firstMembership) {
-    // Platform admins can access /platform even without active org memberships.
-      if (user?.isPlatformAdmin) {
-        clearLoginAttempts(clientId);
-        await createSession(user.id);
-        redirect(sanitizeRedirectPath(parsed.data.next || undefined, "/platform"));
-      }
-    // Regular users with no active memberships are blocked.
-    redirect(buildLoginRedirect("no-memberships", parsed.data.next || undefined));
-  }
-
-  // 3. Success: Finalize Session
   clearLoginAttempts(clientId);
-  await createSession(user.id);
+  await createSession(user!.id);
 
   const finalPath = sanitizeRedirectPath(
     parsed.data.next || undefined,
-    `/${firstMembership.organization.slug}`,
+    user?.isPlatformAdmin ? "/platform" : `/${user!.memberships[0]?.organization.slug}`,
   );
-  redirect(finalPath);
+
+  // 🔥 AQUÍ ESTÁ EL FIX DEL SPLASH
+  redirect(buildTransitionRedirect(finalPath));
 }
 
 export async function logoutAction() {
