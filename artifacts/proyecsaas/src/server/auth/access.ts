@@ -48,6 +48,7 @@ export async function resolveSignedInHomePath(sessionUser: SessionUser): Promise
       },
       organization: {
         isActive: true,
+        deletedAt: null,
       },
     },
     select: {
@@ -74,6 +75,7 @@ export async function requireOrganizationMembership(orgSlug: string) {
     select: {
       id: true,
       isActive: true,
+      deletedAt: true,
       name: true,
       subscription: {
         select: {
@@ -85,6 +87,10 @@ export async function requireOrganizationMembership(orgSlug: string) {
   });
 
   if (!org) {
+    notFound();
+  }
+
+  if (org.deletedAt) {
     notFound();
   }
 
@@ -107,6 +113,7 @@ export async function requireOrganizationMembership(orgSlug: string) {
       },
       organization: {
         slug: orgSlug,
+        deletedAt: null,
       },
     },
     select: {

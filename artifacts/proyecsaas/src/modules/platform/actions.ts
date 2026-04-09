@@ -2,10 +2,12 @@
 
 import crypto from "node:crypto";
 import { MembershipRole, Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import type { ActionResult } from "@/modules/types";
 import { requirePlatformAdmin } from "@/server/auth/access";
+import { logAudit } from "@/server/audit/log";
 import { prisma } from "@/server/db/prisma";
 
 const createOrganizationSchema = z.object({
@@ -115,11 +117,18 @@ export async function deactivateOrganizationAction(orgSlug: string): Promise<Act
   try {
     const org = await prisma.organization.findUnique({
       where: { slug: orgSlug },
-      select: { id: true, name: true, isActive: true },
+      select: { id: true, name: true, isActive: true, deletedAt: true },
     });
 
     if (!org) {
       return { success: false, message: "Inmobiliaria no encontrada." };
+    }
+
+    if (org.deletedAt) {
+      return {
+        success: false,
+        message: "Esta inmobiliaria está en papelera. Restaurala antes de volver a operarla.",
+      };
     }
 
     if (!org.isActive) {
@@ -154,11 +163,18 @@ export async function reactivateOrganizationAction(orgSlug: string): Promise<Act
   try {
     const org = await prisma.organization.findUnique({
       where: { slug: orgSlug },
-      select: { id: true, name: true, isActive: true },
+      select: { id: true, name: true, isActive: true, deletedAt: true },
     });
 
     if (!org) {
       return { success: false, message: "Inmobiliaria no encontrada." };
+    }
+
+    if (org.deletedAt) {
+      return {
+        success: false,
+        message: "Esta inmobiliaria está en papelera. Restaurala antes de reactivarla.",
+      };
     }
 
     if (org.isActive) {
@@ -179,6 +195,336 @@ export async function reactivateOrganizationAction(orgSlug: string): Promise<Act
     return {
       success: false,
       message: "Hubo un error al reactivar la cuenta. Verifica los logs.",
+    };
+  }
+}
+
+/**
+ * Superadmin Action: Permanently deletes a tenant organization and all of its
+ * tenant-scoped data. Intended only for test orgs or accidental creations.
+ */
+export async function deleteOrganizationPermanentlyAction(orgSlug: string): Promise<ActionResult> {
+  const sessionUser = await requirePlatformAdmin();
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        deletedAt: true,
+        _count: {
+          select: {
+            memberships: true,
+            inviteTokens: true,
+            leads: true,
+            properties: true,
+            conversations: true,
+            visits: true,
+            availability: true,
+            notifications: true,
+            automations: true,
+            whatsappChannels: true,
+            billingRecords: true,
+            aiAgents: true,
+          },
+        },
+        subscription: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!org) {
+      return { success: false, message: "Inmobiliaria no encontrada." };
+    }
+
+    const platformOrgId = process.env.WHATSAPP_ORGANIZATION_ID?.trim();
+    if (platformOrgId && org.id === platformOrgId) {
+      return {
+        success: false,
+        message:
+          "No se puede eliminar la organización de plataforma porque sostiene soporte y captación central.",
+      };
+    }
+
+    if (!org.deletedAt) {
+      return {
+        success: false,
+        message:
+          "Para eliminar definitivamente una inmobiliaria primero debe enviarse a papelera.",
+      };
+    }
+
+    const [propertyIds, leadIds, conversationIds] = await Promise.all([
+      prisma.property.findMany({
+        where: { organizationId: org.id },
+        select: { id: true },
+      }),
+      prisma.lead.findMany({
+        where: { organizationId: org.id },
+        select: { id: true },
+      }),
+      prisma.conversation.findMany({
+        where: { organizationId: org.id },
+        select: { id: true },
+      }),
+    ]);
+
+    const propertyIdList = propertyIds.map((item) => item.id);
+    const leadIdList = leadIds.map((item) => item.id);
+    const conversationIdList = conversationIds.map((item) => item.id);
+
+    const deletedCounts = await prisma.$transaction(async (tx) => {
+      
+      const inviteTokens = await tx.inviteToken.deleteMany({
+        where: { organizationId: org.id },
+      });
+      const memberships = await tx.membership.deleteMany({
+        where: { organizationId: org.id },
+      });
+      const notifications = await tx.notification.deleteMany({
+        where: { organizationId: org.id },
+      });
+      const automations = await tx.automationRule.deleteMany({
+        where: { organizationId: org.id },
+      });
+      const billingRecords = await tx.orgBillingRecord.deleteMany({
+        where: { organizationId: org.id },
+      });
+      const subscription = await tx.subscription.deleteMany({
+        where: { organizationId: org.id },
+      });
+      const aiAgents = await tx.aiAgent.deleteMany({
+        where: { organizationId: org.id },
+      });
+      const whatsappChannels = await tx.whatsAppChannel.deleteMany({
+        where: { organizationId: org.id },
+      });
+      const propertyImages = await tx.propertyImage.deleteMany({
+        where: {
+          organizationId: org.id,
+          ...(propertyIdList.length ? { propertyId: { in: propertyIdList } } : {}),
+        },
+      });
+      const availability = await tx.availabilitySlot.deleteMany({
+        where: {
+          organizationId: org.id,
+        },
+      });
+      const messages = await tx.message.deleteMany({
+        where: {
+          organizationId: org.id,
+          ...(conversationIdList.length ? { conversationId: { in: conversationIdList } } : {}),
+        },
+      });
+      const conversations = await tx.conversation.deleteMany({
+        where: {
+          organizationId: org.id,
+        },
+      });
+      const visits = await tx.visit.deleteMany({
+        where: {
+          organizationId: org.id,
+        },
+      });
+      const leads = await tx.lead.deleteMany({
+        where: {
+          organizationId: org.id,
+          ...(leadIdList.length ? { id: { in: leadIdList } } : {}),
+        },
+      });
+      const properties = await tx.property.deleteMany({
+        where: {
+          organizationId: org.id,
+          ...(propertyIdList.length ? { id: { in: propertyIdList } } : {}),
+        },
+      });
+
+      await tx.organization.delete({
+        where: { id: org.id },
+      });
+
+      return {
+        inviteTokens: inviteTokens.count,
+        memberships: memberships.count,
+        notifications: notifications.count,
+        automations: automations.count,
+        billingRecords: billingRecords.count,
+        subscription: subscription.count,
+        aiAgents: aiAgents.count,
+        whatsappChannels: whatsappChannels.count,
+        propertyImages: propertyImages.count,
+        availability: availability.count,
+        messages: messages.count,
+        conversations: conversations.count,
+        visits: visits.count,
+        leads: leads.count,
+        properties: properties.count,
+      };
+    }, {
+      timeout: 20000,
+      maxWait: 10000,
+    });
+
+    await logAudit({
+      event: "org.deleted_permanently",
+      actorId: sessionUser.id,
+      actorEmail: sessionUser.email,
+      entityType: "Organization",
+      entityId: org.id,
+      entityName: org.name,
+      metadata: {
+        slug: org.slug,
+        deletedCounts,
+      },
+    });
+
+    revalidatePath("/platform/organizations");
+
+    return {
+      success: true,
+      message: `La inmobiliaria "${org.name}" fue eliminada definitivamente.`,
+      data: deletedCounts,
+    };
+  } catch (error) {
+    console.error("DELETE ORG ERROR:", error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error("[deleteOrganizationPermanentlyAction] Prisma details:", {
+        code: error.code,
+        meta: error.meta,
+        message: error.message,
+      });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return {
+        success: false,
+        message:
+          "No se pudo eliminar definitivamente la inmobiliaria por una restricción de integridad.",
+      };
+    }
+
+    return {
+      success: false,
+      message: "Hubo un error al eliminar definitivamente la inmobiliaria.",
+    };
+  }
+}
+
+/**
+ * Superadmin Action: Moves an organization to trash without deleting data.
+ */
+export async function moveOrganizationToTrashAction(orgSlug: string): Promise<ActionResult> {
+  const sessionUser = await requirePlatformAdmin();
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: { id: true, name: true, slug: true, deletedAt: true },
+    });
+
+    if (!org) {
+      return { success: false, message: "Inmobiliaria no encontrada." };
+    }
+
+    const platformOrgId = process.env.WHATSAPP_ORGANIZATION_ID?.trim();
+    if (platformOrgId && org.id === platformOrgId) {
+      return {
+        success: false,
+        message:
+          "No se puede mover a papelera la organización de plataforma porque sostiene soporte y captación central.",
+      };
+    }
+
+    if (org.deletedAt) {
+      return { success: false, message: "Esta inmobiliaria ya está en papelera." };
+    }
+
+    await prisma.organization.update({
+      where: { id: org.id },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+      },
+    });
+
+    await logAudit({
+      event: "org.trashed",
+      actorId: sessionUser.id,
+      actorEmail: sessionUser.email,
+      entityType: "Organization",
+      entityId: org.id,
+      entityName: org.name,
+      metadata: { slug: org.slug },
+    });
+
+    revalidatePath("/platform/organizations");
+
+    return {
+      success: true,
+      message: `La inmobiliaria "${org.name}" fue movida a papelera.`,
+    };
+  } catch (error) {
+    console.error("[moveOrganizationToTrashAction] Falló:", error);
+    return {
+      success: false,
+      message: "No se pudo mover la inmobiliaria a papelera.",
+    };
+  }
+}
+
+/**
+ * Superadmin Action: Restores an organization from trash.
+ */
+export async function restoreOrganizationFromTrashAction(orgSlug: string): Promise<ActionResult> {
+  const sessionUser = await requirePlatformAdmin();
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: { id: true, name: true, slug: true, deletedAt: true },
+    });
+
+    if (!org) {
+      return { success: false, message: "Inmobiliaria no encontrada." };
+    }
+
+    if (!org.deletedAt) {
+      return { success: false, message: "Esta inmobiliaria no está en papelera." };
+    }
+
+    await prisma.organization.update({
+      where: { id: org.id },
+      data: {
+        deletedAt: null,
+        isActive: true,
+      },
+    });
+
+    await logAudit({
+      event: "org.restored",
+      actorId: sessionUser.id,
+      actorEmail: sessionUser.email,
+      entityType: "Organization",
+      entityId: org.id,
+      entityName: org.name,
+      metadata: { slug: org.slug },
+    });
+
+    revalidatePath("/platform/organizations");
+
+    return {
+      success: true,
+      message: `La inmobiliaria "${org.name}" fue restaurada desde papelera.`,
+    };
+  } catch (error) {
+    console.error("[restoreOrganizationFromTrashAction] Falló:", error);
+    return {
+      success: false,
+      message: "No se pudo restaurar la inmobiliaria.",
     };
   }
 }
@@ -258,7 +604,10 @@ export async function generateInitialAdminInviteAction(
         },
       });
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+      if (!baseUrl) {
+        throw new Error("[generateInitialAdminInviteAction] NEXT_PUBLIC_APP_URL is not configured.");
+      }
       const inviteUrl = `${baseUrl}/invite/${token}`;
 
       return { inviteUrl };
@@ -393,7 +742,10 @@ export async function quickOnboardOrgAction(input: {
         data: { token, userId: user.id, organizationId: org.id, expiresAt },
       });
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+      if (!baseUrl) {
+        throw new Error("[quickOnboardOrgAction] NEXT_PUBLIC_APP_URL is not configured.");
+      }
       return `${baseUrl}/invite/${token}`;
     });
 

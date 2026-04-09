@@ -24,7 +24,7 @@ export function PlatformShell({
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden print:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -32,7 +32,7 @@ export function PlatformShell({
       <PlatformSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex flex-1 flex-col min-w-0 lg:ml-72">
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:px-6">
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:px-6 print:hidden">
           <div className="flex items-center gap-3">
             {/* Hamburger — visible only on mobile/tablet */}
             <button

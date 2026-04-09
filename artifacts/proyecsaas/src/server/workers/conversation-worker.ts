@@ -53,6 +53,7 @@ import {
   processPostVisitFollowUp,
   type PostVisitJobData,
 } from "@/server/workers/post-visit-worker";
+import { ACTIVATION_EVENTS, trackActivationEventOnce } from "@/server/activation/events";
 
 
 // =========================
@@ -198,6 +199,8 @@ export async function processWhatsAppInboundJob(
   }
 
   // 2. Persistencia atómica (Conversation + Inbound Message)
+  let createdFirstLead = false;
+
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     let conversation = await tx.conversation.findFirst({
       where: {
@@ -237,6 +240,12 @@ export async function processWhatsAppInboundJob(
     });
 
     if (!lead) {
+      const leadCountBefore = await tx.lead.count({
+        where: {
+          organizationId: targetOrgId,
+        },
+      });
+
       lead = await tx.lead.create({
         data: {
           organizationId: targetOrgId,
@@ -246,6 +255,8 @@ export async function processWhatsAppInboundJob(
           source: "WhatsApp",
         },
       });
+
+      createdFirstLead = leadCountBefore === 0;
     }
 
     let message = data.message.externalId
@@ -270,6 +281,18 @@ export async function processWhatsAppInboundJob(
 
     return { conversation, lead, message };
   });
+
+  if (createdFirstLead) {
+    await trackActivationEventOnce(prisma, {
+      event: ACTIVATION_EVENTS.firstLeadCreated,
+      organizationId: targetOrgId,
+      metadata: {
+        source: "whatsapp_worker",
+        leadId: result.lead.id,
+        conversationId: result.conversation.id,
+      },
+    });
+  }
 
   // 2.5 — Early return if an agent has taken manual control of this conversation
   if (result.conversation.isHumanControlled) {

@@ -138,7 +138,13 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     where: {
       id: payload.userId,
       isActive: true,
-    }
+    },
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      isPlatformAdmin: true,
+    },
   });
 
   if (!user) {
@@ -149,6 +155,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     id: user.id,
     email: user.email,
     fullName: user.fullName,
-    isPlatformAdmin: (user as any).isPlatformAdmin ?? false,
+    isPlatformAdmin: user.isPlatformAdmin,
   };
 }

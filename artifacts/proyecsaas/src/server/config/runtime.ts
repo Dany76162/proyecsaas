@@ -18,6 +18,8 @@ function getRoleRequiredEnvVars(role: RuntimeRole) {
       "AUTH_SHARED_PASSWORD",
       "WHATSAPP_APP_SECRET",
       "WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+      "WHATSAPP_TOKEN_ENCRYPTION_KEY",
+      "MERCADO_PAGO_WEBHOOK_SECRET",
     ] as const;
   }
 

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { MembershipRole } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
+import { ACTIVATION_EVENTS, trackActivationEventOnce } from "@/server/activation/events";
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 import { attemptWhatsAppOutboundDelivery } from "@/modules/automations/delivery-service";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
@@ -19,7 +20,7 @@ export async function resolveConversationFollowUpAction(formData: FormData) {
     return;
   }
 
-  const { membership } = await requireOrganizationMembership(orgSlug);
+  const { user, membership } = await requireOrganizationMembership(orgSlug);
   assertMinimumRole(membership.role, MembershipRole.AGENT);
   const organization = membership.organization;
 
@@ -28,6 +29,20 @@ export async function resolveConversationFollowUpAction(formData: FormData) {
     conversationId,
     resolutionMethod: "MANUAL",
     link: `/${orgSlug}/conversations`,
+  });
+
+  await trackActivationEventOnce(prisma, {
+    event: ACTIVATION_EVENTS.firstHumanIntervention,
+    organizationId: organization.id,
+    organizationSlug: organization.slug,
+    organizationName: organization.name,
+    actorId: user.id,
+    actorEmail: user.email,
+    metadata: {
+      source: "follow_up_resolution",
+      conversationId,
+      leadId: leadId || null,
+    },
   });
 
   revalidatePath(`/${orgSlug}/conversations`);
@@ -85,6 +100,21 @@ export async function sendManualMessageAction(formData: FormData) {
     return message;
   });
 
+  await trackActivationEventOnce(prisma, {
+    event: ACTIVATION_EVENTS.firstHumanIntervention,
+    organizationId: organization.id,
+    organizationSlug: organization.slug,
+    organizationName: organization.name,
+    actorId: user.id,
+    actorEmail: user.email,
+    metadata: {
+      source: "manual_message",
+      conversationId,
+      leadId: conversation.leadId ?? null,
+      messageId: outboundMessage.id,
+    },
+  });
+
   const deliveryResult = await attemptWhatsAppOutboundDelivery(prisma, {
     organizationId: organization.id,
     conversationId,
@@ -132,13 +162,26 @@ export async function takeConversationAction(formData: FormData) {
 
   if (!orgSlug || !conversationId) return;
 
-  const { membership } = await requireOrganizationMembership(orgSlug);
+  const { user, membership } = await requireOrganizationMembership(orgSlug);
   assertMinimumRole(membership.role, MembershipRole.AGENT);
   const organization = membership.organization;
 
   await prisma.conversation.updateMany({
     where: { id: conversationId, organizationId: organization.id },
     data: { isHumanControlled: true },
+  });
+
+  await trackActivationEventOnce(prisma, {
+    event: ACTIVATION_EVENTS.firstHumanIntervention,
+    organizationId: organization.id,
+    organizationSlug: organization.slug,
+    organizationName: organization.name,
+    actorId: user.id,
+    actorEmail: user.email,
+    metadata: {
+      source: "take_conversation",
+      conversationId,
+    },
   });
 
   revalidatePath(`/${orgSlug}/conversations`);

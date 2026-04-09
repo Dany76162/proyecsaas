@@ -11,14 +11,23 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   /^\/map\/.+/,
   /^\/invite\/.+/,
   /^\/api\/webhooks\//,
-  /^\/api\/internal\/automation-simulate(\/|$)/,
-  /^\/api\/whatsapp\//,
+  /^\/api\/whatsapp\/webhook(\/|$)/,
   /^\/api\/properties\/sync-from-source/,
   /^\/[^/]+\/catalog(\/|$)/,
 ];
 
+const DEV_ONLY_PUBLIC_PATHS: Array<string | RegExp> = [
+  /^\/api\/internal\/automation-simulate(\/|$)/,
+  /^\/api\/whatsapp\/simulate(\/|$)/,
+];
+
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some((rule) =>
+  const rules =
+    process.env.NODE_ENV === "production"
+      ? PUBLIC_PATHS
+      : [...PUBLIC_PATHS, ...DEV_ONLY_PUBLIC_PATHS];
+
+  return rules.some((rule) =>
     typeof rule === "string" ? pathname === rule : rule.test(pathname),
   );
 }

@@ -25,7 +25,7 @@ export default async function IntegrationsPage({
       <SectionCard
         eyebrow="Integraciones"
         title="Canales conectados"
-        description="Gestioná tus canales de comunicación externos. Conectá un número de WhatsApp Business para empezar a recibir y responder consultas de leads automáticamente."
+        description="Revisá los canales que usa tu inmobiliaria para captar y atender consultas. WhatsApp hoy se administra centralmente desde la plataforma."
       >
         <Link
           href={`/${orgSlug}/settings/integrations/whatsapp`}
@@ -44,7 +44,7 @@ export default async function IntegrationsPage({
             <div>
               <p className="font-semibold text-slate-950">WhatsApp</p>
               <p className="mt-0.5 text-sm text-slate-500">
-                Conectá tu número de WhatsApp Business vía Meta Cloud API.
+                Usá el canal oficial de la plataforma y compartí tu enlace de entrada.
               </p>
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
   writeLeadCommercialSignals,
 } from "@/modules/leads/commercial-signals";
 import { createLeadSchema, updateLeadSchema } from "@/modules/leads/schemas";
+import { ACTIVATION_EVENTS, trackActivationEventOnce } from "@/server/activation/events";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 
@@ -64,6 +65,12 @@ export async function createLeadAction(formData: FormData) {
     },
   });
 
+  const leadCountBefore = await prisma.lead.count({
+    where: {
+      organizationId: organization.id,
+    },
+  });
+
   const lead = await prisma.lead.create({
     data: {
       organizationId: organization.id,
@@ -79,6 +86,19 @@ export async function createLeadAction(formData: FormData) {
       lastContactAt: new Date(),
     },
   });
+
+  if (leadCountBefore === 0) {
+    await trackActivationEventOnce(prisma, {
+      event: ACTIVATION_EVENTS.firstLeadCreated,
+      organizationId: organization.id,
+      organizationSlug: organization.slug,
+      organizationName: organization.name,
+      metadata: {
+        source: "manual",
+        leadId: lead.id,
+      },
+    });
+  }
 
   revalidatePath(`/${orgSlug}/leads`);
   revalidatePath(`/${orgSlug}`);

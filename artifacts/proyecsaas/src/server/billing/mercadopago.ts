@@ -32,7 +32,11 @@ export async function createMercadoPagoPreference(
 ): Promise<MPPreferenceResult> {
   const accessToken = getAccessToken();
   const isSandbox = process.env.MERCADO_PAGO_SANDBOX === "true";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  if (!appUrl) {
+    throw new Error("NEXT_PUBLIC_APP_URL is not set. Mercado Pago checkout URLs cannot be generated.");
+  }
 
   const body = {
     items: [

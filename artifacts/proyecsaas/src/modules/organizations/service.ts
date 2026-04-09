@@ -72,6 +72,7 @@ export async function listOrganizationsForUser(
       },
       organization: {
         isActive: true,
+        deletedAt: null,
       },
     },
     orderBy: {
@@ -124,6 +125,10 @@ export async function getOrganizationWorkspace(
     return null;
   }
 
+  if (organization.deletedAt) {
+    return null;
+  }
+
   const summary = buildOrganizationSummary(organization);
 
   return {
@@ -149,6 +154,7 @@ export async function getSetupChecklistStatus(
     select: {
       name: true,
       city: true,
+      deletedAt: true,
       _count: { select: { properties: true } },
       aiAgents: {
         where: {
@@ -168,6 +174,19 @@ export async function getSetupChecklistStatus(
   });
 
   if (!org) {
+    return {
+      profileComplete: false,
+      propertiesLoaded: false,
+      agentConfigured: false,
+      whatsappConnected: false,
+      readyToOperate: false,
+      completedCount: 0,
+      totalCount: 5,
+      isComplete: false,
+    };
+  }
+
+  if (org.deletedAt) {
     return {
       profileComplete: false,
       propertiesLoaded: false,

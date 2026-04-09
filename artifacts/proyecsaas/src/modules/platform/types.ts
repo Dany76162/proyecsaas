@@ -14,6 +14,8 @@ export type OrgPlatformSummary = {
   city: string;
   planLabel: string;
   isActive: boolean;
+  deletedAt: string | null;
+  isTrashed: boolean;
   memberCount: number;
   leadCount: number;
   propertyCount: number;

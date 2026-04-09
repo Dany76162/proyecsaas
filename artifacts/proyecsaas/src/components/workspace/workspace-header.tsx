@@ -39,12 +39,12 @@ export function WorkspaceHeader({
           {organization.description && (
             <p className="mt-2 text-sm leading-6 text-slate-500">
               {organization.description}
-              {organization.marketFocus ? ` · ${organization.marketFocus}` : ""}
+              {organization.marketFocus ? ` - ${organization.marketFocus}` : ""}
             </p>
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-3 items-center">
+        <div className="flex shrink-0 flex-wrap gap-3 items-center print:hidden">
           {children}
           {onboardingIncomplete ? (
             <Link

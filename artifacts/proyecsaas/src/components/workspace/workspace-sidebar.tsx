@@ -19,6 +19,9 @@ type WorkspaceSidebarProps = {
 
 const OPERATION_NAV = [
   { label: "Inicio", path: "" },
+  { label: "Onboarding", path: "/onboarding" },
+  { label: "Captacion", path: "/captacion" },
+  { label: "Manual de uso", path: "/manual-uso" },
   { label: "Leads", path: "/leads" },
   { label: "Conversaciones", path: "/conversations" },
   { label: "Visitas", path: "/visits" },
@@ -33,13 +36,13 @@ const AUTOMATION_NAV = [
 const MANAGEMENT_NAV = [
   { label: "Disponibilidad", path: "/settings/availability" },
   { label: "Equipo", path: "/settings/users" },
-  { label: "Organización", path: "/settings/organization" },
+  { label: "Organizacion", path: "/settings/organization" },
 ] as const;
 
 const ROLE_MAP = {
   OWNER: { label: "Titular", copy: "Acceso total" },
-  ADMIN: { label: "Administrador", copy: "Gestión y operación" },
-  AGENT: { label: "Agente de ventas", copy: "Operación comercial" },
+  ADMIN: { label: "Administrador", copy: "Gestion y operacion" },
+  AGENT: { label: "Agente de ventas", copy: "Operacion comercial" },
   ASSISTANT: { label: "Asistente", copy: "Soporte operativo" },
 } as const;
 
@@ -67,49 +70,48 @@ export function WorkspaceSidebar({
   return (
     <aside
       className={cn(
-        "fixed bottom-0 left-0 top-0 z-50 w-72 flex flex-col bg-slate-950 h-screen h-[100dvh]",
+        "fixed bottom-0 left-0 top-0 z-50 flex h-screen h-[100dvh] w-72 flex-col bg-slate-950 print:hidden",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
     >
-      {/* Close button — mobile only */}
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-white/10 transition lg:hidden"
-        aria-label="Cerrar menú"
+        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/10 lg:hidden"
+        aria-label="Cerrar menu"
       >
         <X className="h-4 w-4" />
       </button>
 
-      {/* Brand card — fixed at top, never scrolls */}
       <Link
         href={`/${organization.slug}`}
         onClick={onClose}
-        className="m-4 shrink-0 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10 group"
+        className="m-4 flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10 group"
       >
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
             RaicesPilot
           </p>
-          <h2 className="mt-1 text-lg font-bold tracking-tight text-white truncate">{organization.name}</h2>
+          <h2 className="mt-1 truncate text-lg font-bold tracking-tight text-white">
+            {organization.name}
+          </h2>
           <div className="mt-2.5 inline-block rounded bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
-            Panel de Inmobiliaria
+            Panel de inmobiliaria
           </div>
         </div>
         <div className="relative h-16 w-16 shrink-0">
           <img
             src="/brand/Logo%20minimalista%20de%20crecimiento%20inmobiliario.png"
             alt="Logo"
-            className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain transition-transform group-hover:scale-110"
+            className="absolute left-1/2 top-1/2 h-28 w-28 max-w-none -translate-x-1/2 -translate-y-1/2 object-contain transition-transform group-hover:scale-110"
           />
         </div>
       </Link>
 
-      {/* Nav — scrollable middle section */}
-      <div className="flex-1 overflow-y-auto px-4 space-y-1 pb-2">
+      <div className="flex-1 space-y-1 overflow-y-auto px-4 pb-2">
         <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Operación
+          Operacion
         </p>
         {OPERATION_NAV.map((item) => (
           <Link
@@ -127,11 +129,10 @@ export function WorkspaceSidebar({
           </Link>
         ))}
 
-        {/* Automatización — solo ADMIN / OWNER */}
         {isAdminOrOwner(role) && (
           <div className="mt-6 space-y-1">
             <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Automatización
+              Automatizacion
             </p>
             {AUTOMATION_NAV.map((item) => (
               <Link
@@ -151,11 +152,10 @@ export function WorkspaceSidebar({
           </div>
         )}
 
-        {/* Administración — solo ADMIN / OWNER */}
         {isAdminOrOwner(role) && (
           <div className="mt-6 space-y-1">
             <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Administración
+              Administracion
             </p>
             {MANAGEMENT_NAV.map((item) => (
               <Link
@@ -176,14 +176,13 @@ export function WorkspaceSidebar({
         )}
       </div>
 
-      {/* Footer — always visible at the bottom, never scrolls away */}
-      <div className="shrink-0 border-t border-white/10 p-4 space-y-2">
+      <div className="shrink-0 space-y-2 border-t border-white/10 p-4">
         <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">
             {userName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold text-white leading-tight">{userName}</p>
+            <p className="truncate text-xs font-bold leading-tight text-white">{userName}</p>
             <p className="text-[10px] text-slate-400">{roleDisplay.label}</p>
           </div>
         </div>
@@ -193,7 +192,7 @@ export function WorkspaceSidebar({
             className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
           >
             <LogOut className="h-4 w-4" />
-            Cerrar sesión
+            Cerrar sesion
           </button>
         </form>
       </div>
