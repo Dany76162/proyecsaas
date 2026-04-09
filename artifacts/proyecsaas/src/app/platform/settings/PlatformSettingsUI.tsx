@@ -10,6 +10,7 @@ import {
   ShieldOff,
   Shield,
 } from "lucide-react";
+import { DeleteUserButton } from "@/components/platform/DeleteUserButton";
 import {
   updateGlobalSetting,
   grantAdminAccess,
@@ -218,14 +219,23 @@ function DelegatedAdminSection({
                   <p className="text-xs text-slate-500 truncate">{admin.email}</p>
                 </div>
               </div>
-              <button
-                onClick={() => handleRevoke(admin.id, admin.fullName)}
-                disabled={isPending}
-                className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-40"
-              >
-                <ShieldOff className="h-3.5 w-3.5" />
-                Revocar
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleRevoke(admin.id, admin.fullName)}
+                  disabled={isPending}
+                  className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-40"
+                >
+                  <ShieldOff className="h-3.5 w-3.5" />
+                  Revocar
+                </button>
+                <DeleteUserButton
+                  userId={admin.id}
+                  userLabel={admin.fullName}
+                  onDeleted={(deletedUserId) =>
+                    setAdmins((prev) => prev.filter((item) => item.id !== deletedUserId))
+                  }
+                />
+              </div>
             </div>
           ))}
         </div>
