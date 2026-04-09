@@ -20,17 +20,12 @@ export async function acceptInviteAction(prevState: any, formData: FormData) {
 
   const invite = await prisma.inviteToken.findUnique({
     where: { token },
-    include: {
-      organization: {
-        select: {
-          slug: true,
-        },
-      },
-      user: {
-        select: {
-          id: true,
-        },
-      },
+    select: {
+      id: true,
+      userId: true,
+      usedAt: true,
+      expiresAt: true,
+      organizationId: true,
     },
   });
 
@@ -44,6 +39,20 @@ export async function acceptInviteAction(prevState: any, formData: FormData) {
 
   if (invite.expiresAt < new Date()) {
     return { success: false, message: "La invitacion vencio. Solicita un nuevo enlace." };
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: invite.organizationId },
+    select: {
+      slug: true,
+    },
+  });
+
+  if (!organization) {
+    return {
+      success: false,
+      message: "La organizacion de esta invitacion ya no esta disponible. Solicita un nuevo enlace.",
+    };
   }
 
   const passwordHash = await hashPassword(password);
@@ -60,10 +69,11 @@ export async function acceptInviteAction(prevState: any, formData: FormData) {
   ]);
 
   const callerSession = await getSessionUser();
+
   if (callerSession?.isPlatformAdmin) {
-    redirect("/platform?invited=ok");
+    return { success: true, message: "Invitacion activada correctamente." };
   }
 
   await createSession(invite.userId);
-  redirect(`/${invite.organization.slug}`);
+  redirect(`/${organization.slug}`);
 }

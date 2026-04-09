@@ -6,6 +6,7 @@ import { MembershipRole } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
 import { getSessionUser } from "@/server/auth/session";
+import type { SessionUser } from "@/server/auth/session";
 import { resolveEffectiveCommercialState } from "@/server/billing/commercial-access";
 
 function buildLoginRedirectPath(nextPath: string) {
@@ -34,11 +35,41 @@ export async function requirePlatformAdmin() {
   return sessionUser;
 }
 
+export async function resolveSignedInHomePath(sessionUser: SessionUser): Promise<string> {
+  if (sessionUser.isPlatformAdmin) {
+    return "/platform";
+  }
+
+  const firstMembership = await prisma.membership.findFirst({
+    where: {
+      userId: sessionUser.id,
+      user: {
+        isActive: true,
+      },
+      organization: {
+        isActive: true,
+      },
+    },
+    select: {
+      organization: {
+        select: {
+          slug: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  return firstMembership ? `/${firstMembership.organization.slug}` : "/map";
+}
+
 export async function requireOrganizationMembership(orgSlug: string) {
   const sessionUser = await requireSessionUser(`/${orgSlug}`);
 
   // First check: does the org exist at all?
-  const org = await prisma.organization.findUnique({
+  const org = await prisma.organization.findFirst({
     where: { slug: orgSlug },
     select: {
       id: true,
@@ -47,7 +78,6 @@ export async function requireOrganizationMembership(orgSlug: string) {
       subscription: {
         select: {
           status: true,
-          billingMode: true,
           currentPeriodEnd: true,
         },
       },

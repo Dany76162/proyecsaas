@@ -1,51 +1,16 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { prisma } from "@/server/db/prisma";
+import { resolveSignedInHomePath } from "@/server/auth/access";
 import { getSessionUser } from "@/server/auth/session";
 
 export default async function HomePage() {
-  let isLoggedIn = false;
-  let workspaceHref = "/login";
+  const sessionUser = await getSessionUser();
 
-  try {
-    const cookieStore = await cookies();
-    isLoggedIn = cookieStore.has("proyecsaas_session");
-  } catch {
-    isLoggedIn = false;
-  }
-
-  if (isLoggedIn) {
-    const sessionUser = await getSessionUser();
-
-    if (sessionUser?.isPlatformAdmin) {
-      workspaceHref = "/platform";
-    } else if (sessionUser) {
-      const firstMembership = await prisma.membership.findFirst({
-        where: {
-          userId: sessionUser.id,
-          organization: {
-            isActive: true,
-          },
-        },
-        select: {
-          organization: {
-            select: {
-              slug: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      });
-
-      workspaceHref = firstMembership
-        ? `/${firstMembership.organization.slug}`
-        : "/login";
-    }
+  if (sessionUser) {
+    redirect(await resolveSignedInHomePath(sessionUser));
   }
 
   return (
@@ -66,29 +31,18 @@ export default async function HomePage() {
               de visitas.
             </p>
             <div className="flex flex-wrap gap-3">
-              {isLoggedIn ? (
-                <Link
-                  href={workspaceHref}
-                  className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
-                >
-                  Ingresar a tu area de trabajo
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
-                  >
-                    Iniciar sesion
-                  </Link>
-                  <Link
-                    href="/map"
-                    className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                  >
-                    Ver mapa publico
-                  </Link>
-                </>
-              )}
+              <Link
+                href="/login"
+                className="rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
+              >
+                Iniciar sesion
+              </Link>
+              <Link
+                href="/map"
+                className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Ver mapa publico
+              </Link>
             </div>
           </div>
 
@@ -134,15 +88,13 @@ export default async function HomePage() {
               Acceso
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-              {isLoggedIn ? "Sesion activa" : "Acceso restringido"}
+              Acceso restringido
             </h2>
           </div>
         </div>
         <div className="mt-6 rounded-[1.5rem] border bg-white p-6 shadow-soft">
           <p className="text-sm leading-7 text-slate-600">
-            {isLoggedIn
-              ? "Tu sesion esta activa. Accede al area de trabajo desde el boton de arriba."
-              : "El acceso a RaicesPilot requiere autenticacion e invitacion previa a una organizacion valida."}
+            El acceso a RaicesPilot requiere autenticacion e invitacion previa a una organizacion valida.
           </p>
         </div>
       </section>

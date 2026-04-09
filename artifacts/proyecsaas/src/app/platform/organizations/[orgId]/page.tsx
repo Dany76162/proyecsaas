@@ -78,7 +78,7 @@ export default async function OrgAuditPage({
           </div>
           
           <a
-            href={`/${org.slug}/catalogo`}
+            href={`/${org.slug}/catalog`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"

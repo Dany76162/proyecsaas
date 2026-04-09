@@ -204,12 +204,11 @@ export async function loginAction(formData: FormData) {
 
   if (!firstMembership) {
     // Platform admins can access /platform even without active org memberships.
-    if (user?.isPlatformAdmin) {
-      clearLoginAttempts(clientId);
-      await createSession(user.id);
-      const finalPath = sanitizeRedirectPath(parsed.data.next || undefined, "/platform");
-      redirect(`/login/transition?next=${encodeURIComponent(finalPath)}`);
-    }
+      if (user?.isPlatformAdmin) {
+        clearLoginAttempts(clientId);
+        await createSession(user.id);
+        redirect(sanitizeRedirectPath(parsed.data.next || undefined, "/platform"));
+      }
     // Regular users with no active memberships are blocked.
     redirect(buildLoginRedirect("no-memberships", parsed.data.next || undefined));
   }
@@ -222,7 +221,7 @@ export async function loginAction(formData: FormData) {
     parsed.data.next || undefined,
     `/${firstMembership.organization.slug}`,
   );
-  redirect(`/login/transition?next=${encodeURIComponent(finalPath)}`);
+  redirect(finalPath);
 }
 
 export async function logoutAction() {

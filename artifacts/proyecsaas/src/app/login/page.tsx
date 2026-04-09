@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { loginAction } from "@/server/auth/actions";
+import { resolveSignedInHomePath } from "@/server/auth/access";
 import { getSessionUser } from "@/server/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const sessionUser = await getSessionUser();
 
   if (sessionUser) {
-    redirect("/");
+    redirect(await resolveSignedInHomePath(sessionUser));
   }
 
   const resolvedSearchParams = searchParams ? await searchParams : undefined;

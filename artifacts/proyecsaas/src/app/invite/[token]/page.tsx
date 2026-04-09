@@ -6,11 +6,51 @@ import { prisma } from "@/server/db/prisma";
 
 import { InviteAcceptForm } from "./invite-accept-form";
 
-function buildInvalidState(invite: {
+type InvitePageState = {
   usedAt: Date | null;
   expiresAt: Date;
   organization: { name: string; slug: string } | null;
-} | null) {
+  user: { email: string; fullName: string } | null;
+};
+
+async function getInvitePageState(token: string): Promise<InvitePageState | null> {
+  const invite = await prisma.inviteToken.findUnique({
+    where: { token },
+    select: {
+      id: true,
+      usedAt: true,
+      expiresAt: true,
+      organizationId: true,
+      user: {
+        select: {
+          email: true,
+          fullName: true,
+        },
+      },
+    },
+  });
+
+  if (!invite) {
+    return null;
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: invite.organizationId },
+    select: {
+      name: true,
+      slug: true,
+    },
+  });
+
+  return {
+    usedAt: invite.usedAt,
+    expiresAt: invite.expiresAt,
+    organization,
+    user: invite.user,
+  };
+}
+
+function buildInvalidState(invite: Pick<InvitePageState, "usedAt" | "expiresAt" | "organization"> | null) {
   if (!invite) {
     return {
       title: "Invitacion invalida",
@@ -47,23 +87,7 @@ export default async function InvitePage({
 }) {
   const { token } = await params;
 
-  const invite = await prisma.inviteToken.findUnique({
-    where: { token },
-    include: {
-      organization: {
-        select: {
-          name: true,
-          slug: true,
-        },
-      },
-      user: {
-        select: {
-          email: true,
-          fullName: true,
-        },
-      },
-    },
-  });
+  const invite = await getInvitePageState(token);
 
   const isInvalid = !invite;
   const isUsed = !!invite?.usedAt;
@@ -150,15 +174,15 @@ export default async function InvitePage({
 
         <h1 className="mt-6 text-2xl font-semibold text-slate-950">Activa tu acceso</h1>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          Esta invitacion corresponde a <strong>{invite.organization.name}</strong>. El acceso
+          Esta invitacion corresponde a <strong>{invite.organization?.name ?? "tu inmobiliaria"}</strong>. El acceso
           quedara vinculado al email invitado y luego entraras directamente a ese workspace.
         </p>
 
         <InviteAcceptForm
           token={token}
-          email={invite.user.email}
-          organizationName={invite.organization.name}
-          organizationSlug={invite.organization.slug}
+          email={invite.user?.email ?? ""}
+          organizationName={invite.organization?.name ?? "Inmobiliaria"}
+          organizationSlug={invite.organization?.slug ?? ""}
         />
       </div>
     </main>

@@ -64,9 +64,7 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
         subscription: {
           select: {
             status: true,
-            billingMode: true,
             currentPeriodEnd: true,
-            internalBillingNotes: true,
             planId: true,
           },
         },
@@ -157,10 +155,10 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
       commercialStatusLabel: commercialState.summary,
       commercialAccess: commercialState.allowed ? "allowed" : "blocked",
       commercialSource: commercialState.source,
-      billingMode: org.subscription?.billingMode ?? null,
-      billingModeLabel: org.subscription ? BILLING_MODE_LABELS[org.subscription.billingMode] : null,
+      billingMode: null,
+      billingModeLabel: null,
       currentPeriodEnd: org.subscription?.currentPeriodEnd?.toISOString() ?? null,
-      internalBillingNotes: org.subscription?.internalBillingNotes ?? null,
+      internalBillingNotes: null,
       planId: org.subscription?.planId ?? null,
       onboardingStatus:
         org._count.memberships === 0

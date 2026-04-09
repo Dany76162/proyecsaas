@@ -21,7 +21,7 @@ export const BILLING_MODE_LABELS: Record<BillingMode, string> = {
 
 type SubscriptionSnapshot = {
   status: SubscriptionStatus;
-  billingMode: BillingMode;
+  billingMode?: BillingMode | null;
   currentPeriodEnd: Date;
 };
 
