@@ -5,7 +5,7 @@
 # "npm install -g pnpm" which fails because npm's global bin
 # is not on PATH in the Nix environment.
 #
-# Instead: add nodePackages.pnpm to nixPkgs — Nix installs pnpm
+# Instead: add nodePackages.pnpm to nixPkgs - Nix installs pnpm
 # directly into the Nix profile which IS on PATH for all phases.
 
 [variables]
@@ -16,14 +16,13 @@ nixPkgs = ["nodejs_20", "openssl", "nodePackages.pnpm"]
 
 [phases.install]
 # --no-frozen-lockfile: handles pnpm version differences between local (v10)
-#   and whatever Nix provides — allows lockfile to be regenerated if needed
+#   and whatever Nix provides - allows lockfile to be regenerated if needed
 # --prefer-offline: uses BuildKit pnpm cache; avoids minimumReleaseAge checks
 cmds = ["pnpm install --no-frozen-lockfile --prefer-offline"]
 
 [phases.build]
 cmds = [
   "pnpm --filter @workspace/proyecsaas exec prisma generate",
-  "pnpm --filter @workspace/proyecsaas exec prisma migrate resolve --rolled-back 0_init || true",
   "pnpm --filter @workspace/proyecsaas run build"
 ]
 
