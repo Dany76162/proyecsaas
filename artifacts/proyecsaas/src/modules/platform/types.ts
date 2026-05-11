@@ -26,7 +26,7 @@ export type OrgPlatformSummary = {
   whatsappChannel: WhatsAppChannelHealth | null;
   health: OrgHealthStatus;
   onboardingStatus: "Sin usuarios" | "Invitación pendiente" | "Onboarding iniciado" | "Operativa";
-  maxAiAgents: number;
+  maxAiAgents: number | null;
   aiAgentCount: number;
   agentQuotaNote: string | null;
   commercialStatus: string;

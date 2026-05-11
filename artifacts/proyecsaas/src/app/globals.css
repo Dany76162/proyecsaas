@@ -7,17 +7,36 @@
 }
 
 body {
-  @apply bg-slate-50 text-slate-950 antialiased;
-  background-image:
-    radial-gradient(circle at top left, rgba(35, 86, 217, 0.08), transparent 28%),
-    linear-gradient(180deg, #f8fbff 0%, #f8fafc 46%, #f1f5f9 100%);
+  @apply bg-slate-50 text-slate-900 antialiased;
+  background-image: 
+    radial-gradient(circle at 2% 2%, rgba(35, 86, 217, 0.04), transparent 25%),
+    radial-gradient(circle at 98% 98%, rgba(35, 86, 217, 0.03), transparent 25%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 a {
-  @apply text-inherit no-underline;
+  @apply text-inherit no-underline transition-colors duration-200;
 }
 
 * {
-  @apply border-slate-200;
+  @apply border-slate-200/80;
 }
+
+/* Infinite Marquee Animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
+
 

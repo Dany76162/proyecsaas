@@ -1,197 +1,341 @@
 "use server";
+import "server-only";
 
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
-
+import { redirect } from "next/navigation";
+import { getOpenAIClient, createAgentLog, getActiveAgentByType, inferPlatform, formatOpenAIPrompt, parseMarketingResponse, OPENAI_MODEL } from "@/modules/agents/service";
 import { prisma } from "@/server/db/prisma";
-import { requireOrganizationMembership } from "@/server/auth/access";
+import { assertMinimumRole, requireOrganizationMembership, requirePlatformAdmin } from "@/server/auth/access";
+import { ApprovalStatus, AgentType, AgentLogLevel, TaskStatus, RunStatus, DraftStatus, MembershipRole } from "@prisma/client";
+import type { ContentPlatform, AgentPriority } from "@prisma/client";
 
-const createSchema = z.object({
-  name: z.string().min(1, "El nombre es obligatorio").max(80),
-  description: z.string().max(300).optional(),
-  tone: z.enum(["FORMAL", "FRIENDLY", "NEUTRAL"]).default("FRIENDLY"),
-  language: z.string().default("es-AR"),
-  persona: z.string().max(2000).optional(),
-  is24x7: z.boolean().default(true),
-  whatsappChannelId: z.string().optional().nullable(),
-  zoneFilters: z.array(z.string()).default([]),
-  propertyTypes: z.array(z.string()).default([]),
-  minBudget: z.number().int().positive().optional().nullable(),
-  maxBudget: z.number().int().positive().optional().nullable(),
-  escalateAfterMessages: z.number().int().min(1).max(20).default(5),
-  escalateOnKeywords: z.array(z.string()).default([]),
-  humanHandoffMessage: z.string().max(500).optional(),
-});
+export async function createAgentTask(formData: FormData) {
+  const sessionUser = await requirePlatformAdmin();
 
-export type CreateAgentInput = z.infer<typeof createSchema>;
+  const title = formData.get("title")?.toString().trim();
+  const description = formData.get("description")?.toString().trim();
+  const priority = formData.get("priority")?.toString() as AgentPriority | null;
+  const platform = formData.get("platform")?.toString() as ContentPlatform | null;
+  const contentType = formData.get("contentType")?.toString()?.trim() || "post";
 
-type ActionResult = { success: true } | { success: false; error: string };
-
-function isManagerRole(role: string) {
-  return role === "OWNER" || role === "ADMIN";
-}
-
-export async function createAgent(
-  orgSlug: string,
-  input: CreateAgentInput,
-): Promise<ActionResult> {
-  const { membership } = await requireOrganizationMembership(orgSlug);
-  if (!isManagerRole(membership.role)) {
-    return { success: false, error: "Sin permisos para crear agentes." };
+  if (!title || !description || !priority) {
+    throw new Error("Título, descripción y prioridad son obligatorios");
   }
 
-  const parsed = createSchema.safeParse(input);
-  if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
-  }
-
-  const data = parsed.data;
-  const orgId = membership.organization.id;
-
-  // Enforce per-org agent quota (controlled by superadmin)
-  const [org, existingCount] = await Promise.all([
-    prisma.organization.findUnique({ where: { id: orgId }, select: { maxAiAgents: true } }),
-    prisma.aiAgent.count({ where: { organizationId: orgId } }),
-  ]);
-  const quota = org?.maxAiAgents ?? 1;
-  if (existingCount >= quota) {
-    return {
-      success: false,
-      error: `Límite de agentes alcanzado (${quota}). Para habilitar más agentes contactá al soporte de la plataforma.`,
-    };
-  }
-
-  if (data.whatsappChannelId) {
-    const alreadyAssigned = await prisma.aiAgent.findFirst({
-      where: { whatsappChannelId: data.whatsappChannelId },
-    });
-    if (alreadyAssigned) {
-      return { success: false, error: "Ese canal de WhatsApp ya está asignado a otro agente." };
-    }
-  }
-
-  await prisma.aiAgent.create({
+  const task = await prisma.agentTask.create({
     data: {
-      organizationId: orgId,
-      name: data.name,
-      description: data.description,
-      tone: data.tone,
-      language: data.language,
-      persona: data.persona,
-      is24x7: data.is24x7,
-      whatsappChannelId: data.whatsappChannelId ?? null,
-      zoneFilters: data.zoneFilters,
-      propertyTypes: data.propertyTypes,
-      minBudget: data.minBudget ?? null,
-      maxBudget: data.maxBudget ?? null,
-      escalateAfterMessages: data.escalateAfterMessages,
-      escalateOnKeywords: data.escalateOnKeywords,
-      humanHandoffMessage: data.humanHandoffMessage,
-      status: "DRAFT",
+      scope: "PLATFORM",
+      organizationId: null,
+      title,
+      description,
+      priority,
+      createdById: sessionUser.id,
+      metadata: { contentType, platform },
     },
   });
 
-  revalidatePath(`/${orgSlug}/agents`);
-  return { success: true };
-}
+  await createAgentLog({
+    level: AgentLogLevel.INFO,
+    message: `Tarea creada: ${title}`,
+    metadata: { taskId: task.id, priority, platform },
+  });
 
-export async function updateAgent(
-  orgSlug: string,
-  agentId: string,
-  input: Partial<CreateAgentInput> & { status?: "DRAFT" | "ACTIVE" | "PAUSED" },
-): Promise<ActionResult> {
-  const { membership } = await requireOrganizationMembership(orgSlug);
-  if (!isManagerRole(membership.role)) {
-    return { success: false, error: "Sin permisos para editar agentes." };
+  const orchestrator = await getActiveAgentByType(AgentType.ORCHESTRATOR);
+  if (!orchestrator) {
+    await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.FAILED } });
+    throw new Error("No se encontró Director Operativo IA activo");
   }
 
-  const orgId = membership.organization.id;
+  await prisma.agentTask.update({ where: { id: task.id }, data: { agentId: orchestrator.id, status: TaskStatus.ASSIGNED } });
 
-  const agent = await prisma.aiAgent.findFirst({
-    where: { id: agentId, organizationId: orgId },
+  await createAgentLog({
+    level: AgentLogLevel.INFO,
+    message: `Agente asignado: ${orchestrator.name}`,
+    metadata: { taskId: task.id, agentId: orchestrator.id },
   });
-  if (!agent) return { success: false, error: "Agente no encontrado." };
 
-  if (input.whatsappChannelId && input.whatsappChannelId !== agent.whatsappChannelId) {
-    const alreadyAssigned = await prisma.aiAgent.findFirst({
-      where: {
-        whatsappChannelId: input.whatsappChannelId,
-        id: { not: agentId },
+  try {
+    await processTaskWithOrchestrator(task.id, orchestrator.id, sessionUser.id);
+  } catch (err) {
+    // processTaskWithOrchestrator already marks task/run as FAILED and logs internally,
+    // so we swallow here to allow the redirect to proceed gracefully.
+    console.error("[AgentOS] Error en generación (ya registrado en logs):", err instanceof Error ? err.message : err);
+  }
+
+  redirect("/platform/agents/tasks");
+}
+
+export async function approveOrRejectDraft(formData: FormData) {
+  const sessionUser = await requirePlatformAdmin();
+  const approvalId = formData.get("approvalId")?.toString();
+  const decision = formData.get("decision")?.toString() as ApprovalStatus | null;
+  const comments = formData.get("comments")?.toString() ?? "";
+
+  if (!approvalId || !decision || !Object.values(ApprovalStatus).includes(decision)) {
+    throw new Error("Decisión de aprobación inválida");
+  }
+
+  const approval = await prisma.agentApproval.findUnique({
+    where: { id: approvalId },
+    include: { task: true, run: true },
+  });
+
+  if (!approval) {
+    throw new Error("Aprobación no encontrada");
+  }
+
+  if (approval.status !== ApprovalStatus.PENDING) {
+    throw new Error("Esta aprobación ya fue procesada");
+  }
+
+  await prisma.agentApproval.update({
+    where: { id: approvalId },
+    data: {
+      status: decision,
+      comments: comments || null,
+      decidedByUserId: sessionUser.id,
+      decidedAt: new Date(),
+    },
+  });
+
+  const draft = await prisma.contentDraft.findFirst({ where: { taskId: approval.taskId } });
+
+  if (draft) {
+    await prisma.contentDraft.update({
+      where: { id: draft.id },
+      data: {
+        status: decision === ApprovalStatus.APPROVED ? DraftStatus.APPROVED : DraftStatus.REJECTED,
       },
     });
-    if (alreadyAssigned) {
-      return { success: false, error: "Ese canal de WhatsApp ya está asignado a otro agente." };
-    }
   }
 
-  await prisma.aiAgent.update({
-    where: { id: agentId },
+  await prisma.agentTask.update({
+    where: { id: approval.taskId },
     data: {
-      name: input.name,
-      description: input.description,
-      tone: input.tone,
-      language: input.language,
-      persona: input.persona,
-      is24x7: input.is24x7,
-      status: input.status,
-      whatsappChannelId: input.whatsappChannelId ?? null,
-      zoneFilters: input.zoneFilters,
-      propertyTypes: input.propertyTypes,
-      minBudget: input.minBudget ?? null,
-      maxBudget: input.maxBudget ?? null,
-      escalateAfterMessages: input.escalateAfterMessages,
-      escalateOnKeywords: input.escalateOnKeywords,
-      humanHandoffMessage: input.humanHandoffMessage,
+      status: decision === ApprovalStatus.APPROVED ? TaskStatus.COMPLETED : TaskStatus.FAILED,
+    },
+  });
+
+  revalidatePath("/platform/agents/approvals");
+
+  await createAgentLog({
+    runId: approval.runId ?? undefined,
+    level: AgentLogLevel.INFO,
+    message: `Decisión registrada: Borrador ${decision === ApprovalStatus.APPROVED ? "aprobado" : "rechazado"} por ${sessionUser.fullName}`,
+    metadata: { approvalId, decision, comments },
+  });
+
+  redirect("/platform/agents/approvals");
+}
+
+export async function toggleAgentStatus(orgSlug: string, agentId: string) {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+  const agent = await prisma.agent.findFirst({
+    where: {
+      id: agentId,
+      organizationId: membership.organization.id,
+    },
+    select: { id: true, isActive: true },
+  });
+
+  if (!agent) {
+    throw new Error("Agente no encontrado");
+  }
+
+  await prisma.agent.update({
+    where: { id: agent.id },
+    data: {
+      isActive: !agent.isActive,
     },
   });
 
   revalidatePath(`/${orgSlug}/agents`);
-  revalidatePath(`/${orgSlug}/agents/${agentId}`);
-  return { success: true };
 }
 
-export async function toggleAgentStatus(
-  orgSlug: string,
-  agentId: string,
-): Promise<ActionResult> {
-  const { membership } = await requireOrganizationMembership(orgSlug);
-  if (!isManagerRole(membership.role)) {
-    return { success: false, error: "Sin permisos." };
+async function processTaskWithOrchestrator(taskId: string, orchestratorId: string, userId: string) {
+  const task = await prisma.agentTask.findUnique({ where: { id: taskId } });
+  if (!task) throw new Error("Tarea no encontrada");
+
+  const orchestratorRun = await prisma.agentRun.create({
+    data: {
+      scope: "PLATFORM",
+      organizationId: null,
+      taskId,
+      agentId: orchestratorId,
+      status: RunStatus.RUNNING,
+      input: { title: task.title, description: task.description, metadata: task.metadata },
+    },
+  });
+
+  await createAgentLog({
+    runId: orchestratorRun.id,
+    level: AgentLogLevel.INFO,
+    message: "Inicio de ejecución del Director Operativo IA",
+    metadata: { taskId },
+  });
+
+  const platform = inferPlatform(task.description ?? "", (task.metadata as { platform?: string } | null)?.platform ?? null);
+  const contentType = (task.metadata as { contentType?: string } | null)?.contentType ?? "post";
+
+  await prisma.agentTask.update({
+    where: { id: task.id },
+    data: { metadata: { contentType, platform }, status: TaskStatus.IN_PROGRESS },
+  });
+
+  const marketingAgent = await getActiveAgentByType(AgentType.MARKETING);
+  if (!marketingAgent) {
+    await prisma.agentRun.update({ where: { id: orchestratorRun.id }, data: { status: RunStatus.FAILED, error: "Marketing agent no activo" } });
+    await createAgentLog({
+      runId: orchestratorRun.id,
+      level: AgentLogLevel.ERROR,
+      message: "No se encontró Agente de Marketing activo",
+      metadata: { taskId },
+    });
+    await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.FAILED } });
+    return;
   }
 
-  const agent = await prisma.aiAgent.findFirst({
-    where: { id: agentId, organizationId: membership.organization.id },
+  try {
+    const client = getOpenAIClient();
+    const prompt = formatOpenAIPrompt({ title: task.title, description: task.description ?? "", platform });
+    await createAgentLog({
+      runId: orchestratorRun.id,
+      level: AgentLogLevel.INFO,
+      message: "Prompt enviado a OpenAI",
+      metadata: { taskId, platform, contentType },
+    });
+
+    const completion = await Promise.race([
+      client.chat.completions.create({
+        model: OPENAI_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 700,
+      }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("OpenAI timeout")), 30000)),
+    ]) as { choices: Array<{ message: { content?: string } }> };
+
+    const responseText = completion.choices?.[0]?.message?.content?.trim() ?? "";
+    const parsed = parseMarketingResponse(responseText);
+
+    const marketingRun = await prisma.agentRun.create({
+      data: {
+        scope: "PLATFORM",
+        organizationId: null,
+        taskId,
+        agentId: marketingAgent.id,
+        status: RunStatus.COMPLETED,
+        input: { promptSummary: `Generar contenido para ${platform}` },
+        output: { content: parsed.content, title: parsed.title, hashtags: parsed.hashtags },
+      },
+    });
+
+    await prisma.contentDraft.create({
+      data: {
+        scope: "PLATFORM",
+        organizationId: null,
+        taskId,
+        platform,
+        type: contentType,
+        title: parsed.title,
+        content: parsed.content,
+        hashtags: parsed.hashtags,
+        imagePrompt: parsed.imagePrompt ?? null,
+        status: DraftStatus.DRAFT,
+      },
+    });
+
+    await prisma.agentApproval.create({
+      data: {
+        scope: "PLATFORM",
+        organizationId: null,
+        taskId,
+        runId: marketingRun.id,
+        requestedByAgentId: marketingAgent.id,
+        status: ApprovalStatus.PENDING,
+        requestedAt: new Date(),
+      },
+    });
+
+    await prisma.agentRun.update({ where: { id: orchestratorRun.id }, data: { status: RunStatus.COMPLETED, completedAt: new Date() } });
+    await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.APPROVAL_PENDING } });
+
+    await createAgentLog({
+      runId: marketingRun.id,
+      level: AgentLogLevel.INFO,
+      message: "Borrador generado por el Agente de Marketing y pendiente de aprobación",
+      metadata: { taskId, draftPlatform: platform },
+    });
+  } catch (error) {
+    const rawMessage = error instanceof Error ? error.message : String(error);
+
+    // Detect OpenAI 429 quota exceeded specifically
+    const is429 =
+      rawMessage.includes("429") ||
+      rawMessage.includes("quota") ||
+      rawMessage.includes("rate limit") ||
+      rawMessage.includes("exceeded");
+
+    const userMessage = is429
+      ? "OpenAI rechazó la solicitud por cuota insuficiente. Revisá la configuración de API o intentá más tarde."
+      : `Error durante la generación de contenido: ${rawMessage}`;
+
+    await prisma.agentRun.update({
+      where: { id: orchestratorRun.id },
+      data: { status: RunStatus.FAILED, error: userMessage, completedAt: new Date() },
+    });
+    await createAgentLog({
+      runId: orchestratorRun.id,
+      level: AgentLogLevel.ERROR,
+      message: userMessage,
+      metadata: { taskId, error: rawMessage, isQuotaError: is429 },
+    });
+    await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.FAILED } });
+  }
+}
+
+/**
+ * ORGANIZATIONAL SCOPE (Tenant Agents)
+ */
+
+export async function createAgent(orgSlug: string, data: any) {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+  const agent = await prisma.aiAgent.create({
+    data: {
+      ...data,
+      organizationId: membership.organization.id,
+    },
   });
-  if (!agent) return { success: false, error: "Agente no encontrado." };
 
-  const nextStatus = agent.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
+  revalidatePath(`/${orgSlug}/agents`);
+  return { success: true, data: agent };
+}
 
-  await prisma.aiAgent.update({
-    where: { id: agentId },
-    data: { status: nextStatus },
+export async function updateAgent(orgSlug: string, agentId: string, data: any) {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+  const agent = await prisma.aiAgent.update({
+    where: { id: agentId, organizationId: membership.organization.id },
+    data,
   });
 
   revalidatePath(`/${orgSlug}/agents`);
   revalidatePath(`/${orgSlug}/agents/${agentId}`);
-  return { success: true };
+  return { success: true, data: agent };
 }
 
-export async function deleteAgent(
-  orgSlug: string,
-  agentId: string,
-): Promise<ActionResult> {
+export async function deleteAgent(orgSlug: string, agentId: string) {
   const { membership } = await requireOrganizationMembership(orgSlug);
-  if (!isManagerRole(membership.role)) {
-    return { success: false, error: "Sin permisos para eliminar agentes." };
-  }
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
 
-  const agent = await prisma.aiAgent.findFirst({
+  await prisma.aiAgent.delete({
     where: { id: agentId, organizationId: membership.organization.id },
   });
-  if (!agent) return { success: false, error: "Agente no encontrado." };
-
-  await prisma.aiAgent.delete({ where: { id: agentId } });
 
   revalidatePath(`/${orgSlug}/agents`);
-  return { success: true };
 }

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Menu } from "lucide-react";
-
 import { PlatformSidebar } from "@/components/platform/platform-sidebar";
 
 type SessionInfo = {
@@ -43,16 +42,16 @@ export function PlatformShell({
             >
               <Menu className="h-5 w-5" />
             </button>
-            <span className="rounded bg-violet-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-600">
-              Superadmin · Plataforma
+            <span className="rounded border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-brand-700">
+              Panel Superadmin
             </span>
           </div>
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="hidden sm:block text-sm font-semibold text-slate-900 truncate max-w-[160px]">
+            <span className="hidden sm:block text-sm font-bold text-slate-900 truncate max-w-[160px]">
               {sessionUser.fullName}
             </span>
             <span className="hidden sm:block text-slate-300">·</span>
-            <span className="hidden sm:block text-sm text-slate-500 truncate max-w-[200px]">
+            <span className="hidden sm:block text-sm text-slate-500 font-medium truncate max-w-[200px]">
               {sessionUser.email}
             </span>
             {/* Mobile: name only */}
@@ -62,7 +61,7 @@ export function PlatformShell({
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

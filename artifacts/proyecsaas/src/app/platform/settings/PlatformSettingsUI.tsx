@@ -267,7 +267,7 @@ export default function PlatformSettingsUI({
   delegatedAdmins: { id: string; fullName: string; email: string }[];
 }) {
   return (
-    <div className="mx-auto max-w-5xl space-y-6 sm:space-y-10">
+    <div className="space-y-6 sm:space-y-10">
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">

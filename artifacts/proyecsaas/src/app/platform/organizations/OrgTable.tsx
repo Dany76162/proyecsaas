@@ -1,15 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
-
+import { OrgPlatformSummary, PlatformPlanOption } from "@/modules/platform/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { HealthBadge, WhatsAppStatus, formatRelativeTime } from "@/components/platform/platform-ui";
+import { CreateOrgDialog } from "@/components/platform/create-org-dialog";
 import { OnboardingControls } from "@/components/platform/onboarding-controls";
 import { CommercialControls } from "@/components/platform/commercial-controls";
-import { DeleteOrganizationButton } from "@/components/platform/DeleteOrganizationButton";
 import { TrashOrganizationButton } from "@/components/platform/TrashOrganizationButton";
-import { CreateOrgDialog } from "@/components/platform/create-org-dialog";
-import type { OrgPlatformSummary, PlatformPlanOption } from "@/modules/platform/types";
+import { DeleteOrganizationButton } from "@/components/platform/DeleteOrganizationButton";
 
 const HEALTH_FILTERS = [
   { value: "all", label: "Todos" },
@@ -84,26 +96,26 @@ export function OrgTable({
           <div className="flex flex-1 items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
+              <Input
                 type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar por nombre, slug o ciudad..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm font-medium outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="pl-10"
               />
             </div>
-            <button
-              type="button"
+            <Button
+              variant={showFilters || healthFilter !== "all" || visibilityFilter !== "active" ? "secondary" : "outline"}
               onClick={() => setShowFilters((current) => !current)}
-              className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+              className={cn(
                 showFilters || healthFilter !== "all" || visibilityFilter !== "active"
-                  ? "border-indigo-300 bg-indigo-50 text-indigo-700"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
+                  ? "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
+                  : ""
+              )}
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">Filtros</span>
-            </button>
+            </Button>
           </div>
 
           <div className="w-full sm:w-auto">
@@ -112,24 +124,21 @@ export function OrgTable({
         </div>
 
         {showFilters ? (
-          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="mr-2 text-xs font-bold uppercase tracking-wider text-slate-500">
                 Vista:
               </span>
               {VISIBILITY_FILTERS.map((filter) => (
-                <button
+                <Button
                   key={filter.value}
-                  type="button"
+                  variant={visibilityFilter === filter.value ? "primary" : "outline"}
+                  size="sm"
                   onClick={() => setVisibilityFilter(filter.value)}
-                  className={`rounded-lg px-3 py-1 text-xs font-bold transition ${
-                    visibilityFilter === filter.value
-                      ? "bg-slate-900 text-white"
-                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-                  }`}
+                  className="h-7 px-3 text-[10px]"
                 >
                   {filter.label}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -138,18 +147,15 @@ export function OrgTable({
                 Salud:
               </span>
               {HEALTH_FILTERS.map((filter) => (
-                <button
+                <Button
                   key={filter.value}
-                  type="button"
+                  variant={healthFilter === filter.value ? "primary" : "outline"}
+                  size="sm"
                   onClick={() => setHealthFilter(filter.value)}
-                  className={`rounded-lg px-3 py-1 text-xs font-bold transition ${
-                    healthFilter === filter.value
-                      ? "bg-indigo-600 text-white"
-                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-                  }`}
+                  className="h-7 px-3 text-[10px]"
                 >
                   {filter.label}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -174,35 +180,32 @@ export function OrgTable({
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-sm">
-            <thead>
-              <tr className="border-b bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <th className="px-5 py-3.5">Organización</th>
-                <th className="px-5 py-3.5">Estado</th>
-                <th className="px-5 py-3.5">Salud sistémica</th>
-                <th className="px-5 py-3.5">Canal WABA</th>
-                <th className="px-5 py-3.5">Tráfico 7d</th>
-                <th className="px-5 py-3.5 whitespace-nowrap">Última actividad</th>
-                <th className="px-5 py-3.5">Onboarding</th>
-                <th className="px-5 py-3.5">Comercial</th>
-                <th className="px-5 py-3.5 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+      <Card variant="elevated" className="overflow-hidden">
+        <Table className="min-w-[1100px]">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-5">Organización</TableHead>
+              <TableHead className="px-5">Estado</TableHead>
+              <TableHead className="px-5">Salud sistémica</TableHead>
+              <TableHead className="px-5">Canal WABA</TableHead>
+              <TableHead className="px-5">Tráfico 7d</TableHead>
+              <TableHead className="px-5 whitespace-nowrap">Última actividad</TableHead>
+              <TableHead className="px-5">Estado de Alta</TableHead>
+              <TableHead className="px-5">Comercial</TableHead>
+              <TableHead className="px-5 text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
               {filtered.map((org) => (
-                <tr
+                <TableRow
                   key={org.id}
-                  className={`transition hover:bg-slate-50/70 ${
-                    org.isTrashed
-                      ? "bg-amber-50/40"
-                      : !org.isActive || org.commercialAccess === "blocked"
-                        ? "bg-slate-50 opacity-60 grayscale"
-                        : ""
-                  }`}
+                  className={cn(
+                    "transition hover:bg-slate-50/70",
+                    org.isTrashed && "bg-amber-50/40",
+                    (!org.isActive || org.commercialAccess === "blocked") && "bg-slate-50 opacity-60 grayscale"
+                  )}
                 >
-                  <td className="px-5 py-4 align-top">
+                  <TableCell className="px-5 py-4 align-top">
                     <div className="flex flex-col">
                       <span className="font-bold text-slate-900">{org.name}</span>
                       <span className="mt-0.5 text-xs font-medium text-slate-500">
@@ -210,28 +213,28 @@ export function OrgTable({
                       </span>
                       <span className="mt-1 text-[11px] font-medium text-slate-400">{org.slug}</span>
                     </div>
-                  </td>
+                  </TableCell>
 
-                  <td className="px-5 py-4 align-top">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${getLifecycleTone(org)}`}
+                  <TableCell className="px-5 py-4 align-top">
+                    <Badge
+                      variant={org.isTrashed ? "warning" : org.isActive ? "success" : "neutral"}
                     >
                       {getLifecycleLabel(org)}
-                    </span>
+                    </Badge>
                     {org.isTrashed && org.deletedAt ? (
                       <p className="mt-1 text-[11px] text-slate-500">{formatRelativeTime(org.deletedAt)}</p>
                     ) : null}
-                  </td>
+                  </TableCell>
 
-                  <td className="px-5 py-4 align-top">
+                  <TableCell className="px-5 py-4 align-top">
                     <HealthBadge status={org.health} />
-                  </td>
+                  </TableCell>
 
-                  <td className="px-5 py-4 align-top">
+                  <TableCell className="px-5 py-4 align-top">
                     <WhatsAppStatus channel={org.whatsappChannel} />
-                  </td>
+                  </TableCell>
 
-                  <td className="px-5 py-4 align-top">
+                  <TableCell className="px-5 py-4 align-top">
                     <div className="flex flex-col gap-1">
                       <span
                         className={
@@ -243,29 +246,31 @@ export function OrgTable({
                         {org.recentLeadCount} leads
                       </span>
                       <span
-                        className={`text-[10px] font-bold uppercase tracking-wider ${
+                        className={cn(
+                          "text-[10px] font-bold uppercase tracking-wider",
                           org.recentFailedDeliveries > 0 ? "text-red-600" : "text-emerald-600"
-                        }`}
+                        )}
                       >
                         {org.recentFailedDeliveries} errores
                       </span>
                     </div>
-                  </td>
+                  </TableCell>
 
-                  <td className="px-5 py-4 align-top text-xs font-medium text-slate-600">
+                  <TableCell className="px-5 py-4 align-top text-xs font-medium text-slate-600">
                     {org.lastActivityAt ? formatRelativeTime(org.lastActivityAt) : "-"}
-                  </td>
+                  </TableCell>
 
-                  <td className="px-5 py-4 align-top">
+                  <TableCell className="px-5 py-4 align-top">
                     <div className="flex flex-col">
                       <span
-                        className={`mb-1 text-xs font-bold leading-none ${
+                        className={cn(
+                          "mb-1 text-xs font-bold leading-none",
                           org.onboardingStatus === "Operativa"
                             ? "text-emerald-700"
                             : org.onboardingStatus === "Sin usuarios"
                               ? "text-slate-400"
                               : "text-amber-600"
-                        }`}
+                        )}
                       >
                         {org.onboardingStatus}
                       </span>
@@ -273,19 +278,15 @@ export function OrgTable({
                         {org.memberCount} usuarios
                       </span>
                     </div>
-                  </td>
+                  </TableCell>
 
-                  <td className="px-5 py-4 align-top">
+                  <TableCell className="px-5 py-4 align-top">
                     <div className="flex min-w-[180px] flex-col gap-1">
-                      <span
-                        className={`inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                          org.commercialAccess === "allowed"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-rose-50 text-rose-700"
-                        }`}
+                      <Badge
+                        variant={org.commercialAccess === "allowed" ? "success" : "danger"}
                       >
                         {org.commercialStatusLabel}
-                      </span>
+                      </Badge>
                       <span className="text-xs font-semibold text-slate-700">
                         {org.planId ? `Plan ${org.planId}` : "Sin plan asignado"}
                       </span>
@@ -298,9 +299,9 @@ export function OrgTable({
                         </span>
                       ) : null}
                     </div>
-                  </td>
+                  </TableCell>
 
-                  <td className="px-5 py-4 align-top">
+                  <TableCell className="px-5 py-4 align-top">
                     <div className="flex flex-col items-end gap-1.5">
                       {!org.isTrashed ? (
                         <>
@@ -340,13 +341,13 @@ export function OrgTable({
                         isPlatformOrg={platformOrgId === org.id}
                       />
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
 
               {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-5 py-12 text-center">
+                <TableRow>
+                  <TableCell colSpan={9} className="px-5 py-12 text-center">
                     {search || healthFilter !== "all" || visibilityFilter !== "active" ? (
                       <>
                         <p className="text-base font-semibold text-slate-900">Sin resultados</p>
@@ -364,13 +365,12 @@ export function OrgTable({
                         </p>
                       </>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : null}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }

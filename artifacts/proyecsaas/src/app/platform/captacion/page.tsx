@@ -118,7 +118,7 @@ export default async function PlatformCaptacionPage() {
   ] as const;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="space-y-8">
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-violet-950 px-6 py-8 text-white sm:px-8">
           <div className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">

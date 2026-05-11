@@ -130,7 +130,7 @@ export default async function WorkspaceOnboardingPage({
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-100">
-                Onboarding inicial
+                Puesta en marcha
               </span>
               <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100">
                 {completedCount}/{steps.length} completados
@@ -201,7 +201,7 @@ export default async function WorkspaceOnboardingPage({
                   Recorrido completo
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-100">
-                  El onboarding inicial ya quedo cubierto. Ahora podes operar desde conversaciones
+                  La puesta en marcha inicial ya quedo cubierta. Ahora podes operar desde conversaciones
                   y revisar el manual de uso cuando lo necesites.
                 </p>
               </div>

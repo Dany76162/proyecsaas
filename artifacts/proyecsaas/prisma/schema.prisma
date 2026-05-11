@@ -3,8 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 enum MembershipRole {
@@ -83,18 +85,6 @@ enum WhatsAppProvider {
   WHATSAPP_CLOUD
 }
 
-enum AiAgentStatus {
-  DRAFT
-  ACTIVE
-  PAUSED
-}
-
-enum AiAgentTone {
-  FORMAL
-  FRIENDLY
-  NEUTRAL
-}
-
 enum WhatsAppChannelStatus {
   ACTIVE
   INACTIVE
@@ -142,24 +132,39 @@ model User {
   memberships       Membership[]
   ownedLeads        Lead[]             @relation("LeadOwner")
   createdVisits     Visit[]            @relation("VisitCreatedBy")
+  createdAgentTasks AgentTask[]        @relation("TaskCreatedBy")
+  decidedApprovals  AgentApproval[]    @relation("ApprovalDecidedBy")
   inviteTokens      InviteToken[]
+  passwordResetTokens PasswordResetToken[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }
 
 model InviteToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
-  userId    String
+  id             String       @id @default(cuid())
+  token          String       @unique
+  userId         String
   organizationId String
-  usedAt    DateTime?
-  expiresAt DateTime
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  usedAt         DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Organization {
@@ -175,16 +180,16 @@ model Organization {
   contactWhatsapp        String?
   website                String?
   businessHours          String?
-  inviteTokens           InviteToken[]
   propertySourceUrl      String?
   propertySourceType     String?
   propertySourceStatus   String             @default("IDLE")
   propertySourceSyncedAt DateTime?
-  maxAiAgents            Int                @default(1)
-  agentQuotaNote         String?
   isActive               Boolean            @default(true)
   deletedAt              DateTime?
+  maxAiAgents            Int?
+  agentQuotaNote         String?
   memberships            Membership[]
+  inviteTokens           InviteToken[]
   leads                  Lead[]
   properties             Property[]
   conversations          Conversation[]
@@ -198,8 +203,6 @@ model Organization {
   subscription           Subscription?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
-
-  @@index([deletedAt])
 }
 
 model Membership {
@@ -437,37 +440,17 @@ model WorkerHeartbeat {
   updatedAt  DateTime @updatedAt
 }
 
-model GlobalSetting {
-  key         String   @id // e.g. "PLATFORM_WHATSAPP_NUMBER"
-  value       String
-  description String?
-  updatedAt   DateTime @updatedAt
-}
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  event      String
-  actorId    String?
-  actorEmail String?
-  entityType String?
-  entityId   String?
-  entityName String?
-  metadata   Json?
-  createdAt  DateTime @default(now())
-
-  @@index([createdAt])
-  @@index([event])
-}
-
 model WhatsAppChannel {
   id                           String                            @id @default(cuid())
   organizationId               String
+  name                         String?
   provider                     WhatsAppProvider                  @default(WHATSAPP_CLOUD)
   status                       WhatsAppChannelStatus             @default(INACTIVE)
   verificationStatus           WhatsAppChannelVerificationStatus @default(PENDING)
   phoneNumberId                String                            @unique
   wabaId                       String?
   businessAccountId            String?
+  businessId                   String?
   displayPhoneNumber           String?
   verifiedDisplayName          String?
   accessTokenEncrypted         String?
@@ -481,6 +464,7 @@ model WhatsAppChannel {
   lastErrorCode                String?
   lastErrorMessage             String?
   isPrimary                    Boolean                           @default(false)
+  isActive                     Boolean                           @default(true)
   providerMetadata             Json?
   organization                 Organization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt                    DateTime                          @default(now())
@@ -547,12 +531,12 @@ model Subscription {
   organizationId String @unique // enforces one active subscription per org at schema level
   planId         String
 
-  status               SubscriptionStatus @default(TRIALING)
-  billingMode          BillingMode        @default(ONLINE)
-  currentPeriodStart   DateTime
-  currentPeriodEnd     DateTime
-  cancelAtPeriodEnd    Boolean            @default(false)
-  internalBillingNotes String?
+  status             SubscriptionStatus @default(TRIALING)
+  billingMode        BillingMode?
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  internalBillingNotes String?          @db.Text
 
   // Nullable traceability link — stores OrgBillingRecord.id that activated this subscription.
   // Stored as plain String (no FK constraint) to avoid touching OrgBillingRecord in this phase.
@@ -568,31 +552,239 @@ model Subscription {
   @@index([currentPeriodEnd, status])
 }
 
+enum AiAgentTone {
+  FORMAL
+  FRIENDLY
+  NEUTRAL
+}
+
 model AiAgent {
-  id             String        @id @default(cuid())
-  organizationId String
-  name           String
-  description    String?
-  status         AiAgentStatus @default(DRAFT)
-  tone           AiAgentTone   @default(FRIENDLY)
-  language       String        @default("es-AR")
-  persona        String?
-  is24x7         Boolean       @default(true)
+  id             String       @id @default(cuid())
+  organizationId String       @unique // restored @unique for upsert
+  whatsappChannelId String?    @unique
+  name           String       @default("Asistente IA")
+  status         String       @default("ACTIVE")
+  tone           AiAgentTone  @default(FRIENDLY)
+  persona        String?      @db.Text
+  language       String       @default("Spanish")
+  escalateOnKeywords String[] @default([])
+  humanHandoffMessage String? @db.Text
+  escalateAfterMessages Int    @default(5)
+  
+  // Search filters / focus
+  zoneFilters    String[]     @default([])
+  propertyTypes  String[]     @default([])
+  minBudget      Int?
+  maxBudget      Int?
 
-  whatsappChannelId String? @unique
+  isActive       Boolean      @default(true)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
 
-  zoneFilters   String[]
-  propertyTypes String[]
-  minBudget     Int?
-  maxBudget     Int?
+// ─── RaicesPilot AgentOS MVP 1 ───────────────────────────────────────────────
 
-  escalateAfterMessages Int      @default(5)
-  escalateOnKeywords    String[]
-  humanHandoffMessage   String?
+enum AgentScope {
+  PLATFORM    // Agentes globales de RaicesPilot
+  ORGANIZATION // Agentes por inmobiliaria (futuro)
+}
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+enum AgentType {
+  ORCHESTRATOR // Director Operativo IA
+  MARKETING    // Agente de Marketing
+}
 
-  @@index([organizationId, status])
+enum TaskStatus {
+  PENDING      // Creada, esperando asignación
+  ASSIGNED     // Asignada a agente
+  IN_PROGRESS  // Ejecutándose
+  COMPLETED    // Terminada exitosamente
+  FAILED       // Falló
+  APPROVAL_PENDING // Esperando aprobación humana
+}
+
+enum RunStatus {
+  RUNNING      // En ejecución
+  COMPLETED    // Terminada OK
+  FAILED       // Error
+}
+
+enum ApprovalStatus {
+  PENDING      // Esperando decisión
+  APPROVED     // Aprobado por humano
+  REJECTED     // Rechazado por humano
+}
+
+enum ContentPlatform {
+  FACEBOOK
+  INSTAGRAM
+  LINKEDIN
+  WHATSAPP_BUSINESS
+}
+
+enum DraftStatus {
+  DRAFT        // Borrador generado
+  APPROVED     // Aprobado por humano
+  REJECTED     // Rechazado por humano
+}
+
+enum AgentPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AgentLogLevel {
+  INFO
+  WARN
+  ERROR
+}
+
+model Agent {
+  id            String      @id @default(cuid())
+  scope         AgentScope  // PLATFORM para MVP
+  organizationId String?    // Nullable para agentes PLATFORM
+  name          String      // "Director Operativo IA", "Agente de Marketing"
+  type          AgentType
+  isActive      Boolean     @default(true)
+  config        Json        // Config simple (ej: {"tone": "professional"})
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relaciones
+  tasks         AgentTask[]
+  runs          AgentRun[]
+  requestedApprovals AgentApproval[] @relation("ApprovalRequestedBy")
+  @@index([scope, organizationId, type])
+}
+
+model AgentTask {
+  id            String       @id @default(cuid())
+  scope         AgentScope   // PLATFORM para MVP
+  organizationId String?     // Nullable
+  agentId       String?      // Nullable hasta asignación
+  title         String
+  description   String?
+  status        TaskStatus   @default(PENDING)
+  priority      AgentPriority @default(MEDIUM)
+  createdById   String       // User (Superadmin)
+  metadata      Json?        // Datos específicos (ej: {"contentType": "post"})
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  // Relaciones
+  agent         Agent?       @relation(fields: [agentId], references: [id])
+  createdBy     User         @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  runs          AgentRun[]
+  approvals     AgentApproval[]
+  drafts        ContentDraft[]
+  
+  @@index([scope, organizationId, status])
+}
+
+model AgentRun {
+  id            String    @id @default(cuid())
+  scope         AgentScope
+  organizationId String?
+  taskId        String
+  agentId       String
+  status        RunStatus @default(RUNNING)
+  input         Json      // Input de la ejecución
+  output        Json?     // Resultado
+  error         String?
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  
+  // Relaciones
+  task          AgentTask @relation(fields: [taskId], references: [id])
+  agent         Agent     @relation(fields: [agentId], references: [id])
+  logs          AgentLog[]
+  approvals     AgentApproval[]
+  
+  @@index([scope, organizationId, status])
+}
+
+model AgentApproval {
+  id                String         @id @default(cuid())
+  scope             AgentScope
+  organizationId    String?
+  taskId            String
+  runId             String?
+  requestedByAgentId String?       // Agente que solicita aprobación
+  decidedByUserId   String?        // Superadmin que decide
+  status            ApprovalStatus @default(PENDING)
+  comments          String?
+  requestedAt       DateTime       @default(now())
+  decidedAt         DateTime?
+  
+  // Relaciones
+  task              AgentTask      @relation(fields: [taskId], references: [id])
+  run               AgentRun?      @relation(fields: [runId], references: [id])
+  requestedByAgent  Agent?         @relation("ApprovalRequestedBy", fields: [requestedByAgentId], references: [id], onDelete: SetNull)
+  decidedByUser     User?          @relation("ApprovalDecidedBy", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+}
+
+model AgentLog {
+  id            String        @id @default(cuid())
+  scope         AgentScope
+  organizationId String?
+  runId         String?
+  level         AgentLogLevel
+  message       String
+  metadata      Json?
+  timestamp     DateTime      @default(now())
+  
+  // Relaciones
+  run           AgentRun?     @relation(fields: [runId], references: [id])
+  
+  @@index([scope, organizationId, timestamp])
+}
+
+model ContentDraft {
+  id            String          @id @default(cuid())
+  scope         AgentScope
+  organizationId String?
+  taskId        String
+  platform      ContentPlatform
+  type          String          // "post", "reel", "story", "message"
+  title         String?
+  content       String          // Texto generado
+  hashtags      String[]        // Array de hashtags
+  imagePrompt   String?         // Prompt para imagen (futuro)
+  status        DraftStatus     @default(DRAFT)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relaciones
+  task          AgentTask       @relation(fields: [taskId], references: [id])
+  
+  @@index([scope, organizationId, status])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  event       String
+  actorId     String?
+  actorEmail  String?
+  entityType  String?
+  entityId    String?
+  entityName  String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([event])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+model GlobalSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
 }

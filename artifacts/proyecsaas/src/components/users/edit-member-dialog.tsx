@@ -112,7 +112,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
                   </label>
                   <input
                     name="jobTitle"
-                    defaultValue={member.jobTitle === "Team member" ? "" : member.jobTitle}
+                    defaultValue={member.jobTitle === "Miembro del equipo" ? "" : member.jobTitle}
                     placeholder="Ej. Agente senior"
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500"
                   />

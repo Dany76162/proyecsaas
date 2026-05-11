@@ -15,7 +15,7 @@ export default async function AiOperationsPage() {
   const data = await getTenantsAiHealth();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-3">

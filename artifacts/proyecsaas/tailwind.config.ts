@@ -23,7 +23,12 @@ const config: Config = {
         },
       },
       boxShadow: {
-        soft: "0 18px 55px -24px rgba(13, 29, 71, 0.35)",
+        soft: "0 2px 10px -2px rgba(13, 29, 71, 0.05), 0 10px 25px -5px rgba(13, 29, 71, 0.1)",
+        enterprise: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
+      },
+      borderRadius: {
+        xl: "12px",
+        "2xl": "16px",
       },
     },
   },
@@ -31,4 +36,5 @@ const config: Config = {
 };
 
 export default config;
+
 

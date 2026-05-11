@@ -41,7 +41,7 @@ export default async function PlatformActivationPage() {
   const snapshot = await getPlatformActivationSnapshot();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="space-y-8">
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Activacion</h1>
         <p className="text-sm text-slate-500">

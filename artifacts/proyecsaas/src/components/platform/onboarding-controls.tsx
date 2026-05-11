@@ -28,7 +28,7 @@ export function OnboardingControls({
   orgName: string;
   hasUsers: boolean;
   isActive: boolean;
-  maxAiAgents: number;
+  maxAiAgents: number | null;
   aiAgentCount: number;
   agentQuotaNote?: string | null;
 }) {
@@ -66,7 +66,7 @@ export function OnboardingControls({
 
   // Agent quota form
   const [quotaModalOpen, setQuotaModalOpen] = useState(false);
-  const [quotaValue, setQuotaValue] = useState(maxAiAgents);
+  const [quotaValue, setQuotaValue] = useState(maxAiAgents ?? 1);
   const [quotaNote, setQuotaNote] = useState(agentQuotaNote ?? "");
   const [quotaError, setQuotaError] = useState("");
   const [quotaSuccess, setQuotaSuccess] = useState("");
@@ -201,7 +201,7 @@ export function OnboardingControls({
               right: menuCoords.right,
               zIndex: 9999,
             }}
-            className="w-56 origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg"
+            className="w-56 origin-top-right rounded-xl border border-slate-200/60 bg-white shadow-enterprise"
           >
             {/* Onboarding actions */}
             <div className="py-1">
@@ -211,7 +211,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setCleanModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-semibold text-red-600 hover:bg-red-50"
                 >
                   <UserX className="h-4 w-4" />
                   <span>Limpiar accesos</span>
@@ -222,7 +222,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setInviteModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-semibold text-emerald-700 hover:bg-emerald-50"
                 >
                   <UserPlus className="h-4 w-4" />
                   <span>Crear 1º Acceso</span>
@@ -238,7 +238,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setDeactivateModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-bold text-red-700 hover:bg-red-50 transition-colors"
                 >
                   <PowerOff className="h-4 w-4 shrink-0" />
                   <span>Suspender</span>
@@ -249,7 +249,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setReactivateModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
                 >
                   <Power className="h-4 w-4 shrink-0" />
                   <span>Reactivar</span>
@@ -262,12 +262,12 @@ export function OnboardingControls({
               <button
                 onClick={() => {
                   setMenuOpen(false);
-                  setQuotaValue(maxAiAgents);
+                  setQuotaValue(maxAiAgents ?? 1);
                   setQuotaError("");
                   setQuotaSuccess("");
                   setQuotaModalOpen(true);
                 }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Bot className="h-4 w-4 text-brand-600" />
                 <span>Agentes IA ({aiAgentCount}/{maxAiAgents})</span>
@@ -281,7 +281,7 @@ export function OnboardingControls({
                   setMenuOpen(false);
                   setSupportModalOpen(true);
                 }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
               >
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>Soporte técnico</span>
@@ -302,7 +302,7 @@ export function OnboardingControls({
           <button
             type="button"
             onClick={() => setCleanModalOpen(true)}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
+            className="rounded-lg px-3 py-1.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
           >
             Limpiar accesos
           </button>
@@ -310,7 +310,7 @@ export function OnboardingControls({
           <button
             type="button"
             onClick={() => setInviteModalOpen(true)}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors whitespace-nowrap"
+            className="rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50 transition-colors whitespace-nowrap"
           >
             Crear 1º Acceso
           </button>
@@ -321,7 +321,7 @@ export function OnboardingControls({
           <button
             type="button"
             onClick={() => setDeactivateModalOpen(true)}
-            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
           >
             <PowerOff className="h-3 w-3" />
             Suspender
@@ -330,7 +330,7 @@ export function OnboardingControls({
           <button
             type="button"
             onClick={() => setReactivateModalOpen(true)}
-            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap border border-emerald-200"
+            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap border border-emerald-200"
           >
             <Power className="h-3 w-3" />
             Reactivar
@@ -341,13 +341,13 @@ export function OnboardingControls({
         <button
           type="button"
           onClick={() => {
-            setQuotaValue(maxAiAgents);
+            setQuotaValue(maxAiAgents ?? 1);
             setQuotaNote("");
             setQuotaError("");
             setQuotaSuccess("");
             setQuotaModalOpen(true);
           }}
-          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-50 transition-colors whitespace-nowrap"
+          className="rounded-lg px-3 py-1.5 text-sm font-bold text-brand-700 hover:bg-brand-50 transition-colors whitespace-nowrap"
         >
           <Bot className="inline h-3.5 w-3.5 mr-1" />
           Agentes ({aiAgentCount}/{maxAiAgents})
@@ -357,7 +357,7 @@ export function OnboardingControls({
         <button
           type="button"
           onClick={() => setSupportModalOpen(true)}
-          className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-colors whitespace-nowrap"
+          className="rounded-lg px-3 py-1.5 text-sm font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap"
         >
           Soporte
         </button>
@@ -369,7 +369,7 @@ export function OnboardingControls({
           ref={triggerRef}
           type="button"
           onClick={handleToggle}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 transition"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition"
         >
           <MoreVertical className="h-4 w-4" />
         </button>
@@ -379,10 +379,10 @@ export function OnboardingControls({
 
       {/* ── SUPPORT MODAL ─────────────────────────────────────────────────────── */}
       {supportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 border border-amber-100">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
               </div>
               <div>
@@ -402,14 +402,14 @@ export function OnboardingControls({
               <button
                 type="button"
                 onClick={() => setSupportModalOpen(false)}
-                className="rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Cancelar
               </button>
               <Link
                 href={`/${orgSlug}`}
                 onClick={() => setSupportModalOpen(false)}
-                className="rounded-xl bg-amber-500 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-amber-600"
+                className="rounded-lg bg-amber-500 py-2.5 text-center text-sm font-bold text-white transition hover:bg-amber-600 shadow-sm shadow-amber-500/20"
               >
                 Confirmar acceso
               </Link>
@@ -420,8 +420,8 @@ export function OnboardingControls({
 
       {/* ── CLEAN MODAL ──────────────────────────────────────────────────────── */}
       {cleanModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl overflow-hidden">
             <h2 className="text-xl font-bold tracking-tight text-slate-900">
               Desvincular usuarios
             </h2>
@@ -441,7 +441,7 @@ export function OnboardingControls({
                 placeholder={orgName}
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
               />
 
               {cleanError && (
@@ -452,14 +452,14 @@ export function OnboardingControls({
                 <button
                   type="button"
                   onClick={() => setCleanModalOpen(false)}
-                  className="rounded-xl px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+                  className="rounded-lg px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending || confirmText !== orgName}
-                  className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                  className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700 shadow-sm shadow-red-500/20 disabled:opacity-50"
                 >
                   {isPending ? "Limpiando..." : "Confirmar limpieza"}
                 </button>
@@ -471,13 +471,13 @@ export function OnboardingControls({
 
       {/* ── INVITE MODAL ─────────────────────────────────────────────────────── */}
       {inviteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Primer Acceso (Onboarding)</h2>
+              <h2 className="text-lg font-bold text-slate-900">Primer Acceso (Alta)</h2>
               <button
                 onClick={() => setInviteModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:bg-slate-100"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -499,7 +499,7 @@ export function OnboardingControls({
                       type="text"
                       value={inviteName}
                       onChange={(e) => setInviteName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                   <div>
@@ -511,7 +511,7 @@ export function OnboardingControls({
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
@@ -524,9 +524,9 @@ export function OnboardingControls({
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="flex w-full justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                    className="flex w-full justify-center rounded-lg bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 shadow-sm shadow-emerald-500/20 disabled:opacity-50"
                   >
-                    {isPending ? "Generando link encriptado..." : "Generar URL de acceso temporal"}
+                    {isPending ? "Generando link..." : "Generar URL de acceso"}
                   </button>
                 </div>
               </form>
@@ -569,7 +569,7 @@ export function OnboardingControls({
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 border border-brand-100">
                   <Bot className="h-5 w-5 text-brand-600" />
                 </div>
                 <div>
@@ -577,7 +577,7 @@ export function OnboardingControls({
                   <p className="text-xs text-slate-500">{orgName}</p>
                 </div>
               </div>
-              <button onClick={() => setQuotaModalOpen(false)} className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
+              <button onClick={() => setQuotaModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -607,7 +607,7 @@ export function OnboardingControls({
                   max={20}
                   value={quotaValue}
                   onChange={(e) => setQuotaValue(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 />
               </div>
 
@@ -620,7 +620,7 @@ export function OnboardingControls({
                   placeholder="Ej: Factura #42 — $15/mes — Marzo 2026"
                   value={quotaNote}
                   onChange={(e) => setQuotaNote(e.target.value)}
-                  className="w-full resize-none rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 />
                 <p className="mt-1 text-xs text-slate-400">Opcional. Se guarda con fecha y hora automáticos.</p>
               </div>
@@ -632,14 +632,14 @@ export function OnboardingControls({
                 <button
                   type="button"
                   onClick={() => setQuotaModalOpen(false)}
-                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending || quotaValue === maxAiAgents}
-                  className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+                  className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 shadow-sm shadow-brand-500/20 disabled:opacity-50"
                 >
                   {isPending ? "Guardando..." : "Confirmar cuota"}
                 </button>
@@ -651,10 +651,10 @@ export function OnboardingControls({
 
       {/* ── REACTIVATE MODAL ─────────────────────────────────────────────────── */}
       {reactivateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 border border-emerald-100">
                 <Power className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
@@ -676,7 +676,7 @@ export function OnboardingControls({
               <button
                 type="button"
                 onClick={() => setReactivateModalOpen(false)}
-                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Cancelar
               </button>
@@ -684,7 +684,7 @@ export function OnboardingControls({
                 type="button"
                 disabled={isPending}
                 onClick={handleReactivate}
-                className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 shadow-sm shadow-emerald-500/20 disabled:opacity-50"
               >
                 {isPending ? "Reactivando..." : "Confirmar reactivación"}
               </button>
@@ -695,10 +695,10 @@ export function OnboardingControls({
 
       {/* ── DEACTIVATE MODAL — Baja de cliente ───────────────────────────────── */}
       {deactivateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 border border-red-100">
                 <PowerOff className="h-5 w-5 text-red-600" />
               </div>
               <div>
@@ -728,7 +728,7 @@ export function OnboardingControls({
                 placeholder={orgName}
                 value={deactivateConfirmText}
                 onChange={(e) => setDeactivateConfirmText(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
               />
 
               {deactivateError && (
@@ -743,14 +743,14 @@ export function OnboardingControls({
                     setDeactivateConfirmText("");
                     setDeactivateError("");
                   }}
-                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending || deactivateConfirmText !== orgName}
-                  className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                  className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700 shadow-sm shadow-red-500/20 disabled:opacity-50"
                 >
                   {isPending ? "Desactivando..." : "Confirmar baja definitiva"}
                 </button>

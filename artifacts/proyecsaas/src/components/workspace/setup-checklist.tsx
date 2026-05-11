@@ -88,18 +88,18 @@ export function SetupChecklist({ orgSlug, status }: SetupChecklistProps) {
     <section className="rounded-[1.75rem] border border-brand-100 bg-white p-6 shadow-soft">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
+          <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-brand-600">
             Onboarding Guiado
           </p>
           <h2 className="mt-2 text-xl font-semibold text-slate-950">
             Configurá tu inmobiliaria en 5 pasos
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+          <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-slate-600 font-medium">
             Cada paso te acerca a tener tu agente IA atendiendo consultas y mostrando propiedades
             por WhatsApp de forma automática.
           </p>
         </div>
-        <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tabular-nums text-slate-600">
+        <span className="inline-flex w-fit rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-bold tabular-nums text-slate-700">
           {status.completedCount} / {status.totalCount} pasos completos
         </span>
       </div>
@@ -130,19 +130,19 @@ export function SetupChecklist({ orgSlug, status }: SetupChecklistProps) {
 
                 <div className="space-y-2">
                   <div>
-                    <p className="text-base font-semibold text-slate-950">{step.title}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">{step.explanation}</p>
+                    <p className="text-lg font-bold text-slate-950">{step.title}</p>
+                    <p className="mt-1 text-[15px] leading-relaxed text-slate-600 font-medium">{step.explanation}</p>
                   </div>
 
                   <div className="grid gap-2 text-sm sm:grid-cols-2">
                     <div className="rounded-xl bg-slate-50 px-3 py-2">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-500">
                         Beneficio
                       </p>
                       <p className="mt-1 text-slate-600">{step.benefit}</p>
                     </div>
                     <div className="rounded-xl bg-slate-50 px-3 py-2">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-500">
                         Resultado
                       </p>
                       <p className="mt-1 text-slate-600">{step.result}</p>

@@ -4,6 +4,18 @@ import { useState, useTransition } from "react";
 import { UserPlus, CalendarCheck, MessageCircle, Bot, Loader2 } from "lucide-react";
 import { getImpactMetrics, type ImpactMetrics, type ImpactPeriod } from "./analytics-actions";
 import { cn } from "@/lib/utils";
+import { MetricCard } from "@/components/ui/metric-card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 
 const PERIODS: { value: ImpactPeriod; label: string }[] = [
   { value: "7d", label: "7 días" },
@@ -15,23 +27,23 @@ function AgentBadge({ status }: { status: "ACTIVE" | "PAUSED" | "DRAFT" | null }
   if (!status) return <span className="text-xs text-slate-400">Sin agente</span>;
   if (status === "ACTIVE")
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      <Badge variant="success">
+        <span className="mr-1.5 h-1 w-1 rounded-full bg-emerald-500" />
         Activo
-      </span>
+      </Badge>
     );
   if (status === "PAUSED")
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+      <Badge variant="warning">
+        <span className="mr-1.5 h-1 w-1 rounded-full bg-amber-500" />
         Pausado
-      </span>
+      </Badge>
     );
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+    <Badge variant="neutral">
+      <span className="mr-1.5 h-1 w-1 rounded-full bg-slate-400" />
       Borrador
-    </span>
+    </Badge>
   );
 }
 
@@ -61,19 +73,19 @@ export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
         </div>
         <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
           {PERIODS.map((p) => (
-            <button
+            <Button
               key={p.value}
+              variant={period === p.value ? "secondary" : "ghost"}
+              size="sm"
               onClick={() => handlePeriod(p.value)}
               disabled={isPending}
               className={cn(
-                "rounded-lg px-4 py-1.5 text-xs font-bold transition-all",
-                period === p.value
-                  ? "bg-white text-indigo-600 shadow-sm border border-slate-200"
-                  : "text-slate-500 hover:text-slate-800",
+                "h-8 px-4 text-[10px]",
+                period === p.value && "bg-white shadow-sm border border-slate-200"
               )}
             >
               {p.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -81,132 +93,101 @@ export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
       {/* Global KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
         {isPending && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/70 z-10">
-            <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70 z-20 backdrop-blur-[1px]">
+            <Loader2 className="h-6 w-6 animate-spin text-brand-500" />
           </div>
         )}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 text-indigo-500 mb-3">
-            <UserPlus className="h-5 w-5" />
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Leads</p>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-slate-900">
-              {data.totals.leads}
-            </span>
-            <span className="text-sm text-slate-400">capturados</span>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 text-emerald-500 mb-3">
-            <CalendarCheck className="h-5 w-5" />
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Visitas</p>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-slate-900">
-              {data.totals.visits}
-            </span>
-            <span className="text-sm text-slate-400">concretadas</span>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 text-violet-500 mb-3">
-            <MessageCircle className="h-5 w-5" />
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Conversaciones</p>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-slate-900">
-              {data.totals.conversations}
-            </span>
-            <span className="text-sm text-slate-400">iniciadas</span>
-          </div>
-        </div>
+        <MetricCard
+          title="Leads"
+          value={data.totals.leads}
+          icon={UserPlus}
+          variant="brand"
+          description="capturados"
+        />
+        <MetricCard
+          title="Visitas"
+          value={data.totals.visits}
+          icon={CalendarCheck}
+          variant="emerald"
+          description="concretadas"
+        />
+        <MetricCard
+          title="Conversaciones"
+          value={data.totals.conversations}
+          icon={MessageCircle}
+          variant="brand"
+          description="iniciadas"
+        />
       </div>
 
       {/* Per-org table */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b bg-slate-50 px-6 py-4 flex items-center gap-2">
+      <Card variant="elevated" className="overflow-hidden">
+        <CardHeader className="bg-slate-50/50 flex-row items-center gap-2 py-4">
           <Bot className="h-4 w-4 text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-800">Detalle por Inmobiliaria</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
-                <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Inmobiliaria
-                </th>
-                <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Leads
-                </th>
-                <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Visitas
-                </th>
-                <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Convs.
-                </th>
-                <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Agente IA
-                </th>
-                <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  WhatsApp
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {data.byOrg.map((row) => (
-                <tr key={row.orgId} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-semibold text-slate-800">{row.orgName}</td>
-                  <td className="px-4 py-4 text-center">
-                    <span className={cn(
-                      "font-bold",
-                      row.leads > 0 ? "text-indigo-600" : "text-slate-300"
-                    )}>
-                      {row.leads}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    <span className={cn(
-                      "font-bold",
-                      row.visits > 0 ? "text-emerald-600" : "text-slate-300"
-                    )}>
-                      {row.visits}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    <span className={cn(
-                      "font-bold",
-                      row.conversations > 0 ? "text-violet-600" : "text-slate-300"
-                    )}>
-                      {row.conversations}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      <AgentBadge status={row.agentStatus} />
-                      {row.agentName && (
-                        <span className="text-xs text-slate-400">{row.agentName}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-xs text-slate-500 font-mono">
-                    {row.whatsappPhone ?? "—"}
-                  </td>
-                </tr>
-              ))}
-              {data.byOrg.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-400">
-                    Sin organizaciones activas.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <CardTitle className="text-xs uppercase tracking-widest">Detalle por Inmobiliaria</CardTitle>
+        </CardHeader>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="px-6">Inmobiliaria</TableHead>
+              <TableHead className="px-4 text-center">Leads</TableHead>
+              <TableHead className="px-4 text-center">Visitas</TableHead>
+              <TableHead className="px-4 text-center">Convs.</TableHead>
+              <TableHead className="px-6">Agente IA</TableHead>
+              <TableHead className="px-4">WhatsApp</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.byOrg.map((row) => (
+              <TableRow key={row.orgId}>
+                <TableCell className="px-6 py-4 font-bold text-slate-800">{row.orgName}</TableCell>
+                <TableCell className="px-4 py-4 text-center">
+                  <span className={cn(
+                    "font-bold",
+                    row.leads > 0 ? "text-brand-600" : "text-slate-300"
+                  )}>
+                    {row.leads}
+                  </span>
+                </TableCell>
+                <TableCell className="px-4 py-4 text-center">
+                  <span className={cn(
+                    "font-bold",
+                    row.visits > 0 ? "text-emerald-600" : "text-slate-300"
+                  )}>
+                    {row.visits}
+                  </span>
+                </TableCell>
+                <TableCell className="px-4 py-4 text-center">
+                  <span className={cn(
+                    "font-bold",
+                    row.conversations > 0 ? "text-brand-600" : "text-slate-300"
+                  )}>
+                    {row.conversations}
+                  </span>
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  <div className="flex flex-col gap-1">
+                    <AgentBadge status={row.agentStatus} />
+                    {row.agentName && (
+                      <span className="text-[11px] font-medium text-slate-400">{row.agentName}</span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="px-4 py-4 text-xs text-slate-500 font-mono">
+                  {row.whatsappPhone ?? "—"}
+                </TableCell>
+              </TableRow>
+            ))}
+            {data.byOrg.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="px-6 py-12 text-center text-sm text-slate-400">
+                  Sin organizaciones activas.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }

@@ -6,9 +6,20 @@ const {
   PrismaClient,
   PropertyStatus,
   VisitStatus,
+  AgentScope,
+  AgentType,
 } = require("@prisma/client");
+const { randomBytes, scrypt } = require("node:crypto");
+const { promisify } = require("node:util");
 
 const prisma = new PrismaClient();
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("base64");
+  const buf = await scryptAsync(password, salt, 64);
+  return `${salt}:${buf.toString("base64")}`;
+}
 
 const organizations = [
   {
@@ -36,6 +47,14 @@ const organizations = [
 ];
 
 const users = [
+  {
+    id: "user_platform_admin",
+    fullName: "Admin RaicesPilot",
+    email: "admin@raicespilot.local",
+    jobTitle: "Superadmin",
+    isActive: true,
+    isPlatformAdmin: true,
+  },
   {
     id: "user_1",
     fullName: "Camila Ortega",
@@ -505,11 +524,28 @@ async function main() {
   await prisma.property.deleteMany();
   await prisma.membership.deleteMany();
   await prisma.automationRule.deleteMany();
+
+  // Delete AgentOS tables
+  await prisma.agentLog.deleteMany();
+  await prisma.agentApproval.deleteMany();
+  await prisma.agentRun.deleteMany();
+  await prisma.contentDraft.deleteMany();
+  await prisma.agentTask.deleteMany();
+  await prisma.agent.deleteMany();
+
   await prisma.organization.deleteMany();
   await prisma.user.deleteMany();
 
+  const platformAdminPasswordHash = await hashPassword("123456");
+
   await prisma.organization.createMany({ data: organizations });
-  await prisma.user.createMany({ data: users });
+  await prisma.user.createMany({
+    data: users.map((user) =>
+      user.email === "admin@raicespilot.local"
+        ? { ...user, passwordHash: platformAdminPasswordHash }
+        : user,
+    ),
+  });
   await prisma.membership.createMany({ data: memberships });
   await prisma.property.createMany({ data: properties });
   await prisma.lead.createMany({ data: leads });
@@ -518,6 +554,52 @@ async function main() {
   await prisma.availabilitySlot.createMany({ data: availabilitySlots });
   await prisma.visit.createMany({ data: visits });
   await prisma.notification.createMany({ data: notifications });
+
+  // Seed AgentOS agents
+  const existingAgents = await prisma.agent.count({
+    where: { scope: AgentScope.PLATFORM }
+  });
+
+  if (existingAgents === 0) {
+    console.log("Creating AgentOS agents...");
+
+    await prisma.agent.create({
+      data: {
+        scope: AgentScope.PLATFORM,
+        organizationId: null,
+        name: "Director Operativo IA",
+        type: AgentType.ORCHESTRATOR,
+        isActive: true,
+        config: {
+          description: "Agente principal que coordina y asigna tareas a otros agentes especializados",
+          capabilities: ["task_assignment", "workflow_orchestration", "quality_control"],
+          tone: "professional"
+        }
+      }
+    });
+
+    await prisma.agent.create({
+      data: {
+        scope: AgentScope.PLATFORM,
+        organizationId: null,
+        name: "Agente de Marketing",
+        type: AgentType.MARKETING,
+        isActive: true,
+        config: {
+          description: "Especialista en creacion de contenido para redes sociales y marketing digital",
+          capabilities: ["content_creation", "social_media_strategy", "brand_voice"],
+          platforms: ["INSTAGRAM", "FACEBOOK", "LINKEDIN", "WHATSAPP_BUSINESS"],
+          tone: "professional",
+          language: "Spanish",
+          target_audience: "real_estate_professionals"
+        }
+      }
+    });
+
+    console.log("AgentOS agents created successfully");
+  } else {
+    console.log("AgentOS agents already exist, skipping creation");
+  }
 }
 
 main()

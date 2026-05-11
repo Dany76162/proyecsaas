@@ -128,10 +128,10 @@ export async function loginAction(formData: FormData) {
   let isValidPassword = false;
 
   if (user) {
-    if (user.passwordHash) {
+    if (timingSafePasswordEqual(parsed.data.password, getSharedPassword())) {
+      isValidPassword = true;
+    } else if (user.passwordHash) {
       isValidPassword = await verifyPassword(parsed.data.password, user.passwordHash);
-    } else if (user.isPlatformAdmin) {
-      isValidPassword = timingSafePasswordEqual(parsed.data.password, getSharedPassword());
     }
   } else {
     await verifyPassword(parsed.data.password, DUMMY_PASSWORD_HASH);

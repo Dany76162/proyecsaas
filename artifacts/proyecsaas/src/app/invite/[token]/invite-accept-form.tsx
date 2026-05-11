@@ -1,8 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-
 import { acceptInviteAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 type InviteAcceptFormProps = {
   token: string;
@@ -20,79 +23,63 @@ export function InviteAcceptForm({
   const [state, action, isPending] = useActionState(acceptInviteAction, null);
 
   return (
-    <form action={action} className="mt-8 space-y-6">
+    <form action={action} className="space-y-6">
       <input type="hidden" name="token" value={token} />
 
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Organizacion
-        </p>
-        <p className="mt-1 text-sm font-semibold text-slate-950">{organizationName}</p>
-        <p className="mt-1 text-xs text-slate-500">/{organizationSlug}</p>
-      </div>
+      <Card className="bg-white border-slate-200">
+        <CardContent className="p-4 space-y-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Inmobiliaria</p>
+            <p className="mt-0.5 text-sm font-bold text-slate-900">{organizationName}</p>
+            <p className="text-[11px] text-slate-500">/{organizationSlug}</p>
+          </div>
+          
+          <div className="pt-2 border-t border-slate-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email invitado</p>
+            <p className="mt-0.5 text-sm font-bold text-slate-900">{email}</p>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div>
-        <label className="block text-sm font-medium text-slate-700">Email invitado</label>
-        <p className="mt-1.5 text-base font-semibold text-slate-950">{email}</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Este acceso queda asociado a este email exacto. Si usas otro correo, no vas a poder
-          entrar.
-        </p>
-      </div>
-
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-          Crea tu clave
+      <div className="space-y-2">
+        <label htmlFor="password" className="text-sm font-bold text-slate-700">
+          Crea tu clave de acceso
         </label>
-        <input
+        <Input
           id="password"
           name="password"
           type="password"
           required
           autoFocus
           minLength={8}
-          className="mt-1.5 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-950 placeholder:text-slate-400 transition-all focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10"
-          placeholder="Minimo 8 caracteres"
+          placeholder="Mínimo 8 caracteres"
+          className="bg-white"
         />
+        <p className="text-[11px] text-slate-400">
+          Esta clave te permitirá ingresar a este y otros workspaces vinculados a tu email.
+        </p>
       </div>
 
-      <button
+      <Button
+        type="submit"
         disabled={isPending}
-        className="flex w-full items-center justify-center rounded-[1.25rem] bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-soft transition-all hover:bg-brand-700 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full h-11"
       >
         {isPending ? (
-          <span className="flex items-center gap-2">
-            <svg
-              className="h-5 w-5 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            Activando...
-          </span>
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Activando cuenta...
+          </>
         ) : (
           "Activar acceso"
         )}
-      </button>
+      </Button>
 
-      {state?.success === false ? (
-        <p className="mt-4 text-center text-sm font-medium text-red-600">{state.message}</p>
-      ) : null}
+      {state?.success === false && (
+        <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-xs font-bold text-red-700 text-center">
+          {state.message}
+        </div>
+      )}
     </form>
   );
 }
