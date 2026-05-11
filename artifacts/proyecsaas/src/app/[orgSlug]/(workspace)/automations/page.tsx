@@ -189,7 +189,7 @@ export default async function AutomationsPage({
               <span
                 className={`text-sm font-semibold ${botActive ? "text-emerald-700" : "text-amber-700"}`}
               >
-                Agente IA {botActive ? "activo" : "en configuración"}
+                Agente IA {botActive ? "activo" : "en configuración inicial"}
               </span>
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
@@ -399,7 +399,7 @@ export default async function AutomationsPage({
       {/* Pipeline de leads y funnel de automatización */}
       <section className="grid gap-6 lg:grid-cols-2">
         <SectionCard
-          eyebrow="Pipeline de leads"
+          eyebrow="Embudo de prospectos"
           title="Distribución por etapa"
           description="Cómo se distribuyen los leads en el embudo de ventas del equipo."
         >
@@ -437,11 +437,11 @@ export default async function AutomationsPage({
               );
             })}
             {totalLeads === 0 && (
-              <p className="text-sm text-slate-400">Sin leads en el pipeline todavía.</p>
+              <p className="text-sm text-slate-400">Sin prospectos en el embudo todavía.</p>
             )}
           </div>
           <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-sm text-slate-500">Total en pipeline</span>
+            <span className="text-sm text-slate-500">Total en embudo</span>
             <span className="text-lg font-bold text-slate-950">{totalLeads}</span>
           </div>
         </SectionCard>

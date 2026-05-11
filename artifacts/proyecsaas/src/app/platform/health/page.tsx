@@ -122,7 +122,7 @@ export default async function PlatformHealthPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Salud del Sistema</h1>

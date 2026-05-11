@@ -676,11 +676,15 @@ export async function setOrgAgentQuotaAction(
 export async function quickOnboardOrgAction(input: {
   orgName: string;
   ownerEmail: string;
+  ownerName?: string;
+  ownerPhone?: string;
 }): Promise<ActionResult> {
   await requirePlatformAdmin();
 
   const orgName = input.orgName.trim();
   const ownerEmail = input.ownerEmail.trim().toLowerCase();
+  const ownerName = input.ownerName?.trim() || "Titular";
+  const ownerPhone = input.ownerPhone?.trim() || null;
 
   if (!orgName || orgName.length < 2) {
     return { success: false, message: "El nombre de la inmobiliaria es obligatorio." };
@@ -717,14 +721,19 @@ export async function quickOnboardOrgAction(input: {
     const inviteUrl = await prisma.$transaction(async (tx) => {
       // 1. Crear organización
       const org = await tx.organization.create({
-        data: { name: orgName, slug, isActive: true },
+        data: { 
+          name: orgName, 
+          slug, 
+          isActive: true,
+          contactWhatsapp: ownerPhone 
+        },
       });
 
       // 2. Crear o reusar usuario
       const user = await tx.user.upsert({
         where: { email: ownerEmail },
-        create: { email: ownerEmail, fullName: "Titular", isActive: true },
-        update: {},
+        create: { email: ownerEmail, fullName: ownerName, isActive: true },
+        update: { fullName: ownerName },
       });
 
       // Check if already has membership

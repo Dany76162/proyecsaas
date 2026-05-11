@@ -43,9 +43,9 @@ export default async function PlatformOnboardingPage() {
     });
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Historial de Onboarding</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Historial de Altas</h1>
         <p className="text-sm text-slate-500">
           Invitaciones generadas desde el panel superadmin. El primer acceso se genera desde{" "}
           <a href="/platform/organizations" className="font-semibold text-slate-700 underline underline-offset-2">

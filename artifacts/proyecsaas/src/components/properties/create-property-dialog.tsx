@@ -6,6 +6,8 @@ import { FileText, Globe, ArrowRight, X, Loader2 } from "lucide-react";
 import { createPropertyAction } from "@/modules/properties/actions";
 import { updatePropertySourceAction } from "@/modules/organizations/actions";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type Mode = "selector" | "manual" | "import";
 
@@ -60,7 +62,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
     });
   }
 
-  // ─── Sync from URL (Reusing Organization logic) ───────────────────────────
+  // ─── Sync from URL ────────────────────────────────────────────────────────
   async function handleSyncSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -70,7 +72,6 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
     setSyncStatus("loading");
     setSyncMessage(null);
 
-    // 1. REUSE: Save the URL to the organization first (always overwrite as requested)
     const saveRes = await updatePropertySourceAction(orgSlug, {
       propertySourceUrl: url,
       propertySourceType: "website",
@@ -78,11 +79,10 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
     if (!saveRes.success) {
       setSyncStatus("error");
-      setSyncMessage(saveRes.message || "Error al guardar la configuración de la fuente.");
+      setSyncMessage(saveRes.message || "Error al guardar la fuente.");
       return;
     }
 
-    // 2. REUSE: Trigger the sync API (now it will read the URL from DB)
     try {
       const res = await fetch("/api/properties/sync-from-source", {
         method: "POST",
@@ -108,24 +108,22 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
     }
   }
 
-  const inputClass =
-    "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500";
-
   return (
     <>
-      <button
+      <Button
         onClick={handleOpen}
-        className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+        variant="primary"
+        className="rounded-full shadow-lg shadow-brand-500/20"
       >
         Cargar propiedad
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[1.5rem] bg-white shadow-xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.5rem] bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-              <h2 className="text-xl font-semibold tracking-tight text-slate-950">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/40 px-6 py-4">
+              <h2 className="text-lg font-bold tracking-tight text-slate-900">
                 {mode === "selector" && "Agregar propiedades"}
                 {mode === "manual" && "Alta manual"}
                 {mode === "import" && "Sincronizar desde web"}
@@ -141,22 +139,22 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
             {/* ── Mode Selector ─────────────────────────────────────────── */}
             {mode === "selector" && (
-              <div className="px-6 py-5 flex flex-col gap-3">
-                <p className="text-sm text-slate-500 mb-1">
-                  ¿Cómo querés agregar propiedades al catálogo?
+              <div className="px-6 py-6 flex flex-col gap-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                  Selecciona el método de carga
                 </p>
 
                 <button
                   type="button"
                   onClick={() => setMode("manual")}
-                  className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-brand-400 hover:bg-brand-50/50"
+                  className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 text-left transition hover:border-brand-300 hover:bg-brand-50/30"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition group-hover:bg-brand-100 group-hover:text-brand-600">
-                    <FileText className="h-5 w-5" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition group-hover:bg-brand-100 group-hover:text-brand-600">
+                    <FileText className="h-5 w-5" strokeWidth={1.5} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900">Carga manual</p>
-                    <p className="text-sm text-slate-500">Creá una propiedad desde cero ingresando los datos</p>
+                    <p className="text-sm font-bold text-slate-900">Carga manual</p>
+                    <p className="text-xs text-slate-500 leading-relaxed">Ingresar datos ficha por ficha manualmente.</p>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:text-brand-500" />
                 </button>
@@ -164,79 +162,78 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                 <button
                   type="button"
                   onClick={() => setMode("import")}
-                  className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-400 hover:bg-emerald-50/50"
+                  className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50/30"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition group-hover:bg-emerald-100 group-hover:text-emerald-600">
-                    <Globe className="h-5 w-5" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition group-hover:bg-emerald-100 group-hover:text-emerald-600">
+                    <Globe className="h-5 w-5" strokeWidth={1.5} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900">Sincronizar desde web</p>
-                    <p className="text-sm text-slate-500">Traé automáticamente las fichas de tu sitio actual</p>
+                    <p className="text-sm font-bold text-slate-900">Sincronizar web</p>
+                    <p className="text-xs text-slate-500 leading-relaxed">Conectar con tu sitio inmobiliario actual.</p>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:text-emerald-500" />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="mt-1 w-full rounded-xl py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
+                <div className="mt-4 flex flex-col gap-2">
+                  <Button variant="ghost" onClick={handleClose} className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                    Cancelar operación
+                  </Button>
+                </div>
               </div>
             )}
 
             {/* ── Manual form ────────────────────────────────────────────── */}
             {mode === "manual" && (
-              <div className="px-6 py-5">
-                <p className="text-sm text-slate-500">
-                  Cargá los datos mínimos. Al guardar, vas directo a la ficha completa para agregar precio, fotos y más.
+              <div className="px-6 py-6">
+                <p className="text-xs text-slate-500 leading-relaxed mb-6">
+                  Carga los datos principales. Al finalizar, podrás completar fotos y detalles técnicos en la ficha de propiedad.
                 </p>
 
                 {error && (
-                  <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-100">
+                  <div className="mb-4 rounded-xl bg-red-50 p-3.5 text-xs font-semibold text-red-600 border border-red-100">
                     {error}
                   </div>
                 )}
 
-                <form onSubmit={handleManualSubmit} className="mt-4 flex flex-col gap-4">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                      Nombre / Título comercial
+                <form onSubmit={handleManualSubmit} className="flex flex-col gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      Título comercial
                     </label>
-                    <input required name="title" className={inputClass} placeholder="Ej. Departamento luminoso en Palermo" />
+                    <Input required name="title" placeholder="Ej. Depto 2 amb. luminoso con balcón" />
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Dirección</label>
-                    <input required name="address" className={inputClass} placeholder="Ej. Av. Santa Fe 1234" />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dirección</label>
+                    <Input required name="address" placeholder="Calle y número" />
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Ciudad</label>
-                    <input required name="city" className={inputClass} placeholder="Ej. Buenos Aires" />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                      Precio inicial{" "}
-                      <span className="font-normal text-slate-400">(podés ajustarlo después)</span>
-                    </label>
-                    <input required type="number" min="0" name="priceCents" className={inputClass} defaultValue="0" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Ciudad</label>
+                      <Input required name="city" placeholder="Ej. CABA" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Precio (USD)</label>
+                      <Input required type="number" min="0" name="priceCents" defaultValue="0" />
+                    </div>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
-                    <button
+                  <div className="mt-4 flex items-center justify-between gap-4 border-t border-slate-100 pt-6">
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={() => setMode("selector")}
-                      className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-100"
+                      className="text-xs font-bold uppercase tracking-widest"
                     >
                       ← Volver
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
                       disabled={isPending}
-                      className="rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50"
+                      variant="primary"
+                      className="min-w-[140px]"
                     >
-                      {isPending ? "Creando..." : "Crear y completar →"}
-                    </button>
+                      {isPending ? "Procesando..." : "Crear propiedad"}
+                    </Button>
                   </div>
                 </form>
               </div>
@@ -244,62 +241,58 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
             {/* ── Sync from URL ──────────────────────────────────────────── */}
             {mode === "import" && (
-              <div className="px-6 py-5">
-                <p className="text-sm text-slate-500">
-                  Ingresá la URL de tu web inmobiliaria. El sistema sincronizará las propiedades y las guardará en tu catálogo.
+              <div className="px-6 py-6">
+                <p className="text-xs text-slate-500 leading-relaxed mb-6">
+                  Nuestra IA escaneará tu sitio web para extraer las fichas automáticamente. Asegúrate de que sea una página de listado.
                 </p>
 
                 {syncStatus === "success" && (
-                  <div className="mt-4 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700 border border-emerald-100">
-                    ✅ {syncMessage}
+                  <div className="mb-4 rounded-xl bg-emerald-50 p-4 text-xs font-semibold text-emerald-700 border border-emerald-100">
+                    {syncMessage}
                   </div>
                 )}
                 {syncStatus === "error" && (
-                  <div className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
-                    ❌ {syncMessage}
+                  <div className="mb-4 rounded-xl bg-red-50 p-4 text-xs font-semibold text-red-600 border border-red-100">
+                    {syncMessage}
                   </div>
                 )}
 
-                <form onSubmit={handleSyncSubmit} className="mt-4 flex flex-col gap-4">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                      URL de la fuente (página de listado)
+                <form onSubmit={handleSyncSubmit} className="flex flex-col gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      URL del listado
                     </label>
-                    <input
+                    <Input
                       required
                       name="sourceUrl"
                       type="url"
-                      className={inputClass}
-                      placeholder="https://tu-inmobiliaria.com/propiedades"
+                      placeholder="https://tuweb.com/propiedades"
                       disabled={syncStatus === "loading" || syncStatus === "success"}
                     />
-                    <p className="mt-1.5 text-xs text-slate-400">
-                      Se actualizará como tu fuente oficial de propiedades.
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Soporta sitios inmobiliarios estándar y portales compatibles.
                     </p>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
-                    <button
+                  <div className="mt-4 flex items-center justify-between gap-4 border-t border-slate-100 pt-6">
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={() => setMode("selector")}
                       disabled={syncStatus === "loading"}
-                      className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 disabled:opacity-50"
+                      className="text-xs font-bold uppercase tracking-widest"
                     >
                       ← Volver
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
                       disabled={syncStatus === "loading" || syncStatus === "success"}
-                      className={cn(
-                        "flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:opacity-50",
-                        syncStatus === "success"
-                          ? "bg-emerald-500"
-                          : "bg-emerald-600 hover:bg-emerald-700"
-                      )}
+                      variant={syncStatus === "success" ? "success" : "primary"}
+                      className="min-w-[180px]"
                     >
-                      {syncStatus === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {syncStatus === "loading" ? "Sincronizando..." : syncStatus === "success" ? "¡Listo!" : "Sincronizar propiedades →"}
-                    </button>
+                      {syncStatus === "loading" && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                      {syncStatus === "loading" ? "Escaneando sitio..." : syncStatus === "success" ? "¡Importado!" : "Iniciar sincronización"}
+                    </Button>
                   </div>
                 </form>
               </div>

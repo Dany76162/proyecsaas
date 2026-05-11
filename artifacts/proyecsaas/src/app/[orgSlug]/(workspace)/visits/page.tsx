@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { updateVisitStatusAction } from "@/modules/visits/actions";
 import { getVisitSummary, listOrganizationVisits } from "@/modules/visits/service";
@@ -90,7 +89,22 @@ export default async function VisitsPage({
 
   return (
     <>
-      <WorkspaceHeader organization={organization} />
+      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-soft">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-amber-500 shadow-[0_0_0_4px_rgba(245,158,11,0.15)]" />
+              <span className="text-sm font-semibold text-amber-700">Agenda Activa</span>
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              Visitas
+            </h1>
+            <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
+              Gestioná tu calendario de visitas y confirmá citas agendadas por la IA o el equipo.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {successMessage ? (
         <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">

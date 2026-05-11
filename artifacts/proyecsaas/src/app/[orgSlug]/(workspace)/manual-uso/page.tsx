@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { PrintManualButton } from "./PrintManualButton";
 
@@ -93,16 +92,22 @@ export default async function WorkspaceManualUsoPage({
 
   return (
     <>
-      <div className="print:hidden">
-        <WorkspaceHeader organization={organization}>
-          <Link
-            href={`/${orgSlug}/conversations`}
-            className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 print:hidden"
-          >
-            Ver conversaciones
-          </Link>
-        </WorkspaceHeader>
-      </div>
+      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-soft print:hidden">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-slate-400 shadow-[0_0_0_4px_rgba(148,163,184,0.15)]" />
+              <span className="text-sm font-semibold text-slate-600">Documentación Oficial</span>
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              Manual de Uso
+            </h1>
+            <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
+              Todo lo que necesitás saber para operar Raíces Pilot y maximizar tus ventas.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section className="mx-auto mt-5 max-w-5xl space-y-6 print:mt-0 print:max-w-none print:space-y-4">
         <div className="[break-inside:avoid] [page-break-inside:avoid]">

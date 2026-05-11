@@ -36,7 +36,7 @@ export default async function PlatformBillingPage() {
   const mpConfigured = !!process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Comercial / Cobros</h1>
         <p className="text-sm text-slate-500">

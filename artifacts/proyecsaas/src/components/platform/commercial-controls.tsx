@@ -136,11 +136,11 @@ export function CommercialControls({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Control Comercial</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Control Comercial</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-900">{orgName}</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   Activá manualmente, extendé vencimiento o suspendé sin depender solo del pago online.
@@ -159,21 +159,21 @@ export function CommercialControls({
               <button
                 type="button"
                 onClick={() => applyQuickPreset("ACTIVE", "TRANSFER", 30)}
-                className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"
+                className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 transition hover:bg-emerald-100"
               >
                 Activar 30d
               </button>
               <button
                 type="button"
                 onClick={() => applyQuickPreset("TRIALING", "MANUAL", 14)}
-                className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700"
+                className="rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-brand-700 transition hover:bg-brand-100"
               >
                 Trial 14d
               </button>
               <button
                 type="button"
                 onClick={() => setSubscriptionStatus("SUSPENDED")}
-                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"
+                className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-rose-700 transition hover:bg-rose-100"
               >
                 Suspender
               </button>
@@ -186,7 +186,7 @@ export function CommercialControls({
                   <select
                     value={planId}
                     onChange={(e) => setPlanId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                   >
                     {planOptions.map((plan) => (
                       <option key={plan.id} value={plan.id}>
@@ -201,7 +201,7 @@ export function CommercialControls({
                   <select
                     value={subscriptionStatus}
                     onChange={(e) => setSubscriptionStatus(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                   >
                     {STATUS_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -218,7 +218,7 @@ export function CommercialControls({
                   <select
                     value={billingMode}
                     onChange={(e) => setBillingMode(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                   >
                     {BILLING_MODE_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -234,7 +234,7 @@ export function CommercialControls({
                     type="date"
                     value={periodEnd}
                     onChange={(e) => setPeriodEnd(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
               </div>
@@ -246,7 +246,7 @@ export function CommercialControls({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ej: cliente abonó por transferencia, confirmar ingreso el 15/04."
-                  className="w-full resize-none rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-slate-900"
+                  className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 />
               </div>
 
@@ -265,14 +265,14 @@ export function CommercialControls({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending || !planId || !periodEnd}
-                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-50"
+                  className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 shadow-sm shadow-brand-500/20 disabled:opacity-50"
                 >
                   {isPending ? "Guardando..." : "Guardar estado comercial"}
                 </button>

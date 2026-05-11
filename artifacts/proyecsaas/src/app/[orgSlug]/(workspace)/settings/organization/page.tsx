@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/server/db/prisma";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
-import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import {
   OrganizationProfileForm,
@@ -47,7 +46,22 @@ export default async function OrganizationSettingsPage({
 
   return (
     <>
-      <WorkspaceHeader organization={organization} />
+      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-soft">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-slate-400 shadow-[0_0_0_4px_rgba(148,163,184,0.15)]" />
+              <span className="text-sm font-semibold text-slate-600">Perfil Enterprise</span>
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              Organización
+            </h1>
+            <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
+              Gestioná la identidad de tu inmobiliaria, datos de contacto y fuentes de sincronización de propiedades.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-6 md:grid-cols-3">
         <MetricCard

@@ -1,18 +1,21 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowUpRight } from "lucide-react";
 
-import { LeadMiniCard } from "@/components/workspace/lead-mini-card";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StageColumn } from "@/components/workspace/stage-column";
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { createLeadAction } from "@/modules/leads/actions";
 import { getLeadSummary, listOrganizationLeads } from "@/modules/leads/service";
 import type { LeadStage } from "@/modules/leads/types";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { formatDate } from "@/lib/utils";
+import { LeadMiniCard } from "@/components/workspace/lead-mini-card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const stageOrder: LeadStage[] = [
   "NEW",
@@ -22,32 +25,28 @@ const stageOrder: LeadStage[] = [
   "CLOSED",
 ];
 
-const LEAD_STATUS_LABELS: Record<string, string> = {
-  NEW: "Nuevo",
-  CONTACTED: "Contactado",
-  INTERESTED: "Interesado",
-  VISIT: "En Visita",
-  CLOSED: "Cerrado",
+const LEAD_STATUS_LABELS: Record<string, { label: string; tone: "neutral" | "success" | "warning" | "info" | "danger" }> = {
+  NEW:        { label: "Nuevo",      tone: "neutral" },
+  CONTACTED:  { label: "Contactado", tone: "info" },
+  INTERESTED: { label: "Interesado", tone: "info" },
+  VISIT:      { label: "En Visita",  tone: "warning" },
+  CLOSED:     { label: "Cerrado",    tone: "success" },
 };
 
-const TEMPERATURE_LABELS: Record<string, string> = {
-  hot: "Caliente",
-  warm: "Tibio",
-  cold: "Frío",
-  unclear: "Indefinido",
+const STAGE_TITLE_MAP: Record<LeadStage, string> = {
+  NEW:        "NUEVO",
+  CONTACTED:  "CONTACTADO",
+  INTERESTED: "INTERESADO",
+  VISIT:      "EN VISITA",
+  CLOSED:     "CERRADO",
 };
 
-function getTemperatureTone(temperature: "hot" | "warm" | "cold" | "unclear") {
-  if (temperature === "hot") {
-    return "warning" as const;
-  }
-
-  if (temperature === "warm") {
-    return "info" as const;
-  }
-
-  return "neutral" as const;
-}
+const TEMPERATURE_CONFIG = {
+  hot:     { label: "Caliente", tone: "warning" as const, dot: "bg-red-400" },
+  warm:    { label: "Tibio",    tone: "info"    as const, dot: "bg-amber-400" },
+  cold:    { label: "Frío",     tone: "neutral" as const, dot: "bg-slate-400" },
+  unclear: { label: "—",        tone: "neutral" as const, dot: "bg-slate-300" },
+};
 
 export default async function LeadsPage({
   params,
@@ -71,132 +70,105 @@ export default async function LeadsPage({
 
   return (
     <>
-      <WorkspaceHeader organization={organization} />
+      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-soft">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-brand-500 shadow-[0_0_0_4px_rgba(35,86,217,0.15)]" />
+              <span className="text-sm font-semibold text-brand-700">Embudo Comercial</span>
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              Prospectos
+            </h1>
+            <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
+              Gestioná tu pipeline de ventas y hacé seguimiento de cada oportunidad desde el primer contacto.
+            </p>
+          </div>
+        </div>
+      </section>
 
+      {/* ── KPI Strip ── */}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <MetricCard label="Nuevos"     value={String(summary.newCount)}       hint="Demanda entrante." tone="brand" />
+        <MetricCard label="Contactados"value={String(summary.contactedCount)} hint="Primer contacto." />
+        <MetricCard label="Interesados"value={String(summary.interestedCount)}hint="Perfil calificado." />
+        <MetricCard label="En Visita"  value={String(summary.visitCount)}     hint="Agenda activa." tone="warning" />
+        <MetricCard label="Cerrados"   value={String(summary.closedCount)}    hint="Ciclo completado." tone="success" />
+      </section>
+
+      {/* ── Quick Create + Search ── */}
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <SectionCard
-          eyebrow="Acción"
-          title="Nuevo lead"
-          description="Carga rápida manual para agilidad comercial."
-        >
-          <form action={createLeadAction} className="grid gap-3 md:grid-cols-2">
+        <SectionCard eyebrow="Operación" title="Registro rápido de lead">
+          <form action={createLeadAction} className="grid gap-4 md:grid-cols-2">
             <input type="hidden" name="orgSlug" value={orgSlug} />
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Nombre y Apellido</span>
-              <input
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">Nombre completo</span>
+              <Input
                 name="fullName"
                 required
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
                 placeholder="Nombre del lead"
               />
-            </label>
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Teléfono</span>
-              <input
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">Teléfono móvil</span>
+              <Input
                 name="phone"
                 required
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
                 placeholder="+54 11 ..."
               />
-            </label>
-            <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
-              <span>Email (opcional)</span>
-              <input
+            </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">Correo electrónico <span className="normal-case font-normal text-slate-400">(opcional)</span></span>
+              <Input
                 name="email"
                 type="email"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
                 placeholder="lead@ejemplo.com"
               />
-            </label>
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
-              >
-                Crear Lead
-              </button>
+            </div>
+            <div className="md:col-span-2 pt-2">
+              <Button type="submit" variant="primary" className="w-full sm:w-auto min-w-[140px]">
+                Registrar lead
+              </Button>
             </div>
           </form>
         </SectionCard>
 
-        <SectionCard
-          eyebrow="Búsqueda"
-          title="Búsqueda rápida"
-          description="Filtrá por nombre, teléfono o email."
-        >
-          <form className="space-y-3">
-            <input
-              name="q"
-              defaultValue={q}
-              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-950"
-              placeholder="Buscar por nombre, teléfono o email"
-            />
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-              >
-                Buscar
-              </button>
+        <SectionCard eyebrow="Exploración" title="Filtrar cartera">
+          <form className="space-y-4">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Búsqueda global</span>
+              <Input
+                name="q"
+                defaultValue={q}
+                placeholder="Nombre, teléfono o email..."
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="submit" variant="secondary" size="sm" className="text-xs font-bold uppercase tracking-widest">
+                Aplicar filtros
+              </Button>
               {q ? (
-                <Link
-                  href={`/${orgSlug}/leads`}
-                  className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Limpiar
-                </Link>
+                <Button asChild variant="outline" size="sm" className="text-xs font-bold uppercase tracking-widest">
+                  <Link href={`/${orgSlug}/leads`}>Limpiar</Link>
+                </Button>
               ) : null}
+              <span className="ml-auto text-[11px] font-bold text-slate-300 tabular-nums uppercase tracking-widest">
+                {query
+                  ? `${leads.length} COINCIDENCIAS`
+                  : `${summary.total} REGISTROS`}
+              </span>
             </div>
           </form>
-          <p className="mt-4 text-sm text-slate-500">
-            {query
-              ? `${leads.length} resultado${leads.length === 1 ? "" : "s"} para "${q}"`
-              : `Mostrando ${leads.length} de ${summary.total} leads.`}
-          </p>
         </SectionCard>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <MetricCard label="Nuevos" value={String(summary.newCount)} hint="Demanda entrante reciente." />
-        <MetricCard
-          label="Contactados"
-          value={String(summary.contactedCount)}
-          hint="Primer contacto en curso."
-        />
-        <MetricCard
-          label="Interesados"
-          value={String(summary.interestedCount)}
-          hint="Perfil calificado."
-        />
-        <MetricCard
-          label="En Visita"
-          value={String(summary.visitCount)}
-          hint="Agenda de visitas en marcha."
-        />
-        <MetricCard
-          label="Cerrados"
-          value={String(summary.closedCount)}
-          hint="Ciclo comercial completado."
-        />
-      </section>
-
-      <SectionCard
-        eyebrow="Embudo"
-        title="Flujo comercial"
-        description="El tablero refleja el progreso de la oportunidad desde el primer contacto hasta el cierre."
-      >
-        <div className="grid gap-4 xl:grid-cols-5">
+      {/* ── Pipeline Kanban ── */}
+      <SectionCard eyebrow="Embudo" title="Embudo comercial" description="Estado de cada oportunidad desde el primer contacto hasta el cierre.">
+        <div className="grid gap-3 xl:grid-cols-5">
           {stageOrder.map((stage) => {
             const stageLeads = leads.filter((lead) => lead.status === stage);
-
             return (
-              <StageColumn key={stage} title={
-                stage === "NEW" ? "NUEVO" :
-                stage === "CONTACTED" ? "CONTACTADO" :
-                stage === "INTERESTED" ? "INTERESADO" :
-                stage === "VISIT" ? "EN VISITA" :
-                stage === "CLOSED" ? "CERRADO" : stage
-              } count={stageLeads.length}>
+              <StageColumn key={stage} title={STAGE_TITLE_MAP[stage]} count={stageLeads.length}>
                 {stageLeads.map((lead) => (
                   <LeadMiniCard
                     key={lead.id}
@@ -215,87 +187,129 @@ export default async function LeadsPage({
         </div>
       </SectionCard>
 
+      {/* ── DataTable Enterprise ── */}
       <SectionCard
-        eyebrow="Lista"
-        title="Registro global"
-        description="Visualización tradicional de la cartera de leads."
+        eyebrow="Registro"
+        title="Cartera global"
+        description="Vista completa de todos los leads con acceso rápido a cada perfil."
+        noPadding
       >
         <div className="overflow-x-auto">
-          <table className="min-w-[680px] w-full text-left">
-            <thead className="text-sm text-slate-500">
-              <tr className="border-b border-slate-100">
-                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Lead</th>
-                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Propiedad</th>
-                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Responsable</th>
-                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Origen</th>
-                <th className="pb-3 pr-4 font-semibold text-xs uppercase tracking-wider text-slate-400">Etapa</th>
-                <th className="pb-3 font-semibold text-xs uppercase tracking-wider text-slate-400">Último contacto</th>
+          <table className="w-full min-w-[720px] text-left">
+            {/* Table Head */}
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/60">
+                <th className="whitespace-nowrap px-5 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Lead
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Propiedad
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Responsable
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Temp.
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Etapa
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Último contacto
+                </th>
+                <th className="w-10 py-3 pr-4" />
               </tr>
             </thead>
+
+            {/* Table Body */}
             <tbody className="divide-y divide-slate-100">
-              {leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="py-4 pr-4">
-                    <Link
-                      href={`/${orgSlug}/leads/${lead.id}`}
-                      className="font-semibold text-slate-950 hover:text-brand-600"
-                    >
-                      {lead.fullName}
-                    </Link>
-                    <div className="mt-1 text-sm text-slate-500">
-                      {lead.email ? (
-                        <a href={`mailto:${lead.email}`} className="hover:text-brand-600">
-                          {lead.email}
-                        </a>
-                      ) : (
-                        <span>Sin email</span>
-                      )}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-500">
-                      <a href={`tel:${lead.phone}`} className="hover:text-brand-600">
-                        {lead.phone}
-                      </a>
-                    </div>
-                  </td>
-                  <td className="py-4 pr-4 text-sm text-slate-600">
-                    {lead.propertyId ? (
+              {leads.map((lead) => {
+                const statusConfig = LEAD_STATUS_LABELS[lead.status] ?? { label: lead.status, tone: "neutral" as const };
+                const tempConfig = TEMPERATURE_CONFIG[lead.leadTemperature] ?? TEMPERATURE_CONFIG.unclear;
+
+                return (
+                  <tr
+                    key={lead.id}
+                    className="group transition-colors duration-100 hover:bg-slate-50/70"
+                  >
+                    {/* Lead name + contact */}
+                    <td className="px-5 py-3.5">
                       <Link
-                        href={`/${orgSlug}/properties/${lead.propertyId}`}
-                        className="hover:text-brand-600"
+                        href={`/${orgSlug}/leads/${lead.id}`}
+                        className="block font-semibold text-slate-900 hover:text-brand-600 transition-colors duration-150 text-sm leading-tight"
                       >
-                        {lead.propertyTitle}
+                        {lead.fullName}
                       </Link>
-                    ) : (
-                      lead.propertyTitle ?? "—"
-                    )}
-                  </td>
-                  <td className="py-4 pr-4 text-sm text-slate-600">{lead.ownerName}</td>
-                  <td className="py-4 pr-4 text-sm text-slate-600">{lead.source}</td>
-                  <td className="py-4 pr-4">
-                    <StatusBadge
-                      label={LEAD_STATUS_LABELS[lead.status] ?? lead.status}
-                      tone={
-                        lead.status === "CLOSED"
-                          ? "success"
-                          : lead.status === "VISIT"
-                            ? "warning"
-                            : "info"
-                      }
-                    />
-                    <div className="mt-2">
-                      <StatusBadge
-                        label={TEMPERATURE_LABELS[lead.leadTemperature] ?? lead.leadTemperature}
-                        tone={getTemperatureTone(lead.leadTemperature)}
-                      />
-                    </div>
-                  </td>
-                  <td className="py-4 text-sm text-slate-600">
-                    {formatDate(lead.lastContactAt)}
-                  </td>
-                </tr>
-              ))}
+                      <div className="mt-1 space-y-0.5">
+                        {lead.email ? (
+                          <p className="text-[11px] text-slate-400 truncate max-w-[180px]">
+                            {lead.email}
+                          </p>
+                        ) : null}
+                        <p className="text-[11px] text-slate-400">{lead.phone}</p>
+                      </div>
+                    </td>
+
+                    {/* Property */}
+                    <td className="px-4 py-3.5 text-sm text-slate-500 max-w-[160px]">
+                      {lead.propertyId ? (
+                        <Link
+                          href={`/${orgSlug}/properties/${lead.propertyId}`}
+                          className="line-clamp-1 hover:text-brand-600 transition-colors duration-150"
+                        >
+                          {lead.propertyTitle}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </td>
+
+                    {/* Owner */}
+                    <td className="px-4 py-3.5 text-sm text-slate-500 whitespace-nowrap">
+                      {lead.ownerName}
+                    </td>
+
+                    {/* Temperature */}
+                    <td className="px-4 py-3.5">
+                      <span className="flex items-center gap-1.5">
+                        <span className={cn("h-2 w-2 rounded-full shrink-0", tempConfig.dot)} />
+                        <span className="text-xs text-slate-500">{tempConfig.label}</span>
+                      </span>
+                    </td>
+
+                    {/* Stage badge */}
+                    <td className="px-4 py-3.5">
+                      <StatusBadge label={statusConfig.label} tone={statusConfig.tone} />
+                    </td>
+
+                    {/* Last contact */}
+                    <td className="px-4 py-3.5 text-xs text-slate-400 tabular-nums whitespace-nowrap">
+                      {formatDate(lead.lastContactAt)}
+                    </td>
+
+                    {/* Quick action — visible on hover */}
+                    <td className="py-3.5 pr-4">
+                      <Link
+                        href={`/${orgSlug}/leads/${lead.id}`}
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300 opacity-0 transition-all duration-150 hover:bg-brand-50 hover:text-brand-600 group-hover:opacity-100"
+                        title="Abrir lead"
+                      >
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+
+          {leads.length === 0 && (
+            <div className="px-5 py-16 text-center">
+              <p className="text-sm font-medium text-slate-400">
+                {query ? `Sin resultados para "${query}".` : "No hay leads registrados aún."}
+              </p>
+            </div>
+          )}
         </div>
       </SectionCard>
     </>

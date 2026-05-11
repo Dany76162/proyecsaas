@@ -28,7 +28,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
         setInviteUrl(result.data?.inviteUrl);
         router.refresh();
       } else {
-        setError(result.message || "Failed to invite user");
+        setError(result.message || "Error al invitar al usuario");
       }
     });
   }
@@ -36,7 +36,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
   const handleCopy = () => {
     if (!inviteUrl) return;
     navigator.clipboard.writeText(inviteUrl);
-    alert("Invite link copied to clipboard!");
+    alert("¡Enlace de invitación copiado al portapapeles!");
   };
 
   return (
@@ -74,7 +74,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
               <div className="mt-6 flex flex-col gap-4">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Enlace de invitación
+                    Enlace de invitación personal
                   </p>
                   <p className="mt-2 break-all text-sm font-medium text-slate-950">
                     {inviteUrl}

@@ -24,7 +24,7 @@ export async function listOrganizationUsers(
       id: membership.user.id,
       fullName: membership.user.fullName,
       email: membership.user.email,
-      jobTitle: membership.user.jobTitle ?? "Team member",
+      jobTitle: membership.user.jobTitle ?? "Miembro del equipo",
       isActive: membership.user.isActive,
       role: membership.role,
       phone: membership.user.phone ?? null,

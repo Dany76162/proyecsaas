@@ -2,7 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, X } from "lucide-react";
+import {
+  LogOut,
+  X,
+  LayoutDashboard,
+  Rocket,
+  Megaphone,
+  BookOpen,
+  Users,
+  MessageSquare,
+  Calendar,
+  Building2,
+  Bot,
+  Zap,
+  Radio,
+  Users2,
+  Settings,
+} from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
 import type { OrganizationSummary } from "@/modules/organizations/types";
@@ -18,32 +34,32 @@ type WorkspaceSidebarProps = {
 };
 
 const OPERATION_NAV = [
-  { label: "Inicio", path: "" },
-  { label: "Onboarding", path: "/onboarding" },
-  { label: "Captacion", path: "/captacion" },
-  { label: "Manual de uso", path: "/manual-uso" },
-  { label: "Leads", path: "/leads" },
-  { label: "Conversaciones", path: "/conversations" },
-  { label: "Visitas", path: "/visits" },
-  { label: "Propiedades", path: "/properties" },
+  { label: "Inicio",         path: "",              icon: LayoutDashboard },
+  { label: "Bienvenida",     path: "/onboarding",   icon: Rocket },
+  { label: "Captación",      path: "/captacion",    icon: Megaphone },
+  { label: "Manual de uso",  path: "/manual-uso",   icon: BookOpen },
+  { label: "Prospectos",     path: "/leads",        icon: Users },
+  { label: "Conversaciones", path: "/conversations",icon: MessageSquare },
+  { label: "Visitas",        path: "/visits",       icon: Calendar },
+  { label: "Propiedades",    path: "/properties",   icon: Building2 },
 ] as const;
 
 const AUTOMATION_NAV = [
-  { label: "Agentes IA", path: "/agents" },
-  { label: "Automatizaciones", path: "/automations" },
+  { label: "Agentes IA",       path: "/agents",      icon: Bot },
+  { label: "Automatizaciones", path: "/automations", icon: Zap },
 ] as const;
 
 const MANAGEMENT_NAV = [
-  { label: "Disponibilidad", path: "/settings/availability" },
-  { label: "Equipo", path: "/settings/users" },
-  { label: "Organizacion", path: "/settings/organization" },
+  { label: "Disponibilidad", path: "/settings/availability", icon: Radio },
+  { label: "Equipo",         path: "/settings/users",        icon: Users2 },
+  { label: "Organización",   path: "/settings/organization", icon: Settings },
 ] as const;
 
 const ROLE_MAP = {
-  OWNER: { label: "Titular", copy: "Acceso total" },
-  ADMIN: { label: "Administrador", copy: "Gestion y operacion" },
-  AGENT: { label: "Agente de ventas", copy: "Operacion comercial" },
-  ASSISTANT: { label: "Asistente", copy: "Soporte operativo" },
+  OWNER:     { label: "Titular",           copy: "Acceso total" },
+  ADMIN:     { label: "Administrador",     copy: "Gestión y operación" },
+  AGENT:     { label: "Agente de ventas",  copy: "Operación comercial" },
+  ASSISTANT: { label: "Asistente",         copy: "Soporte operativo" },
 } as const;
 
 function isAdminOrOwner(role: MembershipRole): boolean {
@@ -70,129 +86,183 @@ export function WorkspaceSidebar({
   return (
     <aside
       className={cn(
-        "fixed bottom-0 left-0 top-0 z-50 flex h-screen h-[100dvh] w-72 flex-col bg-slate-950 print:hidden",
-        "transition-transform duration-300 ease-in-out",
+        "fixed bottom-0 left-0 top-0 z-50 flex h-screen h-[100dvh] w-64 flex-col print:hidden",
+        // Serene dark — not pure black, not aggressive
+        "bg-[#0f1117] border-r border-white/[0.06]",
+        "transition-transform duration-300 ease-out",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
     >
+      {/* Mobile close */}
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/10 lg:hidden"
+        className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors duration-150 hover:bg-white/8 hover:text-slate-300 lg:hidden"
         aria-label="Cerrar menu"
       >
-        <X className="h-4 w-4" />
+        <X className="h-3.5 w-3.5" />
       </button>
 
+      {/* Brand header */}
       <Link
         href={`/${organization.slug}`}
         onClick={onClose}
-        className="m-4 flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10 group"
+        className="group m-3 flex shrink-0 items-center gap-3 rounded-lg border border-white/[0.07] bg-white/[0.04] px-3.5 py-3 transition-all duration-150 hover:bg-white/[0.07]"
       >
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-            RaicesPilot
-          </p>
-          <h2 className="mt-1 truncate text-lg font-bold tracking-tight text-white">
-            {organization.name}
-          </h2>
-          <div className="mt-2.5 inline-block rounded bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
-            Panel de inmobiliaria
-          </div>
-        </div>
-        <div className="relative h-16 w-16 shrink-0">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md">
           <img
             src="/brand/Logo%20minimalista%20de%20crecimiento%20inmobiliario.png"
             alt="Logo"
-            className="absolute left-1/2 top-1/2 h-28 w-28 max-w-none -translate-x-1/2 -translate-y-1/2 object-contain transition-transform group-hover:scale-110"
+            className="h-12 w-12 max-w-none object-contain brightness-0 invert opacity-90"
           />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-700">
+            RaicesPilot
+          </p>
+          <h2 className="mt-0.5 truncate text-sm font-semibold leading-tight text-white/90">
+            {organization.name}
+          </h2>
         </div>
       </Link>
 
-      <div className="flex-1 space-y-1 overflow-y-auto px-4 pb-2">
-        <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Operacion
-        </p>
-        {OPERATION_NAV.map((item) => (
-          <Link
-            key={item.path}
-            href={`/${organization.slug}${item.path}`}
-            onClick={onClose}
-            className={cn(
-              "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
-              isActive(organization.slug, item.path)
-                ? "bg-white text-slate-950"
-                : "text-slate-300 hover:bg-white/10 hover:text-white",
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 pb-3 space-y-5">
+        {/* Operacion */}
+        <div>
+          <p className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-600">
+            Operación
+          </p>
+          <div className="space-y-0.5">
+            {OPERATION_NAV.map((item) => {
+              const active = isActive(organization.slug, item.path);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.path}
+                  href={`/${organization.slug}${item.path}`}
+                  onClick={onClose}
+                  className={cn(
+                    "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-semibold transition-all duration-150",
+                    active
+                      ? "bg-white/[0.08] text-white"
+                      : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200",
+                  )}
+                >
+                  {/* Active accent */}
+                  {active && (
+                    <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-brand-400" />
+                  )}
+                  <Icon
+                    className={cn(
+                      "h-4.5 w-4.5 shrink-0 transition-colors duration-150",
+                      active ? "text-brand-400" : "text-slate-600 group-hover:text-slate-400",
+                    )}
+                  />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
+        {/* Automatizacion */}
         {isAdminOrOwner(role) && (
-          <div className="mt-6 space-y-1">
-            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Automatizacion
+          <div>
+            <p className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-600">
+              Automatización
             </p>
-            {AUTOMATION_NAV.map((item) => (
-              <Link
-                key={item.path}
-                href={`/${organization.slug}${item.path}`}
-                onClick={onClose}
-                className={cn(
-                  "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
-                  isActive(organization.slug, item.path)
-                    ? "bg-white text-slate-950"
-                    : "text-slate-300 hover:bg-white/10 hover:text-white",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <div className="space-y-0.5">
+              {AUTOMATION_NAV.map((item) => {
+                const active = isActive(organization.slug, item.path);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    href={`/${organization.slug}${item.path}`}
+                    onClick={onClose}
+                    className={cn(
+                      "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
+                      active
+                        ? "bg-white/[0.08] text-white"
+                        : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200",
+                    )}
+                  >
+                    {active && (
+                      <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-brand-400" />
+                    )}
+                    <Icon
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0 transition-colors duration-150",
+                        active ? "text-brand-400" : "text-slate-600 group-hover:text-slate-400",
+                      )}
+                    />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
 
+        {/* Administracion */}
         {isAdminOrOwner(role) && (
-          <div className="mt-6 space-y-1">
-            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Administracion
+          <div>
+            <p className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-600">
+              Administración
             </p>
-            {MANAGEMENT_NAV.map((item) => (
-              <Link
-                key={item.path}
-                href={`/${organization.slug}${item.path}`}
-                onClick={onClose}
-                className={cn(
-                  "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
-                  isActive(organization.slug, item.path)
-                    ? "bg-white text-slate-950"
-                    : "text-slate-300 hover:bg-white/10 hover:text-white",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <div className="space-y-0.5">
+              {MANAGEMENT_NAV.map((item) => {
+                const active = isActive(organization.slug, item.path);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    href={`/${organization.slug}${item.path}`}
+                    onClick={onClose}
+                    className={cn(
+                      "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
+                      active
+                        ? "bg-white/[0.08] text-white"
+                        : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200",
+                    )}
+                  >
+                    {active && (
+                      <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-brand-400" />
+                    )}
+                    <Icon
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0 transition-colors duration-150",
+                        active ? "text-brand-400" : "text-slate-600 group-hover:text-slate-400",
+                      )}
+                    />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
-      </div>
+      </nav>
 
-      <div className="shrink-0 space-y-2 border-t border-white/10 p-4">
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-300">
+      {/* User footer */}
+      <div className="shrink-0 border-t border-white/[0.06] p-3 space-y-1">
+        <div className="flex items-center gap-2.5 rounded-md px-2.5 py-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-800 text-xs font-bold text-slate-400 ring-1 ring-white/10">
             {userName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold leading-tight text-white">{userName}</p>
-            <p className="text-[10px] text-slate-400">{roleDisplay.label}</p>
+            <p className="truncate text-sm font-semibold leading-tight text-slate-300">{userName}</p>
+            <p className="text-xs text-slate-600">{roleDisplay.label}</p>
           </div>
         </div>
         <form action={logoutAction}>
           <button
             type="submit"
-            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+            className="group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-semibold text-slate-600 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400"
           >
-            <LogOut className="h-4 w-4" />
-            Cerrar sesion
+            <LogOut className="h-4.5 w-4.5 transition-colors duration-150 group-hover:text-red-400" />
+            Cerrar sesión
           </button>
         </form>
       </div>

@@ -1,0 +1,7 @@
+ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS 'FOLLOW_UP_RESOLVED';
+
+ALTER TABLE "Conversation"
+ADD COLUMN "followUpActive" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "followUpReason" TEXT,
+ADD COLUMN "followUpActiveAt" TIMESTAMP(3),
+ADD COLUMN "followUpResolvedAt" TIMESTAMP(3);

@@ -7,10 +7,14 @@ import {
   updatePropertySourceAction,
 } from "@/modules/organizations/actions";
 
-// ─── Shared UI helpers ────────────────────────────────────────────────────────
+import { Button } from "@/components/ui/button";
+import { Input, Textarea } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { StatusBadge } from "@/components/workspace/status-badge";
+import { cn } from "@/lib/utils";
 
-const inputCls =
-  "w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-500 bg-white";
+// ─── Shared UI helpers ────────────────────────────────────────────────────────
 
 function Field({
   label,
@@ -23,9 +27,9 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-semibold text-slate-700">
+      <label className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="ml-1 text-brand-500">*</span>}
       </label>
       {children}
     </div>
@@ -34,22 +38,26 @@ function Field({
 
 function GroupLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{children}</p>
+    <p className="mb-4 text-sm font-bold uppercase tracking-widest text-slate-900 border-l-2 border-brand-500 pl-3">
+      {children}
+    </p>
   );
 }
 
 function SaveFeedback({ error, saved }: { error: string; saved: boolean }) {
   if (error)
     return (
-      <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <div className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <AlertCircle className="h-4 w-4" />
         {error}
-      </p>
+      </div>
     );
   if (saved)
     return (
-      <p className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-        Cambios guardados correctamente.
-      </p>
+      <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+        <CheckCircle2 className="h-4 w-4" />
+        Configuración actualizada con éxito.
+      </div>
     );
   return null;
 }
@@ -119,45 +127,41 @@ export function OrganizationProfileForm({
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Perfil básico */}
       <div>
-        <GroupLabel>Perfil básico</GroupLabel>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Nombre comercial" required>
-            <input
+        <GroupLabel>Identidad Corporativa</GroupLabel>
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="Nombre de la inmobiliaria" required>
+            <Input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={120}
-              className={inputCls}
-              placeholder="Inmobiliaria del Valle"
+              placeholder="Ej. Raices Inmobiliaria"
             />
           </Field>
-          <Field label="Ciudad / zona">
-            <input
+          <Field label="Zona de operación">
+            <Input
               value={city}
               onChange={(e) => setCity(e.target.value)}
               maxLength={120}
-              className={inputCls}
-              placeholder="Buenos Aires, Palermo"
+              placeholder="Ej. Buenos Aires, Palermo"
             />
           </Field>
-          <Field label="Enfoque de mercado">
-            <input
+          <Field label="Enfoque comercial">
+            <Input
               value={marketFocus}
               onChange={(e) => setMarketFocus(e.target.value)}
               maxLength={160}
-              className={inputCls}
-              placeholder="Ej: Alquileres residenciales, CABA norte"
+              placeholder="Ej: Residencial, Inversiones"
             />
           </Field>
           <div className="md:col-span-2">
-            <Field label="Descripción breve">
-              <textarea
+            <Field label="Descripción de marca">
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 maxLength={500}
                 rows={3}
-                className={`${inputCls} resize-none`}
-                placeholder="Resumen operativo de la inmobiliaria (aparece en perfiles internos)"
+                placeholder="Breve resumen para perfiles internos y buscadores."
               />
             </Field>
           </div>
@@ -166,46 +170,42 @@ export function OrganizationProfileForm({
 
       {/* Contacto */}
       <div>
-        <GroupLabel>Contacto</GroupLabel>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Email principal">
-            <input
+        <GroupLabel>Información de Contacto</GroupLabel>
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="Email institucional">
+            <Input
               type="email"
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
               maxLength={200}
-              className={inputCls}
-              placeholder="contacto@inmobiliaria.com"
+              placeholder="contacto@empresa.com"
             />
           </Field>
-          <Field label="Teléfono">
-            <input
+          <Field label="Teléfono de oficina">
+            <Input
               type="tel"
               value={contactPhone}
               onChange={(e) => setContactPhone(e.target.value)}
               maxLength={50}
-              className={inputCls}
-              placeholder="+54 11 4xxx-xxxx"
+              placeholder="+54 11 ..."
             />
           </Field>
-          <Field label="WhatsApp">
-            <input
+          <Field label="WhatsApp de ventas">
+            <Input
               type="tel"
               value={contactWhatsapp}
               onChange={(e) => setContactWhatsapp(e.target.value)}
               maxLength={50}
-              className={inputCls}
-              placeholder="+54 9 11 xxxx-xxxx"
+              placeholder="+54 9 11 ..."
             />
           </Field>
-          <Field label="Sitio web">
-            <input
+          <Field label="Sitio web oficial">
+            <Input
               type="url"
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
               maxLength={300}
-              className={inputCls}
-              placeholder="https://www.inmobiliaria.com"
+              placeholder="https://www.tuweb.com"
             />
           </Field>
         </div>
@@ -213,28 +213,28 @@ export function OrganizationProfileForm({
 
       {/* Operación */}
       <div>
-        <GroupLabel>Operación</GroupLabel>
-        <Field label="Horario de atención">
-          <input
+        <GroupLabel>Atención al Cliente</GroupLabel>
+        <Field label="Horarios de atención">
+          <Input
             value={businessHours}
             onChange={(e) => setBusinessHours(e.target.value)}
             maxLength={200}
-            className={inputCls}
-            placeholder="Ej: Lun–Vie 9–18 h, Sáb 9–13 h"
+            placeholder="Ej: Lun–Vie 9–18 h"
           />
         </Field>
       </div>
 
       <SaveFeedback error={error} saved={saved} />
 
-      <div className="flex justify-end">
-        <button
+      <div className="flex justify-end pt-4">
+        <Button
           type="submit"
           disabled={isPending}
-          className="rounded-2xl bg-slate-950 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+          variant="primary"
+          className="min-w-[180px]"
         >
-          {isPending ? "Guardando..." : "Guardar cambios"}
-        </button>
+          {isPending ? "Guardando..." : "Actualizar perfil"}
+        </Button>
       </div>
     </form>
   );
@@ -347,77 +347,80 @@ export function PropertySourceForm({
   const statusUi = SOURCE_STATUS_UI[initial.propertySourceStatus] ?? SOURCE_STATUS_UI["IDLE"];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid gap-4 md:grid-cols-2">
+    <div className="space-y-6">
+      <div className="grid gap-5 md:grid-cols-2">
         <div className="md:col-span-2">
           <Field label="URL del listado de propiedades">
-            <input
+            <Input
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               maxLength={500}
-              className={inputCls}
-              placeholder="https://www.inmobiliaria.com/propiedades"
+              placeholder="https://www.tusitio.com/propiedades"
             />
           </Field>
-          <p className="mt-1.5 text-xs text-slate-400">
-            Pegá la URL donde tu sitio web publica el listado completo de propiedades
-            (ej: /propiedades, /alquileres). El sistema leerá esa página y extraerá las propiedades con IA.
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+            Pega la URL donde se encuentra el catálogo público. La IA de RaicesPilot escaneará esta página para mantener tu inventario sincronizado.
           </p>
         </div>
-        <Field label="Tipo de fuente">
-          <select
+        <Field label="Tipo de conector">
+          <Select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className={inputCls}
           >
-            <option value="website">Sitio web</option>
+            <option value="website">Exploración Web (IA)</option>
             <option value="sitemap">Sitemap XML</option>
             <option value="listing">Listado directo</option>
-          </select>
+          </Select>
         </Field>
         <div className="flex flex-col gap-1.5">
-          <p className="text-sm font-semibold text-slate-700">Estado</p>
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5">
-            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusUi.cls}`}>
-              {statusUi.label}
-            </span>
-            <span className="text-xs text-slate-400">
-              Último sync: {formatDate(initial.propertySourceSyncedAt)}
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Estado de sincronización</p>
+          <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-2">
+            <StatusBadge label={statusUi.label} tone={
+              initial.propertySourceStatus === "OK" ? "success" : 
+              initial.propertySourceStatus === "ERROR" ? "danger" : 
+              initial.propertySourceStatus === "SYNCING" ? "warning" : "neutral"
+            } dot />
+            <span className="text-[10px] font-bold text-slate-400 uppercase tabular-nums">
+              Último: {formatDate(initial.propertySourceSyncedAt)}
             </span>
           </div>
         </div>
       </div>
 
       {syncResult && (
-        <div className={`rounded-2xl border px-4 py-3 text-sm ${
+        <div className={cn(
+          "flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium",
           syncResult.success
-            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-            : "border-rose-200 bg-rose-50 text-rose-800"
-        }`}>
+            ? "border-emerald-100 bg-emerald-50 text-emerald-800"
+            : "border-red-100 bg-red-50 text-red-800"
+        )}>
+          {syncResult.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
           {syncResult.message}
         </div>
       )}
 
       <SaveFeedback error={error} saved={saved} />
 
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <button
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-slate-100">
+        <Button
           type="button"
           onClick={handleSync}
           disabled={isSyncing || !url.trim()}
-          className="rounded-2xl border border-brand-100 bg-brand-50 px-5 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 disabled:opacity-40 disabled:cursor-not-allowed"
+          variant="secondary"
+          className="text-xs font-bold uppercase tracking-widest"
         >
-          {isSyncing ? "Sincronizando con IA..." : "↺ Sincronizar ahora"}
-        </button>
-        <button
-          type="submit"
+          {isSyncing ? "Sincronizando..." : "Sincronizar ahora"}
+        </Button>
+        <Button
+          onClick={handleSubmit}
           disabled={isPending}
-          className="rounded-2xl bg-slate-950 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+          variant="primary"
+          className="min-w-[160px]"
         >
-          {isPending ? "Guardando..." : "Guardar fuente"}
-        </button>
+          {isPending ? "Guardando..." : "Guardar conector"}
+        </Button>
       </div>
-    </form>
+    </div>
   );
 }

@@ -5,7 +5,7 @@ export default async function SupportPage() {
   const initialConversations = await getSupportConversations();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 pb-10">
+    <div className="space-y-8 pb-10">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <div className="h-1 w-6 rounded-full bg-indigo-600" />

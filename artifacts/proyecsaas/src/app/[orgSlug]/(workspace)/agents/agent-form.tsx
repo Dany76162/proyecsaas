@@ -26,7 +26,7 @@ export function AgentForm({
   mode: "create" | "edit";
 }) {
   const [tone, setTone] = useState<"FORMAL" | "FRIENDLY" | "NEUTRAL">(
-    agent?.tone ?? "FRIENDLY",
+    (agent?.tone as "FORMAL" | "FRIENDLY" | "NEUTRAL") ?? "FRIENDLY",
   );
   const [is24x7, setIs24x7] = useState(agent?.is24x7 ?? true);
   const [selectedTypes, setSelectedTypes] = useState<string[]>(agent?.propertyTypes ?? []);

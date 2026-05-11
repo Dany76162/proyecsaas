@@ -27,7 +27,7 @@ export function HealthBadge({ status }: { status: OrgHealthStatus }) {
 
 export function WhatsAppStatus({ channel }: { channel: OrgPlatformSummary["whatsappChannel"] }) {
   if (!channel) {
-    return <span className="text-xs text-slate-400">Sin canal</span>;
+    return <span className="text-sm text-slate-500">Sin canal</span>;
   }
 
   const statusColors: Record<string, string> = {
@@ -41,12 +41,12 @@ export function WhatsAppStatus({ channel }: { channel: OrgPlatformSummary["whats
 
   return (
     <div>
-      <span className={`text-xs font-semibold ${color}`}>{channel.status}</span>
+      <span className={`text-sm font-bold ${color}`}>{channel.status}</span>
       {channel.displayPhoneNumber && (
-        <p className="text-xs text-slate-500">{channel.displayPhoneNumber}</p>
+        <p className="text-sm text-slate-600 font-medium">{channel.displayPhoneNumber}</p>
       )}
       {channel.lastErrorCode && (
-        <p className="text-xs text-red-500">{channel.lastErrorCode}</p>
+        <p className="text-sm text-red-600 font-bold">{channel.lastErrorCode}</p>
       )}
     </div>
   );

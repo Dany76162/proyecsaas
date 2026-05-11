@@ -5,6 +5,7 @@ const SESSION_COOKIE_NAME = "proyecsaas_session";
 const PUBLIC_PATHS: Array<string | RegExp> = [
   "/",
   "/login",
+  "/solicitar-acceso",
   "/suspended",
   "/favicon.ico",
   "/map",

@@ -43,7 +43,7 @@ export default async function OrgAuditPage({
   const isAiActive = aiAgent.status === "ACTIVE";
 
   return (
-    <div className="space-y-8 max-w-[1200px] mx-auto w-full pb-20">
+    <div className="space-y-8 pb-20">
       
       {/* Header & Back */}
       <div className="flex flex-col gap-6">

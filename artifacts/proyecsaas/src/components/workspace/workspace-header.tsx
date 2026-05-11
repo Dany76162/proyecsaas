@@ -19,7 +19,7 @@ export function WorkspaceHeader({
   onboardingNextHref,
 }: WorkspaceHeaderProps) {
   return (
-    <section className="rounded-2xl border bg-white p-6 shadow-sm">
+    <section className="rounded-xl border border-slate-200/60 bg-white p-6 shadow-enterprise">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -37,7 +37,7 @@ export function WorkspaceHeader({
             </h1>
           </div>
           {organization.description && (
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <p className="mt-2 text-[15px] leading-relaxed text-slate-600 font-medium">
               {organization.description}
               {organization.marketFocus ? ` - ${organization.marketFocus}` : ""}
             </p>
@@ -49,7 +49,7 @@ export function WorkspaceHeader({
           {onboardingIncomplete ? (
             <Link
               href={onboardingNextHref ?? `/${organization.slug}/settings/organization`}
-              className="rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+                className="rounded-lg bg-brand-500 px-6 py-3 text-[15px] font-bold text-white transition-all duration-200 hover:bg-brand-600 shadow-sm shadow-brand-500/10"
             >
               Continuar configuracion
             </Link>
@@ -57,13 +57,13 @@ export function WorkspaceHeader({
             <>
               <Link
                 href={`/${organization.slug}/leads`}
-                className="rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                  className="rounded-lg bg-brand-500 px-6 py-3 text-[15px] font-bold text-white transition-all duration-200 hover:bg-brand-600 shadow-sm shadow-brand-500/10"
               >
-                Ver pipeline
+                Ver embudo
               </Link>
               <Link
                 href={`/${organization.slug}/properties`}
-                className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50"
               >
                 Ver propiedades
               </Link>
