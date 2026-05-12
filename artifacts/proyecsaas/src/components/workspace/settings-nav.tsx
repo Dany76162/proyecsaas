@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,7 +10,7 @@ type SettingsNavProps = {
 };
 
 const NAV_ITEMS = [
-  { label: "Organización", path: "/settings/organization" },
+  { label: "OrganizaciÃ³n", path: "/settings/organization" },
   { label: "Disponibilidad", path: "/settings/availability" },
   { label: "Usuarios", path: "/settings/users" },
   { label: "Integraciones", path: "/settings/integrations" },

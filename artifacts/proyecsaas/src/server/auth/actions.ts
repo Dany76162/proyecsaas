@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
@@ -76,7 +76,7 @@ function sanitizeRedirectPath(nextPath: string | undefined, fallbackPath: string
   return nextPath;
 }
 
-// 🔥 CLAVE: transición splash
+// ðŸ”¥ CLAVE: transiciÃ³n splash
 function buildTransitionRedirect(nextPath: string) {
   return `/login/transition?next=${encodeURIComponent(nextPath)}`;
 }
@@ -155,7 +155,7 @@ export async function loginAction(formData: FormData) {
     redirect(buildTransitionRedirect(`/auth/accept-policies?next=${encodeURIComponent(finalPath)}`));
   }
 
-  // 🔥 AQUÍ ESTÁ EL FIX DEL SPLASH
+  // ðŸ”¥ AQUÃ ESTÃ EL FIX DEL SPLASH
   redirect(buildTransitionRedirect(finalPath));
 }
 

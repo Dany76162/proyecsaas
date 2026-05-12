@@ -1,4 +1,4 @@
-import type { VisitStatus } from "@prisma/client";
+﻿import type { VisitStatus } from "@prisma/client";
 
 export type VisitListItem = {
   id: string;

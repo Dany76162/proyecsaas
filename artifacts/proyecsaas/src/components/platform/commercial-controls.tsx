@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ const BILLING_MODE_OPTIONS = [
   { value: "ONLINE", label: "Online" },
   { value: "CASH", label: "Efectivo" },
   { value: "TRANSFER", label: "Transferencia" },
-  { value: "COURTESY", label: "Cortesía" },
+  { value: "COURTESY", label: "CortesÃ­a" },
   { value: "MANUAL", label: "Manual" },
 ] as const;
 
@@ -143,7 +143,7 @@ export function CommercialControls({
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Control Comercial</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-900">{orgName}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Activá manualmente, extendé vencimiento o suspendé sin depender solo del pago online.
+                  ActivÃ¡ manualmente, extendÃ© vencimiento o suspendÃ© sin depender solo del pago online.
                 </p>
               </div>
               <button
@@ -245,7 +245,7 @@ export function CommercialControls({
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Ej: cliente abonó por transferencia, confirmar ingreso el 15/04."
+                  placeholder="Ej: cliente abonÃ³ por transferencia, confirmar ingreso el 15/04."
                   className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 />
               </div>

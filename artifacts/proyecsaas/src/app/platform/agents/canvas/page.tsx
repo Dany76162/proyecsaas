@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Activity, ArrowRight, CheckCircle2, ClipboardList, FileText, Plus } from "lucide-react";
 
 import { AgentCanvas } from "@/components/agents/agent-canvas";
@@ -7,17 +7,17 @@ import { getAgentCanvasData } from "@/modules/agents/service";
 const statusCopy = {
   operational: {
     label: "Operativo",
-    description: "AgentOS no registra bloqueos críticos en el estado agregado.",
+    description: "AgentOS no registra bloqueos crÃ­ticos en el estado agregado.",
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   attention: {
-    label: "Requiere atención",
+    label: "Requiere atenciÃ³n",
     description: "Hay aprobaciones pendientes, errores recientes o tareas fallidas para revisar.",
     className: "border-amber-200 bg-amber-50 text-amber-800",
   },
   empty: {
     label: "Sin actividad",
-    description: "El canvas está listo. Crea una tarea para iniciar el flujo operativo.",
+    description: "El canvas estÃ¡ listo. Crea una tarea para iniciar el flujo operativo.",
     className: "border-slate-200 bg-slate-50 text-slate-700",
   },
 } as const;
@@ -28,7 +28,7 @@ export default async function PlatformAgentsCanvasPage() {
 
   return (
     <div className="flex flex-col" style={{ height: "calc(100dvh - 3.5rem)" }}>
-      {/* ── Header section with its own padding ── */}
+      {/* â”€â”€ Header section with its own padding â”€â”€ */}
       <div className="shrink-0 space-y-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
@@ -91,7 +91,7 @@ export default async function PlatformAgentsCanvasPage() {
               <FileText className="h-5 w-5 text-brand-600" />
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Borradores</p>
-                <p className="text-sm font-semibold text-slate-700">Contenido para revisión humana.</p>
+                <p className="text-sm font-semibold text-slate-700">Contenido para revisiÃ³n humana.</p>
               </div>
             </div>
           </div>
@@ -107,7 +107,7 @@ export default async function PlatformAgentsCanvasPage() {
         </div>
       </div>
 
-      {/* ── Canvas fills ALL remaining space ── */}
+      {/* â”€â”€ Canvas fills ALL remaining space â”€â”€ */}
       <div className="min-h-0 flex-1">
         <AgentCanvas data={data} />
       </div>

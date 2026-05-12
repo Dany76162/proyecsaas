@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -71,7 +71,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
               Editar perfil
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Actualizá los datos operativos de{" "}
+              ActualizÃ¡ los datos operativos de{" "}
               <span className="font-medium text-slate-700">{member.fullName}</span>.
             </p>
 
@@ -108,7 +108,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Cargo / Título
+                    Cargo / TÃ­tulo
                   </label>
                   <input
                     name="jobTitle"
@@ -119,7 +119,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Teléfono
+                    TelÃ©fono
                   </label>
                   <input
                     name="phone"
@@ -141,7 +141,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Zona de operación
+                    Zona de operaciÃ³n
                   </label>
                   <input
                     name="zone"

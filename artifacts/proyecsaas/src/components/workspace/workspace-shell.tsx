@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Menu } from "lucide-react";
@@ -44,12 +44,12 @@ export function WorkspaceShell({
       <div className="flex flex-1 flex-col min-w-0 lg:ml-64 relative">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-slate-200/70 bg-white/95 backdrop-blur-sm px-4 lg:px-6 print:hidden">
           <div className="flex items-center gap-3">
-            {/* Hamburger — visible only on mobile/tablet */}
+            {/* Hamburger â€” visible only on mobile/tablet */}
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
               className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors duration-150 lg:hidden"
-              aria-label="Abrir menú"
+              aria-label="Abrir menÃº"
             >
               <Menu className="h-4 w-4" />
             </button>
@@ -61,7 +61,7 @@ export function WorkspaceShell({
             <span className="hidden sm:block text-sm font-bold text-slate-900 truncate max-w-[160px]">
               {userName}
             </span>
-            <span className="hidden sm:block text-slate-300 text-sm">·</span>
+            <span className="hidden sm:block text-slate-300 text-sm">Â·</span>
             <span className="hidden sm:block text-sm text-slate-500 font-medium truncate max-w-[200px]">
               {userEmail}
             </span>
@@ -79,11 +79,11 @@ export function WorkspaceShell({
 
         {/* FLOATING SUPPORT BUTTON */}
         <a 
-          href="https://wa.me/5491161630205?text=Hola%21%20Necesito%20soporte%20técnico%20con%20mi%20plataforma%20RaicesPilot."
+          href="https://wa.me/5491161630205?text=Hola%21%20Necesito%20soporte%20tÃ©cnico%20con%20mi%20plataforma%20RaicesPilot."
           target="_blank"
           rel="noopener noreferrer"
           className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-2xl shadow-emerald-500/40 transition-all hover:scale-110 hover:bg-emerald-600 active:scale-95 group print:hidden"
-          title="Soporte Técnico"
+          title="Soporte TÃ©cnico"
         >
           <MessageCircle className="h-7 w-7 transition-transform group-hover:rotate-12" />
           <span className="absolute -top-1 -right-1 flex h-4 w-4">

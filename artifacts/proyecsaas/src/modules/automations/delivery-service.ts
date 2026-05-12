@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+﻿import { Prisma, PrismaClient } from "@prisma/client";
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 
 export type PersistedOutboundResponse = {

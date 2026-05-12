@@ -1,4 +1,4 @@
-type RuntimeRole = "web" | "worker";
+﻿type RuntimeRole = "web" | "worker";
 
 type RuntimeValidationResult = {
   role: RuntimeRole;

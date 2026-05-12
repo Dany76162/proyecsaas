@@ -1,4 +1,4 @@
-import { Construction } from "lucide-react";
+﻿import { Construction } from "lucide-react";
 
 export function UnderConstruction({ title, description }: { title: string; description: string }) {
   return (
@@ -9,7 +9,7 @@ export function UnderConstruction({ title, description }: { title: string; descr
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
       <p className="mt-3 max-w-sm text-sm text-slate-500">{description}</p>
       <div className="mt-8 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-slate-400">
-        Próxima Capa
+        PrÃ³xima Capa
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ async function main() {
     },
   });
 
-  console.log("✅ Usuario actualizado:", user.email);
+  console.log("âœ… Usuario actualizado:", user.email);
 }
 
 main()

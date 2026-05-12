@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { Bot, MessageSquare, Megaphone, QrCode, ShieldCheck } from "lucide-react";
@@ -132,7 +132,7 @@ export default async function PlatformCaptacionPage() {
                   Link oficial para captar nuevas inmobiliarias
                 </h1>
                 <p className="max-w-3xl text-sm leading-6 text-slate-200 sm:text-base">
-                  Compartilo en grupos, redes, videos o campañas para que una inmobiliaria interesada
+                  Compartilo en grupos, redes, videos o campaÃ±as para que una inmobiliaria interesada
                   entre por WhatsApp y tome el primer contacto desde el entorno de plataforma.
                 </p>
               </div>
@@ -222,7 +222,7 @@ export default async function PlatformCaptacionPage() {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {[
                 "Grupos de WhatsApp donde participan inmobiliarias o martilleros.",
-                "Facebook e Instagram para campañas, posteos o links en perfil.",
+                "Facebook e Instagram para campaÃ±as, posteos o links en perfil.",
                 "TikTok y YouTube para bio, descripcion o comentarios fijados.",
                 "Landing comercial o boton principal del sitio institucional.",
               ].map((item) => (

@@ -12,7 +12,7 @@ const DATABASE_URL = "postgresql://proyecsaas_user:1234@localhost:5432/proyecsaa
 const SOURCE_URL = "https://cappellapropiedades.com/propiedades/";
 const ORG_ID = "test_capelli_org_001";
 
-// ── Field parsers ──────────────────────────────────────────────────────────────
+// â”€â”€ Field parsers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function parseAmountToCents(raw) {
   if (!raw) return null;
@@ -26,9 +26,9 @@ function parseAmountToCents(raw) {
 function parsePrice(text) {
   if (!text) return null;
   const t = text.replace(/\s+/g, " ");
-  const usdPrefix = t.match(/(?:USD?|U\$S|u\$s|dólar(?:es)?)\s*[:$]?\s*([\d.,]+)/i);
+  const usdPrefix = t.match(/(?:USD?|U\$S|u\$s|dÃ³lar(?:es)?)\s*[:$]?\s*([\d.,]+)/i);
   if (usdPrefix) { const c = parseAmountToCents(usdPrefix[1]); if (c) return { cents: c, currency: "USD" }; }
-  const usdSuffix = t.match(/([\d.,]+)\s*(?:USD?|U\$S|u\$s|dólar(?:es)?)/i);
+  const usdSuffix = t.match(/([\d.,]+)\s*(?:USD?|U\$S|u\$s|dÃ³lar(?:es)?)/i);
   if (usdSuffix) { const c = parseAmountToCents(usdSuffix[1]); if (c) return { cents: c, currency: "USD" }; }
   const arsPrefix = t.match(/\$\s*([\d.,]+)/);
   if (arsPrefix) { const c = parseAmountToCents(arsPrefix[1]); if (c) return { cents: c, currency: "ARS" }; }
@@ -45,7 +45,7 @@ function stripHtml(html) {
 }
 
 function parseSurfaceM2(text) {
-  const match = text?.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|mt2|mts2|metros?(?:\s*cuadrados?)?)/i);
+  const match = text?.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|mÂ²|mt2|mts2|metros?(?:\s*cuadrados?)?)/i);
   return match ? parseInt(match[1], 10) || null : null;
 }
 
@@ -61,7 +61,7 @@ function parseBedrooms(text) {
 }
 
 function parseBathrooms(text) {
-  const match = text?.match(/(\d+)\s*(?:baños?|baths?)/i);
+  const match = text?.match(/(\d+)\s*(?:baÃ±os?|baths?)/i);
   return match ? parseInt(match[1], 10) : null;
 }
 
@@ -69,9 +69,9 @@ function extractNeighborhoodFromTitle(title) {
   const dotSplit = title.match(/\.([^.]{3,40})$/);
   if (dotSplit) {
     const c = dotSplit[1].trim();
-    if (/^[A-ZÁÉÍÓÚÜÑ]/.test(c) && c.split(" ").length <= 4) return c;
+    if (/^[A-ZÃÃ‰ÃÃ“ÃšÃœÃ‘]/.test(c) && c.split(" ").length <= 4) return c;
   }
-  const dashSplit = title.match(/[-–]\s*([A-ZÁÉÍÓÚÜÑ][^-–]{2,30})$/);
+  const dashSplit = title.match(/[-â€“]\s*([A-ZÃÃ‰ÃÃ“ÃšÃœÃ‘][^-â€“]{2,30})$/);
   if (dashSplit) {
     const c = dashSplit[1].trim();
     if (c.split(" ").length <= 4) return c;
@@ -79,7 +79,7 @@ function extractNeighborhoodFromTitle(title) {
   return null;
 }
 
-// ── WP REST API ────────────────────────────────────────────────────────────────
+// â”€â”€ WP REST API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (compatible; RaicesBot/1.0; +https://raicespilot.com/bot)",
@@ -164,7 +164,7 @@ function wpPostToProperty(post) {
   };
 }
 
-// ── DB insert ─────────────────────────────────────────────────────────────────
+// â”€â”€ DB insert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function upsertProperties(properties) {
   const client = new Client({ connectionString: DATABASE_URL });
@@ -226,11 +226,11 @@ async function upsertProperties(properties) {
   return { created, updated, totalInDb: parseInt(count.rows[0].count) };
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function main() {
   console.log("=".repeat(65));
-  console.log("SYNC V2 END-TO-END DB IMPORT — Cappella Propiedades");
+  console.log("SYNC V2 END-TO-END DB IMPORT â€” Cappella Propiedades");
   console.log("Org:", ORG_ID);
   console.log("=".repeat(65));
 
@@ -273,10 +273,10 @@ async function main() {
 
   console.log("\nSAMPLE (10 more recent in DB):");
   sample.rows.forEach((r, i) => {
-    const price = r.priceCents ? `${r.currency} ${(r.priceCents / 100).toLocaleString("es-AR")}` : "–";
+    const price = r.priceCents ? `${r.currency} ${(r.priceCents / 100).toLocaleString("es-AR")}` : "â€“";
     console.log(`${i+1}. ${r.title}`);
     console.log(`   ${r.operationType ?? "?"} / ${r.propertyType ?? "?"} | Precio: ${price}`);
-    console.log(`   Barrio: ${r.neighborhood ?? "-"} | Ciudad: ${r.city ?? "-"} | ${r.surfaceM2 ?? "-"}m² | ${r.bedrooms ?? "-"} dorm`);
+    console.log(`   Barrio: ${r.neighborhood ?? "-"} | Ciudad: ${r.city ?? "-"} | ${r.surfaceM2 ?? "-"}mÂ² | ${r.bedrooms ?? "-"} dorm`);
   });
 }
 

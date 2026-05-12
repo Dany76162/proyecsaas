@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import OpenAI from "openai";
 import { prisma } from "@/server/db/prisma";
@@ -220,7 +220,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
         type: "ORCHESTRATOR",
         status: orchestrator?.isActive ? "Activo" : "Sin agente activo",
         description:
-          "Punto de control del flujo AgentOS. Recibe tareas, prepara la ejecución y deriva el contenido al Agente de Marketing.",
+          "Punto de control del flujo AgentOS. Recibe tareas, prepara la ejecuciÃ³n y deriva el contenido al Agente de Marketing.",
         href: "/platform/agents/tasks",
         metrics: [
           { label: "Tareas asignadas", value: taskCounts.ASSIGNED + taskCounts.IN_PROGRESS + taskCounts.APPROVAL_PENDING, tone: "info" },
@@ -232,11 +232,11 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
       marketing: {
         id: "marketing",
         title: marketing?.name ?? "Agente de Marketing",
-        subtitle: "Produce borradores de contenido para revisión humana.",
+        subtitle: "Produce borradores de contenido para revisiÃ³n humana.",
         type: "MARKETING",
         status: marketing?.isActive ? "Activo" : "Sin agente activo",
         description:
-          "Genera copies y hashtags a partir de tareas aprobadas por el Director Operativo IA. No publica contenido automáticamente.",
+          "Genera copies y hashtags a partir de tareas aprobadas por el Director Operativo IA. No publica contenido automÃ¡ticamente.",
         href: "/platform/agents/content",
         metrics: [
           { label: "Borradores", value: draftCounts.DRAFT + draftCounts.APPROVED + draftCounts.REJECTED, tone: "info" },
@@ -251,7 +251,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
         subtitle: "Estado operativo de solicitudes creadas en AgentOS.",
         type: "TASK_PIPELINE",
         status: totalTasks > 0 ? "Con actividad" : "Sin tareas",
-        description: "Vista agregada de tareas por estado. Este MVP mantiene la creación desde el formulario actual.",
+        description: "Vista agregada de tareas por estado. Este MVP mantiene la creaciÃ³n desde el formulario actual.",
         href: "/platform/agents/tasks",
         metrics: buildMetrics(
           taskCounts,
@@ -277,8 +277,8 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
         title: "Borradores",
         subtitle: "Contenido generado antes de cualquier uso manual.",
         type: "CONTENT_DRAFTS",
-        status: draftCounts.DRAFT > 0 ? "Revisión disponible" : "Sin pendientes",
-        description: "Agrupa los borradores producidos por AgentOS. No conecta con publicación automática.",
+        status: draftCounts.DRAFT > 0 ? "RevisiÃ³n disponible" : "Sin pendientes",
+        description: "Agrupa los borradores producidos por AgentOS. No conecta con publicaciÃ³n automÃ¡tica.",
         href: "/platform/agents/content",
         metrics: buildMetrics(
           draftCounts,
@@ -292,7 +292,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
         title: "Aprobaciones",
         subtitle: "Control humano antes de utilizar cualquier borrador.",
         type: "HUMAN_REVIEW",
-        status: approvalCounts.PENDING > 0 ? "Requiere revisión" : "Sin pendientes",
+        status: approvalCounts.PENDING > 0 ? "Requiere revisiÃ³n" : "Sin pendientes",
         description: "Concentra las decisiones de aprobar o rechazar contenido. No ejecuta publicaciones.",
         href: "/platform/agents/approvals",
         metrics: buildMetrics(
@@ -308,7 +308,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
         subtitle: "Eventos recientes del sistema AgentOS.",
         type: "AUDIT_TRAIL",
         status: recentLogs.length > 0 ? "Registrando eventos" : "Sin actividad",
-        description: "Últimos eventos legibles del flujo. No expone secretos ni prompts completos en el canvas.",
+        description: "Ãšltimos eventos legibles del flujo. No expone secretos ni prompts completos en el canvas.",
         href: "/platform/agents/logs",
         metrics: [
           { label: "Eventos recientes", value: recentLogs.length, tone: "info" },
@@ -449,19 +449,19 @@ export function formatOpenAIPrompt({
   platform: ContentPlatform;
 }) {
   return `
-Crea un borrador de publicación para ${platform}.
+Crea un borrador de publicaciÃ³n para ${platform}.
 
-Título del contenido: ${title}
-Descripción breve: ${description}
+TÃ­tulo del contenido: ${title}
+DescripciÃ³n breve: ${description}
 
-Responde en español con un texto de copy claro y un conjunto de hashtags relevantes.
-Incluye un título corto y un cuerpo de contenido adecuado para la plataforma.
+Responde en espaÃ±ol con un texto de copy claro y un conjunto de hashtags relevantes.
+Incluye un tÃ­tulo corto y un cuerpo de contenido adecuado para la plataforma.
 Devuelve el texto completo en un solo bloque y lista hashtags separados por comas.
 `;
 }
 
 export function buildPromptSummary({ title, platform }: { title: string; platform: ContentPlatform }) {
-  return `Generar borrador para ${platform} con título: ${title}`;
+  return `Generar borrador para ${platform} con tÃ­tulo: ${title}`;
 }
 
 export function parseMarketingResponse(raw: string) {

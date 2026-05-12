@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import Image from "next/image";
 import { CheckCircle2, ShieldCheck, Zap } from "lucide-react";
 import { Montserrat } from "next/font/google";
@@ -27,13 +27,13 @@ type LoginPageProps = {
 function getErrorMessage(error: string | undefined) {
   switch (error) {
     case "invalid-credentials":
-      return "Email o clave de acceso inválidos.";
+      return "Email o clave de acceso invÃ¡lidos.";
     case "activation-required":
-      return "Tu acceso todavía no fue activado. Abrí el link de invitación para crear tu clave.";
+      return "Tu acceso todavÃ­a no fue activado. AbrÃ­ el link de invitaciÃ³n para crear tu clave.";
     case "no-memberships":
-      return "Tu usuario no tiene membresías activas.";
+      return "Tu usuario no tiene membresÃ­as activas.";
     case "too-many-attempts":
-      return "Demasiados intentos fallidos. Por favor, esperá unos minutos antes de reintentar.";
+      return "Demasiados intentos fallidos. Por favor, esperÃ¡ unos minutos antes de reintentar.";
     default:
       return null;
   }
@@ -68,11 +68,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
 
         <div className="relative z-10 w-full max-w-2xl flex flex-col items-center text-center">
-          {/* Logo Oficial RaícesPilot (Tamaño Imponente) */}
+          {/* Logo Oficial RaÃ­cesPilot (TamaÃ±o Imponente) */}
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 -mt-36 -mb-36">
             <Image
               src="/brand/raices_pilot_logo_transparent.png"
-              alt="RaícesPilot"
+              alt="RaÃ­cesPilot"
               width={1000}
               height={500}
               className="h-auto w-[750px] max-w-full opacity-100 drop-shadow-2xl pointer-events-none"
@@ -81,7 +81,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
           
           <p className="-mt-12 text-xl text-slate-400 leading-relaxed font-medium max-w-lg animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 relative z-20">
-            Centralizá leads, conversaciones y seguimiento inmobiliario en una arquitectura diseñada para el alto rendimiento.
+            CentralizÃ¡ leads, conversaciones y seguimiento inmobiliario en una arquitectura diseÃ±ada para el alto rendimiento.
           </p>
 
           <div className="mt-24 grid grid-cols-2 gap-12 w-full animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
@@ -90,7 +90,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 <CheckCircle2 className="h-7 w-7 text-brand-400" />
               </div>
               <div className="mt-5">
-                <h3 className="font-bold text-lg text-slate-100">Atención 24/7</h3>
+                <h3 className="font-bold text-lg text-slate-100">AtenciÃ³n 24/7</h3>
                 <p className="mt-1.5 text-sm text-slate-500 font-medium">Respuesta inmediata impulsada por IA.</p>
               </div>
             </div>
@@ -101,7 +101,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </div>
               <div className="mt-5">
                 <h3 className="font-bold text-lg text-slate-100">Leads Calificados</h3>
-                <p className="mt-1.5 text-sm text-slate-500 font-medium">Perfilado automático de alta precisión.</p>
+                <p className="mt-1.5 text-sm text-slate-500 font-medium">Perfilado automÃ¡tico de alta precisiÃ³n.</p>
               </div>
             </div>
           </div>
@@ -111,7 +111,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <div className="absolute bottom-12 inset-x-0 flex items-center justify-center gap-12 text-[10px] font-bold uppercase tracking-[0.5em] text-slate-600/80">
           <span>v2.5.1 Stable</span>
           <span className="h-1 w-1 rounded-full bg-slate-800" />
-          <span>Inmuebles Digitales © 2026</span>
+          <span>Inmuebles Digitales Â© 2026</span>
         </div>
       </div>
 
@@ -119,11 +119,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="flex flex-1 flex-col items-center justify-center px-12 py-12 lg:w-[40%] bg-slate-50/20">
         <div className="w-full max-w-[440px] animate-in fade-in slide-in-from-right-4 duration-700">
           <div className="mb-12 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-4 duration-700">
-            {/* Ícono de Brújula Oscuro (Desktop & Mobile) */}
+            {/* Ãcono de BrÃºjula Oscuro (Desktop & Mobile) */}
             <div className="-mb-4">
               <Image 
                 src="/brand/logo_transparent_icon.png" 
-                alt="Logo RaícesPilot" 
+                alt="Logo RaÃ­cesPilot" 
                 width={300} 
                 height={300} 
                 className="h-auto w-[240px] brightness-0 opacity-95 pointer-events-none" 
@@ -134,7 +134,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Acceder
             </h3>
             <p className="mt-3 text-slate-500 font-medium text-lg">
-              Ingresá a tu entorno corporativo.
+              IngresÃ¡ a tu entorno corporativo.
             </p>
           </div>
 
@@ -161,19 +161,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     Clave de Acceso
                   </label>
                   <a 
-                    href="https://wa.me/5491161630205?text=Hola%2C%20olvidé%20mi%20clave%20de%20acceso%20a%20RaicesPilot.%20¿Podrían%20ayudarme%20a%20restablecerla%3F" 
+                    href="https://wa.me/5491161630205?text=Hola%2C%20olvidÃ©%20mi%20clave%20de%20acceso%20a%20RaicesPilot.%20Â¿PodrÃ­an%20ayudarme%20a%20restablecerla%3F" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-[11px] font-bold text-brand-600 hover:text-brand-700 transition-colors uppercase tracking-wider"
                   >
-                    ¿Olvidaste tu clave?
+                    Â¿Olvidaste tu clave?
                   </a>
                 </div>
                 <Input
                   type="password"
                   name="password"
                   required
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   className="h-14 bg-white border-slate-200 shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:ring-brand-600 focus:border-brand-600 text-base rounded-xl transition-all"
                 />
               </div>
@@ -186,7 +186,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
               {resolvedSearchParams?.signedOut && (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-3.5 text-xs font-bold text-emerald-600 shadow-sm">
-                  La sesión se cerró correctamente.
+                  La sesiÃ³n se cerrÃ³ correctamente.
                 </div>
               )}
 
@@ -200,7 +200,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           <div className="mt-20 pt-10 border-t border-slate-200/60">
             <p className="text-center text-[13px] text-slate-400 font-medium">
-              ¿No tenés acceso? <a href="https://wa.me/5491161630205?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20RaicesPilot%20para%20mi%20inmobiliaria." target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-brand-600 transition-colors underline decoration-slate-300 underline-offset-8 decoration-2">Solicitá una demo</a>
+              Â¿No tenÃ©s acceso? <a href="https://wa.me/5491161630205?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20RaicesPilot%20para%20mi%20inmobiliaria." target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-brand-600 transition-colors underline decoration-slate-300 underline-offset-8 decoration-2">SolicitÃ¡ una demo</a>
             </p>
           </div>
         </div>

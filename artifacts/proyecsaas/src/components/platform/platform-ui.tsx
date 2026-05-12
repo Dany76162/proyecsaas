@@ -1,11 +1,11 @@
-import type { OrgHealthStatus, OrgPlatformSummary } from "@/modules/platform/types";
+﻿import type { OrgHealthStatus, OrgPlatformSummary } from "@/modules/platform/types";
 
 export function HealthBadge({ status }: { status: OrgHealthStatus }) {
   if (status === "critical") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
         <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-        Crítico
+        CrÃ­tico
       </span>
     );
   }
@@ -53,7 +53,7 @@ export function WhatsAppStatus({ channel }: { channel: OrgPlatformSummary["whats
 }
 
 export function formatRelativeTime(isoString: string): string {
-  if (!isoString) return "—";
+  if (!isoString) return "â€”";
   const diff = Date.now() - new Date(isoString).getTime();
   const minutes = Math.floor(diff / 60_000);
   if (minutes < 60) return `hace ${minutes} min`;

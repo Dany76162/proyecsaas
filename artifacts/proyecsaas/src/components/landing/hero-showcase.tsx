@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { MessageSquare, Clock, Users, BarChart3, Zap, CheckCircle2, ArrowRight } from "lucide-react";
@@ -6,7 +6,7 @@ import { MessageSquare, Clock, Users, BarChart3, Zap, CheckCircle2, ArrowRight }
 const slides = [
   {
     id: 1,
-    title: "Respondé al instante, incluso fuera de horario.",
+    title: "RespondÃ© al instante, incluso fuera de horario.",
     subtitle: "RaicesPilot atiende, ordena y deriva consultas para que ninguna oportunidad quede sin respuesta.",
     visual: (
       <div className="relative h-full flex items-center justify-center">
@@ -28,7 +28,7 @@ const slides = [
                     </div>
                     <div>
                       <div className="text-sm font-semibold">Cliente potencial</div>
-                      <div className="text-xs opacity-90">En línea</div>
+                      <div className="text-xs opacity-90">En lÃ­nea</div>
                     </div>
                   </div>
 
@@ -42,7 +42,7 @@ const slides = [
 
                     <div className="flex justify-end">
                       <div className="bg-brand-500 text-white rounded-2xl rounded-tr-md px-4 py-2 max-w-xs">
-                        <div className="text-sm">¡Hola! Tengo varias opciones perfectas. ¿Cuál es tu presupuesto aproximado?</div>
+                        <div className="text-sm">Â¡Hola! Tengo varias opciones perfectas. Â¿CuÃ¡l es tu presupuesto aproximado?</div>
                       </div>
                     </div>
 
@@ -56,7 +56,7 @@ const slides = [
                       <div className="bg-green-500 text-white rounded-2xl rounded-tr-md px-4 py-2 max-w-xs">
                         <div className="text-sm flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4" />
-                          Lead calificado automáticamente
+                          Lead calificado automÃ¡ticamente
                         </div>
                       </div>
                     </div>
@@ -66,7 +66,7 @@ const slides = [
                   <div className="p-4 border-t border-slate-200">
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-10 bg-slate-100 rounded-full px-4 flex items-center">
-                        <span className="text-sm text-slate-500">RaicesPilot está escribiendo...</span>
+                        <span className="text-sm text-slate-500">RaicesPilot estÃ¡ escribiendo...</span>
                       </div>
                       <div className="w-10 h-10 bg-brand-500 rounded-full flex items-center justify-center">
                         <ArrowRight className="w-4 h-4 text-white" />
@@ -93,7 +93,7 @@ const slides = [
   },
   {
     id: 2,
-    title: "Atención activa 24/7 para no perder oportunidades.",
+    title: "AtenciÃ³n activa 24/7 para no perder oportunidades.",
     subtitle: "Mientras tu equipo trabaja o descansa, el seguimiento sigue funcionando.",
     visual: (
       <div className="relative h-full flex items-center justify-center">
@@ -137,7 +137,7 @@ const slides = [
                   </div>
                   <div>
                     <div className="text-white font-semibold">Mensaje entrante</div>
-                    <div className="text-white/70 text-sm">Procesando automáticamente...</div>
+                    <div className="text-white/70 text-sm">Procesando automÃ¡ticamente...</div>
                   </div>
                 </div>
 
@@ -157,7 +157,7 @@ const slides = [
                   </div>
                   <div>
                     <div className="text-white font-semibold">Visita programada</div>
-                    <div className="text-white/70 text-sm">Mañana 10:00 AM</div>
+                    <div className="text-white/70 text-sm">MaÃ±ana 10:00 AM</div>
                   </div>
                 </div>
               </div>
@@ -169,8 +169,8 @@ const slides = [
   },
   {
     id: 3,
-    title: "Menos desorden operativo, más visitas concretadas.",
-    subtitle: "Automatizá el seguimiento y enfocá al equipo en las oportunidades reales.",
+    title: "Menos desorden operativo, mÃ¡s visitas concretadas.",
+    subtitle: "AutomatizÃ¡ el seguimiento y enfocÃ¡ al equipo en las oportunidades reales.",
     visual: (
       <div className="relative h-full flex items-center justify-center">
         {/* Warm background */}
@@ -198,7 +198,7 @@ const slides = [
                     <div className="text-sm font-semibold text-slate-900">Depto 3 amb - Palermo</div>
                     <div className="text-sm font-bold text-green-600">$285.000</div>
                   </div>
-                  <div className="text-xs text-slate-600">Ana García y Roberto López</div>
+                  <div className="text-xs text-slate-600">Ana GarcÃ­a y Roberto LÃ³pez</div>
                 </div>
               </div>
 
@@ -209,7 +209,7 @@ const slides = [
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">Seguimiento automático</div>
+                    <div className="text-sm font-semibold text-slate-900">Seguimiento automÃ¡tico</div>
                     <div className="text-xs text-slate-600">Recordatorios enviados</div>
                   </div>
                 </div>
@@ -229,8 +229,8 @@ const slides = [
                     <BarChart3 className="w-4 h-4 text-purple-600" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">Conversión exitosa</div>
-                    <div className="text-xs text-slate-600">Visita → Reserva confirmada</div>
+                    <div className="text-sm font-semibold text-slate-900">ConversiÃ³n exitosa</div>
+                    <div className="text-xs text-slate-600">Visita â†’ Reserva confirmada</div>
                   </div>
                 </div>
               </div>
@@ -242,7 +242,7 @@ const slides = [
   },
   {
     id: 4,
-    title: "Toda tu operación comercial en un solo lugar.",
+    title: "Toda tu operaciÃ³n comercial en un solo lugar.",
     subtitle: "Leads, conversaciones, propiedades y seguimiento conectados en una sola plataforma.",
     visual: (
       <div className="relative h-full flex items-center justify-center">

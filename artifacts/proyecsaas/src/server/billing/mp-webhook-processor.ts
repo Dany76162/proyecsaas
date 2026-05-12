@@ -1,15 +1,15 @@
-import "server-only";
+﻿import "server-only";
 
 import { BillingMode, SubscriptionStatus } from "@prisma/client";
 
 import { prisma } from "@/server/db/prisma";
 import { logAudit } from "@/server/audit/log";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type MPWebhookPayload = {
   action?: string;
@@ -30,7 +30,7 @@ export type WebhookOutcome =
   | { outcome: "skipped"; reason: string }
   | { outcome: "error"; reason: string };
 
-// ─── MP Payment fetch (fetch-back validation) ─────────────────────────────────
+// â”€â”€â”€ MP Payment fetch (fetch-back validation) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function fetchMPPayment(
   paymentId: string,
@@ -80,7 +80,7 @@ async function fetchMPPayment(
   return response.json() as Promise<MPPaymentAPIResponse>;
 }
 
-// ─── Subscription period calculation ─────────────────────────────────────────
+// â”€â”€â”€ Subscription period calculation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function computeNewPeriod(
   existing: { status: SubscriptionStatus; currentPeriodEnd: Date } | null,
@@ -96,7 +96,7 @@ function computeNewPeriod(
   return { newPeriodStart, newPeriodEnd, isRenewal };
 }
 
-// ─── Main processor ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Main processor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Processes an incoming Mercado Pago webhook payload.
@@ -108,12 +108,12 @@ function computeNewPeriod(
  * 4. Idempotency: skip if mpPaymentId already matches (already processed).
  * 5. Transaction: mark record as PAID + upsert Subscription (if planId set).
  *
- * Returns a structured outcome — the route handler decides the HTTP response.
+ * Returns a structured outcome â€” the route handler decides the HTTP response.
  */
 export async function processMPPaymentWebhook(
   payload: MPWebhookPayload,
 ): Promise<WebhookOutcome> {
-  // ── 1. Event filter ───────────────────────────────────────────────────────
+  // â”€â”€ 1. Event filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   if (payload.type !== "payment") {
     return { outcome: "skipped", reason: `type-not-payment:${payload.type ?? "undefined"}` };
@@ -133,8 +133,8 @@ export async function processMPPaymentWebhook(
 
   const paymentId = String(rawPaymentId);
 
-  // ── 2. Fetch-back validation ──────────────────────────────────────────────
-  // Always verify status independently — never trust the webhook body alone.
+  // â”€â”€ 2. Fetch-back validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Always verify status independently â€” never trust the webhook body alone.
 
   const payment = await fetchMPPayment(paymentId);
   if (!payment) {
@@ -153,7 +153,7 @@ export async function processMPPaymentWebhook(
     return { outcome: "error", reason: "missing-external-reference" };
   }
 
-  // ── 3. Correlate with OrgBillingRecord ────────────────────────────────────
+  // â”€â”€ 3. Correlate with OrgBillingRecord â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // external_reference was set to OrgBillingRecord.id when the preference was created.
 
   const record = await prisma.orgBillingRecord.findUnique({
@@ -179,7 +179,7 @@ export async function processMPPaymentWebhook(
     return { outcome: "error", reason: "billing-record-not-found" };
   }
 
-  // ── 4. Idempotency guard ──────────────────────────────────────────────────
+  // â”€â”€ 4. Idempotency guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // If this exact payment ID was already stored, the transaction completed before.
 
   if (record.mpPaymentId === paymentId) {
@@ -194,7 +194,7 @@ export async function processMPPaymentWebhook(
     return { outcome: "skipped", reason: "already-processed" };
   }
 
-  // ── 5. Compute subscription period ───────────────────────────────────────
+  // â”€â”€ 5. Compute subscription period â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const now = new Date();
 
@@ -208,7 +208,7 @@ export async function processMPPaymentWebhook(
     now,
   );
 
-  // ── 6. Transactional write ────────────────────────────────────────────────
+  // â”€â”€ 6. Transactional write â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const nextStatus =
     existingSubscription?.status === SubscriptionStatus.SUSPENDED

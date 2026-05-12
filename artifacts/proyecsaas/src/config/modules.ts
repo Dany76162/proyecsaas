@@ -1,4 +1,4 @@
-import { authModule } from "@/modules/auth";
+﻿import { authModule } from "@/modules/auth";
 import { automationsModule } from "@/modules/automations";
 import { conversationsModule } from "@/modules/conversations";
 import { leadsModule } from "@/modules/leads";

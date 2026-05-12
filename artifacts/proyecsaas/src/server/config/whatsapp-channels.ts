@@ -1,4 +1,4 @@
-type WhatsAppChannelConfig = {
+﻿type WhatsAppChannelConfig = {
   organizationId: string;
   accessToken: string;
 };

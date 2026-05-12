@@ -1,10 +1,10 @@
-/**
+﻿/**
  * Property sync orchestrator.
  *
  * Tries strategies in order until one succeeds:
- *   1. WordPress REST API  — best quality, works with WP sites (very common in AR)
- *   2. JSON-LD             — works with any site using schema.org markup
- *   3. Static HTML         — last resort heuristic parsing
+ *   1. WordPress REST API  â€” best quality, works with WP sites (very common in AR)
+ *   2. JSON-LD             â€” works with any site using schema.org markup
+ *   3. Static HTML         â€” last resort heuristic parsing
  *
  * Each strategy returns null if it can't handle the site, letting the
  * orchestrator fall through to the next one.
@@ -28,10 +28,10 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
   try {
     new URL(sourceUrl);
   } catch {
-    throw new Error(`URL inválida: "${sourceUrl}"`);
+    throw new Error(`URL invÃ¡lida: "${sourceUrl}"`);
   }
 
-  // ── Strategy 1: WordPress REST API ──────────────────────────────────────────
+  // â”€â”€ Strategy 1: WordPress REST API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const wpResult = await extractFromWordPressApi(sourceUrl);
   if (wpResult && wpResult.properties.length > 0) {
     return {
@@ -41,7 +41,7 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
     };
   }
 
-  // ── Strategy 2: JSON-LD ──────────────────────────────────────────────────────
+  // â”€â”€ Strategy 2: JSON-LD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const jsonLdProperties = await extractFromJsonLd(sourceUrl);
   if (jsonLdProperties && jsonLdProperties.length > 0) {
     return {
@@ -51,7 +51,7 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
     };
   }
 
-  // ── Strategy 3: Static HTML ──────────────────────────────────────────────────
+  // â”€â”€ Strategy 3: Static HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const htmlProperties = await extractFromHtmlStatic(sourceUrl);
   if (htmlProperties && htmlProperties.length > 0) {
     return {
@@ -63,6 +63,6 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
 
   throw new Error(
     "No se pudieron detectar propiedades en el sitio. " +
-      "Verificá que la URL apunte a la página del listado de propiedades y que sea accesible públicamente."
+      "VerificÃ¡ que la URL apunte a la pÃ¡gina del listado de propiedades y que sea accesible pÃºblicamente."
   );
 }

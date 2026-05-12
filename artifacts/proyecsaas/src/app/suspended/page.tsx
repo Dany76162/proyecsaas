@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { AlertTriangle, Phone, ArrowLeft, Building2, CheckCircle2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,7 @@ export default async function SuspendedPage({
   const orgName = name ?? "tu workspace";
   const waContact = process.env.PLATFORM_WHATSAPP_CONTACT ?? "";
   const waLink = waContact
-    ? `https://wa.me/${waContact.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quisiera reactivar la cuenta de ${orgName} en Raíces Pilot.`)}`
+    ? `https://wa.me/${waContact.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quisiera reactivar la cuenta de ${orgName} en RaÃ­ces Pilot.`)}`
     : null;
 
   return (
@@ -38,12 +38,12 @@ export default async function SuspendedPage({
           </Badge>
           
           <h1 className="text-5xl font-extrabold tracking-tight leading-[1.1]">
-            Tu información está<br />
+            Tu informaciÃ³n estÃ¡<br />
             <span className="text-brand-400">protegida.</span>
           </h1>
           
           <p className="mt-6 text-xl text-slate-400 leading-relaxed">
-            Aunque el acceso está pausado temporalmente, tus datos y configuraciones permanecen intactos y seguros.
+            Aunque el acceso estÃ¡ pausado temporalmente, tus datos y configuraciones permanecen intactos y seguros.
           </p>
 
           <div className="mt-12 space-y-6">
@@ -53,7 +53,7 @@ export default async function SuspendedPage({
               </div>
               <div>
                 <h3 className="font-bold text-slate-100">Datos resguardados</h3>
-                <p className="text-sm text-slate-400">Tu historial de leads y conversaciones está cifrado y esperando ser reactivado.</p>
+                <p className="text-sm text-slate-400">Tu historial de leads y conversaciones estÃ¡ cifrado y esperando ser reactivado.</p>
               </div>
             </div>
 
@@ -62,20 +62,20 @@ export default async function SuspendedPage({
                 <Zap className="h-5 w-5 text-brand-400" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-100">Restauración inmediata</h3>
-                <p className="text-sm text-slate-400">Una vez regularizada la situación, el acceso se habilita de forma automática.</p>
+                <h3 className="font-bold text-slate-100">RestauraciÃ³n inmediata</h3>
+                <p className="text-sm text-slate-400">Una vez regularizada la situaciÃ³n, el acceso se habilita de forma automÃ¡tica.</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="absolute bottom-12 left-16 right-16 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-          <span>RaícesPilot v2.0</span>
-          <span>© 2026 Inmuebles Digitales</span>
+          <span>RaÃ­cesPilot v2.0</span>
+          <span>Â© 2026 Inmuebles Digitales</span>
         </div>
       </div>
 
-      {/* Lado Derecho - Mensaje de Suspensión (40%) */}
+      {/* Lado Derecho - Mensaje de SuspensiÃ³n (40%) */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:w-[40%] bg-slate-50">
         <div className="w-full max-w-sm">
           <div className="mb-10 flex flex-col items-center lg:items-start">
@@ -84,7 +84,7 @@ export default async function SuspendedPage({
                 <Building2 className="h-6 w-6 text-white" />
               </div>
               <span className="text-2xl font-black tracking-tighter text-slate-900">
-                Raíces<span className="text-brand-600">Pilot</span>
+                RaÃ­ces<span className="text-brand-600">Pilot</span>
               </span>
             </div>
             
@@ -102,12 +102,12 @@ export default async function SuspendedPage({
           <div className="space-y-6">
             <div className="rounded-xl border border-red-100 bg-red-50 p-5 text-left">
               <p className="text-sm font-bold text-red-800 leading-relaxed">
-                El acceso fue suspendido por falta de pago o por acción administrativa.
+                El acceso fue suspendido por falta de pago o por acciÃ³n administrativa.
               </p>
               <ul className="mt-3 space-y-1.5 text-xs text-red-700 list-disc list-inside">
-                <li>Tus datos están guardados de forma segura</li>
+                <li>Tus datos estÃ¡n guardados de forma segura</li>
                 <li>El acceso se restaura en minutos tras regularizar</li>
-                <li>Podés comunicarte con soporte ahora mismo</li>
+                <li>PodÃ©s comunicarte con soporte ahora mismo</li>
               </ul>
             </div>
 
@@ -131,7 +131,7 @@ export default async function SuspendedPage({
           </div>
 
           <p className="mt-10 text-center text-xs text-slate-400">
-            ¿Creés que esto es un error? Contactá a tu administrador de plataforma.
+            Â¿CreÃ©s que esto es un error? ContactÃ¡ a tu administrador de plataforma.
           </p>
         </div>
       </div>

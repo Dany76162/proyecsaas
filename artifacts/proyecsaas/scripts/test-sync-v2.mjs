@@ -7,7 +7,7 @@
 const SOURCE_URL = "https://cappellapropiedades.com/propiedades/";
 const COMMON_SLUGS = ["propiedades", "properties", "inmuebles", "listings"];
 
-// ── Field parsers (mirrors src/server/property-sync/field-parser.ts) ──────────
+// â”€â”€ Field parsers (mirrors src/server/property-sync/field-parser.ts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function parseAmountToCents(raw) {
   if (!raw) return null;
@@ -21,12 +21,12 @@ function parseAmountToCents(raw) {
 function parsePrice(text) {
   if (!text) return null;
   const t = text.replace(/\s+/g, " ");
-  const usdPrefix = t.match(/(?:USD?|U\$S|u\$s|dólar(?:es)?)\s*[:$]?\s*([\d.,]+)/i);
+  const usdPrefix = t.match(/(?:USD?|U\$S|u\$s|dÃ³lar(?:es)?)\s*[:$]?\s*([\d.,]+)/i);
   if (usdPrefix) {
     const cents = parseAmountToCents(usdPrefix[1]);
     if (cents) return { cents, currency: "USD" };
   }
-  const usdSuffix = t.match(/([\d.,]+)\s*(?:USD?|U\$S|u\$s|dólar(?:es)?)/i);
+  const usdSuffix = t.match(/([\d.,]+)\s*(?:USD?|U\$S|u\$s|dÃ³lar(?:es)?)/i);
   if (usdSuffix) {
     const cents = parseAmountToCents(usdSuffix[1]);
     if (cents) return { cents, currency: "USD" };
@@ -50,7 +50,7 @@ function stripHtml(html) {
 
 function parseSurfaceM2(text) {
   if (!text) return null;
-  const match = text.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|mt2|mts2|metros?(?:\s*cuadrados?)?)/i);
+  const match = text.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|mÂ²|mt2|mts2|metros?(?:\s*cuadrados?)?)/i);
   if (!match) return null;
   return parseInt(match[1].replace(",", "."), 10) || null;
 }
@@ -62,7 +62,7 @@ function parseRooms(text) {
   return match ? parseInt(match[1], 10) : null;
 }
 
-// ── WordPress API fetcher ──────────────────────────────────────────────────────
+// â”€â”€ WordPress API fetcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (compatible; RaicesBot/1.0; +https://raicespilot.com/bot)",
@@ -72,10 +72,10 @@ const HEADERS = {
 async function fetchJson(url) {
   try {
     const res = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
-    if (!res.ok) { console.log(`  [fetch] ${url} → HTTP ${res.status}`); return null; }
+    if (!res.ok) { console.log(`  [fetch] ${url} â†’ HTTP ${res.status}`); return null; }
     return await res.json();
   } catch (e) {
-    console.log(`  [fetch] ${url} → ${e.message}`);
+    console.log(`  [fetch] ${url} â†’ ${e.message}`);
     return null;
   }
 }
@@ -151,19 +151,19 @@ function wpPostToProperty(post) {
     ciudad: cityTerm ?? "-",
     tipo: typeTerm ?? "-",
     estado: statusTerm ?? "-",
-    precio: priceData ? `${priceData.currency} ${(priceData.cents / 100).toLocaleString("es-AR")}` : "–",
-    sup: surfaceM2 ? `${surfaceM2}m²` : "-",
+    precio: priceData ? `${priceData.currency} ${(priceData.cents / 100).toLocaleString("es-AR")}` : "â€“",
+    sup: surfaceM2 ? `${surfaceM2}mÂ²` : "-",
     ambientes: rooms ?? "-",
     link: post.link,
     termTaxonomies: [...new Set(allTerms.map(t => t.taxonomy))].join(", "),
   };
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function main() {
   console.log("=".repeat(65));
-  console.log("SYNC V2 FUNCTIONAL TEST — Multi-strategy (WP REST API)");
+  console.log("SYNC V2 FUNCTIONAL TEST â€” Multi-strategy (WP REST API)");
   console.log("Source:", SOURCE_URL);
   console.log("=".repeat(65));
 
@@ -189,7 +189,7 @@ async function main() {
   const properties = posts.map(wpPostToProperty).filter(Boolean);
   console.log(`[PARSE] Converted to ${properties.length} properties\n`);
 
-  // Sample output — show first 10
+  // Sample output â€” show first 10
   console.log("SAMPLE (first 10 properties):");
   console.log("-".repeat(65));
   properties.slice(0, 10).forEach((p, i) => {
@@ -197,11 +197,11 @@ async function main() {
     console.log(`   Ciudad: ${p.ciudad} | Tipo: ${p.tipo} | Estado: ${p.estado}`);
     console.log(`   Precio: ${p.precio} | Sup: ${p.sup} | Ambientes: ${p.ambientes}`);
     console.log(`   Link: ${p.link}`);
-    console.log(`   Taxonomías detectadas: ${p.termTaxonomies}`);
+    console.log(`   TaxonomÃ­as detectadas: ${p.termTaxonomies}`);
   });
 
   // Price statistics
-  const withPrice = properties.filter(p => p.precio !== "–");
+  const withPrice = properties.filter(p => p.precio !== "â€“");
   const withCity = properties.filter(p => p.ciudad !== "-");
   const withType = properties.filter(p => p.tipo !== "-");
   const withSurface = properties.filter(p => p.sup !== "-");

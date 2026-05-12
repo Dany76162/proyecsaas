@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -40,17 +40,17 @@ function Navbar() {
         <div className="flex items-center gap-0">
           <img 
             src="/brand/logo_transparent_icon.png" 
-            alt="RaícesPilot Logo" 
+            alt="RaÃ­cesPilot Logo" 
             className="h-16 w-auto object-contain brightness-0" 
           />
           <span className="text-xl font-bold tracking-tight text-slate-900 -ml-1">
-            <span className="text-brand-600">RAÍCES</span><span className="font-light">Pilot</span>
+            <span className="text-brand-600">RAÃCES</span><span className="font-light">Pilot</span>
           </span>
         </div>
         
         <nav className="hidden items-center gap-8 md:flex">
           <a href="#producto" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Producto</a>
-          <a href="#como-funciona" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Cómo funciona</a>
+          <a href="#como-funciona" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">CÃ³mo funciona</a>
           <a href="#beneficios" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Beneficios</a>
         </nav>
 
@@ -95,7 +95,7 @@ export default async function HomePage() {
               La plataforma operativa para inmobiliarias modernas.
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-slate-600 max-w-2xl mx-auto">
-              Centralizá leads, conversaciones, propiedades y seguimiento comercial en un sistema diseñado para trabajar mejor todos los días.
+              CentralizÃ¡ leads, conversaciones, propiedades y seguimiento comercial en un sistema diseÃ±ado para trabajar mejor todos los dÃ­as.
             </p>
             
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -118,29 +118,29 @@ export default async function HomePage() {
         <section id="beneficios" className="mx-auto max-w-7xl px-6 py-16">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900">Eficiencia en cada paso</h2>
-            <p className="mt-4 text-slate-600">Diseñado para minimizar la fricción operativa y maximizar conversiones.</p>
+            <p className="mt-4 text-slate-600">DiseÃ±ado para minimizar la fricciÃ³n operativa y maximizar conversiones.</p>
           </div>
           
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 icon: Clock,
-                title: "Respondé mientras tu equipo está ocupado",
-                desc: "Atención 24/7 sin demoras ni pérdida de interés."
+                title: "RespondÃ© mientras tu equipo estÃ¡ ocupado",
+                desc: "AtenciÃ³n 24/7 sin demoras ni pÃ©rdida de interÃ©s."
               },
               {
                 icon: Inbox,
                 title: "Cada consulta entra con contexto",
-                desc: "Los prospectos se perfilan y organizan automáticamente en tu embudo."
+                desc: "Los prospectos se perfilan y organizan automÃ¡ticamente en tu embudo."
               },
               {
                 icon: LayoutGrid,
                 title: "Seguimiento claro desde el inicio",
-                desc: "Un CRM diseñado específicamente para la operativa inmobiliaria."
+                desc: "Un CRM diseÃ±ado especÃ­ficamente para la operativa inmobiliaria."
               },
               {
                 icon: Users,
-                title: "Intervención en el momento clave",
+                title: "IntervenciÃ³n en el momento clave",
                 desc: "Tu equipo asume el control solo cuando hay oportunidad real de cierre."
               }
             ].map((b, i) => (
@@ -155,7 +155,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* CÓMO FUNCIONA */}
+        {/* CÃ“MO FUNCIONA */}
         <section id="como-funciona" className="bg-white py-16">
           <div className="mx-auto max-w-7xl px-6">
             <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
@@ -173,7 +173,7 @@ export default async function HomePage() {
                     {
                       num: "02",
                       title: "RaicesPilot responde y organiza",
-                      desc: "La IA interactúa, califica el interés y perfila al cliente basándose en tu inventario."
+                      desc: "La IA interactÃºa, califica el interÃ©s y perfila al cliente basÃ¡ndose en tu inventario."
                     },
                     {
                       num: "03",
@@ -221,17 +221,17 @@ export default async function HomePage() {
             <div className="mb-16 text-center">
               <span className="text-brand-400 font-bold tracking-widest uppercase text-xs mb-2 block">Infraestructura</span>
               <h2 className="text-3xl font-bold tracking-tight text-white mb-4">Todo lo que necesitas en un solo lugar</h2>
-              <p className="text-slate-400 max-w-2xl mx-auto">Un entorno operativo profesional, diseñado para escalar la gestión de tu inmobiliaria sin perder el control.</p>
+              <p className="text-slate-400 max-w-2xl mx-auto">Un entorno operativo profesional, diseÃ±ado para escalar la gestiÃ³n de tu inmobiliaria sin perder el control.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
               {[
-                { title: "Panel Analítico", icon: BarChart3, desc: "Métricas comerciales y estado del embudo en tiempo real." },
-                { title: "CRM Inmobiliario", icon: Users, desc: "Gestión de oportunidades, estados y asignación de agentes." },
+                { title: "Panel AnalÃ­tico", icon: BarChart3, desc: "MÃ©tricas comerciales y estado del embudo en tiempo real." },
+                { title: "CRM Inmobiliario", icon: Users, desc: "GestiÃ³n de oportunidades, estados y asignaciÃ³n de agentes." },
                 { title: "Bandeja Conversacional", icon: MessageSquare, desc: "Centro de inteligencia que unifica IA y equipo humano." },
-                { title: "Inventario Activo", icon: Building, desc: "Control total sobre tu catálogo de propiedades." },
-                { title: "Panel de Administración", icon: ShieldCheck, desc: "Control de permisos, roles y configuración de sucursales." },
-                { title: "Métricas Operativas", icon: Activity, desc: "Visibilidad total sobre tiempos de respuesta y conversión." }
+                { title: "Inventario Activo", icon: Building, desc: "Control total sobre tu catÃ¡logo de propiedades." },
+                { title: "Panel de AdministraciÃ³n", icon: ShieldCheck, desc: "Control de permisos, roles y configuraciÃ³n de sucursales." },
+                { title: "MÃ©tricas Operativas", icon: Activity, desc: "Visibilidad total sobre tiempos de respuesta y conversiÃ³n." }
               ].map((feature, i) => (
                 <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition hover:bg-white/10">
                   <feature.icon className="h-6 w-6 text-brand-400 mb-4" />
@@ -249,19 +249,19 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold text-brand-900 mb-8">Nuestros Objetivos Operativos</h2>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <div className="text-xl font-bold text-brand-600 mb-2">Más velocidad</div>
-                <div className="text-sm font-medium text-brand-800">Diseñado para minimizar prospectos perdidos por falta de respuesta.</div>
+                <div className="text-xl font-bold text-brand-600 mb-2">MÃ¡s velocidad</div>
+                <div className="text-sm font-medium text-brand-800">DiseÃ±ado para minimizar prospectos perdidos por falta de respuesta.</div>
               </div>
               <div>
-                <div className="text-xl font-bold text-brand-600 mb-2">Más agilidad</div>
-                <div className="text-sm font-medium text-brand-800">En la calificación inicial y perfilado de prospectos.</div>
+                <div className="text-xl font-bold text-brand-600 mb-2">MÃ¡s agilidad</div>
+                <div className="text-sm font-medium text-brand-800">En la calificaciÃ³n inicial y perfilado de prospectos.</div>
               </div>
               <div>
                 <div className="text-xl font-bold text-brand-600 mb-2">Visibilidad total</div>
-                <div className="text-sm font-medium text-brand-800">Sobre la operación y rendimiento de tu equipo comercial.</div>
+                <div className="text-sm font-medium text-brand-800">Sobre la operaciÃ³n y rendimiento de tu equipo comercial.</div>
               </div>
               <div>
-                <div className="text-xl font-bold text-brand-600 mb-2">Atención 24/7</div>
+                <div className="text-xl font-bold text-brand-600 mb-2">AtenciÃ³n 24/7</div>
                 <div className="text-sm font-medium text-brand-800">Seguimiento centralizado y activo en todo momento.</div>
               </div>
             </div>
@@ -283,10 +283,10 @@ export default async function HomePage() {
                   Comienza Hoy
                 </div>
                 <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl mb-6 leading-tight">
-                  ¿Estás listo para modernizar tu inmobiliaria?
+                  Â¿EstÃ¡s listo para modernizar tu inmobiliaria?
                 </h2>
                 <p className="text-lg text-slate-600 mb-10 leading-relaxed">
-                  Completá el formulario y coordinamos una demo. Te mostramos cómo RaicesPilot puede ayudarte a organizar tus prospectos, automatizar el seguimiento y cerrar más ventas sin complicaciones técnicas.
+                  CompletÃ¡ el formulario y coordinamos una demo. Te mostramos cÃ³mo RaicesPilot puede ayudarte a organizar tus prospectos, automatizar el seguimiento y cerrar mÃ¡s ventas sin complicaciones tÃ©cnicas.
                 </p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-700">
@@ -295,7 +295,7 @@ export default async function HomePage() {
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
                     <div>
-                      <div className="font-bold text-sm text-slate-900">Implementación</div>
+                      <div className="font-bold text-sm text-slate-900">ImplementaciÃ³n</div>
                       <div className="text-xs text-slate-500 mt-0.5">Te guiamos paso a paso.</div>
                     </div>
                   </div>
@@ -305,7 +305,7 @@ export default async function HomePage() {
                     </div>
                     <div>
                       <div className="font-bold text-sm text-slate-900">Soporte</div>
-                      <div className="text-xs text-slate-500 mt-0.5">Asistencia técnica directa.</div>
+                      <div className="text-xs text-slate-500 mt-0.5">Asistencia tÃ©cnica directa.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm sm:col-span-2">
@@ -313,7 +313,7 @@ export default async function HomePage() {
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
                     <div>
-                      <div className="font-bold text-sm text-slate-900">Configuración de IA</div>
+                      <div className="font-bold text-sm text-slate-900">ConfiguraciÃ³n de IA</div>
                       <div className="text-xs text-slate-500 mt-0.5">Ajustamos los agentes a las respuestas ideales de tu inmobiliaria.</div>
                     </div>
                   </div>
@@ -337,10 +337,10 @@ export default async function HomePage() {
           <div className="mx-auto max-w-4xl overflow-hidden rounded-[2.5rem] bg-slate-900 px-6 py-16 sm:px-12 text-center shadow-2xl relative">
             <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)`, backgroundSize: '32px 32px' }} />
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-6 relative z-10">
-              Modernizá la operación comercial de tu inmobiliaria.
+              ModernizÃ¡ la operaciÃ³n comercial de tu inmobiliaria.
             </h2>
             <p className="text-slate-400 mb-10 max-w-2xl mx-auto relative z-10 text-lg">
-              Dejá atrás el caos de los mensajes perdidos y el seguimiento manual. Sumate a las agencias que ya operan a otro nivel.
+              DejÃ¡ atrÃ¡s el caos de los mensajes perdidos y el seguimiento manual. Sumate a las agencias que ya operan a otro nivel.
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 relative z-10">
               <Button size="lg" className="w-full sm:w-auto bg-brand-500 hover:bg-brand-400 text-white border-0" asChild>
@@ -364,9 +364,9 @@ export default async function HomePage() {
               alt="Logo" 
               className="h-10 md:h-12 w-auto object-contain brightness-0" 
             />
-            <span className="text-brand-600 -ml-0.5">RAÍCES</span>Pilot
+            <span className="text-brand-600 -ml-0.5">RAÃCES</span>Pilot
           </div>
-          <p>© {new Date().getFullYear()} RaicesPilot. Plataforma Operativa Inmobiliaria.</p>
+          <p>Â© {new Date().getFullYear()} RaicesPilot. Plataforma Operativa Inmobiliaria.</p>
         </div>
       </footer>
     </div>

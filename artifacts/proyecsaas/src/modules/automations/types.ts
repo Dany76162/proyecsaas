@@ -1,4 +1,4 @@
-import type { ConversationStatus, LeadStatus, MessageDirection } from "@prisma/client";
+﻿import type { ConversationStatus, LeadStatus, MessageDirection } from "@prisma/client";
 
 export type PreparedConversationContext = {
   conversation: {

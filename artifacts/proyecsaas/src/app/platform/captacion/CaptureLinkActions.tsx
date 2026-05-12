@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Check, Copy, ExternalLink, MessageSquare, QrCode } from "lucide-react";

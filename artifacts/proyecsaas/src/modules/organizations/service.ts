@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { PropertyStatus } from "@prisma/client";
 
@@ -40,7 +40,7 @@ function buildOrganizationSummary(organization: {
 }
 
 /**
- * INTERNAL / ADMIN USE ONLY — returns all organizations with no auth or tenant scoping.
+ * INTERNAL / ADMIN USE ONLY â€” returns all organizations with no auth or tenant scoping.
  * Must never be called from user-facing pages, components, or server actions.
  * For user-facing org lists, use listOrganizationsForUser(userId) instead.
  */

@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 export const createLeadSchema = z.object({
   fullName: z.string().min(2).max(120),

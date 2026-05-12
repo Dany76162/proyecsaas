@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+﻿import { Metadata } from "next";
 import { Bot } from "lucide-react";
 
 import { requirePlatformAdmin } from "@/server/auth/access";

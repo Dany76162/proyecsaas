@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { LeadStatus } from "@prisma/client";
 
@@ -80,9 +80,9 @@ export async function listOrganizationConversations(
       id: conversation.id,
       channel: conversation.channel,
       status: conversation.status,
-      subject: conversation.subject ?? "Conversación sobre propiedad",
+      subject: conversation.subject ?? "ConversaciÃ³n sobre propiedad",
       participantName: conversation.participantName ?? "Participante desconocido",
-      participantPhone: conversation.participantPhone ?? "Teléfono pendiente",
+      participantPhone: conversation.participantPhone ?? "TelÃ©fono pendiente",
       propertyId: conversation.propertyId ?? undefined,
       propertyTitle: conversation.property?.title ?? "Propiedad no vinculada",
       propertyContextNote:
@@ -107,7 +107,7 @@ export async function listOrganizationConversations(
         direction: message.direction,
         body: message.body,
         senderName: message.senderName ?? "Remitente desconocido",
-        senderPhone: message.senderPhone ?? "Teléfono pendiente",
+        senderPhone: message.senderPhone ?? "TelÃ©fono pendiente",
         sentAt: message.sentAt.toISOString(),
         deliveryStatus: message.deliveryStatus,
         providerMessageId: message.providerMessageId ?? null,

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { motion } from "framer-motion";
@@ -42,11 +42,11 @@ export function MobilitySection() {
                     
                     <div className="flex-1 py-3 px-2 space-y-4">
                       <div className="space-y-1.5">
-                        <div className="px-2 text-[5px] uppercase tracking-widest opacity-40 font-bold">Operación</div>
+                        <div className="px-2 text-[5px] uppercase tracking-widest opacity-40 font-bold">OperaciÃ³n</div>
                         {[
                           { icon: Home, label: "Inicio" },
                           { icon: CheckCircle2, label: "Bienvenida", active: true },
-                          { icon: UserPlus, label: "Captación" },
+                          { icon: UserPlus, label: "CaptaciÃ³n" },
                           { icon: BookOpen, label: "Manual de uso" },
                           { icon: Users, label: "Prospectos" },
                           { icon: MessageSquare, label: "Conversaciones" },
@@ -64,7 +64,7 @@ export function MobilitySection() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <div className="px-2 text-[5px] uppercase tracking-widest opacity-40 font-bold">Automatización</div>
+                        <div className="px-2 text-[5px] uppercase tracking-widest opacity-40 font-bold">AutomatizaciÃ³n</div>
                         <div className="flex items-center gap-2 px-2 py-1"><Sliders className="h-2.5 w-2.5 opacity-40" /><span>Agentes IA</span></div>
                       </div>
                     </div>
@@ -133,7 +133,7 @@ export function MobilitySection() {
                                <div className="h-1.5 w-48 bg-slate-100 rounded" />
                              </div>
                            </div>
-                           <div className="h-5 w-16 bg-brand-600 rounded flex items-center justify-center text-[6px] text-white font-bold">A configuración</div>
+                           <div className="h-5 w-16 bg-brand-600 rounded flex items-center justify-center text-[6px] text-white font-bold">A configuraciÃ³n</div>
                         </div>
                       </div>
 
@@ -156,7 +156,7 @@ export function MobilitySection() {
                 </div>
               </div>
 
-              {/* Mobile Mockup (AI Chat) - Superpuesto con diseño más prolijo */}
+              {/* Mobile Mockup (AI Chat) - Superpuesto con diseÃ±o mÃ¡s prolijo */}
               <motion.div 
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -174,7 +174,7 @@ export function MobilitySection() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[8px] font-bold leading-tight">RaicesPilot IA</div>
-                        <div className="text-[5px] opacity-70">En línea</div>
+                        <div className="text-[5px] opacity-70">En lÃ­nea</div>
                       </div>
                    </div>
                    {/* Chat Messages */}
@@ -189,9 +189,9 @@ export function MobilitySection() {
                       {/* AI Message */}
                       <div className="self-end max-w-[85%] bg-[#dcf8c6] p-2 rounded-lg rounded-tr-none shadow-sm relative">
                          <p className="text-[7.5px] leading-snug text-slate-800">
-                           ¡Hola! Te ayudo con eso. Tengo 3 opciones disponibles en Palermo que podrían interesarte. ¿Buscás alquiler o compra?
+                           Â¡Hola! Te ayudo con eso. Tengo 3 opciones disponibles en Palermo que podrÃ­an interesarte. Â¿BuscÃ¡s alquiler o compra?
                          </p>
-                         <div className="text-[4px] text-slate-400 text-right mt-1">14:02 <span className="text-blue-500">✓✓</span></div>
+                         <div className="text-[4px] text-slate-400 text-right mt-1">14:02 <span className="text-blue-500">âœ“âœ“</span></div>
                       </div>
                       {/* IA Status Indicator */}
                       <div className="flex justify-center">
@@ -217,10 +217,10 @@ export function MobilitySection() {
             
             <div className="space-y-4">
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-tight">
-                Controlá tu empresa desde cualquier lugar
+                ControlÃ¡ tu empresa desde cualquier lugar
               </h2>
               <p className="text-lg leading-relaxed text-slate-600 max-w-2xl">
-                RaicesPilot funciona desde la web, sin instalaciones ni descargas pesadas. Desde tu computadora o celular podés verificar leads, conversaciones y seguimiento comercial sin estar físicamente en la oficina.
+                RaicesPilot funciona desde la web, sin instalaciones ni descargas pesadas. Desde tu computadora o celular podÃ©s verificar leads, conversaciones y seguimiento comercial sin estar fÃ­sicamente en la oficina.
               </p>
             </div>
 
@@ -230,8 +230,8 @@ export function MobilitySection() {
                   <Smartphone className="h-5 w-5 text-brand-600" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-slate-900">Operación Móvil</div>
-                  <div className="text-xs text-slate-500">Monitoreá la actividad 24/7.</div>
+                  <div className="text-sm font-bold text-slate-900">OperaciÃ³n MÃ³vil</div>
+                  <div className="text-xs text-slate-500">MonitoreÃ¡ la actividad 24/7.</div>
                 </div>
               </div>
               <div className="flex items-center gap-4 p-5 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">

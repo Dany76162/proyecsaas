@@ -1,4 +1,4 @@
-import {
+﻿import {
   ConversationStatus,
   FollowUpCategory,
   MessageDeliveryStatus,
@@ -6,7 +6,7 @@ import {
   NotificationType,
 } from "@prisma/client";
 
-// ⚠️ IMPORTANTE: usar prisma-worker (NO prisma normal)
+// âš ï¸ IMPORTANTE: usar prisma-worker (NO prisma normal)
 import { prismaWorker as prisma } from "@/server/db/prisma-worker";
 import { attemptWhatsAppOutboundDelivery } from "@/modules/automations/delivery-service";
 import { readLeadCommercialSignals } from "@/modules/leads/commercial-signals";
@@ -39,14 +39,14 @@ function buildPostVisitMessage(params: {
     : "la propiedad visitada";
 
   if (params.temperature === "hot") {
-    return `Hola ${firstName}! ¿Cómo te fue en la visita a ${propertyRef}? Si querés avanzar con los próximos pasos, avisame cuando quieras.`;
+    return `Hola ${firstName}! Â¿CÃ³mo te fue en la visita a ${propertyRef}? Si querÃ©s avanzar con los prÃ³ximos pasos, avisame cuando quieras.`;
   }
 
   if (params.temperature === "warm") {
-    return `Hola ${firstName}! Quería saber cómo te fue en la visita a ${propertyRef}. ¿Quedó alguna duda o te interesaría ver otras opciones?`;
+    return `Hola ${firstName}! QuerÃ­a saber cÃ³mo te fue en la visita a ${propertyRef}. Â¿QuedÃ³ alguna duda o te interesarÃ­a ver otras opciones?`;
   }
 
-  return `Hola ${firstName}! ¿Qué te pareció ${propertyRef}? Estamos disponibles para cualquier consulta o si querés explorar otras alternativas.`;
+  return `Hola ${firstName}! Â¿QuÃ© te pareciÃ³ ${propertyRef}? Estamos disponibles para cualquier consulta o si querÃ©s explorar otras alternativas.`;
 }
 
 // =========================
@@ -136,7 +136,7 @@ export async function processPostVisitFollowUp(data: PostVisitJobData) {
     return { status: "ignored" as const, reason: "human-controlled" };
   }
 
-  // 5. Deduplication via deterministic message ID — safe for worker retries
+  // 5. Deduplication via deterministic message ID â€” safe for worker retries
   const deterministicId = `pv_${data.visitId}`;
 
   const existingMessage = await prisma.message.findUnique({
@@ -220,7 +220,7 @@ export async function processPostVisitFollowUp(data: PostVisitJobData) {
     },
   });
 
-  // 11. Set follow-up on conversation — agent must track the feedback regardless of delivery
+  // 11. Set follow-up on conversation â€” agent must track the feedback regardless of delivery
   const followUpReason = visit.property?.title
     ? `Seguimiento post-visita: ${visit.property.title}. Esperando respuesta del lead.`
     : "Seguimiento post-visita enviado. Esperando respuesta del lead.";

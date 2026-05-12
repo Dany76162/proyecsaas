@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,7 +36,7 @@ type WorkspaceSidebarProps = {
 const OPERATION_NAV = [
   { label: "Inicio",         path: "",              icon: LayoutDashboard },
   { label: "Bienvenida",     path: "/onboarding",   icon: Rocket },
-  { label: "Captación",      path: "/captacion",    icon: Megaphone },
+  { label: "CaptaciÃ³n",      path: "/captacion",    icon: Megaphone },
   { label: "Manual de uso",  path: "/manual-uso",   icon: BookOpen },
   { label: "Prospectos",     path: "/leads",        icon: Users },
   { label: "Conversaciones", path: "/conversations",icon: MessageSquare },
@@ -52,18 +52,18 @@ const AUTOMATION_NAV = [
 const MANAGEMENT_NAV = [
   { label: "Disponibilidad", path: "/settings/availability", icon: Radio },
   { label: "Equipo",         path: "/settings/users",        icon: Users2 },
-  { label: "Organización",   path: "/settings/organization", icon: Settings },
+  { label: "OrganizaciÃ³n",   path: "/settings/organization", icon: Settings },
 ] as const;
 
 const HELP_NAV = [
-  { label: "Soporte Técnico", href: "https://wa.me/5491161630205", icon: MessageSquare },
+  { label: "Soporte TÃ©cnico", href: "https://wa.me/5491161630205", icon: MessageSquare },
   { label: "Manual de Uso",   path: "/manual-uso",             icon: BookOpen },
 ] as const;
 
 const ROLE_MAP = {
   OWNER:     { label: "Titular",           copy: "Acceso total" },
-  ADMIN:     { label: "Administrador",     copy: "Gestión y operación" },
-  AGENT:     { label: "Agente de ventas",  copy: "Operación comercial" },
+  ADMIN:     { label: "Administrador",     copy: "GestiÃ³n y operaciÃ³n" },
+  AGENT:     { label: "Agente de ventas",  copy: "OperaciÃ³n comercial" },
   ASSISTANT: { label: "Asistente",         copy: "Soporte operativo" },
 } as const;
 
@@ -92,7 +92,7 @@ export function WorkspaceSidebar({
     <aside
       className={cn(
         "fixed bottom-0 left-0 top-0 z-50 flex h-screen h-[100dvh] w-64 flex-col print:hidden",
-        // Serene dark — not pure black, not aggressive
+        // Serene dark â€” not pure black, not aggressive
         "bg-[#0f1117] border-r border-white/[0.06]",
         "transition-transform duration-300 ease-out",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
@@ -136,7 +136,7 @@ export function WorkspaceSidebar({
         {/* Operacion */}
         <div>
           <p className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-600">
-            Operación
+            OperaciÃ³n
           </p>
           <div className="space-y-0.5">
             {OPERATION_NAV.map((item) => {
@@ -175,7 +175,7 @@ export function WorkspaceSidebar({
         {isAdminOrOwner(role) && (
           <div>
             <p className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-600">
-              Automatización
+              AutomatizaciÃ³n
             </p>
             <div className="space-y-0.5">
               {AUTOMATION_NAV.map((item) => {
@@ -214,7 +214,7 @@ export function WorkspaceSidebar({
         {isAdminOrOwner(role) && (
           <div>
             <p className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-600">
-              Administración
+              AdministraciÃ³n
             </p>
             <div className="space-y-0.5">
               {MANAGEMENT_NAV.map((item) => {
@@ -317,7 +317,7 @@ export function WorkspaceSidebar({
             className="group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-semibold text-slate-600 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400"
           >
             <LogOut className="h-4.5 w-4.5 transition-colors duration-150 group-hover:text-red-400" />
-            Cerrar sesión
+            Cerrar sesiÃ³n
           </button>
         </form>
       </div>

@@ -1,4 +1,4 @@
-// Mercado Pago Checkout Preferences helper.
+﻿// Mercado Pago Checkout Preferences helper.
 // Requires env var: MERCADO_PAGO_ACCESS_TOKEN (from MP panel > Credenciales).
 // Uses production API. For sandbox, set MERCADO_PAGO_SANDBOX=true.
 //
@@ -7,7 +7,7 @@
 export type MPPreferenceInput = {
   title: string;
   amountARS: number; // amount in full ARS (not cents)
-  externalReference: string; // billing record ID — used to correlate with DB
+  externalReference: string; // billing record ID â€” used to correlate with DB
   payerEmail?: string;
 };
 

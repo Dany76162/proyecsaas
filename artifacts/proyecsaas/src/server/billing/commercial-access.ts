@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { BillingMode, SubscriptionStatus } from "@prisma/client";
 
@@ -15,7 +15,7 @@ export const BILLING_MODE_LABELS: Record<BillingMode, string> = {
   ONLINE: "Online",
   CASH: "Efectivo",
   TRANSFER: "Transferencia",
-  COURTESY: "Cortesía",
+  COURTESY: "CortesÃ­a",
   MANUAL: "Manual",
 };
 
@@ -42,7 +42,7 @@ export function resolveEffectiveCommercialState(input: {
       allowed: false,
       effectiveStatus: SubscriptionStatus.SUSPENDED,
       source: "organization",
-      summary: "Cuenta desactivada por administración.",
+      summary: "Cuenta desactivada por administraciÃ³n.",
     };
   }
 
@@ -51,7 +51,7 @@ export function resolveEffectiveCommercialState(input: {
       allowed: true,
       effectiveStatus: null,
       source: "legacy",
-      summary: "Acceso legado sin suscripción explícita.",
+      summary: "Acceso legado sin suscripciÃ³n explÃ­cita.",
     };
   }
 

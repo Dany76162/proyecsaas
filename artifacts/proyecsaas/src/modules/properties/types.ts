@@ -1,4 +1,4 @@
-import type { PropertyStatus, VisitStatus } from "@prisma/client";
+﻿import type { PropertyStatus, VisitStatus } from "@prisma/client";
 
 export type PropertyListItem = {
   id: string;

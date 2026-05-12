@@ -1,4 +1,4 @@
-import { PropertyStatus } from "@prisma/client";
+﻿import { PropertyStatus } from "@prisma/client";
 import { z } from "zod";
 
 function emptyStringToNull(value: unknown) {
@@ -21,7 +21,7 @@ function stringNumberToNullableInt(value: unknown) {
     return null;
   }
 
-  // Strip dots/commas used as thousands separators (e.g. "300.000" → "300000")
+  // Strip dots/commas used as thousands separators (e.g. "300.000" â†’ "300000")
   const noSep = normalized.replace(/[,.](?=(\d{3})+(?!\d))/g, "");
   const parsed = Number.parseInt(noSep, 10);
   return Number.isNaN(parsed) ? value : parsed;
@@ -45,17 +45,17 @@ export const updatePropertySchema = z.object({
   expensesCents: z.preprocess(stringNumberToNullableInt, z.number().int().nonnegative().nullable()),
   status: z.nativeEnum(PropertyStatus),
   publicVisible: z.boolean(),
-  // Ubicación
+  // UbicaciÃ³n
   address: z.preprocess(emptyStringToNull, z.string().trim().max(160).nullable()),
   city: z.preprocess(emptyStringToNull, z.string().trim().max(120).nullable()),
   neighborhood: z.preprocess(emptyStringToNull, z.string().trim().max(120).nullable()),
-  // Características
+  // CaracterÃ­sticas
   rooms: z.preprocess(stringNumberToNullableInt, z.number().int().nonnegative().nullable()),
   bedrooms: z.preprocess(stringNumberToNullableInt, z.number().int().nonnegative().nullable()),
   bathrooms: z.preprocess(stringNumberToNullableInt, z.number().int().nonnegative().nullable()),
   surfaceM2: z.preprocess(stringNumberToNullableInt, z.number().int().nonnegative().nullable()),
   parkingSpots: z.preprocess(stringNumberToNullableInt, z.number().int().nonnegative().nullable()),
-  // Descripción y multimedia
+  // DescripciÃ³n y multimedia
   description: z.preprocess(emptyStringToNull, z.string().trim().max(4000).nullable()),
   amenities: z.preprocess(emptyStringToNull, z.string().trim().max(500).nullable()),
   externalLink: z.preprocess(emptyStringToNull, z.string().trim().max(500).nullable()),

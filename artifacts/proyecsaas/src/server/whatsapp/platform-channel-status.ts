@@ -1,10 +1,10 @@
-/**
+﻿/**
  * Resolves the platform-level WhatsApp channel status for display in the
  * Admin Inmobiliario panel.
  *
  * Separates two independent concerns:
- *   1. Platform phone number  — the human-readable number stored in GlobalSetting.
- *   2. Meta Cloud API channel — whether the env-based Cloud API credentials are present.
+ *   1. Platform phone number  â€” the human-readable number stored in GlobalSetting.
+ *   2. Meta Cloud API channel â€” whether the env-based Cloud API credentials are present.
  *
  * This is the ONLY place that should be called to get this composite status.
  * It avoids reading env vars inside page/component code.
@@ -52,7 +52,7 @@ export async function getPlatformWhatsAppStatus(): Promise<PlatformWhatsAppStatu
       process.env.WHATSAPP_PLATFORM_PHONE_DISPLAY?.trim() ||
       null;
   } catch {
-    // DB unavailable — fall back to env
+    // DB unavailable â€” fall back to env
     platformPhone = process.env.WHATSAPP_PLATFORM_PHONE_DISPLAY?.trim() || null;
   }
 

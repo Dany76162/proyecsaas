@@ -1,4 +1,4 @@
-export type OrganizationSummary = {
+﻿export type OrganizationSummary = {
   id: string;
   slug: string;
   name: string;

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
@@ -8,29 +8,29 @@ import { cn } from "@/lib/utils";
 const SLIDES = [
   {
     id: 1,
-    title: "Respondé en segundos, incluso cuando tu equipo está ocupado.",
-    description: "RaicesPilot automatiza la primera respuesta, califica consultas y mantiene activa la conversación.",
+    title: "RespondÃ© en segundos, incluso cuando tu equipo estÃ¡ ocupado.",
+    description: "RaicesPilot automatiza la primera respuesta, califica consultas y mantiene activa la conversaciÃ³n.",
     image: "/landing/slide1.png",
     alt: "IA respondiendo en tiempo real",
   },
   {
     id: 2,
     title: "Mejor experiencia para cada consulta.",
-    description: "La velocidad de respuesta mejora la percepción del cliente y evita perder oportunidades.",
+    description: "La velocidad de respuesta mejora la percepciÃ³n del cliente y evita perder oportunidades.",
     image: "/landing/slide2.png",
-    alt: "Cliente satisfecho por atención rápida",
+    alt: "Cliente satisfecho por atenciÃ³n rÃ¡pida",
   },
   {
     id: 3,
     title: "Mientras el sistema automatiza, tu equipo avanza.",
-    description: "Centralizá leads, conversaciones y seguimiento comercial sin frenar la operación.",
+    description: "CentralizÃ¡ leads, conversaciones y seguimiento comercial sin frenar la operaciÃ³n.",
     image: "/landing/ai_map_strategy.png",
     alt: "Inmobiliaria trabajando con el sistema y mapas de calor",
   },
   {
     id: 4,
-    title: "Menos desorden operativo, más visitas concretadas.",
-    description: "Automatizá el seguimiento y enfocá al equipo en lo que realmente cierra ventas.",
+    title: "Menos desorden operativo, mÃ¡s visitas concretadas.",
+    description: "AutomatizÃ¡ el seguimiento y enfocÃ¡ al equipo en lo que realmente cierra ventas.",
     image: "/landing/slide4.png",
     alt: "Visita inmobiliaria concretada",
   },

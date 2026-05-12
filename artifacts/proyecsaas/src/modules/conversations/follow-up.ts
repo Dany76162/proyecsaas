@@ -1,4 +1,4 @@
-import { NotificationType, Prisma, PrismaClient } from "@prisma/client";
+﻿import { NotificationType, Prisma, PrismaClient } from "@prisma/client";
 
 export type FollowUpResolutionMethod = "MANUAL" | "AUTO_REPLY" | "AUTO_SYSTEM";
 

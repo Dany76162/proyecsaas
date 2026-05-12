@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+﻿import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ShieldCheck, Lock, Eye, Building2, UserCheck, Scale, FileText, Bot, Globe } from "lucide-react";
 
@@ -7,7 +7,7 @@ import { prisma } from "@/server/db/prisma";
 import { revalidatePath } from "next/cache";
 
 export const metadata: Metadata = {
-  title: "Centro de Políticas y Privacidad | RaicesPilot",
+  title: "Centro de PolÃ­ticas y Privacidad | RaicesPilot",
 };
 
 export default async function AcceptPoliciesPage({
@@ -53,7 +53,7 @@ export default async function AcceptPoliciesPage({
               Centro de Transparencia y Seguridad
             </h1>
             <p className="mt-6 text-slate-400 text-lg leading-relaxed">
-              En RaicesPilot, la confianza es nuestra base operativa. Revisá y aceptá nuestros términos para proteger tu inmobiliaria y a tus clientes.
+              En RaicesPilot, la confianza es nuestra base operativa. RevisÃ¡ y aceptÃ¡ nuestros tÃ©rminos para proteger tu inmobiliaria y a tus clientes.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default async function AcceptPoliciesPage({
             </div>
             <div className="flex items-center gap-3 text-slate-400 text-sm">
               <Eye className="h-5 w-5 text-brand-500" />
-              <span>Auditoría transparente</span>
+              <span>AuditorÃ­a transparente</span>
             </div>
           </div>
 
@@ -85,15 +85,15 @@ export default async function AcceptPoliciesPage({
               <section className="space-y-4">
                 <div className="flex items-center gap-3 text-slate-900">
                   <FileText className="h-6 w-6 text-brand-600" />
-                  <h2 className="text-xl font-bold">1. Términos de Servicio</h2>
+                  <h2 className="text-xl font-bold">1. TÃ©rminos de Servicio</h2>
                 </div>
                 <div className="prose prose-slate prose-sm max-w-none text-slate-600 leading-relaxed">
                   <p>
-                    Al acceder a RaicesPilot, el Usuario acepta utilizar la plataforma exclusivamente para fines inmobiliarios comerciales legítimos. 
-                    Se prohíbe el uso del sistema para el envío de spam, acoso o actividades ilícitas que violen las leyes locales de telecomunicaciones.
+                    Al acceder a RaicesPilot, el Usuario acepta utilizar la plataforma exclusivamente para fines inmobiliarios comerciales legÃ­timos. 
+                    Se prohÃ­be el uso del sistema para el envÃ­o de spam, acoso o actividades ilÃ­citas que violen las leyes locales de telecomunicaciones.
                   </p>
                   <p>
-                    <strong>Responsabilidad de Cuenta:</strong> Cada cliente es responsable de la veracidad de la información de sus propiedades y del comportamiento de sus agentes autorizados.
+                    <strong>Responsabilidad de Cuenta:</strong> Cada cliente es responsable de la veracidad de la informaciÃ³n de sus propiedades y del comportamiento de sus agentes autorizados.
                   </p>
                 </div>
               </section>
@@ -106,11 +106,11 @@ export default async function AcceptPoliciesPage({
                 </div>
                 <div className="prose prose-slate prose-sm max-w-none text-slate-600 leading-relaxed">
                   <p>
-                    RaicesPilot utiliza algoritmos de IA para automatizar la atención. El Usuario acepta que:
+                    RaicesPilot utiliza algoritmos de IA para automatizar la atenciÃ³n. El Usuario acepta que:
                   </p>
                   <ul className="list-disc pl-5 space-y-2">
-                    <li>La IA debe ser supervisada periódicamente por un operador humano.</li>
-                    <li>El scraping de propiedades (PropertySource) debe realizarse sobre fuentes públicas donde el usuario tenga permisos o sea el propietario de la información.</li>
+                    <li>La IA debe ser supervisada periÃ³dicamente por un operador humano.</li>
+                    <li>El scraping de propiedades (PropertySource) debe realizarse sobre fuentes pÃºblicas donde el usuario tenga permisos o sea el propietario de la informaciÃ³n.</li>
                     <li>La plataforma no se hace responsable por alucinaciones de la IA o respuestas incorrectas generadas por modelos de terceros.</li>
                   </ul>
                 </div>
@@ -120,11 +120,11 @@ export default async function AcceptPoliciesPage({
               <section className="space-y-4">
                 <div className="flex items-center gap-3 text-slate-900">
                   <Lock className="h-6 w-6 text-brand-600" />
-                  <h2 className="text-xl font-bold">3. Privacidad y Auditoría de Plataforma</h2>
+                  <h2 className="text-xl font-bold">3. Privacidad y AuditorÃ­a de Plataforma</h2>
                 </div>
                 <div className="prose prose-slate prose-sm max-w-none text-slate-600 leading-relaxed">
                   <p>
-                    <strong>Acceso Administrativo:</strong> El Superadmin de RaicesPilot se reserva el derecho de acceder a los workspaces para tareas de mantenimiento, soporte técnico y auditoría de seguridad.
+                    <strong>Acceso Administrativo:</strong> El Superadmin de RaicesPilot se reserva el derecho de acceder a los workspaces para tareas de mantenimiento, soporte tÃ©cnico y auditorÃ­a de seguridad.
                   </p>
                   <p>
                     <strong>Cero Mutaciones sin Aviso:</strong> Los datos operativos de la inmobiliaria son propiedad del cliente. RaicesPilot garantiza el aislamiento de datos entre organizaciones.
@@ -140,7 +140,7 @@ export default async function AcceptPoliciesPage({
                 </div>
                 <div className="prose prose-slate prose-sm max-w-none text-slate-600 leading-relaxed">
                   <p>
-                    El uso de la integración de WhatsApp está sujeto a las políticas comerciales de Meta. El bloqueo de números por parte de Meta debido a malas prácticas del usuario no es responsabilidad de RaicesPilot.
+                    El uso de la integraciÃ³n de WhatsApp estÃ¡ sujeto a las polÃ­ticas comerciales de Meta. El bloqueo de nÃºmeros por parte de Meta debido a malas prÃ¡cticas del usuario no es responsabilidad de RaicesPilot.
                   </p>
                 </div>
               </section>
@@ -153,26 +153,26 @@ export default async function AcceptPoliciesPage({
                 </div>
                 <div className="prose prose-slate prose-sm max-w-none text-slate-600 leading-relaxed">
                   <p>
-                    Todo el código fuente, algoritmos, diseños de interfaz, logotipos y estructuras de datos de RaicesPilot son propiedad exclusiva del desarrollador/propietario de la plataforma. 
+                    Todo el cÃ³digo fuente, algoritmos, diseÃ±os de interfaz, logotipos y estructuras de datos de RaicesPilot son propiedad exclusiva del desarrollador/propietario de la plataforma. 
                   </p>
                   <p>
-                    Queda estrictamente prohibido cualquier intento de ingeniería inversa, copia parcial o total del código, o extracción de datos para el entrenamiento de modelos competitivos externos. La licencia de uso es personal, intransferible y revocable en caso de violación de estos términos.
+                    Queda estrictamente prohibido cualquier intento de ingenierÃ­a inversa, copia parcial o total del cÃ³digo, o extracciÃ³n de datos para el entrenamiento de modelos competitivos externos. La licencia de uso es personal, intransferible y revocable en caso de violaciÃ³n de estos tÃ©rminos.
                   </p>
                 </div>
               </section>
 
-              {/* Section 6: Limitación de Responsabilidad */}
+              {/* Section 6: LimitaciÃ³n de Responsabilidad */}
               <section className="space-y-4">
                 <div className="flex items-center gap-3 text-slate-900">
                   <ShieldCheck className="h-6 w-6 text-brand-600" />
-                  <h2 className="text-xl font-bold">6. Garantías y Responsabilidad</h2>
+                  <h2 className="text-xl font-bold">6. GarantÃ­as y Responsabilidad</h2>
                 </div>
                 <div className="prose prose-slate prose-sm max-w-none text-slate-600 leading-relaxed">
                   <p>
                     RaicesPilot se esfuerza por mantener un tiempo de actividad (uptime) del 99.9%, pero no garantiza la disponibilidad ininterrumpida ante fallos de proveedores externos (Railway, OpenAI, WhatsApp). 
                   </p>
                   <p>
-                    En ningún caso la plataforma será responsable por lucro cesante o pérdidas comerciales derivadas del uso o imposibilidad de uso del software.
+                    En ningÃºn caso la plataforma serÃ¡ responsable por lucro cesante o pÃ©rdidas comerciales derivadas del uso o imposibilidad de uso del software.
                   </p>
                 </div>
               </section>
@@ -184,7 +184,7 @@ export default async function AcceptPoliciesPage({
             <div className="mb-6 flex items-start gap-3 p-4 bg-brand-50 rounded-2xl border border-brand-100">
                <ShieldCheck className="h-5 w-5 text-brand-600 mt-0.5" />
                <p className="text-xs text-brand-900 leading-relaxed">
-                 Al hacer clic en "Aceptar y Entrar", confirmás que has leído íntegramente las políticas de servicio, privacidad, propiedad intelectual y uso de IA. Tu aceptación quedará registrada con marca de tiempo inmutable.
+                 Al hacer clic en "Aceptar y Entrar", confirmÃ¡s que has leÃ­do Ã­ntegramente las polÃ­ticas de servicio, privacidad, propiedad intelectual y uso de IA. Tu aceptaciÃ³n quedarÃ¡ registrada con marca de tiempo inmutable.
                </p>
             </div>
 

@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { prisma } from "@/server/db/prisma";
 import { readLeadCommercialSignals } from "@/modules/leads/commercial-signals";
@@ -57,9 +57,9 @@ export async function listOrganizationLeads(
       phone: lead.phone ?? "",
       status: lead.status,
       source: lead.source ?? "Ingreso manual",
-      notes: signals.notes || "Lead listo para calificación.",
+      notes: signals.notes || "Lead listo para calificaciÃ³n.",
       interestLabel: lead.interestLabel ?? "Nueva consulta",
-      budgetLabel: lead.budgetLabel ?? "Pendiente de calificación",
+      budgetLabel: lead.budgetLabel ?? "Pendiente de calificaciÃ³n",
       ownerName: lead.owner?.fullName ?? "Sin asignar",
       propertyId: lead.propertyId ?? undefined,
       propertyTitle: lead.property?.title ?? "Sin propiedad vinculada",
@@ -155,8 +155,8 @@ export async function getLeadDetail(
       id: `${lead.id}_created`,
       title: "Lead creado",
       description: lead.source
-        ? `Lead ingresó al CRM desde ${lead.source}.`
-        : "Lead ingresó al CRM y está listo para calificación.",
+        ? `Lead ingresÃ³ al CRM desde ${lead.source}.`
+        : "Lead ingresÃ³ al CRM y estÃ¡ listo para calificaciÃ³n.",
       happenedAt: lead.createdAt.toISOString(),
     },
     ...(lead.updatedAt.getTime() !== lead.createdAt.getTime()
@@ -174,7 +174,7 @@ export async function getLeadDetail(
           {
             id: `${lead.id}_property`,
             title: "Propiedad vinculada",
-            description: `El lead está vinculado a ${lead.property.title}.`,
+            description: `El lead estÃ¡ vinculado a ${lead.property.title}.`,
             happenedAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
           },
         ]
@@ -200,9 +200,9 @@ export async function getLeadDetail(
     ? {
         id: conversationContextSource.id,
         status: conversationContextSource.status,
-        subject: conversationContextSource.subject ?? "Conversación sobre propiedad",
+        subject: conversationContextSource.subject ?? "ConversaciÃ³n sobre propiedad",
         participantName: conversationContextSource.participantName ?? "Participante desconocido",
-        participantPhone: conversationContextSource.participantPhone ?? "Teléfono pendiente",
+        participantPhone: conversationContextSource.participantPhone ?? "TelÃ©fono pendiente",
         followUpActive: conversationContextSource.followUpActive,
         followUpCategory: conversationContextSource.followUpCategory,
         followUpReason: conversationContextSource.followUpReason,
@@ -230,9 +230,9 @@ export async function getLeadDetail(
     phone: lead.phone ?? "",
     status: lead.status,
     source: lead.source ?? "Ingreso manual",
-    notes: signals.notes || "Lead listo para calificación.",
+    notes: signals.notes || "Lead listo para calificaciÃ³n.",
     interestLabel: lead.interestLabel ?? "Nueva consulta",
-    budgetLabel: lead.budgetLabel ?? "Pendiente de calificación",
+    budgetLabel: lead.budgetLabel ?? "Pendiente de calificaciÃ³n",
     ownerName: lead.owner?.fullName ?? "Sin asignar",
     assignedUserEmail: lead.owner?.email ?? "Sin email asignado",
     propertyId: lead.propertyId ?? undefined,

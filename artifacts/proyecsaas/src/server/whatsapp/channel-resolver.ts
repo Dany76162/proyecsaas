@@ -1,4 +1,4 @@
-import {
+﻿import {
   Prisma,
   PrismaClient,
 } from "@prisma/client";
@@ -205,19 +205,19 @@ export async function resolveLegacyFallback(
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PLATFORM ROUTING — Option A
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PLATFORM ROUTING â€” Option A
 // Each org gets a WhatsApp link with a routing code: [ref:orgslug]
 // When a lead sends the first message, the system extracts the slug and routes
 // to the correct org. Subsequent messages are routed by existing conversation.
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ROUTING_CODE_REGEX = /^\[ref:([a-z0-9_-]+)\]\s*/i;
 
 /**
  * Extracts the org slug from the routing code at the start of a message.
  * Returns null if no routing code is present.
- * Example: "[ref:raices] Hola, me interesa una propiedad" → "raices"
+ * Example: "[ref:raices] Hola, me interesa una propiedad" â†’ "raices"
  */
 export function extractOrgSlugFromMessage(text: string): string | null {
   const match = text.trim().match(ROUTING_CODE_REGEX);
@@ -226,7 +226,7 @@ export function extractOrgSlugFromMessage(text: string): string | null {
 
 /**
  * Strips the routing code from a message body so the AI sees clean text.
- * Example: "[ref:raices] Hola, me interesa" → "Hola, me interesa"
+ * Example: "[ref:raices] Hola, me interesa" â†’ "Hola, me interesa"
  */
 export function stripRoutingCodeFromMessage(text: string): string {
   return text.trim().replace(ROUTING_CODE_REGEX, "").trim();

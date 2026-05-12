@@ -1,4 +1,4 @@
-import { getGlobalSettings, getDelegatedAdmins } from "./actions/settings-actions";
+﻿import { getGlobalSettings, getDelegatedAdmins } from "./actions/settings-actions";
 import PlatformSettingsUI from "./PlatformSettingsUI";
 
 export default async function PlatformSettingsPage() {

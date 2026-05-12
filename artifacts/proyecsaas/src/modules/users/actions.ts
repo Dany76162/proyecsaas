@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { MembershipRole } from "@prisma/client";
 
@@ -109,7 +109,7 @@ export async function updateMemberProfileAction(
   if (!parsed.success) {
     return {
       success: false,
-      message: "Datos inválidos.",
+      message: "Datos invÃ¡lidos.",
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -123,7 +123,7 @@ export async function updateMemberProfileAction(
   });
 
   if (!targetMembership) {
-    return { success: false, message: "Usuario no encontrado en esta organización." };
+    return { success: false, message: "Usuario no encontrado en esta organizaciÃ³n." };
   }
 
   try {
@@ -145,9 +145,9 @@ export async function updateMemberProfileAction(
   } catch (error: unknown) {
     const prismaError = error as { code?: string };
     if (prismaError?.code === "P2002") {
-      return { success: false, message: "El email ya está en uso por otro usuario." };
+      return { success: false, message: "El email ya estÃ¡ en uso por otro usuario." };
     }
     console.error("[updateMemberProfileAction] Failed:", error);
-    return { success: false, message: "Error al actualizar. Intentá nuevamente." };
+    return { success: false, message: "Error al actualizar. IntentÃ¡ nuevamente." };
   }
 }

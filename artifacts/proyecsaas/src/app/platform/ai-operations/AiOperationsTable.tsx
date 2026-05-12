@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import Link from "next/link";
@@ -56,13 +56,13 @@ export function AiOperationsTable({ data }: { data: TenantAiHealth[] }) {
           icon={AlertCircle}
           title="Derivaciones atascadas"
           value={stats.atascados}
-          trend={{ value: "Atascado", label: "fricción", type: "negative" }}
+          trend={{ value: "Atascado", label: "fricciÃ³n", type: "negative" }}
         />
         <MetricCard
           icon={Clock}
-          title="Configuración incompleta"
+          title="ConfiguraciÃ³n incompleta"
           value={stats.incomplete}
-          trend={{ value: "Pendiente", label: "configuración", type: "neutral" }}
+          trend={{ value: "Pendiente", label: "configuraciÃ³n", type: "neutral" }}
         />
       </div>
 
@@ -72,8 +72,8 @@ export function AiOperationsTable({ data }: { data: TenantAiHealth[] }) {
             <TableRow>
               <TableHead className="px-6">Inmobiliaria</TableHead>
               <TableHead className="text-center">Salud IA</TableHead>
-              <TableHead className="text-center">Conexión</TableHead>
-              <TableHead className="text-right">Tráfico (7d)</TableHead>
+              <TableHead className="text-center">ConexiÃ³n</TableHead>
+              <TableHead className="text-right">TrÃ¡fico (7d)</TableHead>
               <TableHead className="text-right">Leads</TableHead>
               <TableHead className="text-right">Derivaciones</TableHead>
               <TableHead className="text-right px-6">Acciones</TableHead>
@@ -186,7 +186,7 @@ function HealthBadge({ status }: { status: TenantAiHealthStatus }) {
       return (
         <Badge variant="danger">
           <AlertCircle className="mr-1.5 h-3 w-3" />
-          Fricción
+          FricciÃ³n
         </Badge>
       );
 
@@ -202,7 +202,7 @@ function HealthBadge({ status }: { status: TenantAiHealthStatus }) {
       return (
         <Badge variant="neutral">
           <XCircle className="mr-1.5 h-3 w-3" />
-          Sin tráfico
+          Sin trÃ¡fico
         </Badge>
       );
 

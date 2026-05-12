@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { UserPlus, CalendarCheck, MessageCircle, Bot, Loader2 } from "lucide-react";
@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/table";
 
 const PERIODS: { value: ImpactPeriod; label: string }[] = [
-  { value: "7d", label: "7 días" },
+  { value: "7d", label: "7 dÃ­as" },
   { value: "30d", label: "Este mes" },
-  { value: "365d", label: "Este año" },
+  { value: "365d", label: "Este aÃ±o" },
 ];
 
 function AgentBadge({ status }: { status: "ACTIVE" | "PAUSED" | "DRAFT" | null }) {
@@ -174,7 +174,7 @@ export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
                   </div>
                 </TableCell>
                 <TableCell className="px-4 py-4 text-xs text-slate-500 font-mono">
-                  {row.whatsappPhone ?? "—"}
+                  {row.whatsappPhone ?? "â€”"}
                 </TableCell>
               </TableRow>
             ))}

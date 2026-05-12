@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import { listOrganizationsForPlatform, listPlatformPlans } from "@/modules/platform/service";
 import { OrgTable } from "./OrgTable";

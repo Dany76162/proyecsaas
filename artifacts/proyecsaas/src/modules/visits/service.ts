@@ -1,4 +1,4 @@
-import { LeadStatus, NotificationType, VisitStatus, Prisma, PrismaClient } from "@prisma/client";
+﻿import { LeadStatus, NotificationType, VisitStatus, Prisma, PrismaClient } from "@prisma/client";
 
 import type { VisitListItem, VisitSummary } from "@/modules/visits/types";
 
@@ -198,7 +198,7 @@ export async function createVisitForAutomation(
         createdById: ownerId,
         scheduledAt,
         status: params.status ?? VisitStatus.PENDING,
-        notes: params.notes ?? "Visita creada desde el flujo de automatización.",
+        notes: params.notes ?? "Visita creada desde el flujo de automatizaciÃ³n.",
       },
     });
 

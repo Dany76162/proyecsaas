@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { Search, Send, User, Clock, Check, MoreVertical, ArrowLeft } from "lucide-react";
@@ -53,7 +53,7 @@ export default function SupportChatUI({
         direction: "OUTBOUND" as const,
         body: text,
         sentAt: new Date(),
-        senderName: "Tú",
+        senderName: "TÃº",
     };
     setMessages(prev => [...prev, optimisticMsg]);
     setTimeout(() => scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight), 50);
@@ -116,7 +116,7 @@ export default function SupportChatUI({
             {/* Header del Chat */}
             <header className="flex h-16 items-center justify-between border-b border-slate-100 px-4 sm:px-6 shrink-0 bg-white/80 backdrop-blur-md z-10">
               <div className="flex items-center gap-3">
-                {/* Back button — mobile only */}
+                {/* Back button â€” mobile only */}
                 <button
                   type="button"
                   onClick={() => setMobileShowChat(false)}
@@ -129,7 +129,7 @@ export default function SupportChatUI({
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">{activeConv?.participantName}</h3>
-                  <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{activeConv?.participantPhone} · EN LÍNEA</p>
+                  <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{activeConv?.participantPhone} Â· EN LÃNEA</p>
                 </div>
               </div>
               <button className="rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition">
@@ -146,7 +146,7 @@ export default function SupportChatUI({
               {isFetchingMsgs && (
                   <div className="flex items-center justify-center py-10 opacity-50">
                       <Clock className="h-5 w-5 animate-spin mr-2" />
-                      <span className="text-xs font-bold text-slate-400">Cargando conversación...</span>
+                      <span className="text-xs font-bold text-slate-400">Cargando conversaciÃ³n...</span>
                   </div>
               )}
               {messages.map((msg) => (
@@ -180,7 +180,7 @@ export default function SupportChatUI({
                   type="text" 
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Escribe tu respuesta aquí..." 
+                  placeholder="Escribe tu respuesta aquÃ­..." 
                   className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-medium outline-none focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all"
                 />
                 <button 
@@ -197,8 +197,8 @@ export default function SupportChatUI({
              <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center mb-6">
                 <Clock className="h-10 w-10 text-slate-200" />
              </div>
-             <h3 className="text-base font-bold text-slate-900">Bandeja de Entrada Vacía</h3>
-             <p className="mt-2 text-xs text-slate-400 max-w-xs">Selecciona una conversación de la izquierda para comenzar a responder.</p>
+             <h3 className="text-base font-bold text-slate-900">Bandeja de Entrada VacÃ­a</h3>
+             <p className="mt-2 text-xs text-slate-400 max-w-xs">Selecciona una conversaciÃ³n de la izquierda para comenzar a responder.</p>
           </div>
         )}
       </main>

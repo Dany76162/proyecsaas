@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -48,7 +48,7 @@ export function TrashOrganizationButton({
         return;
       }
 
-      setError(result.message ?? "No se pudo completar la acción.");
+      setError(result.message ?? "No se pudo completar la acciÃ³n.");
     });
   }
 
@@ -93,15 +93,15 @@ export function TrashOrganizationButton({
 
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-bold text-slate-900">
-                {isTrashed ? "Restaurar organización" : "Mover a papelera"}
+                {isTrashed ? "Restaurar organizaciÃ³n" : "Mover a papelera"}
               </h3>
               <p className="mt-1 text-xs leading-5 text-slate-600">
                 {isTrashed
-                  ? `La inmobiliaria "${orgName}" volverá a estar disponible en el panel y recuperará su acceso operativo.`
-                  : `La inmobiliaria "${orgName}" saldrá de operación normal y podrá restaurarse más adelante desde la papelera.`}
+                  ? `La inmobiliaria "${orgName}" volverÃ¡ a estar disponible en el panel y recuperarÃ¡ su acceso operativo.`
+                  : `La inmobiliaria "${orgName}" saldrÃ¡ de operaciÃ³n normal y podrÃ¡ restaurarse mÃ¡s adelante desde la papelera.`}
               </p>
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                Para confirmar, escribí el slug exacto:
+                Para confirmar, escribÃ­ el slug exacto:
                 <span className="ml-1 font-semibold text-slate-700">{orgSlug}</span>
               </p>
             </div>

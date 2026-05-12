@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Shared types for the property sync system.
  */
 

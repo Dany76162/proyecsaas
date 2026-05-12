@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, PropertyStatus } from "@prisma/client";
+﻿import { Prisma, PrismaClient, PropertyStatus } from "@prisma/client";
 
 import type { LeadExtractedPreferences } from "@/modules/leads/commercial-signals";
 

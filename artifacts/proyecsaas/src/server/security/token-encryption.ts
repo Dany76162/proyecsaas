@@ -1,12 +1,12 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 
 // AES-256-GCM authenticated encryption for WhatsApp access tokens.
 // Stored format: "enc:v1:<iv-base64url>:<ciphertext+authTag-base64url>"
-// Legacy (plaintext) tokens — those without the prefix — are passed through
+// Legacy (plaintext) tokens â€” those without the prefix â€” are passed through
 // transparently so existing DB rows keep working without a migration.
 
 const ALGORITHM = "aes-256-gcm" as const;
-const IV_BYTES = 12; // 96-bit IV — recommended for GCM
+const IV_BYTES = 12; // 96-bit IV â€” recommended for GCM
 const AUTH_TAG_BYTES = 16;
 const PREFIX = "enc:v1:";
 
@@ -43,7 +43,7 @@ export function encryptToken(plaintext: string): string {
 
 export function decryptToken(stored: string): string {
   if (!stored.startsWith(PREFIX)) {
-    // Legacy plaintext — return as-is for backward compatibility.
+    // Legacy plaintext â€” return as-is for backward compatibility.
     return stored;
   }
 

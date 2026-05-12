@@ -1,4 +1,4 @@
-import { listAgentContentDrafts } from "@/modules/agents/service";
+﻿import { listAgentContentDrafts } from "@/modules/agents/service";
 
 const DRAFT_STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
@@ -19,7 +19,7 @@ export default async function PlatformAgentsContentPage() {
       <div className="grid gap-4">
         {drafts.length === 0 ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
-            No hay borradores disponibles todavía.
+            No hay borradores disponibles todavÃ­a.
           </div>
         ) : (
           drafts.map((draft) => (
@@ -27,7 +27,7 @@ export default async function PlatformAgentsContentPage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-slate-500">{draft.platform}</p>
-                  <h2 className="text-xl font-semibold text-slate-900">{draft.title ?? "Título no proporcionado"}</h2>
+                  <h2 className="text-xl font-semibold text-slate-900">{draft.title ?? "TÃ­tulo no proporcionado"}</h2>
                 </div>
                 <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-600">
                   {DRAFT_STATUS_LABELS[draft.status] || draft.status}

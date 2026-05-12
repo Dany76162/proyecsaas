@@ -1,4 +1,4 @@
-type AppCardProps = {
+﻿type AppCardProps = {
   title: string;
   description: string;
 };

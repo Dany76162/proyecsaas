@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 "use client";
 
@@ -100,7 +100,7 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
 
   return (
     <div className="space-y-5">
-      {/* ── Image grid ─────────────────────────────────────── */}
+      {/* â”€â”€ Image grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {images.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {images.map((img) => (
@@ -151,10 +151,10 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
           ))}
         </div>
       ) : (
-        <p className="text-sm text-slate-400">Sin imágenes todavía. Subí la primera desde abajo.</p>
+        <p className="text-sm text-slate-400">Sin imÃ¡genes todavÃ­a. SubÃ­ la primera desde abajo.</p>
       )}
 
-      {/* ── Tab switcher ───────────────────────────────────── */}
+      {/* â”€â”€ Tab switcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 w-fit">
         <button
           type="button"
@@ -180,7 +180,7 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
         </button>
       </div>
 
-      {/* ── Upload tab ─────────────────────────────────────── */}
+      {/* â”€â”€ Upload tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {activeTab === "upload" && (
         <div className="space-y-3">
           <CldUploadWidget
@@ -203,22 +203,22 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
                 <span className="text-sm font-medium text-slate-600">
-                  Hacé click para seleccionar imágenes
+                  HacÃ© click para seleccionar imÃ¡genes
                 </span>
                 <span className="text-xs text-slate-400">
-                  JPG, PNG, WEBP · máx. 4 MB por imagen · hasta 8 a la vez
+                  JPG, PNG, WEBP Â· mÃ¡x. 4 MB por imagen Â· hasta 8 a la vez
                 </span>
               </button>
             )}
           </CldUploadWidget>
           <p className="text-xs text-slate-400">
-            Funciona desde PC y celular. Las imágenes se suben al CDN de Cloudinary y quedan vinculadas
+            Funciona desde PC y celular. Las imÃ¡genes se suben al CDN de Cloudinary y quedan vinculadas
             a esta propiedad.
           </p>
         </div>
       )}
 
-      {/* ── URL / Drive tab ────────────────────────────────── */}
+      {/* â”€â”€ URL / Drive tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {activeTab === "url" && (
         <div className="space-y-3">
           {urlError && (
@@ -236,13 +236,13 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="https://ejemplo.com/foto.jpg  ó  https://drive.google.com/file/d/…"
+                placeholder="https://ejemplo.com/foto.jpg  Ã³  https://drive.google.com/file/d/â€¦"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div className="w-full sm:w-40">
               <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                Descripción (opcional)
+                DescripciÃ³n (opcional)
               </label>
               <input
                 type="text"
@@ -257,17 +257,17 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
               disabled={isBusy || !urlInput.trim()}
               className="shrink-0 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50"
             >
-              {isPendingUrl ? "Agregando…" : "Agregar"}
+              {isPendingUrl ? "Agregandoâ€¦" : "Agregar"}
             </button>
           </form>
           {urlInput && isDriveUrl(urlInput) && (
             <p className="text-xs text-emerald-600">
-              Link de Google Drive detectado — se convertirá automáticamente a URL directa.
+              Link de Google Drive detectado â€” se convertirÃ¡ automÃ¡ticamente a URL directa.
               El archivo debe estar compartido como "Cualquiera con el enlace".
             </p>
           )}
           <p className="text-xs text-slate-400">
-            Pegá la URL de una imagen alojada externamente, o un link compartido de Google Drive.
+            PegÃ¡ la URL de una imagen alojada externamente, o un link compartido de Google Drive.
           </p>
         </div>
       )}

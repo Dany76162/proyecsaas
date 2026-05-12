@@ -1,4 +1,4 @@
-process.env.NEXT_RUNTIME = "nodejs";
+﻿process.env.NEXT_RUNTIME = "nodejs";
 
 import { validateWorkerRuntimeConfig } from "@/server/config/runtime";
 import { createConversationWorker } from "@/server/workers/conversation-worker";

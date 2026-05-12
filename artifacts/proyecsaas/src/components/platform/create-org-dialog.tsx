@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -76,7 +76,7 @@ export function CreateOrgDialog() {
   const buildWhatsAppUrl = () => {
     if (!inviteUrl) return "#";
     const phone = ownerPhone.replace(/\D/g, "");
-    const text = `¡Hola! Te envío el acceso a tu panel de gestión en Raíces Pilot.\n\nIngresá con este link y creá tu contraseña:\n${inviteUrl}\n\nEl link es válido por 7 días.`;
+    const text = `Â¡Hola! Te envÃ­o el acceso a tu panel de gestiÃ³n en RaÃ­ces Pilot.\n\nIngresÃ¡ con este link y creÃ¡ tu contraseÃ±a:\n${inviteUrl}\n\nEl link es vÃ¡lido por 7 dÃ­as.`;
     const encoded = encodeURIComponent(text);
     return phone ? `https://wa.me/${phone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
   };
@@ -99,12 +99,12 @@ export function CreateOrgDialog() {
             </div>
             <DialogTitle>Nueva Inmobiliaria</DialogTitle>
             <DialogDescription>
-              Se genera el acceso automáticamente y el link de invitación.
+              Se genera el acceso automÃ¡ticamente y el link de invitaciÃ³n.
             </DialogDescription>
           </DialogHeader>
 
           {!inviteUrl ? (
-            /* ── Formulario ── */
+            /* â”€â”€ Formulario â”€â”€ */
             <form onSubmit={handleSubmit} className="space-y-4 py-2">
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700">
@@ -114,7 +114,7 @@ export function CreateOrgDialog() {
                   required
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
-                  placeholder="Ej: Raíces Pilar"
+                  placeholder="Ej: RaÃ­ces Pilar"
                 />
               </div>
 
@@ -126,9 +126,9 @@ export function CreateOrgDialog() {
                 <Input
                   value={ownerName}
                   onChange={(e) => setOwnerName(e.target.value)}
-                  placeholder="Ej: Martín García"
+                  placeholder="Ej: MartÃ­n GarcÃ­a"
                 />
-                <p className="text-[11px] text-slate-400">Nombre con el que se registrará el acceso.</p>
+                <p className="text-[11px] text-slate-400">Nombre con el que se registrarÃ¡ el acceso.</p>
               </div>
 
               <div className="space-y-1.5">
@@ -142,7 +142,7 @@ export function CreateOrgDialog() {
                   onChange={(e) => setOwnerEmail(e.target.value)}
                   placeholder="titular@ejemplo.com"
                 />
-                <p className="text-[11px] text-slate-400">El titular usará este email para ingresar.</p>
+                <p className="text-[11px] text-slate-400">El titular usarÃ¡ este email para ingresar.</p>
               </div>
 
               <div className="space-y-1.5">
@@ -160,7 +160,7 @@ export function CreateOrgDialog() {
                     className="pl-7"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400">Código de país + número. Ej: 549341XXXXXXX</p>
+                <p className="text-[11px] text-slate-400">CÃ³digo de paÃ­s + nÃºmero. Ej: 549341XXXXXXX</p>
               </div>
 
               {error && (
@@ -182,14 +182,14 @@ export function CreateOrgDialog() {
               </DialogFooter>
             </form>
           ) : (
-            /* ── Resultado: link listo ── */
+            /* â”€â”€ Resultado: link listo â”€â”€ */
             <div className="space-y-5 py-2">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <p className="text-sm font-bold text-emerald-800">
-                  ¡Listo! Inmobiliaria creada.
+                  Â¡Listo! Inmobiliaria creada.
                 </p>
                 <p className="mt-0.5 text-xs text-emerald-700">
-                  Válido por 7 días. El titular crea su contraseña al entrar.
+                  VÃ¡lido por 7 dÃ­as. El titular crea su contraseÃ±a al entrar.
                 </p>
               </div>
 

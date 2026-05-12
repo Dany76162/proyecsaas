@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useTransition } from "react";
 import {
@@ -18,7 +18,7 @@ import {
 } from "./actions/settings-actions";
 import { cn } from "@/lib/utils";
 
-// ─── Editable Setting Row ────────────────────────────────────────────────────
+// â”€â”€â”€ Editable Setting Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function EditableSetting({
   label,
@@ -93,7 +93,7 @@ function EditableSetting({
   );
 }
 
-// ─── Status Row ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Status Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatusRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
@@ -115,7 +115,7 @@ function StatusRow({ label, value, ok }: { label: string; value: string; ok: boo
   );
 }
 
-// ─── Delegated Admin Section ─────────────────────────────────────────────────
+// â”€â”€â”€ Delegated Admin Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function DelegatedAdminSection({
   initial,
@@ -139,7 +139,7 @@ function DelegatedAdminSection({
       if (result.success) {
         setEmail("");
         showMessage("success", "Acceso otorgado correctamente");
-        // Refresh list — page revalidation will update on next navigation
+        // Refresh list â€” page revalidation will update on next navigation
         // For immediate UI update, we optimistically add a placeholder
         setAdmins((prev) => [...prev, { id: "_pending", fullName: email, email }]);
       } else {
@@ -164,10 +164,10 @@ function DelegatedAdminSection({
     <div className="space-y-5">
       <div>
         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-tight">
-          Administración Delegada
+          AdministraciÃ³n Delegada
         </h3>
         <p className="text-xs text-slate-500 mt-0.5">
-          Otorgá acceso temporal al panel a otro usuario registrado. Podés revocarlo en cualquier momento.
+          OtorgÃ¡ acceso temporal al panel a otro usuario registrado. PodÃ©s revocarlo en cualquier momento.
         </p>
       </div>
 
@@ -246,7 +246,7 @@ function DelegatedAdminSection({
   );
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface Settings {
   waContact: string;
@@ -277,11 +277,11 @@ export default function PlatformSettingsUI({
           </span>
         </div>
         <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-950">
-          Panel de Configuración
+          Panel de ConfiguraciÃ³n
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
-          Gestioná los parámetros maestros de Raíces Pilot en tiempo real. Estos valores afectan
-          directamente la facturación, los links de soporte y las comunicaciones oficiales.
+          GestionÃ¡ los parÃ¡metros maestros de RaÃ­ces Pilot en tiempo real. Estos valores afectan
+          directamente la facturaciÃ³n, los links de soporte y las comunicaciones oficiales.
         </p>
       </div>
 
@@ -296,7 +296,7 @@ export default function PlatformSettingsUI({
               label="Nombre"
               settingKey="OPERATOR_NAME"
               initialValue={settings.operatorName}
-              description="Nombre del administrador o dueño de la plataforma."
+              description="Nombre del administrador o dueÃ±o de la plataforma."
               placeholder="Ej: Carlos"
             />
             <EditableSetting
@@ -304,45 +304,45 @@ export default function PlatformSettingsUI({
               settingKey="OPERATOR_LASTNAME"
               initialValue={settings.operatorLastName}
               description="Apellido del administrador."
-              placeholder="Ej: García"
+              placeholder="Ej: GarcÃ­a"
             />
             <EditableSetting
               label="CUID / DNI"
               settingKey="OPERATOR_CUID"
               initialValue={settings.operatorCuid}
-              description="Clave única de identificación o DNI del responsable de la plataforma."
+              description="Clave Ãºnica de identificaciÃ³n o DNI del responsable de la plataforma."
               placeholder="Ej: 30123456"
             />
             <EditableSetting
-              label="Razón Social (opcional)"
+              label="RazÃ³n Social (opcional)"
               settingKey="OPERATOR_COMPANY"
               initialValue={settings.operatorCompany}
               description="Nombre comercial o empresa bajo la que opera la plataforma."
-              placeholder="Ej: Raíces Pilot S.A.S."
+              placeholder="Ej: RaÃ­ces Pilot S.A.S."
             />
           </section>
 
-          {/* 2. Parámetros Operativos */}
+          {/* 2. ParÃ¡metros Operativos */}
           <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">Parámetros Operativos</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">ParÃ¡metros Operativos</h2>
 
             <EditableSetting
-              label="Número oficial de WhatsApp (plataforma)"
+              label="NÃºmero oficial de WhatsApp (plataforma)"
               settingKey="PLATFORM_WHATSAPP_NUMBER"
               initialValue={settings.waContact}
-              description="Número de WhatsApp que los clientes de las inmobiliarias usan para contactarse. Es el número visible en el panel de cada inmobiliaria. Formato internacional sin + ni espacios. Ej: 5491161630205"
+              description="NÃºmero de WhatsApp que los clientes de las inmobiliarias usan para contactarse. Es el nÃºmero visible en el panel de cada inmobiliaria. Formato internacional sin + ni espacios. Ej: 5491161630205"
               placeholder="Ej: 5491161630205"
             />
             <EditableSetting
               label="Precio Plan Base (ARS)"
               settingKey="BASE_PLAN_PRICE_ARS"
               initialValue={settings.basePrice}
-              description="Valor mensual de la suscripción. Afecta los nuevos links de pago generados."
+              description="Valor mensual de la suscripciÃ³n. Afecta los nuevos links de pago generados."
               placeholder="Ej: 45000"
             />
           </section>
 
-          {/* 3. Administración Delegada */}
+          {/* 3. AdministraciÃ³n Delegada */}
           <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
             <DelegatedAdminSection initial={delegatedAdmins} />
           </section>
@@ -373,7 +373,7 @@ export default function PlatformSettingsUI({
               <p className="text-[11px] leading-relaxed text-slate-400">
                 <span className="text-white font-bold">Nota operativa:</span> Los cambios se
                 persisten en PostgreSQL en tiempo real. Los precios impactan en las renovaciones
-                del próximo ciclo.
+                del prÃ³ximo ciclo.
               </p>
             </div>
           </section>

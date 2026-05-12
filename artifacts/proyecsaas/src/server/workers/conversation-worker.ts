@@ -1,4 +1,4 @@
-import {
+﻿import {
   ConversationStatus,
   FollowUpCategory,
   LeadStatus,
@@ -11,7 +11,7 @@ import {
 import { createHash } from "node:crypto";
 import { Job, Worker } from "bullmq";
 
-// ⚠️ IMPORTANTE: usar prisma-worker (NO prisma normal)
+// âš ï¸ IMPORTANTE: usar prisma-worker (NO prisma normal)
 import { prismaWorker as prisma } from "@/server/db/prisma-worker";
 
 import { generateAutomationDecision } from "@/modules/automations/decision-service";
@@ -161,7 +161,7 @@ export async function processWhatsAppInboundJob(
     throw new ConversationWorkerError("missing-phone", "Participant phone is missing.");
   }
 
-  // Solo procesamos texto por ahora en automatización
+  // Solo procesamos texto por ahora en automatizaciÃ³n
   if (data.message.type !== "text") {
     return { status: "ignored", reason: "unsupported-message-type" } as const;
   }
@@ -193,12 +193,12 @@ export async function processWhatsAppInboundJob(
     } else {
       throw new ConversationWorkerError(
         "missing-org",
-        `Cannot determine organization for phone ${participantPhone} — no routing code and no existing conversation.`,
+        `Cannot determine organization for phone ${participantPhone} â€” no routing code and no existing conversation.`,
       );
     }
   }
 
-  // 2. Persistencia atómica (Conversation + Inbound Message)
+  // 2. Persistencia atÃ³mica (Conversation + Inbound Message)
   let createdFirstLead = false;
 
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -294,7 +294,7 @@ export async function processWhatsAppInboundJob(
     });
   }
 
-  // 2.5 — Early return if an agent has taken manual control of this conversation
+  // 2.5 â€” Early return if an agent has taken manual control of this conversation
   if (result.conversation.isHumanControlled) {
     return { status: "ignored" as const, reason: "human-controlled" };
   }

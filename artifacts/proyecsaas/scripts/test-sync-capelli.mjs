@@ -1,5 +1,5 @@
 /**
- * Script de prueba funcional: sincronización de propiedades
+ * Script de prueba funcional: sincronizaciÃ³n de propiedades
  * Inmobiliaria: Alberto Capelli Propiedades (test_capelli_org_001)
  * Fuente: https://cappellapropiedades.com/propiedades/
  */
@@ -12,7 +12,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ORG_ID = "test_capelli_org_001";
 const SOURCE_URL = "https://cappellapropiedades.com/propiedades/";
 
-// ── 1. Fetch page content ──────────────────────────────────────────────────────
+// â”€â”€ 1. Fetch page content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function fetchPageContent(url) {
   console.log(`\n[FETCH] Fetching: ${url}`);
@@ -46,32 +46,32 @@ async function fetchPageContent(url) {
   return stripped;
 }
 
-// ── 2. Extract with AI ────────────────────────────────────────────────────────
+// â”€â”€ 2. Extract with AI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function extractPropertiesWithAI(pageContent, sourceUrl) {
   console.log("[AI] Calling OpenAI to extract properties...");
 
-  const prompt = `Analizá el siguiente contenido de texto extraído de un sitio web inmobiliario argentino.
-Extraé TODAS las propiedades que encuentres y devolvé un JSON array. Cada propiedad debe tener:
+  const prompt = `AnalizÃ¡ el siguiente contenido de texto extraÃ­do de un sitio web inmobiliario argentino.
+ExtraÃ© TODAS las propiedades que encuentres y devolvÃ© un JSON array. Cada propiedad debe tener:
 
 {
-  "title": "Descripción corta (ej: Departamento 2 ambientes en Palermo)",
-  "address": "Dirección si está disponible",
+  "title": "DescripciÃ³n corta (ej: Departamento 2 ambientes en Palermo)",
+  "address": "DirecciÃ³n si estÃ¡ disponible",
   "neighborhood": "Barrio",
   "city": "Ciudad",
   "propertyType": "Departamento | Casa | PH | Local | Oficina | Terreno | Cochera | Otro",
   "operationType": "Venta | Alquiler | Alquiler temporario",
   "priceCents": 12500000,
   "currency": "USD | ARS",
-  "bedrooms": número o null,
-  "bathrooms": número o null,
-  "surfaceM2": número en m2 o null,
-  "description": "Descripción corta de hasta 200 caracteres",
+  "bedrooms": nÃºmero o null,
+  "bathrooms": nÃºmero o null,
+  "surfaceM2": nÃºmero en m2 o null,
+  "description": "DescripciÃ³n corta de hasta 200 caracteres",
   "externalLink": "URL completa de la propiedad si hay un link directo"
 }
 
-Si no podés identificar propiedades claras, devolvé [].
-Devolvé SOLO el JSON array, sin texto adicional ni markdown.
+Si no podÃ©s identificar propiedades claras, devolvÃ© [].
+DevolvÃ© SOLO el JSON array, sin texto adicional ni markdown.
 
 URL de origen: ${sourceUrl}
 
@@ -115,7 +115,7 @@ ${pageContent}`;
   }
 }
 
-// ── 3. Insert into DB via REST (using node-postgres) ──────────────────────────
+// â”€â”€ 3. Insert into DB via REST (using node-postgres) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function insertProperties(properties) {
   // Use pg via require since it's a CommonJS package
@@ -221,11 +221,11 @@ async function insertProperties(properties) {
   return { created, updated, results };
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function main() {
   console.log("=".repeat(60));
-  console.log("PRUEBA FUNCIONAL — Alberto Capelli Propiedades");
+  console.log("PRUEBA FUNCIONAL â€” Alberto Capelli Propiedades");
   console.log("Fuente: " + SOURCE_URL);
   console.log("=".repeat(60));
 
@@ -233,13 +233,13 @@ async function main() {
     const pageContent = await fetchPageContent(SOURCE_URL);
 
     if (!pageContent || pageContent.length < 50) {
-      throw new Error("El sitio no devolvió contenido útil");
+      throw new Error("El sitio no devolviÃ³ contenido Ãºtil");
     }
 
     const properties = await extractPropertiesWithAI(pageContent, SOURCE_URL);
 
     if (properties.length === 0) {
-      console.log("[RESULT] No se encontraron propiedades en la página.");
+      console.log("[RESULT] No se encontraron propiedades en la pÃ¡gina.");
       return;
     }
 
@@ -254,7 +254,7 @@ async function main() {
       console.log(`\n${i + 1}. ${r.titulo}`);
       console.log(`   Tipo: ${r.tipo} | Precio: ${r.precio}`);
       console.log(`   Ciudad: ${r.ciudad} / Barrio: ${r.barrio}`);
-      console.log(`   Sup: ${r.m2}m² | Dorm: ${r.dorm}`);
+      console.log(`   Sup: ${r.m2}mÂ² | Dorm: ${r.dorm}`);
     });
 
   } catch (err) {

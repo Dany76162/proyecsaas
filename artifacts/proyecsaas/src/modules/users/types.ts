@@ -1,4 +1,4 @@
-import type { MembershipRole } from "@prisma/client";
+﻿import type { MembershipRole } from "@prisma/client";
 
 export type OrganizationMember = {
   id: string;

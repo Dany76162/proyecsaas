@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { VisitStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -168,7 +168,7 @@ export async function updateVisitStatusAction(formData: FormData) {
         propertyId: visit.propertyId,
       });
     } catch (error) {
-      // Don't fail the action if Redis is unavailable — visit is already updated
+      // Don't fail the action if Redis is unavailable â€” visit is already updated
       console.error(
         JSON.stringify({
           scope: "visits",

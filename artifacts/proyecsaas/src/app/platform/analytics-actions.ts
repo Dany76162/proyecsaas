@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { prisma } from "@/server/db/prisma";
 import { requirePlatformAdmin } from "@/server/auth/access";

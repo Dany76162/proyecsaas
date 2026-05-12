@@ -1,5 +1,5 @@
-/**
- * Canvas layout — overrides the default platform main padding
+﻿/**
+ * Canvas layout â€” overrides the default platform main padding
  * so the canvas can stretch edge-to-edge within the content area.
  */
 export default function CanvasLayout({ children }: { children: React.ReactNode }) {

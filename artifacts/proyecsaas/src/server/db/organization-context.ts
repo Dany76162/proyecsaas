@@ -1,7 +1,7 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+﻿import { Prisma, PrismaClient } from "@prisma/client";
 
 /**
- * RAW UNAUTHENTICATED LOOKUP — for internal automation/worker use only.
+ * RAW UNAUTHENTICATED LOOKUP â€” for internal automation/worker use only.
  *
  * This function does NOT verify session, membership, or any form of access control.
  * It must NEVER be used as a substitute for requireOrganizationMembership() in

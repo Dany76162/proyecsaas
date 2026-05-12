@@ -1,4 +1,4 @@
-import type { AutomationDecision } from "@/modules/automations/types";
+﻿import type { AutomationDecision } from "@/modules/automations/types";
 import type { LeadPropertyMatchTrace } from "@/modules/properties/matching";
 
 const COMMERCIAL_MARKER_START = "[AI_COMMERCIAL]";

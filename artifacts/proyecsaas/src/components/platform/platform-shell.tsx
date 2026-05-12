@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Menu } from "lucide-react";
@@ -33,12 +33,12 @@ export function PlatformShell({
       <div className="flex flex-1 flex-col min-w-0 lg:ml-72">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:px-6 print:hidden">
           <div className="flex items-center gap-3">
-            {/* Hamburger — visible only on mobile/tablet */}
+            {/* Hamburger â€” visible only on mobile/tablet */}
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
               className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 transition lg:hidden"
-              aria-label="Abrir menú"
+              aria-label="Abrir menÃº"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -50,7 +50,7 @@ export function PlatformShell({
             <span className="hidden sm:block text-sm font-bold text-slate-900 truncate max-w-[160px]">
               {sessionUser.fullName}
             </span>
-            <span className="hidden sm:block text-slate-300">·</span>
+            <span className="hidden sm:block text-slate-300">Â·</span>
             <span className="hidden sm:block text-sm text-slate-500 font-medium truncate max-w-[200px]">
               {sessionUser.email}
             </span>

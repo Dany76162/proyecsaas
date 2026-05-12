@@ -1,4 +1,4 @@
-/**
+﻿/**
  * JSON-LD structured data strategy.
  *
  * Many real estate sites embed schema.org/RealEstateListing or

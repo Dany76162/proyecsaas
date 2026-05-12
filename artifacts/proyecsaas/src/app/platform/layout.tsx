@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 import { requirePlatformAdmin } from "@/server/auth/access";
 import { PlatformShell } from "@/components/platform/platform-shell";
 

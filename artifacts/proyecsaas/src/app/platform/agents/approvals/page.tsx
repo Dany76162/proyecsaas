@@ -1,4 +1,4 @@
-import { approveOrRejectDraft } from "@/modules/agents/actions";
+﻿import { approveOrRejectDraft } from "@/modules/agents/actions";
 import { listAgentApprovals } from "@/modules/agents/service";
 
 const APPROVAL_STATUS_LABELS: Record<string, string> = {
@@ -34,7 +34,7 @@ export default async function PlatformAgentsApprovalsPage() {
                 <tr key={approval.id}>
                   <td className="px-6 py-4">
                     <p className="font-semibold text-slate-900">{approval.task.title}</p>
-                    <p className="text-xs text-slate-500">{approval.task.description ?? "Sin descripción"}</p>
+                    <p className="text-xs text-slate-500">{approval.task.description ?? "Sin descripciÃ³n"}</p>
                   </td>
                   <td className="px-6 py-4">{approval.requestedByAgent?.name ?? "Agente IA"}</td>
                   <td className="px-6 py-4 text-slate-500">{new Date(approval.requestedAt).toLocaleString()}</td>

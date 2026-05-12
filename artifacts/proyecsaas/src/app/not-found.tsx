@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Home, Compass, ArrowLeft } from "lucide-react";
@@ -20,7 +20,7 @@ export default function NotFound() {
         <div className="space-y-3">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Ruta no encontrada</h1>
           <p className="text-slate-500 leading-relaxed">
-            Parece que te has desviado del camino. La propiedad o página que buscas no existe o ha sido movida.
+            Parece que te has desviado del camino. La propiedad o pÃ¡gina que buscas no existe o ha sido movida.
           </p>
         </div>
 
@@ -35,7 +35,7 @@ export default function NotFound() {
           
           <Button variant="outline" size="lg" onClick={() => window.history.back()} className="w-full sm:w-auto border-slate-200 text-slate-600 rounded-2xl gap-2 h-14 px-8 bg-white hover:bg-slate-50 transition-all">
             <ArrowLeft className="h-5 w-5" />
-            Volver atrás
+            Volver atrÃ¡s
           </Button>
         </div>
 

@@ -1,4 +1,4 @@
-export type AppModule = {
+﻿export type AppModule = {
   key: string;
   label: string;
   description: string;

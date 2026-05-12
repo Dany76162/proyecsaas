@@ -3,7 +3,7 @@ import { PrismaClient, AgentScope, AgentType } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function seedAgentOS() {
-  console.log("🌱 Inicializando AgentOS...");
+  console.log("ðŸŒ± Inicializando AgentOS...");
 
   // Verificar si ya existen agentes
   const existingAgents = await prisma.agent.count({
@@ -11,11 +11,11 @@ async function seedAgentOS() {
   });
 
   if (existingAgents > 0) {
-    console.log("✅ Agentes AgentOS ya existen, saltando inicialización");
+    console.log("âœ… Agentes AgentOS ya existen, saltando inicializaciÃ³n");
     return;
   }
 
-  console.log("📝 Creando agentes AgentOS...");
+  console.log("ðŸ“ Creando agentes AgentOS...");
 
   // Crear Director Operativo IA
   const orchestrator = await prisma.agent.create({
@@ -42,7 +42,7 @@ async function seedAgentOS() {
       type: AgentType.MARKETING,
       isActive: true,
       config: {
-        description: "Especialista en creación de contenido para redes sociales y marketing digital",
+        description: "Especialista en creaciÃ³n de contenido para redes sociales y marketing digital",
         capabilities: ["content_creation", "social_media_strategy", "brand_voice"],
         platforms: ["INSTAGRAM", "FACEBOOK", "LINKEDIN", "WHATSAPP_BUSINESS"],
         tone: "professional",
@@ -52,7 +52,7 @@ async function seedAgentOS() {
     }
   });
 
-  console.log("✅ Agentes AgentOS creados:");
+  console.log("âœ… Agentes AgentOS creados:");
   console.log(`   - ${orchestrator.name} (ID: ${orchestrator.id})`);
   console.log(`   - ${marketingAgent.name} (ID: ${marketingAgent.id})`);
 }
@@ -60,9 +60,9 @@ async function seedAgentOS() {
 async function main() {
   try {
     await seedAgentOS();
-    console.log("🎉 Inicialización AgentOS completada");
+    console.log("ðŸŽ‰ InicializaciÃ³n AgentOS completada");
   } catch (error) {
-    console.error("❌ Error inicializando AgentOS:", error);
+    console.error("âŒ Error inicializando AgentOS:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

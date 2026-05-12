@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
@@ -124,7 +124,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   try {
     payload = decodeSessionToken(token);
   } catch (err) {
-    // AUTH_SESSION_SECRET missing or wrong — clear stale cookie and degrade gracefully
+    // AUTH_SESSION_SECRET missing or wrong â€” clear stale cookie and degrade gracefully
     console.error(
       JSON.stringify({ scope: "session", event: "decode-error", message: err instanceof Error ? err.message : String(err) }),
     );

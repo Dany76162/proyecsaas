@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 import { prisma } from "@/server/db/prisma";
 
 export type AuditEvent =
@@ -43,6 +43,6 @@ export async function logAudit(params: {
       },
     });
   } catch {
-    // Fail silently — audit logging must never break the main flow
+    // Fail silently â€” audit logging must never break the main flow
   }
 }

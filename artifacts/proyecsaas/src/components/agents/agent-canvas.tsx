@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import "@xyflow/react/dist/style.css";
 
@@ -50,8 +50,8 @@ const toneClasses: Record<NonNullable<AgentCanvasMetric["tone"]>, string> = {
 const statusClasses: Record<string, string> = {
   Activo: "border-emerald-200 bg-emerald-50 text-emerald-700",
   "Con actividad": "border-blue-200 bg-blue-50 text-blue-700",
-  "Revisión disponible": "border-amber-200 bg-amber-50 text-amber-700",
-  "Requiere revisión": "border-amber-200 bg-amber-50 text-amber-700",
+  "RevisiÃ³n disponible": "border-amber-200 bg-amber-50 text-amber-700",
+  "Requiere revisiÃ³n": "border-amber-200 bg-amber-50 text-amber-700",
   "Registrando eventos": "border-blue-200 bg-blue-50 text-blue-700",
 };
 
@@ -128,7 +128,7 @@ function AgentCanvasCard({ data, selected }: NodeProps<CanvasFlowNode>) {
 
       {data.activities[0] ? (
         <div className="mt-4 rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Última actividad</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Ãšltima actividad</p>
           <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{data.activities[0].message}</p>
         </div>
       ) : null}
@@ -204,7 +204,7 @@ const initialEdges: Edge[] = [
     id: "drafts-approvals",
     source: "drafts",
     target: "approvals",
-    label: "solicita revisión",
+    label: "solicita revisiÃ³n",
   },
   {
     id: "approvals-logs",

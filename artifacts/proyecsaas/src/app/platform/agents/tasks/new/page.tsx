@@ -1,4 +1,4 @@
-import { createAgentTask } from "@/modules/agents/actions";
+﻿import { createAgentTask } from "@/modules/agents/actions";
 
 export default function PlatformAgentsNewTaskPage() {
   return (
@@ -7,19 +7,19 @@ export default function PlatformAgentsNewTaskPage() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Nueva tarea</h1>
         <p className="text-sm text-slate-500">Crea una tarea para el Director Operativo IA y el Agente de Marketing.</p>
         <div className="mt-2 rounded-xl bg-blue-50 px-4 py-2 text-xs font-medium text-blue-700 border border-blue-100">
-          Nota: Este MVP genera un borrador por ejecución.
+          Nota: Este MVP genera un borrador por ejecuciÃ³n.
         </div>
       </div>
 
       <form action={createAgentTask} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="grid gap-6">
           <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Título
+            TÃ­tulo
             <input name="title" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
           </label>
 
           <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Descripción
+            DescripciÃ³n
             <textarea name="description" rows={5} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
           </label>
 

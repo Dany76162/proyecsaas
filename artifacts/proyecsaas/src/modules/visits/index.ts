@@ -1,4 +1,4 @@
-import type { AppModule } from "@/modules/types";
+﻿import type { AppModule } from "@/modules/types";
 
 export const visitsModule: AppModule = {
   key: "visits",

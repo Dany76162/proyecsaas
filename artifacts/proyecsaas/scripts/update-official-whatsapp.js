@@ -9,10 +9,10 @@ const prisma = new PrismaClient();
 
 async function setup() {
   const rawNumber = "+54 9 11 6163-0205";
-  // Limpiamos el número para wa.me (solo dígitos)
+  // Limpiamos el nÃºmero para wa.me (solo dÃ­gitos)
   const cleanNumber = rawNumber.replace(/\D/g, "");
   
-  console.log(`Configurando número oficial: ${rawNumber} (Limpio: ${cleanNumber})`);
+  console.log(`Configurando nÃºmero oficial: ${rawNumber} (Limpio: ${cleanNumber})`);
 
   try {
     // 1. Actualizar GlobalSetting
@@ -23,7 +23,7 @@ async function setup() {
       create: {
         key,
         value: cleanNumber,
-        description: "Número oficial de WhatsApp de la plataforma para captación y soporte.",
+        description: "NÃºmero oficial de WhatsApp de la plataforma para captaciÃ³n y soporte.",
       }
     });
     console.log("DB: GlobalSetting actualizado.");
@@ -45,7 +45,7 @@ async function setup() {
       console.log(".env: Variable WHATSAPP_PLATFORM_PHONE_DISPLAY actualizada.");
     }
 
-    console.log("¡Todo configurado con el nuevo número oficial!");
+    console.log("Â¡Todo configurado con el nuevo nÃºmero oficial!");
   } catch (error) {
     console.error("Error al configurar WhatsApp:", error);
   } finally {

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+﻿import { cn } from "@/lib/utils";
 import { UserCheck, ZapOff, AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -45,12 +45,12 @@ export function HandoffBanner({
           </div>
           <div>
             <h4 className="text-base font-bold tracking-tight">
-              {isHumanControlled ? "Control Humano Activo" : "Intervención Sugerida"}
+              {isHumanControlled ? "Control Humano Activo" : "IntervenciÃ³n Sugerida"}
             </h4>
             <p className="mt-1 text-sm font-medium opacity-90 leading-relaxed max-w-md">
               {isHumanControlled 
-                ? "Las respuestas automáticas están en pausa. El agente tiene el control total de la conversación."
-                : followUpReason || "Se ha detectado una situación que requiere validación manual por parte del equipo."}
+                ? "Las respuestas automÃ¡ticas estÃ¡n en pausa. El agente tiene el control total de la conversaciÃ³n."
+                : followUpReason || "Se ha detectado una situaciÃ³n que requiere validaciÃ³n manual por parte del equipo."}
             </p>
           </div>
         </div>

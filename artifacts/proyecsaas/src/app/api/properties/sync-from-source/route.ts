@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/server/db/prisma";
 import { syncPropertiesFromUrl } from "@/server/property-sync";
@@ -45,7 +45,7 @@ async function handleSync(req: NextRequest) {
   });
 
   if (!org) {
-    return NextResponse.json({ error: "Organización no encontrada" }, { status: 404 });
+    return NextResponse.json({ error: "OrganizaciÃ³n no encontrada" }, { status: 404 });
   }
 
   // Use propertySourceUrl first; fall back to the org website URL if not set.
@@ -55,7 +55,7 @@ async function handleSync(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "No hay URL configurada. Ingresá la URL del listado de propiedades en Configuración → Organización → Fuente de propiedades.",
+          "No hay URL configurada. IngresÃ¡ la URL del listado de propiedades en ConfiguraciÃ³n â†’ OrganizaciÃ³n â†’ Fuente de propiedades.",
       },
       { status: 422 }
     );

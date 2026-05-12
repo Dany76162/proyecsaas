@@ -1,4 +1,4 @@
-import type { FollowUpCategory, VisitStatus } from "@prisma/client";
+﻿import type { FollowUpCategory, VisitStatus } from "@prisma/client";
 import type { LeadExtractedPreferences, LeadTemperature } from "@/modules/leads/commercial-signals";
 import type { MessageDeliveryStatus, MessageDirection, ConversationStatus } from "@prisma/client";
 import type { LeadPropertyMatchTrace } from "@/modules/properties/matching";

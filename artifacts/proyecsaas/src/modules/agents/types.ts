@@ -1,4 +1,4 @@
-export type AgentTaskSummary = {
+﻿export type AgentTaskSummary = {
   id: string;
   title: string;
   description: string | null;
@@ -84,7 +84,7 @@ export const TONE_LABELS: Record<string, string> = {
 
 export const TONE_DESCRIPTIONS: Record<string, string> = {
   FORMAL: "Profesional y respetuoso, usa 'usted'.",
-  FRIENDLY: "Cálido y cercano, usa 'vos/tú'.",
+  FRIENDLY: "CÃ¡lido y cercano, usa 'vos/tÃº'.",
   NEUTRAL: "Conciso y directo, sin vueltas.",
 };
 

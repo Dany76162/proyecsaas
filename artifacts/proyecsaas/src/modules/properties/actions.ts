@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { MembershipRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -69,7 +69,7 @@ function parseMajorUnitToCentsStr(raw: string): string {
   if (trimmed === "") return "";
   // Strip thousands separators: dot or comma followed by exactly 3 digits
   const noThousands = trimmed.replace(/[,.](?=(\d{3})+(?!\d))/g, "");
-  // Normalize comma-as-decimal to dot (e.g. "1500,50" → "1500.50")
+  // Normalize comma-as-decimal to dot (e.g. "1500,50" â†’ "1500.50")
   const normalized = noThousands.replace(",", ".");
   const major = parseFloat(normalized);
   if (isNaN(major)) return "";
@@ -94,17 +94,17 @@ export async function updatePropertyAction(formData: FormData) {
     expensesCents: parseMajorUnitToCentsStr(String(formData.get("expensesCents") ?? "")),
     status: String(formData.get("status") ?? ""),
     publicVisible: formData.get("publicVisible") === "on",
-    // Ubicación
+    // UbicaciÃ³n
     address: String(formData.get("address") ?? ""),
     city: String(formData.get("city") ?? ""),
     neighborhood: String(formData.get("neighborhood") ?? ""),
-    // Características
+    // CaracterÃ­sticas
     rooms: String(formData.get("rooms") ?? ""),
     bedrooms: String(formData.get("bedrooms") ?? ""),
     bathrooms: String(formData.get("bathrooms") ?? ""),
     surfaceM2: String(formData.get("surfaceM2") ?? ""),
     parkingSpots: String(formData.get("parkingSpots") ?? ""),
-    // Descripción y multimedia
+    // DescripciÃ³n y multimedia
     description: String(formData.get("description") ?? ""),
     amenities: String(formData.get("amenities") ?? ""),
     externalLink: String(formData.get("externalLink") ?? ""),
@@ -162,17 +162,17 @@ export async function updatePropertyAction(formData: FormData) {
   redirectToPropertyResult(orgSlug, property.id, { success: "property-updated" });
 }
 
-// ─── Delete action ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Delete action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Permanently deletes a property and cleans up all related records.
  *
  * Cascade behavior:
- *   - PropertyImage   → deleted via DB cascade (onDelete: Cascade)
- *   - Visit           → deleted via DB cascade (onDelete: Cascade)
- *   - Lead.propertyId → nulled (onDelete: Restrict — leads are decoupled, not deleted)
- *   - Conversation.propertyId → nulled (onDelete: Restrict — conversations preserved)
- *   - AvailabilitySlot.propertyId → nulled (onDelete: Restrict — slots preserved without property context)
+ *   - PropertyImage   â†’ deleted via DB cascade (onDelete: Cascade)
+ *   - Visit           â†’ deleted via DB cascade (onDelete: Cascade)
+ *   - Lead.propertyId â†’ nulled (onDelete: Restrict â€” leads are decoupled, not deleted)
+ *   - Conversation.propertyId â†’ nulled (onDelete: Restrict â€” conversations preserved)
+ *   - AvailabilitySlot.propertyId â†’ nulled (onDelete: Restrict â€” slots preserved without property context)
  *
  * Auth: requires ADMIN role. Agents can edit but not delete.
  */
@@ -185,7 +185,7 @@ export async function deletePropertyAction(
 
   const parsed = deletePropertySchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "ID de propiedad inválido." };
+    return { success: false, message: "ID de propiedad invÃ¡lido." };
   }
 
   // Verify property belongs to this org (multi-tenant guard)
@@ -218,7 +218,7 @@ export async function deletePropertyAction(
       where: { propertyId: property.id, organizationId: membership.organization.id },
       data: { propertyId: null },
     }),
-    // Delete the property — images and visits cascade automatically
+    // Delete the property â€” images and visits cascade automatically
     prisma.property.delete({
       where: { id: property.id },
     }),
@@ -231,7 +231,7 @@ export async function deletePropertyAction(
   return { success: true, message: "Propiedad eliminada correctamente." };
 }
 
-// ─── Video action ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Video action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Sets or clears the video URL for a property.
@@ -247,7 +247,7 @@ export async function setPropertyVideoAction(
 
   const parsed = setPropertyVideoSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "Datos inválidos." };
+    return { success: false, message: "Datos invÃ¡lidos." };
   }
 
   const property = await prisma.property.findFirst({
@@ -267,7 +267,7 @@ export async function setPropertyVideoAction(
   return { success: true, message: parsed.data.url ? "Video actualizado." : "Video eliminado." };
 }
 
-// ─── Image actions ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Image actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function addPropertyImageAction(
   orgSlug: string,
@@ -278,7 +278,7 @@ export async function addPropertyImageAction(
 
   const parsed = addPropertyImageSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "URL inválida.", fieldErrors: parsed.error.flatten().fieldErrors };
+    return { success: false, message: "URL invÃ¡lida.", fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
   // Verify property belongs to this org
@@ -330,7 +330,7 @@ export async function removePropertyImageAction(
 
   const parsed = removePropertyImageSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "Solicitud inválida." };
+    return { success: false, message: "Solicitud invÃ¡lida." };
   }
 
   // Verify the image belongs to a property in this org
@@ -361,7 +361,7 @@ export async function setPropertyImagePrimaryAction(
 
   const parsed = setPropertyImagePrimarySchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "Solicitud inválida." };
+    return { success: false, message: "Solicitud invÃ¡lida." };
   }
 
   const image = await prisma.propertyImage.findFirst({

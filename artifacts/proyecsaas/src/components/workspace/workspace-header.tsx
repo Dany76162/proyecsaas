@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 import type { OrganizationWorkspace } from "@/modules/organizations/types";
 import { StatusBadge } from "@/components/workspace/status-badge";

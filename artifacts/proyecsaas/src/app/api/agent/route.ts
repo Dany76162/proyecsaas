@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
 import { getSessionUser } from "@/server/auth/session";
 import { prisma } from "@/server/db/prisma";
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
   const organizationId = await resolveOrgFromRequest(req, user.id);
   if (!organizationId) {
-    return NextResponse.json({ error: "Organización no encontrada." }, { status: 404 });
+    return NextResponse.json({ error: "OrganizaciÃ³n no encontrada." }, { status: 404 });
   }
 
   const agent = await prisma.aiAgent.upsert({
@@ -81,14 +81,14 @@ export async function PATCH(req: NextRequest) {
 
   const organizationId = await resolveOrgFromRequest(req, user.id);
   if (!organizationId) {
-    return NextResponse.json({ error: "Organización no encontrada." }, { status: 404 });
+    return NextResponse.json({ error: "OrganizaciÃ³n no encontrada." }, { status: 404 });
   }
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
+    return NextResponse.json({ error: "Cuerpo invÃ¡lido." }, { status: 400 });
   }
 
   const allowedTones = ["FORMAL", "FRIENDLY", "NEUTRAL"];
@@ -113,7 +113,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (Object.keys(data).length === 0) {
-    return NextResponse.json({ error: "Sin campos válidos para actualizar." }, { status: 400 });
+    return NextResponse.json({ error: "Sin campos vÃ¡lidos para actualizar." }, { status: 400 });
   }
 
   const agent = await prisma.aiAgent.upsert({

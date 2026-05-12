@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import Link from "next/link";
@@ -28,9 +28,9 @@ export default function GlobalError({
 
         {/* Text Content */}
         <div className="space-y-4">
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Algo no salió como esperábamos</h1>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Algo no saliÃ³ como esperÃ¡bamos</h1>
           <p className="text-slate-500 text-lg leading-relaxed max-w-md mx-auto">
-            Hemos tenido un inconveniente técnico interno. Nuestro equipo ha sido notificado y estamos trabajando para resolverlo.
+            Hemos tenido un inconveniente tÃ©cnico interno. Nuestro equipo ha sido notificado y estamos trabajando para resolverlo.
           </p>
           {error.digest && (
             <code className="inline-block px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-mono text-slate-400 uppercase tracking-widest">
@@ -60,11 +60,11 @@ export default function GlobalError({
 
         {/* Support Section */}
         <div className="pt-10 border-t border-slate-100">
-          <p className="text-sm text-slate-400 mb-4">¿Necesitas ayuda inmediata?</p>
+          <p className="text-sm text-slate-400 mb-4">Â¿Necesitas ayuda inmediata?</p>
           <Button variant="outline" asChild className="rounded-full border-slate-200 text-slate-600 gap-2">
             <a href="https://wa.me/5491161630205" target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-4 w-4 text-emerald-500" />
-              Soporte vía WhatsApp
+              Soporte vÃ­a WhatsApp
             </a>
           </Button>
         </div>

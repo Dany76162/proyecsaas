@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 
@@ -115,7 +115,7 @@ export async function revokeAdminAccess(userId: string) {
   const currentUser = await requirePlatformAdmin();
 
   if (userId === currentUser.id) {
-    return { success: false, error: "No podés revocar tu propio acceso" };
+    return { success: false, error: "No podÃ©s revocar tu propio acceso" };
   }
 
   const user = await prisma.user.findUnique({
@@ -150,7 +150,7 @@ export async function deleteUserCompletely(userId: string) {
   }
 
   if (sessionUser.id === userId) {
-    return { success: false, error: "No podés eliminar tu propio usuario." };
+    return { success: false, error: "No podÃ©s eliminar tu propio usuario." };
   }
 
   const user = await prisma.user.findUnique({

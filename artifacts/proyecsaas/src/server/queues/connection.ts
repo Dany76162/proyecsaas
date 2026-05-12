@@ -1,4 +1,4 @@
-import type { ConnectionOptions } from "bullmq";
+﻿import type { ConnectionOptions } from "bullmq";
 
 let hasWarnedForDefaultRedisUrl = false;
 

@@ -1,10 +1,10 @@
-import { Building2, Home, Landmark, School, Store, Warehouse } from "lucide-react";
+﻿import { Building2, Home, Landmark, School, Store, Warehouse } from "lucide-react";
 
 const CLIENTS = [
   { main: "MelePropiedades", sub: "Inmobiliaria" },
   { main: "Alberto Capelli", sub: "Martillero" },
   { main: "SevenToop", sub: "Marketing Digital" },
-  { main: "RaicesPilot", sub: "Tecnología Inmobiliaria", isPlaceholder: true },
+  { main: "RaicesPilot", sub: "TecnologÃ­a Inmobiliaria", isPlaceholder: true },
 ];
 
 export function ClientMarquee() {

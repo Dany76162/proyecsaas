@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { AlertTriangle, UserPlus, Activity, Database, ArrowRight } from "lucide-react";
@@ -32,7 +32,7 @@ export default async function PlatformPage() {
   const onboardingAccounts = activeOrgs
     .filter(
       (o) =>
-        o.onboardingStatus === "Sin usuarios" || o.onboardingStatus === "Invitación pendiente",
+        o.onboardingStatus === "Sin usuarios" || o.onboardingStatus === "InvitaciÃ³n pendiente",
     )
     .slice(0, 5);
 
@@ -55,16 +55,16 @@ export default async function PlatformPage() {
               workerStatus.status === "ok" ? "bg-emerald-500" : workerStatus.status === "stale" ? "bg-amber-500" : "bg-red-500"
             )}
           />
-          {workerStatus.status === "ok" ? "Worker operativo" : workerStatus.status === "stale" ? "Worker lento" : "Worker caído"}
+          {workerStatus.status === "ok" ? "Worker operativo" : workerStatus.status === "stale" ? "Worker lento" : "Worker caÃ­do"}
         </Badge>
         <span className="text-[11px] font-medium text-slate-400">
           {workerStatus.secondsAgo !== null
-            ? `Último heartbeat hace ${workerStatus.secondsAgo}s`
-            : "Sin señal de vida registrada"}
+            ? `Ãšltimo heartbeat hace ${workerStatus.secondsAgo}s`
+            : "Sin seÃ±al de vida registrada"}
         </span>
       </div>
 
-      {/* KPIs — más grandes, más presencia */}
+      {/* KPIs â€” mÃ¡s grandes, mÃ¡s presencia */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Cuentas Activas"
@@ -76,10 +76,10 @@ export default async function PlatformPage() {
           title="Mantenimiento"
           value={criticalCount + warningCount}
           icon={AlertTriangle}
-          description="requieren revisión"
+          description="requieren revisiÃ³n"
         />
         <MetricCard
-          title="Tráfico Leads (7d)"
+          title="TrÃ¡fico Leads (7d)"
           value={totalLeads7d}
           icon={UserPlus}
           variant="brand"
@@ -100,7 +100,7 @@ export default async function PlatformPage() {
         <Card variant="elevated" className="flex flex-col">
           <CardHeader className="bg-slate-50/50 flex-row items-center justify-between py-4 px-6">
             <CardTitle className="text-base">Cuentas en Riesgo</CardTitle>
-            <Badge variant="danger">Requiere Atención</Badge>
+            <Badge variant="danger">Requiere AtenciÃ³n</Badge>
           </CardHeader>
           <CardContent className="divide-y divide-slate-100 flex-1 p-0">
             {riskAccounts.map((org) => (
@@ -108,8 +108,8 @@ export default async function PlatformPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-slate-900">{org.name}</p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Última msg:{" "}
-                    {org.lastActivityAt ? formatRelativeTime(org.lastActivityAt) : "Sin histórico"}
+                    Ãšltima msg:{" "}
+                    {org.lastActivityAt ? formatRelativeTime(org.lastActivityAt) : "Sin histÃ³rico"}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2">

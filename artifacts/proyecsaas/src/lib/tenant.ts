@@ -1,4 +1,4 @@
-export type TenantContext = {
+﻿export type TenantContext = {
   organizationId: string;
   organizationSlug: string;
   userId?: string;

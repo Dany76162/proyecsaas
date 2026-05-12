@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
     setIsOpen(false);
   }
 
-  // ─── Manual creation ───────────────────────────────────────────────────────
+  // â”€â”€â”€ Manual creation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function handleManualSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -62,7 +62,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
     });
   }
 
-  // ─── Sync from URL ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Sync from URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function handleSyncSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -93,7 +93,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
       if (res.ok && json.success) {
         setSyncStatus("success");
-        setSyncMessage(`Sincronización exitosa: ${json.total} propiedades procesadas.`);
+        setSyncMessage(`SincronizaciÃ³n exitosa: ${json.total} propiedades procesadas.`);
         setTimeout(() => {
           router.refresh();
           handleClose();
@@ -137,11 +137,11 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
               </button>
             </div>
 
-            {/* ── Mode Selector ─────────────────────────────────────────── */}
+            {/* â”€â”€ Mode Selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {mode === "selector" && (
               <div className="px-6 py-6 flex flex-col gap-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
-                  Selecciona el método de carga
+                  Selecciona el mÃ©todo de carga
                 </p>
 
                 <button
@@ -176,17 +176,17 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
                 <div className="mt-4 flex flex-col gap-2">
                   <Button variant="ghost" onClick={handleClose} className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    Cancelar operación
+                    Cancelar operaciÃ³n
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* ── Manual form ────────────────────────────────────────────── */}
+            {/* â”€â”€ Manual form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {mode === "manual" && (
               <div className="px-6 py-6">
                 <p className="text-xs text-slate-500 leading-relaxed mb-6">
-                  Carga los datos principales. Al finalizar, podrás completar fotos y detalles técnicos en la ficha de propiedad.
+                  Carga los datos principales. Al finalizar, podrÃ¡s completar fotos y detalles tÃ©cnicos en la ficha de propiedad.
                 </p>
 
                 {error && (
@@ -198,13 +198,13 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                 <form onSubmit={handleManualSubmit} className="flex flex-col gap-5">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      Título comercial
+                      TÃ­tulo comercial
                     </label>
-                    <Input required name="title" placeholder="Ej. Depto 2 amb. luminoso con balcón" />
+                    <Input required name="title" placeholder="Ej. Depto 2 amb. luminoso con balcÃ³n" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dirección</label>
-                    <Input required name="address" placeholder="Calle y número" />
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">DirecciÃ³n</label>
+                    <Input required name="address" placeholder="Calle y nÃºmero" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -224,7 +224,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                       onClick={() => setMode("selector")}
                       className="text-xs font-bold uppercase tracking-widest"
                     >
-                      ← Volver
+                      â† Volver
                     </Button>
                     <Button
                       type="submit"
@@ -239,11 +239,11 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
               </div>
             )}
 
-            {/* ── Sync from URL ──────────────────────────────────────────── */}
+            {/* â”€â”€ Sync from URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {mode === "import" && (
               <div className="px-6 py-6">
                 <p className="text-xs text-slate-500 leading-relaxed mb-6">
-                  Nuestra IA escaneará tu sitio web para extraer las fichas automáticamente. Asegúrate de que sea una página de listado.
+                  Nuestra IA escanearÃ¡ tu sitio web para extraer las fichas automÃ¡ticamente. AsegÃºrate de que sea una pÃ¡gina de listado.
                 </p>
 
                 {syncStatus === "success" && (
@@ -270,7 +270,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                       disabled={syncStatus === "loading" || syncStatus === "success"}
                     />
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Soporta sitios inmobiliarios estándar y portales compatibles.
+                      Soporta sitios inmobiliarios estÃ¡ndar y portales compatibles.
                     </p>
                   </div>
 
@@ -282,7 +282,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                       disabled={syncStatus === "loading"}
                       className="text-xs font-bold uppercase tracking-widest"
                     >
-                      ← Volver
+                      â† Volver
                     </Button>
                     <Button
                       type="submit"
@@ -291,7 +291,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                       className="min-w-[180px]"
                     >
                       {syncStatus === "loading" && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                      {syncStatus === "loading" ? "Escaneando sitio..." : syncStatus === "success" ? "¡Importado!" : "Iniciar sincronización"}
+                      {syncStatus === "loading" ? "Escaneando sitio..." : syncStatus === "success" ? "Â¡Importado!" : "Iniciar sincronizaciÃ³n"}
                     </Button>
                   </div>
                 </form>

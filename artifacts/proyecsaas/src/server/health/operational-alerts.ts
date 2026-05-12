@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { getOperationalObservabilitySnapshot } from "@/server/health/operational-observability";
 import { getSystemStatusSnapshot } from "@/server/health/system-status";

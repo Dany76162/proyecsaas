@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { prisma } from "@/server/db/prisma";
 import { BILLING_MODE_LABELS, resolveEffectiveCommercialState } from "@/server/billing/commercial-access";
@@ -170,7 +170,7 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
           : org._count.memberships === 1
             ? org.memberships[0]?.user.passwordHash
               ? "Onboarding iniciado"
-              : "Invitación pendiente"
+              : "InvitaciÃ³n pendiente"
             : "Operativa",
       health: computeHealth({
         channel,

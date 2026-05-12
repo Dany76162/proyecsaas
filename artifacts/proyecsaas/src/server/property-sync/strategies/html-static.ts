@@ -1,5 +1,5 @@
-/**
- * Static HTML parsing strategy — last resort fallback.
+﻿/**
+ * Static HTML parsing strategy â€” last resort fallback.
  *
  * Works for simple sites that render property listings server-side
  * (no JavaScript rendering required). Looks for repeating card/article
@@ -65,8 +65,8 @@ function extractLinkFromBlock(block: string): string | null {
 
 /**
  * Extracts the best available image URL from an HTML block.
- * Priority: src → data-src → first srcset URL.
- * Only returns http(s) URLs — ignores data: URIs and relative paths.
+ * Priority: src â†’ data-src â†’ first srcset URL.
+ * Only returns http(s) URLs â€” ignores data: URIs and relative paths.
  */
 function extractImageFromBlock(block: string): string | null {
   // 1. Regular src attribute (absolute URL only)
@@ -77,7 +77,7 @@ function extractImageFromBlock(block: string): string | null {
   const dataSrcMatch = block.match(/<img[^>]+data-src=["'](https?:\/\/[^"']+)["']/i);
   if (dataSrcMatch) return dataSrcMatch[1];
 
-  // 3. srcset — take the first absolute URL listed
+  // 3. srcset â€” take the first absolute URL listed
   const srcsetMatch = block.match(/srcset=["']([^"']+)["']/i);
   if (srcsetMatch) {
     const firstCandidate = srcsetMatch[1].split(",")[0]?.trim().split(/\s+/)[0];

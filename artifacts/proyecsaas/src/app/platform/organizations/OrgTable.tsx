@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
@@ -27,7 +27,7 @@ const HEALTH_FILTERS = [
   { value: "all", label: "Todos" },
   { value: "ok", label: "OK" },
   { value: "warning", label: "Advertencia" },
-  { value: "critical", label: "Crítico" },
+  { value: "critical", label: "CrÃ­tico" },
 ] as const;
 
 const VISIBILITY_FILTERS = [
@@ -184,12 +184,12 @@ export function OrgTable({
         <Table className="min-w-[1100px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-5">Organización</TableHead>
+              <TableHead className="px-5">OrganizaciÃ³n</TableHead>
               <TableHead className="px-5">Estado</TableHead>
-              <TableHead className="px-5">Salud sistémica</TableHead>
+              <TableHead className="px-5">Salud sistÃ©mica</TableHead>
               <TableHead className="px-5">Canal WABA</TableHead>
-              <TableHead className="px-5">Tráfico 7d</TableHead>
-              <TableHead className="px-5 whitespace-nowrap">Última actividad</TableHead>
+              <TableHead className="px-5">TrÃ¡fico 7d</TableHead>
+              <TableHead className="px-5 whitespace-nowrap">Ãšltima actividad</TableHead>
               <TableHead className="px-5">Estado de Alta</TableHead>
               <TableHead className="px-5">Comercial</TableHead>
               <TableHead className="px-5 text-right">Acciones</TableHead>
@@ -362,7 +362,7 @@ export function OrgTable({
                           Sin inmobiliarias cargadas
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          Todavía no hay organizaciones para administrar.
+                          TodavÃ­a no hay organizaciones para administrar.
                         </p>
                       </>
                     )}

@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import { prisma } from "@/server/db/prisma";
 import { BillingTable } from "@/components/platform/billing-table";
@@ -40,7 +40,7 @@ export default async function PlatformBillingPage() {
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Comercial / Cobros</h1>
         <p className="text-sm text-slate-500">
-          Registros de cobro por cliente. Generá links de pago vía Mercado Pago y gestioná el estado de factura.
+          Registros de cobro por cliente. GenerÃ¡ links de pago vÃ­a Mercado Pago y gestionÃ¡ el estado de factura.
         </p>
       </div>
 

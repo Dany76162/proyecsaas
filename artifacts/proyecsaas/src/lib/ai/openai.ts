@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+﻿import OpenAI from "openai";
 
 export const AI_MODEL = "gpt-4o-mini";
 

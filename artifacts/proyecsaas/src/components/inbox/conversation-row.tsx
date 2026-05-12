@@ -1,4 +1,4 @@
-import { cn, formatDateTime } from "@/lib/utils";
+﻿import { cn, formatDateTime } from "@/lib/utils";
 import { ConversationListItem } from "@/modules/conversations/types";
 import { StatusBadge } from "@/components/workspace/status-badge";
 
@@ -68,7 +68,7 @@ export function ConversationRow({ conv, isSelected, onClick }: ConversationRowPr
         )}
         {requiresAction && (
           <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-amber-600 ring-1 ring-amber-100">
-            Acción
+            AcciÃ³n
           </span>
         )}
       </div>

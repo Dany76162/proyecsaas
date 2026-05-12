@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+﻿import { cn } from "@/lib/utils";
 
 const STAGE_CONFIG: Record<string, { accent: string; countBg: string }> = {
   NUEVO:      { accent: "border-t-slate-300",   countBg: "bg-slate-100 text-slate-700" },

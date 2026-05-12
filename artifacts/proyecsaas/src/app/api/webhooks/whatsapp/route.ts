@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+﻿import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import { validateWebRuntimeConfig } from "@/server/config/runtime";
@@ -46,7 +46,7 @@ function validateSignature(rawBody: string, signatureHeader: string | null) {
       JSON.stringify({
         scope: "automation-webhook",
         event: "signature-validation-skipped",
-        reason: "WHATSAPP_APP_SECRET is not configured — rejecting request",
+        reason: "WHATSAPP_APP_SECRET is not configured â€” rejecting request",
       }),
     );
     return false;

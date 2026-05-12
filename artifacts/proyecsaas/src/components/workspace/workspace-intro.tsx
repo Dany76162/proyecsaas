@@ -1,4 +1,4 @@
-type WorkspaceIntroProps = {
+﻿type WorkspaceIntroProps = {
   title: string;
   orgSlug: string;
   description: string;
