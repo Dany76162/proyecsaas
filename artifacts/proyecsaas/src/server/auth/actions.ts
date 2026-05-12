@@ -114,6 +114,7 @@ export async function loginAction(formData: FormData) {
       id: true,
       isPlatformAdmin: true,
       passwordHash: true,
+      termsAcceptedAt: true,
       memberships: {
         select: {
           organization: {
@@ -148,6 +149,11 @@ export async function loginAction(formData: FormData) {
     parsed.data.next || undefined,
     user?.isPlatformAdmin ? "/platform" : `/${user!.memberships[0]?.organization.slug}`,
   );
+
+  // Check if policies need acceptance
+  if (!user?.termsAcceptedAt) {
+    redirect(buildTransitionRedirect(`/auth/accept-policies?next=${encodeURIComponent(finalPath)}`));
+  }
 
   // 🔥 AQUÍ ESTÁ EL FIX DEL SPLASH
   redirect(buildTransitionRedirect(finalPath));

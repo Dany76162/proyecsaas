@@ -118,6 +118,7 @@ const checklistGroups = [
       "WHATSAPP_TOKEN_ENCRYPTION_KEY configurada",
       "NEXT_PUBLIC_APP_URL consistente con el dominio real",
       "Sin defaults inseguros activos en produccion",
+      "Politicas de uso y privacidad configuradas en /auth/accept-policies",
     ],
   },
 ] as const;
@@ -181,6 +182,19 @@ const playbooks = [
     ],
     validation:
       "El link debe generarse bien y el pago debe impactar en el estado comercial esperado.",
+  },
+  {
+    title: "Gestión de Privacidad y Auditoría",
+    summary:
+      "Controlar cómo el equipo de plataforma accede a los datos de los clientes y asegurar la transparencia.",
+    steps: [
+      "Confirmar que todos los usuarios acepten los términos en su primer ingreso.",
+      "Validar que el bypass de Superadmin esté activo para soporte técnico.",
+      "Revisar la tabla AuditLog periódicamente para detectar accesos administrativos no justificados.",
+      "Asegurar que las políticas mencionen explícitamente el derecho de auditoría por seguridad.",
+    ],
+    validation:
+      "Cada acceso de Superadmin a un workspace ajeno debe generar un log con evento SUPERADMIN_WORKSPACE_ACCESS.",
   },
 ] as const;
 
@@ -317,11 +331,19 @@ const troubleshooting = [
     ],
   },
   {
-    title: "Tenant sin actividad esperada",
+    title: "Acceso administrativo denegado (404) en un workspace de cliente",
     checks: [
-      "Revisar canal WhatsApp, agente y estado comercial.",
-      "Confirmar onboarding minimo y catalogo disponible.",
-      "Mirar eventos recientes en support, health y ai operations.",
+      "Confirmar que tu usuario tenga isPlatformAdmin: true.",
+      "Verificar que la URL del workspace use el slug correcto.",
+      "Revisar si el middleware o requireOrganizationMembership están bloqueando por falta de aceptación de políticas.",
+    ],
+  },
+  {
+    title: "El usuario no puede salir de la pantalla de políticas",
+    checks: [
+      "Validar que la redirección post-aceptación tenga el parámetro 'next' correcto.",
+      "Verificar que la acción de servidor esté guardando termsAcceptedAt en la base de datos.",
+      "Confirmar que no haya un bucle de redirección en requireSessionUser.",
     ],
   },
 ] as const;

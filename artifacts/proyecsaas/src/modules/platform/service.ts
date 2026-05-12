@@ -75,7 +75,7 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
         memberships: {
           take: 1,
           select: {
-            user: { select: { passwordHash: true } },
+            user: { select: { email: true, passwordHash: true } },
           },
         },
         whatsappChannels: {
@@ -163,6 +163,7 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
       currentPeriodEnd: org.subscription?.currentPeriodEnd?.toISOString() ?? null,
       internalBillingNotes: null,
       planId: org.subscription?.planId ?? null,
+      ownerEmail: org.memberships[0]?.user.email ?? null,
       onboardingStatus:
         org._count.memberships === 0
           ? "Sin usuarios"

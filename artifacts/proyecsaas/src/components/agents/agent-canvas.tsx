@@ -329,11 +329,11 @@ export function AgentCanvas({ data }: { data: AgentCanvasData }) {
     ({ ...data.nodes.orchestrator, variant: "agent" } satisfies CanvasNodeData);
 
   return (
-    <div className="space-y-5">
+    <div className="flex h-full flex-col">
       <MobileCanvasList data={data} />
 
-      <div className="hidden min-h-[650px] overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm md:grid md:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="relative min-h-[650px] bg-slate-50">
+      <div className="hidden h-full overflow-hidden border-t border-slate-200 bg-white md:grid md:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="relative h-full bg-slate-50">
           <div className="absolute left-5 top-5 z-10 flex items-center gap-2 rounded-full border border-white bg-white/90 px-3 py-2 text-xs font-bold text-slate-500 shadow-sm backdrop-blur">
             <RadioTower className="h-4 w-4 text-brand-600" />
             Canvas operativo en vivo
@@ -346,8 +346,8 @@ export function AgentCanvas({ data }: { data: AgentCanvasData }) {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             fitView
-            fitViewOptions={{ padding: 0.12 }}
-            minZoom={0.45}
+            fitViewOptions={{ padding: 0.2 }}
+            minZoom={0.35}
             maxZoom={1.4}
             nodesDraggable
             nodesConnectable={false}
@@ -367,7 +367,7 @@ export function AgentCanvas({ data }: { data: AgentCanvasData }) {
           </ReactFlow>
         </div>
 
-        <div className="border-l border-slate-200 bg-slate-50 p-4">
+        <div className="border-l border-slate-200 bg-slate-50 p-4 overflow-auto">
           <DetailPanel node={selectedNode} />
         </div>
       </div>

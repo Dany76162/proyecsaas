@@ -11,6 +11,7 @@ export type SessionUser = {
   email: string;
   fullName: string;
   isPlatformAdmin: boolean;
+  termsAcceptedAt: Date | null;
 };
 
 const SESSION_COOKIE_NAME = "proyecsaas_session";
@@ -144,6 +145,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       email: true,
       fullName: true,
       isPlatformAdmin: true,
+      termsAcceptedAt: true,
     },
   });
 
@@ -156,5 +158,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     email: user.email,
     fullName: user.fullName,
     isPlatformAdmin: user.isPlatformAdmin,
+    termsAcceptedAt: user.termsAcceptedAt,
   };
 }

@@ -32,7 +32,8 @@ const PLATFORM_NAV = [
   { name: "Onboarding", href: "/platform/onboarding", icon: UserPlus },
   { name: "Activación", href: "/platform/activation", icon: TrendingUp },
   { name: "Salud del sistema", href: "/platform/health", icon: ActivitySquare },
-  { name: "Manual Operativo", href: "/platform/manual-operativo", icon: BookOpen },
+  { name: "Manual Vivo", href: "/platform/manual-operativo", icon: BookOpen },
+  { name: "Manual Maestro", href: "/platform/master-manual", icon: BookOpen },
   { name: "Comercial", href: "/platform/billing", icon: CreditCard },
   { name: "Configuración", href: "/platform/settings", icon: Settings },
 ];

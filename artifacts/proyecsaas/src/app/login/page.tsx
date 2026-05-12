@@ -160,7 +160,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                   <label className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400">
                     Clave de Acceso
                   </label>
-                  <a href="#" className="text-[11px] font-bold text-brand-600 hover:text-brand-700 transition-colors uppercase tracking-wider">
+                  <a 
+                    href="https://wa.me/5491161630205?text=Hola%2C%20olvidé%20mi%20clave%20de%20acceso%20a%20RaicesPilot.%20¿Podrían%20ayudarme%20a%20restablecerla%3F" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-bold text-brand-600 hover:text-brand-700 transition-colors uppercase tracking-wider"
+                  >
                     ¿Olvidaste tu clave?
                   </a>
                 </div>

@@ -10,14 +10,16 @@ import {
   deactivateOrganizationAction,
   reactivateOrganizationAction,
   setOrgAgentQuotaAction,
+  resetUserPasswordAction,
 } from "@/modules/platform/actions";
-import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle, PowerOff, Bot, Power } from "lucide-react";
+import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle, PowerOff, Bot, Power, Key } from "lucide-react";
 
 type MenuCoords = { top: number; right: number };
 
 export function OnboardingControls({
   orgSlug,
   orgName,
+  ownerEmail,
   hasUsers,
   isActive,
   maxAiAgents,
@@ -26,6 +28,7 @@ export function OnboardingControls({
 }: {
   orgSlug: string;
   orgName: string;
+  ownerEmail: string | null;
   hasUsers: boolean;
   isActive: boolean;
   maxAiAgents: number | null;
@@ -70,6 +73,11 @@ export function OnboardingControls({
   const [quotaNote, setQuotaNote] = useState(agentQuotaNote ?? "");
   const [quotaError, setQuotaError] = useState("");
   const [quotaSuccess, setQuotaSuccess] = useState("");
+
+  // Reset password state
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetUrl, setResetUrl] = useState<string | null>(null);
+  const [resetError, setResetError] = useState("");
 
   // Click-outside: close dropdown when clicking neither trigger nor dropdown
   useEffect(() => {
@@ -187,6 +195,20 @@ export function OnboardingControls({
     });
   };
 
+  const handleReset = async () => {
+    if (!ownerEmail) return;
+    startTransition(async () => {
+      setResetError("");
+      const res = await resetUserPasswordAction(orgSlug, ownerEmail);
+      if (res.success && res.data?.inviteUrl) {
+        setResetUrl(res.data.inviteUrl);
+        router.refresh();
+      } else {
+        setResetError(res.message);
+      }
+    });
+  };
+
   // ─── Portal dropdown (mobile / tablet) ────────────────────────────────────
   // Rendered at document.body to escape overflow:hidden / overflow-x:auto
   // clipping from the table container. Uses position:fixed + viewport coords.
@@ -226,6 +248,21 @@ export function OnboardingControls({
                 >
                   <UserPlus className="h-4 w-4" />
                   <span>Crear 1º Acceso</span>
+                </button>
+              )}
+
+              {hasUsers && ownerEmail && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setResetUrl(null);
+                    setResetError("");
+                    setResetModalOpen(true);
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-semibold text-brand-700 hover:bg-brand-50"
+                >
+                  <Key className="h-4 w-4" />
+                  <span>Reiniciar Clave</span>
                 </button>
               )}
             </div>
@@ -313,6 +350,21 @@ export function OnboardingControls({
             className="rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50 transition-colors whitespace-nowrap"
           >
             Crear 1º Acceso
+          </button>
+        )}
+
+        {/* Reiniciar Clave — solo si hay usuario */}
+        {hasUsers && ownerEmail && (
+          <button
+            type="button"
+            onClick={() => {
+              setResetUrl(null);
+              setResetError("");
+              setResetModalOpen(true);
+            }}
+            className="rounded-lg px-3 py-1.5 text-sm font-bold text-brand-600 hover:bg-brand-50 transition-colors whitespace-nowrap"
+          >
+            Reiniciar Clave
           </button>
         )}
 
@@ -756,6 +808,84 @@ export function OnboardingControls({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── RESET PASSWORD MODAL ──────────────────────────────────────────────── */}
+      {resetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900">Reiniciar Clave</h2>
+              <button
+                onClick={() => setResetModalOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Vas a generar un nuevo enlace de acceso para <strong>{ownerEmail}</strong>. 
+              La clave actual dejará de funcionar hasta que el usuario establezca una nueva.
+            </p>
+
+            {!resetUrl ? (
+              <div className="mt-6 space-y-4">
+                {resetError && (
+                  <p className="text-sm font-medium text-red-600">{resetError}</p>
+                )}
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setResetModalOpen(false)}
+                    className="rounded-lg px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    disabled={isPending}
+                    className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 shadow-sm shadow-brand-500/20 disabled:opacity-50"
+                  >
+                    {isPending ? "Generando..." : "Confirmar y Generar Link"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-700 mb-2">
+                  Nuevo Enlace de Acceso
+                </p>
+                <div className="flex items-center rounded-xl border-2 border-brand-100 bg-brand-50 p-1">
+                  <p className="flex-1 truncate px-3 py-2 text-sm font-medium text-brand-900">
+                    {resetUrl}
+                  </p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(resetUrl);
+                      alert("Enlace copiado.");
+                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-200 text-brand-800 hover:bg-brand-300 transition"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+                <p className="mt-3 text-[11px] text-slate-500">
+                  Copiá este link y enviaselo al cliente por WhatsApp. 
+                  Tiene validez por 48 horas.
+                </p>
+                <div className="mt-6">
+                  <button
+                    onClick={() => setResetModalOpen(false)}
+                    className="w-full rounded-xl border border-slate-200 py-2.5 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

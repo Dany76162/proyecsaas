@@ -771,3 +771,86 @@ export async function quickOnboardOrgAction(input: {
     return { success: false, message: "Error al crear la inmobiliaria. Intentá nuevamente." };
   }
 }
+
+/**
+ * Superadmin Action: Resets a user's password by clearing their hash
+ * and generating a new invite token.
+ */
+export async function resetUserPasswordAction(
+  orgSlug: string,
+  email: string
+): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: { id: true, name: true },
+    });
+
+    if (!org) {
+      return { success: false, message: "Inmobiliaria no encontrada." };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, fullName: true },
+    });
+
+    if (!user) {
+      return { success: false, message: "Usuario no encontrado." };
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 48); // 48hs para reset
+
+    await prisma.$transaction([
+      // 1. Limpiar el hash para que deba poner uno nuevo
+      prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: null, isActive: true },
+      }),
+      // 2. Generar nuevo token
+      prisma.inviteToken.create({
+        data: {
+          token,
+          userId: user.id,
+          organizationId: org.id,
+          expiresAt,
+        },
+      }),
+    ]);
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+    if (!baseUrl) {
+      throw new Error("[resetUserPasswordAction] NEXT_PUBLIC_APP_URL is not configured.");
+    }
+    const inviteUrl = `${baseUrl}/invite/${token}`;
+
+    const admin = await requirePlatformAdmin();
+    await logAudit({
+      event: "user.password_reset",
+      actorId: admin.id,
+      actorEmail: admin.email,
+      entityType: "User",
+      entityId: user.id,
+      entityName: user.fullName,
+      metadata: { orgSlug, email: normalizedEmail },
+    });
+
+    return {
+      success: true,
+      message: `Se generó un nuevo enlace de acceso para ${user.fullName}.`,
+      data: { inviteUrl },
+    };
+  } catch (error) {
+    console.error("[resetUserPasswordAction] Falló:", error);
+    return {
+      success: false,
+      message: "Hubo un error al resetear la clave. Intenta nuevamente.",
+    };
+  }
+}
+

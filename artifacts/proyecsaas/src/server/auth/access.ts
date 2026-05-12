@@ -15,11 +15,15 @@ function buildLoginRedirectPath(nextPath: string) {
   return `/login?${search.toString()}`;
 }
 
-export async function requireSessionUser(nextPath = "/") {
+export async function requireSessionUser(nextPath = "/", skipTermsCheck = false) {
   const sessionUser = await getSessionUser();
 
   if (!sessionUser) {
     redirect(buildLoginRedirectPath(nextPath));
+  }
+
+  if (!skipTermsCheck && !sessionUser.termsAcceptedAt) {
+    redirect(`/auth/accept-policies?next=${encodeURIComponent(nextPath)}`);
   }
 
   return sessionUser;
@@ -129,6 +133,35 @@ export async function requireOrganizationMembership(orgSlug: string) {
   });
 
   if (!membership) {
+    if (sessionUser.isPlatformAdmin) {
+      // Record administrative access in audit logs
+      await prisma.auditLog.create({
+        data: {
+          event: "SUPERADMIN_WORKSPACE_ACCESS",
+          actorId: sessionUser.id,
+          actorEmail: sessionUser.email,
+          entityType: "ORGANIZATION",
+          entityId: org.id,
+          entityName: org.name,
+          metadata: {
+            reason: "Administrative oversight",
+            path: orgSlug,
+          },
+        },
+      });
+
+      return {
+        user: sessionUser,
+        membership: {
+          role: MembershipRole.OWNER,
+          organization: {
+            id: org.id,
+            slug: orgSlug,
+            name: org.name,
+          },
+        },
+      };
+    }
     notFound();
   }
 

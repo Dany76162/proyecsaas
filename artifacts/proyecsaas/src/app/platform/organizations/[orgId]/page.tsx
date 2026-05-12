@@ -78,12 +78,12 @@ export default async function OrgAuditPage({
           </div>
           
           <a
-            href={`/${org.slug}/catalog`}
+            href={`/${org.slug}/properties`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
           >
-            Ver Sitio Público
+            Ver Propiedades
             <ExternalLink className="h-4 w-4 text-slate-400" />
           </a>
         </div>
@@ -181,7 +181,7 @@ export default async function OrgAuditPage({
             </p>
           </div>
           <Link 
-            href={`/${org.slug}/catalog`} 
+            href={`/${org.slug}/properties`} 
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/5 py-2 px-3 text-xs font-medium text-white transition hover:bg-white/10 w-full"
             target="_blank"
           >

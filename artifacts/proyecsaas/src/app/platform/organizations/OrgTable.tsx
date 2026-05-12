@@ -308,6 +308,7 @@ export function OrgTable({
                           <OnboardingControls
                             orgSlug={org.slug}
                             orgName={org.name}
+                            ownerEmail={org.ownerEmail}
                             hasUsers={org.memberCount > 0}
                             isActive={org.isActive}
                             maxAiAgents={org.maxAiAgents}

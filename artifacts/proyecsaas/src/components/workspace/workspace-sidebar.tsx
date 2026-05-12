@@ -55,6 +55,11 @@ const MANAGEMENT_NAV = [
   { label: "Organización",   path: "/settings/organization", icon: Settings },
 ] as const;
 
+const HELP_NAV = [
+  { label: "Soporte Técnico", href: "https://wa.me/5491161630205", icon: MessageSquare },
+  { label: "Manual de Uso",   path: "/manual-uso",             icon: BookOpen },
+] as const;
+
 const ROLE_MAP = {
   OWNER:     { label: "Titular",           copy: "Acceso total" },
   ADMIN:     { label: "Administrador",     copy: "Gestión y operación" },
@@ -243,6 +248,56 @@ export function WorkspaceSidebar({
             </div>
           </div>
         )}
+        {/* Centro de Ayuda */}
+        <div>
+          <p className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-600">
+            Centro de Ayuda
+          </p>
+          <div className="space-y-0.5">
+            {HELP_NAV.map((item) => {
+              const Icon = item.icon;
+              if ("href" in item) {
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.05] hover:text-slate-200"
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0 transition-colors duration-150 text-slate-600 group-hover:text-slate-400" />
+                    {item.label}
+                  </a>
+                );
+              }
+              const active = isActive(organization.slug, item.path);
+              return (
+                <Link
+                  key={item.path}
+                  href={`/${organization.slug}${item.path}`}
+                  onClick={onClose}
+                  className={cn(
+                    "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
+                    active
+                      ? "bg-white/[0.08] text-white"
+                      : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200",
+                  )}
+                >
+                  {active && (
+                    <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-brand-400" />
+                  )}
+                  <Icon
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-colors duration-150",
+                      active ? "text-brand-400" : "text-slate-600 group-hover:text-slate-400",
+                    )}
+                  />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
       {/* User footer */}

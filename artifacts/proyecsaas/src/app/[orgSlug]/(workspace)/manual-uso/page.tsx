@@ -29,14 +29,21 @@ const systemSteps = [
   },
   {
     step: "4",
-    title: "Interviene una persona",
+    title: "Agendado de visitas",
     description:
-      "Cuando aparece una oportunidad real, el equipo toma el control para cerrar visita u operación.",
+      "Si el cliente quiere ver una propiedad, la IA propone turnos basados en tu disponibilidad configurada.",
+  },
+  {
+    step: "5",
+    title: "Cierre humano",
+    description:
+      "Cuando aparece una oportunidad real, el equipo toma el control para cerrar la operación.",
   },
 ] as const;
 
 const leadChecklist = [
   "Revisar la conversación y entender qué pidió el cliente.",
+  "Configurar tu Disponibilidad para que la IA pueda agendar visitas por vos.",
   "Identificar si busca una propiedad puntual, información general o una visita.",
   "Responder manualmente solo si hace falta destrabar la conversación.",
   "Llevar el contacto hacia una visita o siguiente paso concreto.",
@@ -286,6 +293,49 @@ export default async function WorkspaceManualUsoPage({
               </div>
             </SectionCard>
           </div>
+        </div>
+
+        {/* Nueva sección de Disponibilidad */}
+        <div className="[break-inside:avoid] [page-break-inside:avoid]">
+          <SectionCard
+            eyebrow="Configuración"
+            title="Gestión de Disponibilidad para Visitas"
+            description="Para que la IA pueda proponer visitas, necesita saber cuándo estás disponible."
+          >
+            <div className="grid gap-6 lg:grid-cols-2 print:grid-cols-1">
+              <div className="space-y-4 text-sm leading-6 text-slate-600">
+                <p>
+                  En la sección de <strong>Disponibilidad</strong>, podés configurar tus franjas horarias de trabajo. 
+                  Sin esto, la IA no podrá ofrecer turnos automáticos y tendrá que derivar la consulta siempre a un humano.
+                </p>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="font-semibold text-slate-900 mb-2">Tipos de Horarios</p>
+                  <ul className="space-y-2 list-disc pl-4 text-slate-600">
+                    <li><strong>Generales:</strong> Para toda la inmobiliaria.</li>
+                    <li><strong>Por Agente:</strong> Si un agente específico tiene sus propios horarios.</li>
+                    <li><strong>Por Propiedad:</strong> Si una propiedad solo se puede mostrar en días específicos.</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-5 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="font-semibold text-brand-900">¿Por qué es importante?</p>
+                  <p className="mt-2 text-sm leading-relaxed text-brand-800">
+                    Las inmobiliarias que configuran sus horarios ven un <strong>40% más de visitas agendadas</strong>, 
+                    ya que el cliente recibe una propuesta de turno inmediata en WhatsApp mientras tiene interés.
+                  </p>
+                </div>
+                <div className="print:hidden">
+                  <Link
+                    href={`/${orgSlug}/settings/availability`}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  >
+                    Configurar mis horarios ahora
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
         </div>
 
         <div className="grid gap-5 xl:grid-cols-2 print:grid-cols-1">

@@ -38,6 +38,7 @@ export type OrgPlatformSummary = {
   currentPeriodEnd: string | null;
   internalBillingNotes: string | null;
   planId: string | null;
+  ownerEmail: string | null;
 };
 
 export type PlatformPlanOption = {
