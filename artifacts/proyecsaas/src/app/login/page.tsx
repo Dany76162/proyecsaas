@@ -8,6 +8,7 @@ import { resolveSignedInHomePath } from "@/server/auth/access";
 import { getSessionUser } from "@/server/auth/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -169,12 +170,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     ¿Olvidaste tu clave?
                   </a>
                 </div>
-                <Input
-                  type="password"
+                <PasswordInput
                   name="password"
                   required
                   placeholder="••••••••"
-                  className="h-14 bg-white border-slate-200 shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:ring-brand-600 focus:border-brand-600 text-base rounded-xl transition-all"
+                  className="h-14 bg-white border-slate-200 shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:ring-brand-600 focus:border-brand-600 text-base rounded-xl transition-all pr-12"
                 />
               </div>
 
