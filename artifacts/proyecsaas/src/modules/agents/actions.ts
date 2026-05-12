@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 import "server-only";
 
 import { revalidatePath } from "next/cache";
@@ -6,8 +6,9 @@ import { redirect } from "next/navigation";
 import { getOpenAIClient, createAgentLog, getActiveAgentByType, inferPlatform, formatOpenAIPrompt, parseMarketingResponse, OPENAI_MODEL } from "@/modules/agents/service";
 import { prisma } from "@/server/db/prisma";
 import { assertMinimumRole, requireOrganizationMembership, requirePlatformAdmin } from "@/server/auth/access";
-import { ApprovalStatus, AgentType, AgentLogLevel, TaskStatus, RunStatus, DraftStatus, MembershipRole } from "@prisma/client";
+import { ApprovalStatus, AgentType, AgentLogLevel, TaskStatus, RunStatus, DraftStatus, MembershipRole, GoalType, GoalStatus } from "@prisma/client";
 import type { ContentPlatform, AgentPriority } from "@prisma/client";
+import { createAgentGoal, suggestTasksForGoal } from "./goals-service";
 
 export async function createAgentTask(formData: FormData) {
   const sessionUser = await requirePlatformAdmin();
@@ -17,6 +18,7 @@ export async function createAgentTask(formData: FormData) {
   const priority = formData.get("priority")?.toString() as AgentPriority | null;
   const platform = formData.get("platform")?.toString() as ContentPlatform | null;
   const contentType = formData.get("contentType")?.toString()?.trim() || "post";
+  const goalId = formData.get("goalId")?.toString();
 
   if (!title || !description || !priority) {
     throw new Error("Título, descripción y prioridad son obligatorios");
@@ -29,6 +31,7 @@ export async function createAgentTask(formData: FormData) {
       title,
       description,
       priority,
+      goalId: goalId || null,
       createdById: sessionUser.id,
       metadata: { contentType, platform },
     },
@@ -339,3 +342,77 @@ export async function deleteAgent(orgSlug: string, agentId: string) {
 
   revalidatePath(`/${orgSlug}/agents`);
 }
+
+/**
+ * PLATFORM GOALS (AgentOS 2.3)
+ */
+
+export async function createGoalAction(formData: FormData) {
+  const sessionUser = await requirePlatformAdmin();
+
+  const title = formData.get("title")?.toString().trim();
+  const description = formData.get("description")?.toString().trim();
+  const priority = formData.get("priority")?.toString() as AgentPriority;
+  const type = formData.get("type")?.toString() as GoalType;
+  const targetDateStr = formData.get("targetDate")?.toString();
+
+  if (!title || !priority || !type) {
+    throw new Error("Título, prioridad y tipo son obligatorios");
+  }
+
+  const goal = await createAgentGoal({
+    title,
+    description,
+    priority,
+    type,
+    targetDate: targetDateStr ? new Date(targetDateStr) : undefined
+  });
+
+  revalidatePath("/platform/agents/goals");
+  revalidatePath("/platform/agents");
+  
+  redirect(`/platform/agents/goals/${goal.id}`);
+}
+
+export async function suggestGoalTasksAction(goalId: string) {
+  await requirePlatformAdmin();
+  
+  if (!goalId) throw new Error("ID de objetivo requerido");
+
+  const suggestions = await suggestTasksForGoal(goalId);
+  return { success: true, data: suggestions };
+}
+
+export async function createSuggestedTasksAction(goalId: string, tasks: { title: string; description: string }[]) {
+  const sessionUser = await requirePlatformAdmin();
+
+  const orchestrator = await getActiveAgentByType(AgentType.ORCHESTRATOR);
+  
+  for (const taskData of tasks) {
+    const task = await prisma.agentTask.create({
+      data: {
+        scope: "PLATFORM",
+        organizationId: null,
+        goalId,
+        agentId: orchestrator?.id || null,
+        status: orchestrator ? TaskStatus.ASSIGNED : TaskStatus.PENDING,
+        title: taskData.title,
+        description: taskData.description,
+        priority: "MEDIUM",
+        createdById: sessionUser.id
+      }
+    });
+
+    await createAgentLog({
+      level: AgentLogLevel.INFO,
+      message: `Tarea creada desde objetivo: ${task.title}`,
+      metadata: { goalId, taskId: task.id }
+    });
+  }
+
+  revalidatePath(`/platform/agents/goals/${goalId}`);
+  revalidatePath("/platform/agents/tasks");
+  
+  return { success: true };
+}
+

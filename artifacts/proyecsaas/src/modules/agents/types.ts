@@ -1,4 +1,4 @@
-﻿export type AgentTaskSummary = {
+export type AgentTaskSummary = {
   id: string;
   title: string;
   description: string | null;
@@ -67,6 +67,8 @@ export type AgentCanvasData = {
     drafts: AgentCanvasNode;
     approvals: AgentCanvasNode;
     logs: AgentCanvasNode;
+    goals: AgentCanvasNode;
+    library: AgentCanvasNode;
   };
 };
 

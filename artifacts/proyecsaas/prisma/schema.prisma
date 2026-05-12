@@ -616,6 +616,22 @@ enum ApprovalStatus {
   REJECTED     // Rechazado por humano
 }
 
+enum GoalStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+  FAILED
+}
+
+enum GoalType {
+  MARKETING
+  OPERATIONS
+  ONBOARDING
+  COMMERCIAL
+  AUDIT
+}
+
 enum ContentPlatform {
   FACEBOOK
   INSTAGRAM
@@ -668,6 +684,7 @@ model AgentTask {
   description   String?
   status        TaskStatus   @default(PENDING)
   priority      AgentPriority @default(MEDIUM)
+  goalId        String?      // Asociado a un objetivo operativo
   createdById   String       // User (Superadmin)
   metadata      Json?        // Datos específicos (ej: {"contentType": "post"})
   createdAt     DateTime     @default(now())
@@ -675,6 +692,7 @@ model AgentTask {
   
   // Relaciones
   agent         Agent?       @relation(fields: [agentId], references: [id])
+  goal          AgentGoal?   @relation(fields: [goalId], references: [id])
   createdBy     User         @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   runs          AgentRun[]
   approvals     AgentApproval[]
@@ -739,6 +757,21 @@ model AgentLog {
   run           AgentRun?     @relation(fields: [runId], references: [id])
   
   @@index([scope, organizationId, timestamp])
+}
+
+model AgentGoal {
+  id              String       @id @default(cuid())
+  title           String
+  description     String?
+  status          GoalStatus   @default(PENDING)
+  priority        AgentPriority @default(MEDIUM)
+  type            GoalType
+  targetDate      DateTime?
+  progress        Int          @default(0) // 0-100 calculado
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  tasks           AgentTask[]
 }
 
 model ContentDraft {

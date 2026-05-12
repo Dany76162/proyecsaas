@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import OpenAI from "openai";
 import { prisma } from "@/server/db/prisma";
@@ -23,33 +23,180 @@ export type AgentDashboardSummary = {
   pendingApproval: number;
   draftCount: number;
   activeAgents: number;
+  // Métricas 2.2
+  completedLast7Days: number;
+  approvedCount: number;
+  rejectedCount: number;
+  recentErrors: number;
+  avgApprovalTimeMinutes: number | null;
+  approvalRate: number;
+  hasOpenAIQuotaError: boolean;
+  totalGoals: number;
+  activeGoals: number;
 };
 
 export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary> {
-  // Each count is wrapped individually to gracefully handle tables
-  // that may not exist yet in the database (e.g. fresh local dev).
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
   async function safeCount(fn: () => Promise<number>): Promise<number> {
     try {
       return await fn();
     } catch (err) {
-      console.warn("[AgentOS] Count failed (table likely missing):", err instanceof Error ? err.message : String(err));
       return 0;
     }
   }
 
-  const [totalTasks, pendingApproval, draftCount, activeAgents] = await Promise.all([
+  const [
+    totalTasks, 
+    pendingApproval, 
+    draftCount, 
+    activeAgents,
+    completedLast7Days,
+    approvedCount,
+    rejectedCount,
+    recentErrors,
+    quotaErrorLog,
+    approvalsWithTime,
+    totalGoals,
+    activeGoals
+  ] = await Promise.all([
     safeCount(() => prisma.agentTask.count()),
     safeCount(() => prisma.agentApproval.count({ where: { status: ApprovalStatus.PENDING } })),
     safeCount(() => prisma.contentDraft.count()),
     safeCount(() => prisma.agent.count({ where: { scope: "PLATFORM", isActive: true } })),
+    safeCount(() => prisma.agentTask.count({ 
+      where: { status: TaskStatus.COMPLETED, updatedAt: { gte: sevenDaysAgo } } 
+    })),
+    safeCount(() => prisma.agentApproval.count({ where: { status: ApprovalStatus.APPROVED } })),
+    safeCount(() => prisma.agentApproval.count({ where: { status: ApprovalStatus.REJECTED } })),
+    safeCount(() => prisma.agentLog.count({ 
+      where: { level: AgentLogLevel.ERROR, timestamp: { gte: sevenDaysAgo } } 
+    })),
+    prisma.agentLog.findFirst({
+      where: { 
+        OR: [
+          { message: { contains: "429" } },
+          { message: { contains: "quota" } },
+          { message: { contains: "limit" } }
+        ],
+        timestamp: { gte: new Date(Date.now() - 6 * 60 * 60 * 1000) } // Últimas 6 horas
+      }
+    }),
+    prisma.agentApproval.findMany({
+      where: { 
+        status: { in: [ApprovalStatus.APPROVED, ApprovalStatus.REJECTED] },
+        decidedAt: { not: null }
+      },
+      select: { requestedAt: true, decidedAt: true },
+      take: 50,
+      orderBy: { decidedAt: 'desc' }
+    }),
+    safeCount(() => prisma.agentGoal.count()),
+    safeCount(() => prisma.agentGoal.count({ where: { status: { not: "COMPLETED" } } }))
   ]);
+
+  const totalDecided = approvedCount + rejectedCount;
+  const approvalRate = totalDecided > 0 ? (approvedCount / totalDecided) * 100 : 0;
+
+  let avgApprovalTimeMinutes = null;
+  if (approvalsWithTime.length > 0) {
+    const times = approvalsWithTime.map(a => {
+      const start = new Date(a.requestedAt).getTime();
+      const end = new Date(a.decidedAt!).getTime();
+      return (end - start) / (1000 * 60);
+    });
+    avgApprovalTimeMinutes = times.reduce((a, b) => a + b, 0) / times.length;
+  }
 
   return {
     totalTasks,
     pendingApproval,
     draftCount,
     activeAgents,
+    completedLast7Days,
+    approvedCount,
+    rejectedCount,
+    recentErrors,
+    avgApprovalTimeMinutes,
+    approvalRate,
+    hasOpenAIQuotaError: !!quotaErrorLog,
+    totalGoals,
+    activeGoals,
   };
+}
+
+export async function getAgentLibraryData() {
+  const agents = await prisma.agent.findMany({
+    where: { scope: "PLATFORM" },
+    orderBy: { createdAt: "asc" }
+  });
+
+  // Agentes "virtuales" o futuros que no están en DB aún
+  const predefined = [
+    {
+      id: "orchestrator",
+      name: "Director Operativo IA",
+      role: "Orquesta objetivos, tareas y agentes.",
+      type: "ORCHESTRATOR",
+      status: "ACTIVE",
+      isActive: agents.some(a => a.type === "ORCHESTRATOR" && a.isActive),
+      capabilities: ["Planificación", "Asignación", "Seguimiento"],
+      availability: "24/7"
+    },
+    {
+      id: "marketing",
+      name: "Agente de Marketing",
+      role: "Genera contenido, campañas y borradores.",
+      type: "MARKETING",
+      status: "ACTIVE",
+      isActive: agents.some(a => a.type === "MARKETING" && a.isActive),
+      capabilities: ["Copywriting", "Hashtags", "Ads"],
+      availability: "24/7"
+    },
+    {
+      id: "commercial",
+      name: "Agente Comercial",
+      role: "Analiza solicitudes de demo y oportunidades comerciales.",
+      type: "COMMERCIAL",
+      status: "INACTIVE",
+      isActive: false,
+      capabilities: ["Calificación", "Ventas", "Prospectos"],
+      availability: "Próximamente"
+    },
+    {
+      id: "onboarding",
+      name: "Agente de Onboarding",
+      role: "Ayuda a preparar altas de inmobiliarias y configuración inicial.",
+      type: "ONBOARDING",
+      status: "INACTIVE",
+      isActive: false,
+      capabilities: ["Setup", "Configuración", "Migración"],
+      availability: "Próximamente"
+    },
+    {
+      id: "qa",
+      name: "Agente QA",
+      role: "Audita logs, errores y calidad operativa.",
+      type: "QA",
+      status: "INACTIVE",
+      isActive: false,
+      capabilities: ["Auditoría", "Testing", "Alertas"],
+      availability: "Próximamente"
+    },
+    {
+      id: "financial",
+      name: "Agente Financiero",
+      role: "Resume métricas de facturación y uso.",
+      type: "FINANCIAL",
+      status: "INACTIVE",
+      isActive: false,
+      capabilities: ["Facturación", "Pagos", "Métricas"],
+      availability: "Próximamente"
+    }
+  ];
+
+  return predefined;
 }
 
 export async function listAgentTasks() {
@@ -70,30 +217,66 @@ export async function listAgentContentDrafts() {
     where: { scope: "PLATFORM" },
     orderBy: { createdAt: "desc" },
     include: {
-      task: { select: { title: true, status: true } },
+      task: { 
+        include: {
+          approvals: {
+            select: { id: true, status: true }
+          }
+        }
+      },
     },
   });
 }
 
-export async function listAgentApprovals() {
+export async function listAgentApprovals(status?: ApprovalStatus) {
   return prisma.agentApproval.findMany({
-    where: { scope: "PLATFORM", status: ApprovalStatus.PENDING },
+    where: { 
+      scope: "PLATFORM", 
+      ...(status ? { status } : {})
+    },
     orderBy: { requestedAt: "desc" },
     include: {
-      task: { select: { title: true, description: true, status: true } },
+      task: { 
+        select: { 
+          id: true, 
+          title: true, 
+          description: true, 
+          status: true,
+          drafts: {
+            select: {
+              id: true,
+              platform: true,
+              type: true,
+              content: true,
+              hashtags: true
+            }
+          }
+        } 
+      },
       run: { select: { status: true, error: true } },
       requestedByAgent: { select: { name: true, type: true } },
+      decidedByUser: { select: { fullName: true } },
     },
   });
 }
 
-export async function listAgentLogs() {
+export async function listAgentLogs(level?: AgentLogLevel) {
   return prisma.agentLog.findMany({
-    where: { scope: "PLATFORM" },
+    where: { 
+      scope: "PLATFORM",
+      ...(level ? { level } : {})
+    },
     orderBy: { timestamp: "desc" },
     take: 200,
     include: {
-      run: { select: { taskId: true, agentId: true } },
+      run: { 
+        select: { 
+          taskId: true, 
+          agentId: true,
+          agent: { select: { name: true } },
+          task: { select: { title: true } }
+        } 
+      },
     },
   });
 }
@@ -137,6 +320,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
     approvalCountsRaw,
     recentLogs,
     runStatusCountsRaw,
+    activeGoalsRaw,
   ] = await Promise.all([
     prisma.agent.findMany({
       where: { scope: PLATFORM_SCOPE },
@@ -169,6 +353,12 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
       where: { scope: PLATFORM_SCOPE },
       _count: { status: true },
     }),
+    prisma.agentGoal.findMany({
+      where: { status: { not: "COMPLETED" } },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      select: { title: true, progress: true }
+    })
   ]);
 
   const taskCounts = countByKey(taskCountsRaw, [
@@ -227,7 +417,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
           { label: "Pendientes", value: taskCounts.PENDING, tone: "neutral" },
           { label: "Aprobaciones", value: approvalCounts.PENDING, tone: approvalCounts.PENDING > 0 ? "warning" : "success" },
         ],
-        activities: recentActivities.slice(0, 3),
+        activities: recentActivities.slice(0, 5),
       },
       marketing: {
         id: "marketing",
@@ -243,7 +433,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
           { label: "Completadas", value: taskCounts.COMPLETED, tone: "success" },
           { label: "Errores recientes", value: recentErrors, tone: recentErrors > 0 ? "danger" : "success" },
         ],
-        activities: recentActivities.slice(0, 3),
+        activities: recentActivities.slice(0, 5),
       },
       tasks: {
         id: "tasks",
@@ -270,7 +460,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
             FAILED: "danger",
           },
         ),
-        activities: recentActivities.slice(0, 4),
+        activities: recentActivities.slice(0, 5),
       },
       drafts: {
         id: "drafts",
@@ -285,7 +475,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
           { DRAFT: "Borradores", APPROVED: "Aprobados", REJECTED: "Rechazados" },
           { DRAFT: "warning", APPROVED: "success", REJECTED: "danger" },
         ),
-        activities: recentActivities.slice(0, 3),
+        activities: recentActivities.slice(0, 5),
       },
       approvals: {
         id: "approvals",
@@ -317,6 +507,31 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
         ],
         activities: recentActivities,
       },
+      goals: {
+        id: "goals",
+        title: "Objetivos Estratégicos",
+        subtitle: "Metas de alto nivel que el sistema debe cumplir.",
+        type: "GOALS",
+        status: activeGoalsRaw.length > 0 ? `${activeGoalsRaw.length} Activos` : "Sin metas activas",
+        description: "Representa el 'por qué' de las tareas asignadas. El Director Operativo IA desglosa estos objetivos en tareas accionables.",
+        href: "/platform/agents/goals",
+        metrics: activeGoalsRaw.map(g => ({ label: g.title, value: g.progress, tone: "info" })),
+        activities: [],
+      },
+      library: {
+        id: "library",
+        title: "Biblioteca de Agentes",
+        subtitle: "Capacidades de IA disponibles para la plataforma.",
+        type: "AGENTS_LIBRARY",
+        status: `${agents.length} Agentes DB / 6 Perfiles`,
+        description: "Catálogo de agentes activos e inactivos. Define roles, capacidades y disponibilidad del equipo IA.",
+        href: "/platform/agents/library",
+        metrics: [
+          { label: "Activos", value: agents.filter(a => a.isActive).length, tone: "success" },
+          { label: "Disponibles", value: 6, tone: "info" }
+        ],
+        activities: [],
+      }
     },
   };
 }
