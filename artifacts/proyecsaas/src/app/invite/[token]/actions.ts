@@ -38,6 +38,10 @@ export async function acceptInviteAction(prevState: any, formData: FormData) {
     return { success: false, message: "Invitacion invalida o expirada." };
   }
 
+  if (!invite.organizationId) {
+    return { success: false, message: "Invitacion invalida o vencida." };
+  }
+
   const organization = await prisma.organization.findUnique({
     where: { id: invite.organizationId },
     select: { slug: true },

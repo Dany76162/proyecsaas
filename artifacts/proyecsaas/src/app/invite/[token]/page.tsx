@@ -36,13 +36,15 @@ async function getInvitePageState(token: string): Promise<InvitePageState | null
     return null;
   }
 
-  const organization = await prisma.organization.findUnique({
-    where: { id: invite.organizationId },
-    select: {
-      name: true,
-      slug: true,
-    },
-  });
+  const organization = invite.organizationId
+    ? await prisma.organization.findUnique({
+        where: { id: invite.organizationId },
+        select: {
+          name: true,
+          slug: true,
+        },
+      })
+    : null;
 
   return {
     usedAt: invite.usedAt,
