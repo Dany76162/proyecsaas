@@ -1,184 +1,110 @@
 # Manual Operativo — RaicesPilot SaaS
 
-**Versión**: 1.0  
-**Fecha**: Abril 2026  
-**Documento**: Guía centralizada de operación técnica y comercial para Superadmins.
+**Versión**: 3.1  
+**Fecha**: Mayo 2026  
+**Documento**: Guía centralizada de operación técnica y comercial para Superadmins y Operadores.
 
-> [!NOTE]
-> Este documento es el **Manual Maestro Técnico**. Para guías de uso diario integradas en la plataforma, consulta el **Manual de Inmobiliarias** (en el workspace del cliente) y el **Manual Operativo Vivo** (en el panel Superadmin).
-
----
-
-## 1. Visión General del Sistema
-
-**RaicesPilot** es una plataforma SaaS multi-tenant B2B diseñada exclusivamente para agencias inmobiliarias argentinas. Su objetivo es automatizar la captación y calificación de leads mediante inteligencia artificial, centralizando la operación en un CRM especializado.
-
-### Propósito Core
-- **Automatización 24/7**: Captación de leads vía WhatsApp usando GPT-4o-mini.
-- **Calificación Inteligente**: Filtrado de prospectos según zona, presupuesto y tipo de propiedad.
-- **Escalamiento Humano**: Handoff fluido a operadores humanos cuando la IA detecta una intención de cierre o duda compleja.
-- **Gestión Inmobiliaria**: CRM integrado con módulos de propiedades, visitas y analítica.
-
-### Stack Tecnológico Principal
-- **Framework**: Next.js 15 (App Router).
-- **Base de Datos**: PostgreSQL con Prisma ORM.
-- **Colas/Background**: BullMQ con Redis.
-- **Integraciones**: WhatsApp Cloud API (v21.0), OpenAI (GPT-4o / GPT-4o-mini), Mercado Pago (Checkout Pro), UploadThing.
-
-### Arquitectura de Datos (ERD)
-- **Organization (Tenant)**: La entidad raíz. Posee su propio subdominio (slug), base de propiedades y configuración de IA.
-- **User (Global)**: El usuario existe a nivel plataforma. Su email es único.
-- **Membership**: El puente entre User y Organization. Define el rol (OWNER, ADMIN, etc.).
-- **WhatsAppChannel**: Vinculado a la Org. Soporta múltiples números, pero uno actúa como primario para la IA.
+> [!IMPORTANT]
+> **AgentOS 3.1 (Governance & Production Safety)** está actualmente habilitado **exclusivamente** para el panel de Superadmin. El Panel de Administrador Inmobiliario (Tenants) mantiene su versión operativa estándar hasta nuevo aviso.
 
 ---
 
-## 2. Gestión de Roles y Permisos
+## 1. Visión del Producto y Arquitectura
 
-El sistema utiliza una estructura jerárquica de permisos basada en membresías por organización.
+**RaicesPilot** es una plataforma SaaS multi-tenant diseñada para automatizar el ciclo de vida del lead inmobiliario en Argentina.
 
-| Rol | Siglas | Descripción |
-| :--- | :--- | :--- |
-| **OWNER** | OW | Titular de la inmobiliaria. Acceso total a facturación, configuración de la organización y gestión de equipo. |
-| **ADMIN** | AD | Administrador operativo. Puede gestionar agentes IA, propiedades y supervisar a todos los agentes. |
-| **AGENT** | AG | Agente de ventas. Operación comercial diaria: gestión de sus propios leads, conversaciones y visitas. |
-| **ASSISTANT** | AS | Soporte operativo. Acceso limitado a carga de datos y visualización. |
-| **Platform Admin** | PA | Administrador de la infraestructura global (`isPlatformAdmin: true`). Acceso al panel `/platform`. Puede auditar workspaces ajenos bajo protocolo de seguridad. |
+### 1.1. Estructura de Paneles
+1. **Landing Pública**: Vitrina comercial y captación central vía WhatsApp oficial.
+2. **Panel Admin Inmobiliario (Tenant)**: Gestión diaria de la inmobiliaria (leads, propiedades, visitas).
+3. **Panel Superadmin (Platform)**: Control global, métricas, salud del sistema y AgentOS.
+4. **AgentOS 3.1**: Sistema avanzado de operaciones asistidas por agentes IA (solo Superadmin).
 
----
-
-## 4. Seguridad, Privacidad y Auditoría
-
-Para garantizar el cumplimiento legal y la transparencia operativa, el sistema implementa tres capas de control:
-
-### 4.1. Aceptación Obligatoria de Políticas
-Todo usuario, al ingresar por primera vez o tras una actualización legal, debe aceptar las **Políticas de Uso y Privacidad** en `/auth/accept-policies`. El acceso a los datos de la inmobiliaria está bloqueado hasta que se confirme esta aceptación.
-
-### 4.2. Registro de Auditoría (Audit Logs)
-El sistema registra acciones sensibles de los administradores de plataforma:
-- **SUPERADMIN_WORKSPACE_ACCESS**: Registra cada vez que un Superadmin accede al workspace de una inmobiliaria para soporte técnico.
-- El log incluye: Actor, Fecha, Organización accedida y Contexto del acceso.
-
-### 4.3. Recuperación de Accesos (Contraseñas)
-Dado que RaicesPilot es un entorno corporativo controlado, la recuperación de claves se gestiona mediante soporte administrativo:
-1. **Solicitud**: El usuario utiliza el enlace "¿Olvidaste tu clave?" en el login para enviar un mensaje de WhatsApp al Superadmin.
-2. **Reinicio**: El Superadmin utiliza la función **"Reiniciar Clave"** en el panel de control.
-3. **Link Único**: Se genera un enlace de invitación temporal (48hs) que permite al usuario establecer una nueva clave.
+### 1.2. Separación de Responsabilidades (PLATFORM vs ORGANIZATION)
+- **PLATFORM**: Nivel infraestructura. Controla suscripciones, salud global y gobernanza de agentes.
+- **ORGANIZATION**: Nivel cliente. Controla sus propios datos, equipo y agentes locales.
 
 ---
 
-## 5. Guía Funcional por Módulos
+## 2. Panel de Administrador Inmobiliario (Tenant)
 
-### 3.1. CRM de Leads (Prospectos)
-Centraliza toda la información de los clientes potenciales.
-- **Ciclo de Vida**: `NEW` -> `CONTACTED` -> `INTERESTED` -> `VISIT` -> `CLOSED`.
-- **Scoring**: El sistema califica automáticamente al lead basándose en "señales comerciales" detectadas por la IA.
-- **Asignación**: Los leads pueden asignarse manualmente o automáticamente a un `OWNER` o `AGENT`.
+Ubicado en `/[orgSlug]`, permite a la inmobiliaria gestionar su negocio:
 
-### 3.2. Gestión de Propiedades
-Inventario digital sincronizable.
-- **Atributos**: Soporte para tipo de operación (Venta/Alquiler), ubicación (lat/long), moneda (ARS/USD), expensas y galería de imágenes.
-- **Sincronización**: Posibilidad de importar propiedades desde fuentes externas vía URL (PropertySource).
-- **Catálogo Público**: Cada inmobiliaria tiene un `/catalog` público y un `/map` interactivo.
-
-### 3.3. Agentes IA (WhatsApp)
-El "cerebro" conversacional del sistema.
-- **Configuración**: Se define el tono (Formal/Amigable), persona, y filtros específicos (zonas permitidas, presupuesto min/max).
-- **Disponibilidad**: Sincronización con el módulo de horarios para proponer visitas reales.
-- **Handoff (Escalamiento)**: Se activa automáticamente cuando la IA detecta una intención de cierre, duda compleja o solicitud explícita de "humano". 
-    - **isHumanControlled**: Bandera en la conversación que silencia a la IA para permitir la intervención manual sin interferencias.
-
-### 3.4. Radar de Operaciones IA (Superadmin)
-Herramienta de auditoría profunda para el equipo de plataforma.
-- **Salud por Cliente**: Detecta si una inmobiliaria tiene el canal WABA caído o si su IA no tiene propiedades cargadas para vender.
-- **Auditoría de Derivaciones**: Permite ver qué conversas terminaron en "atascadas" (sin respuesta humana post-IA) para asesorar al cliente.
-- **Métricas de Impacto**: Visualización del volumen de mensajes procesados vs. derivaciones exitosas.
-- **Inbox**: Filtra por estado de conversación (`OPEN`, `QUALIFIED`, `CLOSED`).
-- **Follow-up**: Sistema de seguimiento automático para mensajes que requieren respuesta técnica o comercial.
-- **Control Humano**: Permite a un agente tomar el control total del chat, pausando la IA momentáneamente.
-
-### 3.5. Gestión de Disponibilidad y Visitas
-Permite configurar cuándo la IA puede agendar citas físicas o virtuales.
-- **Configuración**: Se realiza en `/[orgSlug]/settings/availability`.
-- **Inteligencia**: La IA consulta estos slots en tiempo real para proponer turnos a los leads calificados.
-- **Seguimiento**: Gestión de estados de citas (`PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELED`) y recordatorios automáticos.
+- **Inicio/Captación**: Vista rápida de actividad y links de referido.
+- **Prospectos & Conversaciones**: CRM de leads y chat multicanal asistido por IA.
+- **Visitas**: Calendario de citas coordinadas por la IA.
+- **Propiedades**: Inventario sincronizado o cargado manualmente.
+- **Agentes IA**: Configuración local (tono, filtros de presupuesto, zonas).
+- **Equipo & Organización**: Gestión de miembros y roles (OWNER, ADMIN, AGENT).
+- **Integraciones**: Vinculación de WhatsApp Business (WABA).
 
 ---
 
-## 4. Configuraciones Críticas
+## 3. AgentOS 3.1 (Superadmin Center)
 
-### 4.1. Integración WhatsApp (Meta)
-Para que el sistema funcione, cada organización debe vincular su WABA (WhatsApp Business Account).
-- **Requisito**: `phoneNumberId`, `wabaId` y `accessToken` cifrado.
-- **Validación**: El sistema monitorea el estado del canal (`ACTIVE`, `DISCONNECTED`, `ERROR`).
+Ubicado en `/platform/agents`, es el núcleo de inteligencia y gobernanza de RaicesPilot.
 
-### 4.2. Pagos y Facturación (Mercado Pago)
-Gestión de suscripciones y cobros.
-- **Checkout**: Integración con Mercado Pago Checkout Pro.
-- **Webhook**: Procesamiento automático de notificaciones de pago para activar/suspender organizaciones.
+### 3.1. Gestión Operativa
+- **Objetivos Operativos**: Definición de metas de alto nivel (ej. "Generar contenido para Mayo").
+- **Director Operativo IA**: Agente orquestador que desglosa objetivos en tareas.
+- **Biblioteca de Agentes**: Repositorio de perfiles especializados (Marketing, Análisis, etc.).
+- **Canvas & Tareas**: Espacio visual para el seguimiento de ejecuciones y runs.
+- **Borradores & Aprobaciones**: Flujo Human-in-the-loop antes de cualquier publicación o acción externa.
 
----
+### 3.2. Automatización y Calendario
+- **Automatizaciones Controladas**: Reglas internas que disparan tareas programadas.
+- **Calendario Interno**: Vista unificada de publicaciones proyectadas y tareas futuras.
+- **Scheduler Interno Seguro**: Motor de ejecución de tareas diferidas protegido por secreto.
 
-## 5. Panel de Plataforma (Superadmin)
+### 3.3. Integración con Meta (Safe Mode)
+- **Meta Read-Only**: Sincronización y monitoreo de páginas sin permiso de escritura por defecto.
+- **Publicación Manual Asistida**: Flujo de publicación directa a Facebook/Instagram tras aprobación.
+- **Publicación Programada**: Ejecución automática de posts aprobados (bajo flag de seguridad).
 
-Ubicado en `/platform`, es el centro de control para los dueños del software.
-
-### 5.1. Onboarding Flow (Alta de Cliente)
-1. **Creación**: Se genera la `Organization` con su slug único.
-2. **Primer Acceso**: Se genera un `InviteToken` para el email del titular (OWNER).
-3. **Activación**: El cliente recibe el link, establece su contraseña y acepta las políticas de uso.
-4. **Setup WABA**: El Superadmin vincula el `phoneNumberId` y el token de Meta.
-5. **Carga Inicial**: El cliente carga sus propiedades (vía manual o scraping) y activa su Agente IA.
-
-### 5.2. Gestión de Accesos y Recuperación
-- **Reiniciar Clave**: Función crítica para generar nuevos enlaces de acceso para usuarios que olvidaron su contraseña o quedaron bloqueados.
-- **Limpiar Accesos**: Permite purgar todas las membresías de una inmobiliaria en caso de rescisión de contrato, manteniendo los datos históricos.
-
-### 5.2. Salud y Monitoreo
-- **Health Check**: Monitoreo en tiempo real de WhatsApp, OpenAI y el Worker.
-- **Worker Heartbeat**: Si el worker no reporta señal en > 5 minutos, se considera caído.
-
-### 5.3. Control Comercial
-- **Billing Table**: Control de cobranzas manuales y seguimiento de pagos de Mercado Pago.
-- **Suscripciones**: Gestión del estado comercial (Activo/Suspendido) de cada cliente.
+### 3.4. Gobernanza y Seguridad (RC 3.1)
+- **Budget Guard**: Límites de ejecución y autonomía para agentes IA, previniendo costos inesperados.
+- **Org Chart**: Visualización jerárquica de la estructura de agentes activos.
+- **Feature Flag Center**: Activación dinámica de capacidades (Meta, Publishing, Scheduled).
+- **Readiness Center**: Auditoría técnica antes de habilitar nuevas funciones en producción.
+- **Audit Export**: Generación de reportes operativos para auditoría externa.
 
 ---
 
-## 6. Flujos Operativos Críticos
+## 4. Seguridad y Protocolos Técnicos
 
-### 6.1. Flujo de Captación Automática
-1. Lead envía mensaje a WhatsApp.
-2. `webhook/whatsapp` recibe y encola el job en BullMQ.
-3. El `conversation-worker` consulta a la IA con el contexto de la organización y propiedades.
-4. IA responde calificando al lead si detecta interés claro.
-5. Se crea/actualiza el registro en el CRM.
+### 4.1. Protección de Acceso
+- **requirePlatformAdmin**: Todas las rutas de AgentOS 3.1 requieren permisos de administrador de plataforma.
+- **HMAC-SHA256**: Validación de sesiones en cada request.
+- **Cifrado de Tokens**: Los tokens de Meta y WhatsApp nunca son visibles en la UI y se almacenan cifrados (AES-256).
 
-### 6.2. Handoff a Operador Humano
-Si el lead dice "quiero hablar con un humano" o "quiero coordinar una visita":
-1. La IA detecta el marcador de escalamiento.
-2. Marca la conversación como `isHumanControlled: true`.
-3. Dispara una `Notification` interna para los miembros de la organización.
-4. El agente humano recibe la alerta y continúa el chat desde el Inbox.
+### 4.2. Infraestructura de Producción
+- **Cron Jobs**: Protegidos por `AGENTOS_CRON_SECRET`. Solo el programador autorizado puede disparar ejecuciones.
+- **Feature Flags**: Las funciones de publicación están desactivadas por defecto (`false`) y solo se activan mediante variables de entorno tras QA exitoso.
 
 ---
 
-## 7. Landing Page y Captación Central
+## 5. Guía de Despliegue Seguro (Railway)
 
-El ecosistema comienza en la web pública, que sirve tanto de vitrina como de embudo para la plataforma misma.
+Para garantizar la estabilidad del sistema, se deben seguir estrictamente estos pasos:
 
-### 7.1. Web Pública (Landing)
-- **Propósito**: Conversión de inmobiliarias interesadas.
-- **CTAs**: Todos los botones de "Solicitar Demo" apuntan al WhatsApp central de ventas de la plataforma.
-- **Marquee de Clientes**: Carrusel dinámico que muestra logos de inmobiliarias que ya operan con RaicesPilot.
+### 5.1. Reglas de Base de Datos
+- **PROHIBIDO**: No usar `npx prisma db push` en producción.
+- **PROHIBIDO**: No usar `npx prisma migrate reset` en producción (pérdida de datos).
+- **OBLIGATORIO**: Usar siempre `npx prisma migrate deploy --schema prisma/schema.prisma`.
 
-### 7.2. Módulo de Captación (Superadmin)
-- **Inbox Central**: Ubicado en `/platform/support`, centraliza las consultas de inmobiliarias interesadas que entran por el número oficial de RaicesPilot.
-- **Link Comercial**: Ubicado en `/platform/captacion`, permite generar enlaces con el prefijo `[ref:orgslug]` para que la IA sepa de qué inmobiliaria viene el interesado (si aplica) o tratarlo como un lead de plataforma.
+### 5.2. Checklist Pre-Deploy
+1. Ejecutar `npx prisma validate`.
+2. Ejecutar `npx prisma generate`.
+3. Validar tipos con `npx tsc --noEmit`.
+4. Realizar `npx next build`.
+5. Verificar el **Readiness Center** tras el despliegue para confirmar variables críticas.
+
+### 5.3. Variables de Entorno Críticas
+- `AGENTOS_CRON_SECRET`: Secreto para ejecuciones programadas.
+- `WHATSAPP_TOKEN_ENCRYPTION_KEY`: Llave de cifrado simétrico.
+- `AGENTOS_ENABLE_META_PUBLISHING`: Mantener en `false` hasta validación final.
+- `AGENTOS_ENABLE_SCHEDULED_PUBLISHING`: Mantener en `false` hasta validación final.
 
 ---
 
-## 8. Mantenimiento y Seguridad
-
-- **Estabilidad de DB**: Nunca ejecutar `db push` en producción. Los cambios de esquema se realizan mediante scripts controlados.
-- **Seguridad**: Todas las sesiones son validadas vía HMAC-SHA256. El acceso a los workspaces está restringido estrictamente por el `organizationId` del usuario autenticado.
-- **Logs de Auditoría**: El sistema registra acciones críticas (borrado de leads, cambios de plan) en una tabla de auditoría.
+## 6. Soporte y Mantenimiento
+El sistema mantiene logs de auditoría inmutables para cada acción administrativa. En caso de error crítico, el **Readiness Center** marcará en rojo las piezas de infraestructura fallidas.
