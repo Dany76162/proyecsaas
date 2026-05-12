@@ -74,7 +74,7 @@ function ConversationDetail({
 
   return (
     <div className="flex h-full flex-col gap-5 overflow-hidden">
-      {/* â”€â”€â”€ Header: Mesa de OperaciÃ³n â”€â”€â”€ */}
+      {/* â”€â”€â”€ Header: Mesa de Operación â”€â”€â”€ */}
       <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-6 py-4 shadow-sm">
         <div className="flex items-center gap-4 min-w-0">
           <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 font-bold">
@@ -157,7 +157,7 @@ function ConversationDetail({
           {/* Messages Feed */}
           <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-inner custom-scrollbar space-y-6">
             {conv.messages.length === 0 ? (
-              <EmptyState title="Sin mensajes" description="Esta conversaciÃ³n aÃºn no tiene actividad registrada." icon={MessageSquare} />
+              <EmptyState title="Sin mensajes" description="Esta conversación aún no tiene actividad registrada." icon={MessageSquare} />
             ) : (
               conv.messages.map((msg) => (
                 <div
@@ -191,7 +191,7 @@ function ConversationDetail({
                   {msg.deliveryStatus === "FAILED" && (
                     <span className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-500 uppercase tracking-widest">
                       <AlertCircle className="h-3.5 w-3.5" />
-                      EnvÃ­o fallido: {msg.deliveryError || "Error desconocido"}
+                      Envío fallido: {msg.deliveryError || "Error desconocido"}
                     </span>
                   )}
                 </div>
@@ -253,7 +253,7 @@ function ConversationDetail({
                   </div>
                 </div>
                 <Button asChild variant="outline" size="sm" className="w-full text-[11px] font-extrabold uppercase tracking-widest h-9">
-                  <Link href={`/${orgSlug}/properties/${conv.propertyId}`}>Ver ficha tÃ©cnica</Link>
+                  <Link href={`/${orgSlug}/properties/${conv.propertyId}`}>Ver ficha técnica</Link>
                 </Button>
               </div>
             ) : (
@@ -401,9 +401,9 @@ export function ConversationInbox({
             <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
               <p className="text-xs font-semibold text-slate-400 italic">
                 {activeFilter === "failed"
-                  ? "No hay fallas de envÃ­o."
+                  ? "No hay fallas de envío."
                   : activeFilter === "followup"
-                    ? "La bandeja operativa estÃ¡ vacÃ­a."
+                    ? "La bandeja operativa está vacía."
                     : "No hay conversaciones."}
               </p>
             </div>
@@ -442,7 +442,7 @@ export function ConversationInbox({
           <div className="flex h-full flex-col items-center justify-center text-center opacity-40">
             <div className="h-10 w-10 rounded-full border-4 border-slate-200 border-t-brand-500 animate-spin mb-4" />
             <p className="text-xs font-bold text-slate-900 uppercase tracking-widest">
-              Selecciona una conversaciÃ³n
+              Selecciona una conversación
             </p>
           </div>
         )}

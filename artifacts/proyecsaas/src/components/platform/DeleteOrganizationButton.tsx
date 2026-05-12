@@ -43,7 +43,7 @@ export function DeleteOrganizationButton({
         return;
       }
 
-      setError(result.message ?? "No se pudo eliminar la organizaciÃ³n.");
+      setError(result.message ?? "No se pudo eliminar la organización.");
     });
   }
 
@@ -83,10 +83,10 @@ export function DeleteOrganizationButton({
               <p className="mt-1 text-xs leading-5 text-slate-600">
                 Vas a borrar por completo la inmobiliaria{" "}
                 <span className="font-semibold text-slate-900">&quot;{orgName}&quot;</span> y sus
-                datos asociados. Esta acciÃ³n no se puede deshacer.
+                datos asociados. Esta acción no se puede deshacer.
               </p>
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                Para confirmar, escribÃ­ el slug exacto:
+                Para confirmar, escribí el slug exacto:
                 <span className="ml-1 font-semibold text-slate-700">{orgSlug}</span>
               </p>
             </div>
@@ -102,9 +102,9 @@ export function DeleteOrganizationButton({
             />
 
             <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">
-              Se eliminan membresÃ­as, invitaciones, leads, conversaciones, mensajes,
+              Se eliminan membresías, invitaciones, leads, conversaciones, mensajes,
               propiedades, visitas, disponibilidad, notificaciones, automatizaciones, canales
-              de WhatsApp, registros comerciales, suscripciÃ³n y agentes IA asociados.
+              de WhatsApp, registros comerciales, suscripción y agentes IA asociados.
             </div>
 
             {error ? (

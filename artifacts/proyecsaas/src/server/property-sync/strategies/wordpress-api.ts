@@ -117,8 +117,8 @@ async function fetchAllPosts(origin: string, restBase: string): Promise<WpPost[]
 
 /**
  * Extracts neighborhood from title patterns like:
- * "Departamento 3 ambientes. La Perla"  â†’ "La Perla"
- * "Casa en venta - GÃ¼emes"              â†’ "GÃ¼emes"
+ * "Departamento 3 ambientes. La Perla"  → "La Perla"
+ * "Casa en venta - GÃ¼emes"              → "GÃ¼emes"
  */
 function extractNeighborhoodFromTitle(title: string): string | null {
   // Pattern: "PROPERTY DESC. NEIGHBORHOOD" (after last dot or dash separator)
@@ -126,11 +126,11 @@ function extractNeighborhoodFromTitle(title: string): string | null {
   if (dotSplit) {
     const candidate = dotSplit[1].trim();
     // Must start with uppercase and not look like a sentence (no verbs, short)
-    if (/^[A-ZÃÃ‰ÃÃ“ÃšÃœÃ‘]/.test(candidate) && candidate.split(" ").length <= 4) {
+    if (/^[A-ZÁÉÍÓÚÃœÑ]/.test(candidate) && candidate.split(" ").length <= 4) {
       return candidate;
     }
   }
-  const dashSplit = title.match(/[-â€“]\s*([A-ZÃÃ‰ÃÃ“ÃšÃœÃ‘][^-â€“]{2,30})$/);
+  const dashSplit = title.match(/[-â€“]\s*([A-ZÁÉÍÓÚÃœÑ][^-â€“]{2,30})$/);
   if (dashSplit) {
     const candidate = dashSplit[1].trim();
     if (candidate.split(" ").length <= 4) return candidate;

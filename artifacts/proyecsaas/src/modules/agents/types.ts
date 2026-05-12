@@ -84,7 +84,7 @@ export const TONE_LABELS: Record<string, string> = {
 
 export const TONE_DESCRIPTIONS: Record<string, string> = {
   FORMAL: "Profesional y respetuoso, usa 'usted'.",
-  FRIENDLY: "CÃ¡lido y cercano, usa 'vos/tÃº'.",
+  FRIENDLY: "Cálido y cercano, usa 'vos/tú'.",
   NEUTRAL: "Conciso y directo, sin vueltas.",
 };
 

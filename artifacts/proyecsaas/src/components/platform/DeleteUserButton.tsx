@@ -18,7 +18,7 @@ export function DeleteUserButton({ userId, userLabel, onDeleted }: DeleteUserBut
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = () => {
-    const confirmed = window.confirm(`Â¿Eliminar definitivamente a ${userLabel}?`);
+    const confirmed = window.confirm(`¿Eliminar definitivamente a ${userLabel}?`);
 
     if (!confirmed) {
       return;

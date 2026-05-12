@@ -17,7 +17,7 @@ const createOrganizationSchema = z.object({
     .trim()
     .min(2, "El slug debe tener al menos 2 caracteres.")
     .max(60, "El slug no puede superar los 60 caracteres.")
-    .regex(/^[a-z0-9-]+$/, "Solo letras minÃºsculas, nÃºmeros y guiones."),
+    .regex(/^[a-z0-9-]+$/, "Solo letras minúsculas, números y guiones."),
   city: z.string().trim().max(100).optional(),
   planLabel: z.string().trim().max(60).optional(),
 });
@@ -32,7 +32,7 @@ export async function createOrganizationAction(input: unknown): Promise<ActionRe
   if (!parsed.success) {
     return {
       success: false,
-      message: parsed.error.issues[0]?.message ?? "Datos invÃ¡lidos.",
+      message: parsed.error.issues[0]?.message ?? "Datos inválidos.",
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -59,17 +59,17 @@ export async function createOrganizationAction(input: unknown): Promise<ActionRe
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return {
         success: false,
-        message: `El slug "${slug}" ya estÃ¡ en uso. ElegÃ­ otro.`,
-        fieldErrors: { slug: [`El slug "${slug}" ya estÃ¡ en uso.`] },
+        message: `El slug "${slug}" ya está en uso. Elegí otro.`,
+        fieldErrors: { slug: [`El slug "${slug}" ya está en uso.`] },
       };
     }
     console.error("[createOrganizationAction]", error);
-    return { success: false, message: "Error al crear la inmobiliaria. IntentÃ¡ nuevamente." };
+    return { success: false, message: "Error al crear la inmobiliaria. Intentá nuevamente." };
   }
 }
 
 const generateInviteSchema = z.object({
-  email: z.string().email("Correo electrÃ³nico invÃ¡lido"),
+  email: z.string().email("Correo electrónico inválido"),
   fullName: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
 });
 
@@ -96,13 +96,13 @@ export async function clearOrganizationMembershipsAction(orgSlug: string): Promi
 
     return {
       success: true,
-      message: `MembresÃ­as limpiadas correctamente de "${org.name}". Se eliminaron ${result.count} accesos.`,
+      message: `Membresías limpiadas correctamente de "${org.name}". Se eliminaron ${result.count} accesos.`,
     };
   } catch (error) {
-    console.error("[clearOrganizationMembershipsAction] FallÃ³:", error);
+    console.error("[clearOrganizationMembershipsAction] Falló:", error);
     return {
       success: false,
-      message: "Hubo un error al intentar limpiar las membresÃ­as. Verifica los logs.",
+      message: "Hubo un error al intentar limpiar las membresías. Verifica los logs.",
     };
   }
 }
@@ -127,12 +127,12 @@ export async function deactivateOrganizationAction(orgSlug: string): Promise<Act
     if (org.deletedAt) {
       return {
         success: false,
-        message: "Esta inmobiliaria estÃ¡ en papelera. Restaurala antes de volver a operarla.",
+        message: "Esta inmobiliaria está en papelera. Restaurala antes de volver a operarla.",
       };
     }
 
     if (!org.isActive) {
-      return { success: false, message: "Esta cuenta ya estÃ¡ desactivada." };
+      return { success: false, message: "Esta cuenta ya está desactivada." };
     }
 
     await prisma.organization.update({
@@ -142,10 +142,10 @@ export async function deactivateOrganizationAction(orgSlug: string): Promise<Act
 
     return {
       success: true,
-      message: `La cuenta "${org.name}" fue dada de baja. Los usuarios ya no podrÃ¡n acceder al workspace.`,
+      message: `La cuenta "${org.name}" fue dada de baja. Los usuarios ya no podrán acceder al workspace.`,
     };
   } catch (error) {
-    console.error("[deactivateOrganizationAction] FallÃ³:", error);
+    console.error("[deactivateOrganizationAction] Falló:", error);
     return {
       success: false,
       message: "Hubo un error al desactivar la cuenta. Verifica los logs.",
@@ -173,12 +173,12 @@ export async function reactivateOrganizationAction(orgSlug: string): Promise<Act
     if (org.deletedAt) {
       return {
         success: false,
-        message: "Esta inmobiliaria estÃ¡ en papelera. Restaurala antes de reactivarla.",
+        message: "Esta inmobiliaria está en papelera. Restaurala antes de reactivarla.",
       };
     }
 
     if (org.isActive) {
-      return { success: false, message: "Esta cuenta ya estÃ¡ activa." };
+      return { success: false, message: "Esta cuenta ya está activa." };
     }
 
     await prisma.organization.update({
@@ -191,7 +191,7 @@ export async function reactivateOrganizationAction(orgSlug: string): Promise<Act
       message: `La cuenta "${org.name}" fue reactivada. Los usuarios ya pueden acceder al workspace.`,
     };
   } catch (error) {
-    console.error("[reactivateOrganizationAction] FallÃ³:", error);
+    console.error("[reactivateOrganizationAction] Falló:", error);
     return {
       success: false,
       message: "Hubo un error al reactivar la cuenta. Verifica los logs.",
@@ -245,7 +245,7 @@ export async function deleteOrganizationPermanentlyAction(orgSlug: string): Prom
       return {
         success: false,
         message:
-          "No se puede eliminar la organizaciÃ³n de plataforma porque sostiene soporte y captaciÃ³n central.",
+          "No se puede eliminar la organización de plataforma porque sostiene soporte y captación central.",
       };
     }
 
@@ -403,7 +403,7 @@ export async function deleteOrganizationPermanentlyAction(orgSlug: string): Prom
       return {
         success: false,
         message:
-          "No se pudo eliminar definitivamente la inmobiliaria por una restricciÃ³n de integridad.",
+          "No se pudo eliminar definitivamente la inmobiliaria por una restricción de integridad.",
       };
     }
 
@@ -435,12 +435,12 @@ export async function moveOrganizationToTrashAction(orgSlug: string): Promise<Ac
       return {
         success: false,
         message:
-          "No se puede mover a papelera la organizaciÃ³n de plataforma porque sostiene soporte y captaciÃ³n central.",
+          "No se puede mover a papelera la organización de plataforma porque sostiene soporte y captación central.",
       };
     }
 
     if (org.deletedAt) {
-      return { success: false, message: "Esta inmobiliaria ya estÃ¡ en papelera." };
+      return { success: false, message: "Esta inmobiliaria ya está en papelera." };
     }
 
     await prisma.organization.update({
@@ -468,7 +468,7 @@ export async function moveOrganizationToTrashAction(orgSlug: string): Promise<Ac
       message: `La inmobiliaria "${org.name}" fue movida a papelera.`,
     };
   } catch (error) {
-    console.error("[moveOrganizationToTrashAction] FallÃ³:", error);
+    console.error("[moveOrganizationToTrashAction] Falló:", error);
     return {
       success: false,
       message: "No se pudo mover la inmobiliaria a papelera.",
@@ -493,7 +493,7 @@ export async function restoreOrganizationFromTrashAction(orgSlug: string): Promi
     }
 
     if (!org.deletedAt) {
-      return { success: false, message: "Esta inmobiliaria no estÃ¡ en papelera." };
+      return { success: false, message: "Esta inmobiliaria no está en papelera." };
     }
 
     await prisma.organization.update({
@@ -521,7 +521,7 @@ export async function restoreOrganizationFromTrashAction(orgSlug: string): Promi
       message: `La inmobiliaria "${org.name}" fue restaurada desde papelera.`,
     };
   } catch (error) {
-    console.error("[restoreOrganizationFromTrashAction] FallÃ³:", error);
+    console.error("[restoreOrganizationFromTrashAction] Falló:", error);
     return {
       success: false,
       message: "No se pudo restaurar la inmobiliaria.",
@@ -544,7 +544,7 @@ export async function generateInitialAdminInviteAction(
   if (!parsed.success) {
     return {
       success: false,
-      message: "Datos de usuario invÃ¡lidos.",
+      message: "Datos de usuario inválidos.",
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -569,7 +569,7 @@ export async function generateInitialAdminInviteAction(
     }
 
     const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 168); // 7 dÃ­as de validez para el 1Âº acceso
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 168); // 7 días de validez para el 1Âº acceso
 
     const { inviteUrl } = await prisma.$transaction(async (tx) => {
       // 1. Crear o actualizar el registro del User global (por si era un invite abandonado)
@@ -585,7 +585,7 @@ export async function generateInitialAdminInviteAction(
         },
       });
 
-      // 2. Anclarlo a la organizaciÃ³n con permisos absolutos (OWNER)
+      // 2. Anclarlo a la organización con permisos absolutos (OWNER)
       await tx.membership.create({
         data: {
           userId: user.id,
@@ -594,7 +594,7 @@ export async function generateInitialAdminInviteAction(
         },
       });
 
-      // 3. Generar token de invitaciÃ³n
+      // 3. Generar token de invitación
       await tx.inviteToken.create({
         data: {
           token,
@@ -619,10 +619,10 @@ export async function generateInitialAdminInviteAction(
       data: { inviteUrl },
     };
   } catch (error) {
-    console.error("[generateInitialAdminInviteAction] FallÃ³:", error);
+    console.error("[generateInitialAdminInviteAction] Falló:", error);
     return {
       success: false,
-      message: "Hubo un error al generar la invitaciÃ³n. Intenta nuevamente.",
+      message: "Hubo un error al generar la invitación. Intenta nuevamente.",
     };
   }
 }
@@ -639,7 +639,7 @@ export async function setOrgAgentQuotaAction(
   await requirePlatformAdmin();
 
   if (!Number.isInteger(quota) || quota < 1 || quota > 20) {
-    return { success: false, message: "La cuota debe ser un nÃºmero entre 1 y 20." };
+    return { success: false, message: "La cuota debe ser un número entre 1 y 20." };
   }
 
   const org = await prisma.organization.findUnique({
@@ -648,7 +648,7 @@ export async function setOrgAgentQuotaAction(
   });
 
   if (!org) {
-    return { success: false, message: "OrganizaciÃ³n no encontrada." };
+    return { success: false, message: "Organización no encontrada." };
   }
 
   const trimmedNote = note.trim();
@@ -692,7 +692,7 @@ export async function quickOnboardOrgAction(input: {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(ownerEmail)) {
-    return { success: false, message: "El email del titular no es vÃ¡lido." };
+    return { success: false, message: "El email del titular no es válido." };
   }
 
   // Auto-generate slug from org name
@@ -715,11 +715,11 @@ export async function quickOnboardOrgAction(input: {
   }
 
   const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 168); // 7 dÃ­as
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 168); // 7 días
 
   try {
     const inviteUrl = await prisma.$transaction(async (tx) => {
-      // 1. Crear organizaciÃ³n
+      // 1. Crear organización
       const org = await tx.organization.create({
         data: { 
           name: orgName, 
@@ -765,10 +765,10 @@ export async function quickOnboardOrgAction(input: {
     };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return { success: false, message: "El email ya estÃ¡ registrado en otra organizaciÃ³n." };
+      return { success: false, message: "El email ya está registrado en otra organización." };
     }
     console.error("[quickOnboardOrgAction]", error);
-    return { success: false, message: "Error al crear la inmobiliaria. IntentÃ¡ nuevamente." };
+    return { success: false, message: "Error al crear la inmobiliaria. Intentá nuevamente." };
   }
 }
 
@@ -842,11 +842,11 @@ export async function resetUserPasswordAction(
 
     return {
       success: true,
-      message: `Se generÃ³ un nuevo enlace de acceso para ${user.fullName}.`,
+      message: `Se generó un nuevo enlace de acceso para ${user.fullName}.`,
       data: { inviteUrl },
     };
   } catch (error) {
-    console.error("[resetUserPasswordAction] FallÃ³:", error);
+    console.error("[resetUserPasswordAction] Falló:", error);
     return {
       success: false,
       message: "Hubo un error al resetear la clave. Intenta nuevamente.",

@@ -36,7 +36,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
   const handleCopy = () => {
     if (!inviteUrl) return;
     navigator.clipboard.writeText(inviteUrl);
-    alert("Â¡Enlace de invitaciÃ³n copiado al portapapeles!");
+    alert("¡Enlace de invitación copiado al portapapeles!");
   };
 
   return (
@@ -56,12 +56,12 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[1.5rem] bg-white p-6 shadow-xl relative top-0 animate-in fade-in zoom-in-95 duration-200">
             <h2 className="text-xl font-semibold tracking-tight text-slate-950">
-              {inviteUrl ? "InvitaciÃ³n generada" : "Invitar nuevo miembro"}
+              {inviteUrl ? "Invitación generada" : "Invitar nuevo miembro"}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
               {inviteUrl 
-                ? "EnviÃ¡ este enlace al usuario para que configure su acceso y contraseÃ±a personal."
-                : "AgregÃ¡ un nuevo miembro al equipo de esta inmobiliaria."}
+                ? "Enviá este enlace al usuario para que configure su acceso y contraseña personal."
+                : "Agregá un nuevo miembro al equipo de esta inmobiliaria."}
             </p>
 
             {error && (
@@ -74,7 +74,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
               <div className="mt-6 flex flex-col gap-4">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Enlace de invitaciÃ³n personal
+                    Enlace de invitación personal
                   </p>
                   <p className="mt-2 break-all text-sm font-medium text-slate-950">
                     {inviteUrl}
@@ -101,11 +101,11 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
                     required 
                     name="fullName" 
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500" 
-                    placeholder="Ej. Juan PÃ©rez" 
+                    placeholder="Ej. Juan Pérez" 
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Correo electrÃ³nico</label>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Correo electrónico</label>
                   <input 
                     required 
                     type="email"
@@ -141,7 +141,7 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
                     disabled={isPending} 
                     className="rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50"
                   >
-                    {isPending ? "Generando..." : "Enviar invitaciÃ³n"}
+                    {isPending ? "Generando..." : "Enviar invitación"}
                   </button>
                 </div>
               </form>

@@ -184,14 +184,14 @@ const playbooks = [
       "El link debe generarse bien y el pago debe impactar en el estado comercial esperado.",
   },
   {
-    title: "GestiÃ³n de Privacidad y AuditorÃ­a",
+    title: "Gestión de Privacidad y Auditoría",
     summary:
-      "Controlar cÃ³mo el equipo de plataforma accede a los datos de los clientes y asegurar la transparencia.",
+      "Controlar cómo el equipo de plataforma accede a los datos de los clientes y asegurar la transparencia.",
     steps: [
-      "Confirmar que todos los usuarios acepten los tÃ©rminos en su primer ingreso.",
-      "Validar que el bypass de Superadmin estÃ© activo para soporte tÃ©cnico.",
-      "Revisar la tabla AuditLog periÃ³dicamente para detectar accesos administrativos no justificados.",
-      "Asegurar que las polÃ­ticas mencionen explÃ­citamente el derecho de auditorÃ­a por seguridad.",
+      "Confirmar que todos los usuarios acepten los términos en su primer ingreso.",
+      "Validar que el bypass de Superadmin esté activo para soporte técnico.",
+      "Revisar la tabla AuditLog periódicamente para detectar accesos administrativos no justificados.",
+      "Asegurar que las políticas mencionen explícitamente el derecho de auditoría por seguridad.",
     ],
     validation:
       "Cada acceso de Superadmin a un workspace ajeno debe generar un log con evento SUPERADMIN_WORKSPACE_ACCESS.",
@@ -335,15 +335,15 @@ const troubleshooting = [
     checks: [
       "Confirmar que tu usuario tenga isPlatformAdmin: true.",
       "Verificar que la URL del workspace use el slug correcto.",
-      "Revisar si el middleware o requireOrganizationMembership estÃ¡n bloqueando por falta de aceptaciÃ³n de polÃ­ticas.",
+      "Revisar si el middleware o requireOrganizationMembership están bloqueando por falta de aceptación de políticas.",
     ],
   },
   {
-    title: "El usuario no puede salir de la pantalla de polÃ­ticas",
+    title: "El usuario no puede salir de la pantalla de políticas",
     checks: [
-      "Validar que la redirecciÃ³n post-aceptaciÃ³n tenga el parÃ¡metro 'next' correcto.",
-      "Verificar que la acciÃ³n de servidor estÃ© guardando termsAcceptedAt en la base de datos.",
-      "Confirmar que no haya un bucle de redirecciÃ³n en requireSessionUser.",
+      "Validar que la redirección post-aceptación tenga el parámetro 'next' correcto.",
+      "Verificar que la acción de servidor esté guardando termsAcceptedAt en la base de datos.",
+      "Confirmar que no haya un bucle de redirección en requireSessionUser.",
     ],
   },
 ] as const;
@@ -1000,7 +1000,7 @@ export default async function PlatformManualOperativoPage() {
                     Base lista para checks operativos dinamicos
                   </h3>
                   <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                    La estructura ya deja preparado el modulo para sumar estados en vivo, checklist accionable y validaciones automÃ¡ticas por servicio.
+                    La estructura ya deja preparado el modulo para sumar estados en vivo, checklist accionable y validaciones automáticas por servicio.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">

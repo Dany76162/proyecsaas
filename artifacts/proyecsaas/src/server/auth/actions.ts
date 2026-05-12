@@ -76,7 +76,7 @@ function sanitizeRedirectPath(nextPath: string | undefined, fallbackPath: string
   return nextPath;
 }
 
-// ðŸ”¥ CLAVE: transiciÃ³n splash
+// ðŸ”¥ CLAVE: transición splash
 function buildTransitionRedirect(nextPath: string) {
   return `/login/transition?next=${encodeURIComponent(nextPath)}`;
 }
@@ -155,7 +155,7 @@ export async function loginAction(formData: FormData) {
     redirect(buildTransitionRedirect(`/auth/accept-policies?next=${encodeURIComponent(finalPath)}`));
   }
 
-  // ðŸ”¥ AQUÃ ESTÃ EL FIX DEL SPLASH
+  // ðŸ”¥ AQUÍ ESTÁ EL FIX DEL SPLASH
   redirect(buildTransitionRedirect(finalPath));
 }
 

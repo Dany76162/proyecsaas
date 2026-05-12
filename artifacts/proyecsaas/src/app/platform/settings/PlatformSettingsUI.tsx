@@ -164,10 +164,10 @@ function DelegatedAdminSection({
     <div className="space-y-5">
       <div>
         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-tight">
-          AdministraciÃ³n Delegada
+          Administración Delegada
         </h3>
         <p className="text-xs text-slate-500 mt-0.5">
-          OtorgÃ¡ acceso temporal al panel a otro usuario registrado. PodÃ©s revocarlo en cualquier momento.
+          Otorgá acceso temporal al panel a otro usuario registrado. Podés revocarlo en cualquier momento.
         </p>
       </div>
 
@@ -277,11 +277,11 @@ export default function PlatformSettingsUI({
           </span>
         </div>
         <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-950">
-          Panel de ConfiguraciÃ³n
+          Panel de Configuración
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
-          GestionÃ¡ los parÃ¡metros maestros de RaÃ­ces Pilot en tiempo real. Estos valores afectan
-          directamente la facturaciÃ³n, los links de soporte y las comunicaciones oficiales.
+          Gestioná los parámetros maestros de Raíces Pilot en tiempo real. Estos valores afectan
+          directamente la facturación, los links de soporte y las comunicaciones oficiales.
         </p>
       </div>
 
@@ -296,7 +296,7 @@ export default function PlatformSettingsUI({
               label="Nombre"
               settingKey="OPERATOR_NAME"
               initialValue={settings.operatorName}
-              description="Nombre del administrador o dueÃ±o de la plataforma."
+              description="Nombre del administrador o dueño de la plataforma."
               placeholder="Ej: Carlos"
             />
             <EditableSetting
@@ -304,45 +304,45 @@ export default function PlatformSettingsUI({
               settingKey="OPERATOR_LASTNAME"
               initialValue={settings.operatorLastName}
               description="Apellido del administrador."
-              placeholder="Ej: GarcÃ­a"
+              placeholder="Ej: García"
             />
             <EditableSetting
               label="CUID / DNI"
               settingKey="OPERATOR_CUID"
               initialValue={settings.operatorCuid}
-              description="Clave Ãºnica de identificaciÃ³n o DNI del responsable de la plataforma."
+              description="Clave única de identificación o DNI del responsable de la plataforma."
               placeholder="Ej: 30123456"
             />
             <EditableSetting
-              label="RazÃ³n Social (opcional)"
+              label="Razón Social (opcional)"
               settingKey="OPERATOR_COMPANY"
               initialValue={settings.operatorCompany}
               description="Nombre comercial o empresa bajo la que opera la plataforma."
-              placeholder="Ej: RaÃ­ces Pilot S.A.S."
+              placeholder="Ej: Raíces Pilot S.A.S."
             />
           </section>
 
-          {/* 2. ParÃ¡metros Operativos */}
+          {/* 2. Parámetros Operativos */}
           <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">ParÃ¡metros Operativos</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">Parámetros Operativos</h2>
 
             <EditableSetting
-              label="NÃºmero oficial de WhatsApp (plataforma)"
+              label="Número oficial de WhatsApp (plataforma)"
               settingKey="PLATFORM_WHATSAPP_NUMBER"
               initialValue={settings.waContact}
-              description="NÃºmero de WhatsApp que los clientes de las inmobiliarias usan para contactarse. Es el nÃºmero visible en el panel de cada inmobiliaria. Formato internacional sin + ni espacios. Ej: 5491161630205"
+              description="Número de WhatsApp que los clientes de las inmobiliarias usan para contactarse. Es el número visible en el panel de cada inmobiliaria. Formato internacional sin + ni espacios. Ej: 5491161630205"
               placeholder="Ej: 5491161630205"
             />
             <EditableSetting
               label="Precio Plan Base (ARS)"
               settingKey="BASE_PLAN_PRICE_ARS"
               initialValue={settings.basePrice}
-              description="Valor mensual de la suscripciÃ³n. Afecta los nuevos links de pago generados."
+              description="Valor mensual de la suscripción. Afecta los nuevos links de pago generados."
               placeholder="Ej: 45000"
             />
           </section>
 
-          {/* 3. AdministraciÃ³n Delegada */}
+          {/* 3. Administración Delegada */}
           <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
             <DelegatedAdminSection initial={delegatedAdmins} />
           </section>
@@ -373,7 +373,7 @@ export default function PlatformSettingsUI({
               <p className="text-[11px] leading-relaxed text-slate-400">
                 <span className="text-white font-bold">Nota operativa:</span> Los cambios se
                 persisten en PostgreSQL en tiempo real. Los precios impactan en las renovaciones
-                del prÃ³ximo ciclo.
+                del próximo ciclo.
               </p>
             </div>
           </section>

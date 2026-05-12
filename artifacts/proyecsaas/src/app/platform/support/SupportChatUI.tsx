@@ -53,7 +53,7 @@ export default function SupportChatUI({
         direction: "OUTBOUND" as const,
         body: text,
         sentAt: new Date(),
-        senderName: "TÃº",
+        senderName: "Tú",
     };
     setMessages(prev => [...prev, optimisticMsg]);
     setTimeout(() => scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight), 50);
@@ -129,7 +129,7 @@ export default function SupportChatUI({
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">{activeConv?.participantName}</h3>
-                  <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{activeConv?.participantPhone} Â· EN LÃNEA</p>
+                  <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{activeConv?.participantPhone} Â· EN LÍNEA</p>
                 </div>
               </div>
               <button className="rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition">
@@ -146,7 +146,7 @@ export default function SupportChatUI({
               {isFetchingMsgs && (
                   <div className="flex items-center justify-center py-10 opacity-50">
                       <Clock className="h-5 w-5 animate-spin mr-2" />
-                      <span className="text-xs font-bold text-slate-400">Cargando conversaciÃ³n...</span>
+                      <span className="text-xs font-bold text-slate-400">Cargando conversación...</span>
                   </div>
               )}
               {messages.map((msg) => (
@@ -180,7 +180,7 @@ export default function SupportChatUI({
                   type="text" 
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Escribe tu respuesta aquÃ­..." 
+                  placeholder="Escribe tu respuesta aquí..." 
                   className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-medium outline-none focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all"
                 />
                 <button 
@@ -197,8 +197,8 @@ export default function SupportChatUI({
              <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center mb-6">
                 <Clock className="h-10 w-10 text-slate-200" />
              </div>
-             <h3 className="text-base font-bold text-slate-900">Bandeja de Entrada VacÃ­a</h3>
-             <p className="mt-2 text-xs text-slate-400 max-w-xs">Selecciona una conversaciÃ³n de la izquierda para comenzar a responder.</p>
+             <h3 className="text-base font-bold text-slate-900">Bandeja de Entrada Vacía</h3>
+             <p className="mt-2 text-xs text-slate-400 max-w-xs">Selecciona una conversación de la izquierda para comenzar a responder.</p>
           </div>
         )}
       </main>

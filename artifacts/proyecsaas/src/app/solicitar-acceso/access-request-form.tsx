@@ -24,7 +24,7 @@ export function AccessRequestForm() {
     if (!formData.email.trim()) {
       newErrors.email = "El email es obligatorio.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Formato de email invÃ¡lido.";
+      newErrors.email = "Formato de email inválido.";
     }
     if (!formData.whatsapp.trim()) newErrors.whatsapp = "El WhatsApp es obligatorio.";
 
@@ -74,7 +74,7 @@ Datos de la inmobiliaria:
             </label>
             <Input
               id="contactName"
-              placeholder="Ej: Juan PÃ©rez"
+              placeholder="Ej: Juan Pérez"
               value={formData.contactName}
               onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
               error={!!errors.contactName}
@@ -131,7 +131,7 @@ Datos de la inmobiliaria:
             </label>
             <Textarea
               id="message"
-              placeholder="Â¿Alguna consulta especÃ­fica?"
+              placeholder="¿Alguna consulta específica?"
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               className="min-h-[100px]"
@@ -154,7 +154,7 @@ Datos de la inmobiliaria:
       </div>
 
       <p className="text-[13px] text-slate-500 leading-relaxed max-w-lg mx-auto">
-        El acceso a la plataforma se habilita de forma controlada. Una vez aprobada la solicitud, el equipo podrÃ¡ enviarte el link correspondiente para configurar tu cuenta.
+        El acceso a la plataforma se habilita de forma controlada. Una vez aprobada la solicitud, el equipo podrá enviarte el link correspondiente para configurar tu cuenta.
       </p>
     </div>
   );

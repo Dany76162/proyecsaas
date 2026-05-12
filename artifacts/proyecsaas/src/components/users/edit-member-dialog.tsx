@@ -71,7 +71,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
               Editar perfil
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              ActualizÃ¡ los datos operativos de{" "}
+              Actualizá los datos operativos de{" "}
               <span className="font-medium text-slate-700">{member.fullName}</span>.
             </p>
 
@@ -108,7 +108,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Cargo / TÃ­tulo
+                    Cargo / Título
                   </label>
                   <input
                     name="jobTitle"
@@ -119,7 +119,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    TelÃ©fono
+                    Teléfono
                   </label>
                   <input
                     name="phone"
@@ -141,7 +141,7 @@ export function EditMemberDialog({ orgSlug, member }: EditMemberDialogProps) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Zona de operaciÃ³n
+                    Zona de operación
                   </label>
                   <input
                     name="zone"

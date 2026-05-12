@@ -109,7 +109,7 @@ export function WelcomeVideo({ onComplete }: WelcomeVideoProps) {
             <div className="relative h-[500px] w-[800px] overflow-hidden rounded-3xl border border-white/20 shadow-2xl">
               <img
                 src="/onboarding/closing.png"
-                alt="RaÃ­ces Pilot Closing"
+                alt="Raíces Pilot Closing"
                 className="h-full w-full object-cover"
               />
               
@@ -139,7 +139,7 @@ export function WelcomeVideo({ onComplete }: WelcomeVideoProps) {
               transition={{ delay: 1 }}
               className="mt-6 text-sm italic text-white/60"
             >
-              "Tu Ã©xito, automatizado. Empecemos."
+              "Tu éxito, automatizado. Empecemos."
             </motion.p>
           </motion.div>
         )}

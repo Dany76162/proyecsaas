@@ -28,7 +28,7 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
   try {
     new URL(sourceUrl);
   } catch {
-    throw new Error(`URL invÃ¡lida: "${sourceUrl}"`);
+    throw new Error(`URL inválida: "${sourceUrl}"`);
   }
 
   // â”€â”€ Strategy 1: WordPress REST API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -63,6 +63,6 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
 
   throw new Error(
     "No se pudieron detectar propiedades en el sitio. " +
-      "VerificÃ¡ que la URL apunte a la pÃ¡gina del listado de propiedades y que sea accesible pÃºblicamente."
+      "Verificá que la URL apunte a la página del listado de propiedades y que sea accesible públicamente."
   );
 }

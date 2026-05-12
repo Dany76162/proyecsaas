@@ -170,7 +170,7 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
           : org._count.memberships === 1
             ? org.memberships[0]?.user.passwordHash
               ? "Onboarding iniciado"
-              : "InvitaciÃ³n pendiente"
+              : "Invitación pendiente"
             : "Operativa",
       health: computeHealth({
         channel,

@@ -19,7 +19,7 @@ export async function createAgentTask(formData: FormData) {
   const contentType = formData.get("contentType")?.toString()?.trim() || "post";
 
   if (!title || !description || !priority) {
-    throw new Error("TÃ­tulo, descripciÃ³n y prioridad son obligatorios");
+    throw new Error("Título, descripción y prioridad son obligatorios");
   }
 
   const task = await prisma.agentTask.create({
@@ -43,7 +43,7 @@ export async function createAgentTask(formData: FormData) {
   const orchestrator = await getActiveAgentByType(AgentType.ORCHESTRATOR);
   if (!orchestrator) {
     await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.FAILED } });
-    throw new Error("No se encontrÃ³ Director Operativo IA activo");
+    throw new Error("No se encontró Director Operativo IA activo");
   }
 
   await prisma.agentTask.update({ where: { id: task.id }, data: { agentId: orchestrator.id, status: TaskStatus.ASSIGNED } });
@@ -59,7 +59,7 @@ export async function createAgentTask(formData: FormData) {
   } catch (err) {
     // processTaskWithOrchestrator already marks task/run as FAILED and logs internally,
     // so we swallow here to allow the redirect to proceed gracefully.
-    console.error("[AgentOS] Error en generaciÃ³n (ya registrado en logs):", err instanceof Error ? err.message : err);
+    console.error("[AgentOS] Error en generación (ya registrado en logs):", err instanceof Error ? err.message : err);
   }
 
   redirect("/platform/agents/tasks");
@@ -72,7 +72,7 @@ export async function approveOrRejectDraft(formData: FormData) {
   const comments = formData.get("comments")?.toString() ?? "";
 
   if (!approvalId || !decision || !Object.values(ApprovalStatus).includes(decision)) {
-    throw new Error("DecisiÃ³n de aprobaciÃ³n invÃ¡lida");
+    throw new Error("Decisión de aprobación inválida");
   }
 
   const approval = await prisma.agentApproval.findUnique({
@@ -81,11 +81,11 @@ export async function approveOrRejectDraft(formData: FormData) {
   });
 
   if (!approval) {
-    throw new Error("AprobaciÃ³n no encontrada");
+    throw new Error("Aprobación no encontrada");
   }
 
   if (approval.status !== ApprovalStatus.PENDING) {
-    throw new Error("Esta aprobaciÃ³n ya fue procesada");
+    throw new Error("Esta aprobación ya fue procesada");
   }
 
   await prisma.agentApproval.update({
@@ -121,7 +121,7 @@ export async function approveOrRejectDraft(formData: FormData) {
   await createAgentLog({
     runId: approval.runId ?? undefined,
     level: AgentLogLevel.INFO,
-    message: `DecisiÃ³n registrada: Borrador ${decision === ApprovalStatus.APPROVED ? "aprobado" : "rechazado"} por ${sessionUser.fullName}`,
+    message: `Decisión registrada: Borrador ${decision === ApprovalStatus.APPROVED ? "aprobado" : "rechazado"} por ${sessionUser.fullName}`,
     metadata: { approvalId, decision, comments },
   });
 
@@ -172,7 +172,7 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
   await createAgentLog({
     runId: orchestratorRun.id,
     level: AgentLogLevel.INFO,
-    message: "Inicio de ejecuciÃ³n del Director Operativo IA",
+    message: "Inicio de ejecución del Director Operativo IA",
     metadata: { taskId },
   });
 
@@ -190,7 +190,7 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
     await createAgentLog({
       runId: orchestratorRun.id,
       level: AgentLogLevel.ERROR,
-      message: "No se encontrÃ³ Agente de Marketing activo",
+      message: "No se encontró Agente de Marketing activo",
       metadata: { taskId },
     });
     await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.FAILED } });
@@ -265,7 +265,7 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
     await createAgentLog({
       runId: marketingRun.id,
       level: AgentLogLevel.INFO,
-      message: "Borrador generado por el Agente de Marketing y pendiente de aprobaciÃ³n",
+      message: "Borrador generado por el Agente de Marketing y pendiente de aprobación",
       metadata: { taskId, draftPlatform: platform },
     });
   } catch (error) {
@@ -279,8 +279,8 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
       rawMessage.includes("exceeded");
 
     const userMessage = is429
-      ? "OpenAI rechazÃ³ la solicitud por cuota insuficiente. RevisÃ¡ la configuraciÃ³n de API o intentÃ¡ mÃ¡s tarde."
-      : `Error durante la generaciÃ³n de contenido: ${rawMessage}`;
+      ? "OpenAI rechazó la solicitud por cuota insuficiente. Revisá la configuración de API o intentá más tarde."
+      : `Error durante la generación de contenido: ${rawMessage}`;
 
     await prisma.agentRun.update({
       where: { id: orchestratorRun.id },

@@ -23,7 +23,7 @@ export async function updateOrganizationProfileAction(
   if (!parsed.success) {
     return {
       success: false,
-      message: parsed.error.issues[0]?.message ?? "Datos invÃ¡lidos.",
+      message: parsed.error.issues[0]?.message ?? "Datos inválidos.",
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -55,7 +55,7 @@ export async function updatePropertySourceAction(
   const parsed = updatePropertySourceSchema.safeParse(input);
 
   if (!parsed.success) {
-    return { success: false, message: "Datos de fuente invÃ¡lidos." };
+    return { success: false, message: "Datos de fuente inválidos." };
   }
 
   await prisma.organization.update({

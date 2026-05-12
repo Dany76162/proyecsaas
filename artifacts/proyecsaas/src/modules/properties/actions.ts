@@ -69,7 +69,7 @@ function parseMajorUnitToCentsStr(raw: string): string {
   if (trimmed === "") return "";
   // Strip thousands separators: dot or comma followed by exactly 3 digits
   const noThousands = trimmed.replace(/[,.](?=(\d{3})+(?!\d))/g, "");
-  // Normalize comma-as-decimal to dot (e.g. "1500,50" â†’ "1500.50")
+  // Normalize comma-as-decimal to dot (e.g. "1500,50" → "1500.50")
   const normalized = noThousands.replace(",", ".");
   const major = parseFloat(normalized);
   if (isNaN(major)) return "";
@@ -94,17 +94,17 @@ export async function updatePropertyAction(formData: FormData) {
     expensesCents: parseMajorUnitToCentsStr(String(formData.get("expensesCents") ?? "")),
     status: String(formData.get("status") ?? ""),
     publicVisible: formData.get("publicVisible") === "on",
-    // UbicaciÃ³n
+    // Ubicación
     address: String(formData.get("address") ?? ""),
     city: String(formData.get("city") ?? ""),
     neighborhood: String(formData.get("neighborhood") ?? ""),
-    // CaracterÃ­sticas
+    // Características
     rooms: String(formData.get("rooms") ?? ""),
     bedrooms: String(formData.get("bedrooms") ?? ""),
     bathrooms: String(formData.get("bathrooms") ?? ""),
     surfaceM2: String(formData.get("surfaceM2") ?? ""),
     parkingSpots: String(formData.get("parkingSpots") ?? ""),
-    // DescripciÃ³n y multimedia
+    // Descripción y multimedia
     description: String(formData.get("description") ?? ""),
     amenities: String(formData.get("amenities") ?? ""),
     externalLink: String(formData.get("externalLink") ?? ""),
@@ -168,11 +168,11 @@ export async function updatePropertyAction(formData: FormData) {
  * Permanently deletes a property and cleans up all related records.
  *
  * Cascade behavior:
- *   - PropertyImage   â†’ deleted via DB cascade (onDelete: Cascade)
- *   - Visit           â†’ deleted via DB cascade (onDelete: Cascade)
- *   - Lead.propertyId â†’ nulled (onDelete: Restrict â€” leads are decoupled, not deleted)
- *   - Conversation.propertyId â†’ nulled (onDelete: Restrict â€” conversations preserved)
- *   - AvailabilitySlot.propertyId â†’ nulled (onDelete: Restrict â€” slots preserved without property context)
+ *   - PropertyImage   → deleted via DB cascade (onDelete: Cascade)
+ *   - Visit           → deleted via DB cascade (onDelete: Cascade)
+ *   - Lead.propertyId → nulled (onDelete: Restrict â€” leads are decoupled, not deleted)
+ *   - Conversation.propertyId → nulled (onDelete: Restrict â€” conversations preserved)
+ *   - AvailabilitySlot.propertyId → nulled (onDelete: Restrict â€” slots preserved without property context)
  *
  * Auth: requires ADMIN role. Agents can edit but not delete.
  */
@@ -185,7 +185,7 @@ export async function deletePropertyAction(
 
   const parsed = deletePropertySchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "ID de propiedad invÃ¡lido." };
+    return { success: false, message: "ID de propiedad inválido." };
   }
 
   // Verify property belongs to this org (multi-tenant guard)
@@ -247,7 +247,7 @@ export async function setPropertyVideoAction(
 
   const parsed = setPropertyVideoSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "Datos invÃ¡lidos." };
+    return { success: false, message: "Datos inválidos." };
   }
 
   const property = await prisma.property.findFirst({
@@ -278,7 +278,7 @@ export async function addPropertyImageAction(
 
   const parsed = addPropertyImageSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "URL invÃ¡lida.", fieldErrors: parsed.error.flatten().fieldErrors };
+    return { success: false, message: "URL inválida.", fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
   // Verify property belongs to this org
@@ -330,7 +330,7 @@ export async function removePropertyImageAction(
 
   const parsed = removePropertyImageSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "Solicitud invÃ¡lida." };
+    return { success: false, message: "Solicitud inválida." };
   }
 
   // Verify the image belongs to a property in this org
@@ -361,7 +361,7 @@ export async function setPropertyImagePrimaryAction(
 
   const parsed = setPropertyImagePrimarySchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, message: "Solicitud invÃ¡lida." };
+    return { success: false, message: "Solicitud inválida." };
   }
 
   const image = await prisma.propertyImage.findFirst({

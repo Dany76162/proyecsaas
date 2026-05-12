@@ -217,7 +217,7 @@ const ROUTING_CODE_REGEX = /^\[ref:([a-z0-9_-]+)\]\s*/i;
 /**
  * Extracts the org slug from the routing code at the start of a message.
  * Returns null if no routing code is present.
- * Example: "[ref:raices] Hola, me interesa una propiedad" â†’ "raices"
+ * Example: "[ref:raices] Hola, me interesa una propiedad" → "raices"
  */
 export function extractOrgSlugFromMessage(text: string): string | null {
   const match = text.trim().match(ROUTING_CODE_REGEX);
@@ -226,7 +226,7 @@ export function extractOrgSlugFromMessage(text: string): string | null {
 
 /**
  * Strips the routing code from a message body so the AI sees clean text.
- * Example: "[ref:raices] Hola, me interesa" â†’ "Hola, me interesa"
+ * Example: "[ref:raices] Hola, me interesa" → "Hola, me interesa"
  */
 export function stripRoutingCodeFromMessage(text: string): string {
   return text.trim().replace(ROUTING_CODE_REGEX, "").trim();

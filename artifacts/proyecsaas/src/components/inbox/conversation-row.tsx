@@ -68,7 +68,7 @@ export function ConversationRow({ conv, isSelected, onClick }: ConversationRowPr
         )}
         {requiresAction && (
           <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-amber-600 ring-1 ring-amber-100">
-            AcciÃ³n
+            Acción
           </span>
         )}
       </div>

@@ -32,7 +32,7 @@ const WORKER_UI = {
     icon: <Clock className="h-5 w-5 text-amber-500 shrink-0" />,
   },
   down: {
-    label: "CaÃ­do",
+    label: "Caído",
     chip: "border-red-200 bg-red-50 text-red-700",
     icon: <XCircle className="h-5 w-5 text-red-500 shrink-0" />,
   },
@@ -64,9 +64,9 @@ export default async function PlatformHealthPage() {
   const alerts: { level: AlertLevel; message: string }[] = [];
 
   if (worker.status === "down")
-    alerts.push({ level: "error", message: "Worker caÃ­do: no se recibiÃ³ heartbeat en mÃ¡s de 5 minutos." });
+    alerts.push({ level: "error", message: "Worker caído: no se recibió heartbeat en más de 5 minutos." });
   else if (worker.status === "stale")
-    alerts.push({ level: "warning", message: "Worker lento: Ãºltimo heartbeat hace mÃ¡s de 2 minutos." });
+    alerts.push({ level: "warning", message: "Worker lento: último heartbeat hace más de 2 minutos." });
 
   if (activeOrgCount === 0)
     alerts.push({ level: "error", message: "No hay organizaciones activas en la plataforma." });
@@ -81,7 +81,7 @@ export default async function PlatformHealthPage() {
     alerts.push({ level: "warning", message: "Motor IA no configurado â€” AI_INTEGRATIONS_OPENAI_API_KEY ausente." });
 
   if (pendingBilling > 0)
-    alerts.push({ level: "warning", message: `${pendingBilling} cobro${pendingBilling !== 1 ? "s" : ""} pendiente${pendingBilling !== 1 ? "s" : ""} de confirmaciÃ³n.` });
+    alerts.push({ level: "warning", message: `${pendingBilling} cobro${pendingBilling !== 1 ? "s" : ""} pendiente${pendingBilling !== 1 ? "s" : ""} de confirmación.` });
 
   const workerUi = WORKER_UI[worker.status];
 
@@ -93,7 +93,7 @@ export default async function PlatformHealthPage() {
     "billing.mp_link_generated":{ label: "Link MP generado",      color: "text-violet-600 bg-violet-50 border-violet-200" },
     "org.reactivated":         { label: "Org reactivada",         color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
     "org.suspended":           { label: "Org suspendida",         color: "text-red-600 bg-red-50 border-red-200" },
-    "settings.updated":        { label: "ConfiguraciÃ³n editada",  color: "text-blue-600 bg-blue-50 border-blue-200" },
+    "settings.updated":        { label: "Configuración editada",  color: "text-blue-600 bg-blue-50 border-blue-200" },
     "admin.access_granted":    { label: "Admin delegado",         color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
     "admin.access_revoked":    { label: "Acceso revocado",        color: "text-red-600 bg-red-50 border-red-200" },
   };
@@ -190,7 +190,7 @@ export default async function PlatformHealthPage() {
               </span>
               {worker.lastSeenAt ? (
                 <p className="mt-1.5 text-xs text-slate-500">
-                  Ãšltimo heartbeat: {formatDate(worker.lastSeenAt)}
+                  Último heartbeat: {formatDate(worker.lastSeenAt)}
                   {worker.secondsAgo !== null && ` (${formatSecondsAgo(worker.secondsAgo)})`}
                 </p>
               ) : (
@@ -228,12 +228,12 @@ export default async function PlatformHealthPage() {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b bg-slate-50 px-6 py-4 flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-slate-400" />
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">AuditorÃ­a del Sistema</h3>
-          <span className="ml-auto text-xs text-slate-400">Ãšltimos 30 eventos</span>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Auditoría del Sistema</h3>
+          <span className="ml-auto text-xs text-slate-400">Últimos 30 eventos</span>
         </div>
         {auditLogs.length === 0 ? (
           <div className="px-6 py-10 text-center text-sm text-slate-400">
-            Sin eventos registrados aÃºn. Los eventos se generan automÃ¡ticamente.
+            Sin eventos registrados aún. Los eventos se generan automáticamente.
           </div>
         ) : (
           <div className="divide-y divide-slate-100 max-h-[480px] overflow-y-auto">
@@ -268,7 +268,7 @@ export default async function PlatformHealthPage() {
       {/* Expired invites footnote */}
       {expiredInvites > 0 && (
         <p className="text-center text-xs text-slate-400">
-          {expiredInvites} invitaciÃ³n{expiredInvites !== 1 ? "es" : ""} expirada{expiredInvites !== 1 ? "s" : ""} sin activar â€”{" "}
+          {expiredInvites} invitación{expiredInvites !== 1 ? "es" : ""} expirada{expiredInvites !== 1 ? "s" : ""} sin activar â€”{" "}
           <a href="/platform/onboarding" className="font-semibold text-slate-600 underline underline-offset-2">
             revisalas en Onboarding
           </a>

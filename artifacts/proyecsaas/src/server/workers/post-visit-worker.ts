@@ -39,14 +39,14 @@ function buildPostVisitMessage(params: {
     : "la propiedad visitada";
 
   if (params.temperature === "hot") {
-    return `Hola ${firstName}! Â¿CÃ³mo te fue en la visita a ${propertyRef}? Si querÃ©s avanzar con los prÃ³ximos pasos, avisame cuando quieras.`;
+    return `Hola ${firstName}! ¿Cómo te fue en la visita a ${propertyRef}? Si querés avanzar con los próximos pasos, avisame cuando quieras.`;
   }
 
   if (params.temperature === "warm") {
-    return `Hola ${firstName}! QuerÃ­a saber cÃ³mo te fue en la visita a ${propertyRef}. Â¿QuedÃ³ alguna duda o te interesarÃ­a ver otras opciones?`;
+    return `Hola ${firstName}! Quería saber cómo te fue en la visita a ${propertyRef}. ¿Quedó alguna duda o te interesaría ver otras opciones?`;
   }
 
-  return `Hola ${firstName}! Â¿QuÃ© te pareciÃ³ ${propertyRef}? Estamos disponibles para cualquier consulta o si querÃ©s explorar otras alternativas.`;
+  return `Hola ${firstName}! ¿Qué te pareció ${propertyRef}? Estamos disponibles para cualquier consulta o si querés explorar otras alternativas.`;
 }
 
 // =========================

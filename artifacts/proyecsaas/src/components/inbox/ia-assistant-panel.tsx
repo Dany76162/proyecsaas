@@ -47,7 +47,7 @@ export function IaAssistantPanel({
           {intent && (
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 shadow-sm ring-1 ring-brand-100">
               <Target className="h-3 w-3" />
-              IntenciÃ³n: {intent}
+              Intención: {intent}
             </span>
           )}
           {signals.map((s) => (
@@ -76,7 +76,7 @@ export function IaAssistantPanel({
         <div className="rounded-xl bg-white p-3.5 shadow-sm ring-1 ring-brand-100">
           <div className="flex items-center gap-2 text-brand-600 mb-1">
             <Zap className="h-3.5 w-3.5" />
-            <p className="text-[11px] font-extrabold uppercase tracking-widest">Sugerencia de acciÃ³n</p>
+            <p className="text-[11px] font-extrabold uppercase tracking-widest">Sugerencia de acción</p>
           </div>
           <p className="text-sm font-bold text-slate-900 leading-tight">
             {nextAction}

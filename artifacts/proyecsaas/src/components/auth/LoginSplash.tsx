@@ -48,7 +48,7 @@ export function LoginSplash({ onComplete, duration = 2500 }: LoginSplashProps) {
             >
               <img
                 src="/onboarding/closing.png"
-                alt="RaÃ­ces Pilot"
+                alt="Raíces Pilot"
                 className="h-full w-full object-cover opacity-60"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
@@ -64,10 +64,10 @@ export function LoginSplash({ onComplete, duration = 2500 }: LoginSplashProps) {
                 className="space-y-4"
               >
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
-                  RaÃ­ces<span className="text-brand-400">Pilot</span>
+                  Raíces<span className="text-brand-400">Pilot</span>
                 </h1>
                 <p className="text-lg md:text-xl font-medium text-white/80">
-                  Tu Ã©xito, automatizado.
+                  Tu éxito, automatizado.
                 </p>
               </motion.div>
 

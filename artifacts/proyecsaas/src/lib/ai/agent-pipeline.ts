@@ -5,7 +5,7 @@ import type { AiAgentTone } from "@prisma/client";
 
 const TONE_DESCRIPTION: Record<AiAgentTone, string> = {
   FORMAL: "formal y profesional, usando usted y lenguaje de negocios",
-  FRIENDLY: "amigable y cercano, usando vos y un tono cÃ¡lido",
+  FRIENDLY: "amigable y cercano, usando vos y un tono cálido",
   NEUTRAL: "neutral y conciso, sin excesos de formalidad ni informalidad",
 };
 
@@ -47,40 +47,40 @@ const SYSTEM_PROMPT_TEMPLATE = (params: {
               p.propertyType,
               p.operationType,
               p.bedrooms ? `${p.bedrooms} dorm.` : null,
-              p.bathrooms ? `${p.bathrooms} baÃ±os` : null,
+              p.bathrooms ? `${p.bathrooms} baños` : null,
               p.surfaceM2 ? `${p.surfaceM2}mÂ²` : null,
             ]
               .filter(Boolean)
               .join(" | ");
             const location = [p.neighborhood, p.city].filter(Boolean).join(", ");
-            return `- [ID:${p.id}] ${p.title} â€” ${location} â€” ${price} â€” ${details}${p.description ? `\n  DescripciÃ³n: ${p.description}` : ""}`;
+            return `- [ID:${p.id}] ${p.title} â€” ${location} â€” ${price} â€” ${details}${p.description ? `\n  Descripción: ${p.description}` : ""}`;
           })
           .join("\n");
 
   const escalationText =
     escalateOnKeywords.length > 0
-      ? `Si el cliente menciona alguna de estas palabras o frases, DEBÃ‰S escalar: ${escalateOnKeywords.join(", ")}.`
+      ? `Si el cliente menciona alguna de estas palabras o frases, DEBÉS escalar: ${escalateOnKeywords.join(", ")}.`
       : "";
 
   return `Sos el asistente de IA de ${orgName}, una agencia inmobiliaria. Tu nombre es ${agentName}.
 
 Idioma: ${language}
-Estilo de comunicaciÃ³n: HablÃ¡ de manera ${TONE_DESCRIPTION[tone]}.
+Estilo de comunicación: Hablá de manera ${TONE_DESCRIPTION[tone]}.
 ${persona ? `\nPersonalidad adicional:\n${persona}` : ""}
 
 PROPIEDADES DISPONIBLES PARA OFRECER:
 ${propsText}
 
-INSTRUCCIONES CRÃTICAS:
-1. Solo ofrecÃ© propiedades de la lista de arriba. NUNCA inventes propiedades.
-2. Si el cliente muestra interÃ©s concreto en una propiedad, incluÃ­ exactamente este marcador en tu respuesta: [LEAD_INTERESTED]
-3. Si querÃ©s proponer una visita a una propiedad, incluÃ­: [PROPOSE_VISIT: YYYY-MM-DD HH:MM | PROPERTY_ID:xxx]
-   - UsÃ¡ una fecha y hora razonable (prÃ³ximos 7 dÃ­as, horario laboral 9-19h).
-   - Si no sabÃ©s exactamente cuÃ¡ndo, proponÃ© opciones y esperÃ¡ confirmaciÃ³n antes de usar el marcador.
-4. Si el cliente pide hablar con una persona, o si la conversaciÃ³n estÃ¡ fuera de tu capacidad, incluÃ­: [ESCALATE: motivo]
+INSTRUCCIONES CRÍTICAS:
+1. Solo ofrecé propiedades de la lista de arriba. NUNCA inventes propiedades.
+2. Si el cliente muestra interés concreto en una propiedad, incluí exactamente este marcador en tu respuesta: [LEAD_INTERESTED]
+3. Si querés proponer una visita a una propiedad, incluí: [PROPOSE_VISIT: YYYY-MM-DD HH:MM | PROPERTY_ID:xxx]
+   - Usá una fecha y hora razonable (próximos 7 días, horario laboral 9-19h).
+   - Si no sabés exactamente cuándo, proponé opciones y esperá confirmación antes de usar el marcador.
+4. Si el cliente pide hablar con una persona, o si la conversación está fuera de tu capacidad, incluí: [ESCALATE: motivo]
 ${escalationText}
-5. Si el cliente te da su nombre, incluÃ­: [LEAD_NAME: nombre completo]
-6. RespondÃ© de forma concisa (mÃ¡ximo 3 pÃ¡rrafos cortos). No uses markdown en tus respuestas, solo texto plano.
+5. Si el cliente te da su nombre, incluí: [LEAD_NAME: nombre completo]
+6. Respondé de forma concisa (máximo 3 párrafos cortos). No uses markdown en tus respuestas, solo texto plano.
 7. Tu objetivo es calificar el lead y agendar una visita cuando sea el momento adecuado.
 
 ${humanHandoffMessage ? `Mensaje para cuando escales: "${humanHandoffMessage}"` : ""}
@@ -324,7 +324,7 @@ export async function runAgentPipeline(input: PipelineInput): Promise<PipelineRe
         where: { id: conversation.id },
         data: {
           isHumanControlled: true,
-          nextBestAction: `Escalar: ${markers.escalationReason ?? "El cliente solicitÃ³ atenciÃ³n humana"}`,
+          nextBestAction: `Escalar: ${markers.escalationReason ?? "El cliente solicitó atención humana"}`,
         },
       })
     );
@@ -353,7 +353,7 @@ export async function runAgentPipeline(input: PipelineInput): Promise<PipelineRe
               createdById: orgOwner.userId,
               scheduledAt: visitDate,
               status: "PENDING",
-              notes: `Visita agendada automÃ¡ticamente por el agente IA "${agent.name}" vÃ­a WhatsApp.`,
+              notes: `Visita agendada automáticamente por el agente IA "${agent.name}" vía WhatsApp.`,
             },
           });
           actions.visitCreated = true;

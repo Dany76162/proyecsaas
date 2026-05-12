@@ -38,7 +38,7 @@ export function PlatformShell({
               type="button"
               onClick={() => setSidebarOpen(true)}
               className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 transition lg:hidden"
-              aria-label="Abrir menÃº"
+              aria-label="Abrir menú"
             >
               <Menu className="h-5 w-5" />
             </button>

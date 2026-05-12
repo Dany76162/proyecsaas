@@ -76,7 +76,7 @@ export function CreateOrgDialog() {
   const buildWhatsAppUrl = () => {
     if (!inviteUrl) return "#";
     const phone = ownerPhone.replace(/\D/g, "");
-    const text = `Â¡Hola! Te envÃ­o el acceso a tu panel de gestiÃ³n en RaÃ­ces Pilot.\n\nIngresÃ¡ con este link y creÃ¡ tu contraseÃ±a:\n${inviteUrl}\n\nEl link es vÃ¡lido por 7 dÃ­as.`;
+    const text = `¡Hola! Te envío el acceso a tu panel de gestión en Raíces Pilot.\n\nIngresá con este link y creá tu contraseña:\n${inviteUrl}\n\nEl link es válido por 7 días.`;
     const encoded = encodeURIComponent(text);
     return phone ? `https://wa.me/${phone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
   };
@@ -99,7 +99,7 @@ export function CreateOrgDialog() {
             </div>
             <DialogTitle>Nueva Inmobiliaria</DialogTitle>
             <DialogDescription>
-              Se genera el acceso automÃ¡ticamente y el link de invitaciÃ³n.
+              Se genera el acceso automáticamente y el link de invitación.
             </DialogDescription>
           </DialogHeader>
 
@@ -114,7 +114,7 @@ export function CreateOrgDialog() {
                   required
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
-                  placeholder="Ej: RaÃ­ces Pilar"
+                  placeholder="Ej: Raíces Pilar"
                 />
               </div>
 
@@ -126,9 +126,9 @@ export function CreateOrgDialog() {
                 <Input
                   value={ownerName}
                   onChange={(e) => setOwnerName(e.target.value)}
-                  placeholder="Ej: MartÃ­n GarcÃ­a"
+                  placeholder="Ej: Martín García"
                 />
-                <p className="text-[11px] text-slate-400">Nombre con el que se registrarÃ¡ el acceso.</p>
+                <p className="text-[11px] text-slate-400">Nombre con el que se registrará el acceso.</p>
               </div>
 
               <div className="space-y-1.5">
@@ -142,7 +142,7 @@ export function CreateOrgDialog() {
                   onChange={(e) => setOwnerEmail(e.target.value)}
                   placeholder="titular@ejemplo.com"
                 />
-                <p className="text-[11px] text-slate-400">El titular usarÃ¡ este email para ingresar.</p>
+                <p className="text-[11px] text-slate-400">El titular usará este email para ingresar.</p>
               </div>
 
               <div className="space-y-1.5">
@@ -160,7 +160,7 @@ export function CreateOrgDialog() {
                     className="pl-7"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400">CÃ³digo de paÃ­s + nÃºmero. Ej: 549341XXXXXXX</p>
+                <p className="text-[11px] text-slate-400">Código de país + número. Ej: 549341XXXXXXX</p>
               </div>
 
               {error && (
@@ -186,10 +186,10 @@ export function CreateOrgDialog() {
             <div className="space-y-5 py-2">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <p className="text-sm font-bold text-emerald-800">
-                  Â¡Listo! Inmobiliaria creada.
+                  ¡Listo! Inmobiliaria creada.
                 </p>
                 <p className="mt-0.5 text-xs text-emerald-700">
-                  VÃ¡lido por 7 dÃ­as. El titular crea su contraseÃ±a al entrar.
+                  Válido por 7 días. El titular crea su contraseña al entrar.
                 </p>
               </div>
 

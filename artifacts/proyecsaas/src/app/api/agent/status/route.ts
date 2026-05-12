@@ -26,7 +26,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      status: "AgentOS MVP 1 - AUDITORÃA COMPLETADA âœ…",
+      status: "AgentOS MVP 1 - AUDITORÍA COMPLETADA âœ…",
       agents: {
         count: agents.length,
         list: agents
@@ -43,7 +43,7 @@ export async function GET() {
         }))
       },
       platformAdmins: adminUsers,
-      verdict: "LISTO PARA PRODUCCIÃ“N",
+      verdict: "LISTO PARA PRODUCCIÓN",
       timestamp: new Date().toISOString()
     });
   } catch (error) {

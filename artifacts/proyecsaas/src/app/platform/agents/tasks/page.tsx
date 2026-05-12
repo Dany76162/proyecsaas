@@ -9,7 +9,7 @@ const TASK_STATUS_LABELS: Record<string, string> = {
   IN_PROGRESS: "En progreso",
   COMPLETED: "Completada",
   FAILED: "Fallida",
-  APPROVAL_PENDING: "Pendiente de aprobaciÃ³n",
+  APPROVAL_PENDING: "Pendiente de aprobación",
 };
 
 function statusClasses(status: string) {
@@ -47,8 +47,8 @@ export default async function PlatformAgentsTasksPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Tareas AgentOS</h1>
-          <p className="text-sm text-slate-500">Crea y supervisa la generaciÃ³n de contenido con el Director Operativo IA.</p>
-          <p className="mt-1 text-[10px] text-slate-400 italic">Este MVP genera un borrador por ejecuciÃ³n.</p>
+          <p className="text-sm text-slate-500">Crea y supervisa la generación de contenido con el Director Operativo IA.</p>
+          <p className="mt-1 text-[10px] text-slate-400 italic">Este MVP genera un borrador por ejecución.</p>
         </div>
         <Link
           href="/platform/agents/tasks/new"
@@ -76,7 +76,7 @@ export default async function PlatformAgentsTasksPage() {
           <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
             <thead className="bg-slate-50 text-slate-700">
               <tr>
-                <th className="px-6 py-4 font-semibold">TÃ­tulo</th>
+                <th className="px-6 py-4 font-semibold">Título</th>
                 <th className="px-6 py-4 font-semibold">Estado</th>
                 <th className="px-6 py-4 font-semibold">Prioridad</th>
                 <th className="px-6 py-4 font-semibold">Agente</th>
@@ -89,7 +89,7 @@ export default async function PlatformAgentsTasksPage() {
                 <tr key={task.id}>
                   <td className="px-6 py-4 text-slate-900">
                     <div className="font-semibold">{task.title}</div>
-                    <div className="text-xs text-slate-500">{task.description ?? "Sin descripciÃ³n"}</div>
+                    <div className="text-xs text-slate-500">{task.description ?? "Sin descripción"}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${statusClasses(task.status)}`}>
@@ -105,7 +105,7 @@ export default async function PlatformAgentsTasksPage() {
               {tasks.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    No hay tareas creadas todavÃ­a.
+                    No hay tareas creadas todavía.
                   </td>
                 </tr>
               )}

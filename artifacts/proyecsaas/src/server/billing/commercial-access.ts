@@ -15,7 +15,7 @@ export const BILLING_MODE_LABELS: Record<BillingMode, string> = {
   ONLINE: "Online",
   CASH: "Efectivo",
   TRANSFER: "Transferencia",
-  COURTESY: "CortesÃ­a",
+  COURTESY: "Cortesía",
   MANUAL: "Manual",
 };
 
@@ -42,7 +42,7 @@ export function resolveEffectiveCommercialState(input: {
       allowed: false,
       effectiveStatus: SubscriptionStatus.SUSPENDED,
       source: "organization",
-      summary: "Cuenta desactivada por administraciÃ³n.",
+      summary: "Cuenta desactivada por administración.",
     };
   }
 
@@ -51,7 +51,7 @@ export function resolveEffectiveCommercialState(input: {
       allowed: true,
       effectiveStatus: null,
       source: "legacy",
-      summary: "Acceso legado sin suscripciÃ³n explÃ­cita.",
+      summary: "Acceso legado sin suscripción explícita.",
     };
   }
 

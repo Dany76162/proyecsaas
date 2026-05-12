@@ -27,7 +27,7 @@ export default function DebugVerifyPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 space-y-1 pb-2">
-           <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">OperaciÃ³n</p>
+           <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operación</p>
            {[ "Inicio", "Leads", "Conversaciones", "Visitas", "Propiedades" ].map(label => (
              <div key={label} className="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300">
                {label}
@@ -49,7 +49,7 @@ export default function DebugVerifyPage() {
           </div>
           <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 bg-red-500/5 text-red-400 border border-red-500/20">
             <LogOut className="h-4 w-4" />
-            Cerrar sesiÃ³n
+            Cerrar sesión
           </button>
         </div>
       </aside>
@@ -71,7 +71,7 @@ export default function DebugVerifyPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-lg font-semibold leading-snug text-slate-950">
-                    Propiedad con TÃ­tulo Muy Largo para Validar que Badges se Apilan Correctamente
+                    Propiedad con Título Muy Largo para Validar que Badges se Apilan Correctamente
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
                     Av. Libertador 1234, Recoleta, CABA
@@ -84,13 +84,13 @@ export default function DebugVerifyPage() {
                     Disponible
                   </span>
                   <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
-                    PÃºblico
+                    Público
                   </span>
                 </div>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-500">
-                <span>Departamento</span> â€¢ <span>3 dor</span> â€¢ <span>2 ba</span> â€¢ <span>120 mÂ²</span>
+                <span>Departamento</span> • <span>3 dor</span> • <span>2 ba</span> • <span>120 mÂ²</span>
               </div>
               <p className="mt-4 text-xl font-semibold text-slate-950">USD 250.000</p>
             </div>

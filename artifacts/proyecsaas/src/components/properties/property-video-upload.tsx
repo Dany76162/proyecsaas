@@ -135,7 +135,7 @@ export function PropertyVideoUpload({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-brand-600 transition hover:bg-slate-50"
             >
-              Ver video externo â†’
+              Ver video externo →
             </a>
           )}
 
@@ -194,17 +194,17 @@ export function PropertyVideoUpload({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9A2.25 2.25 0 0013.5 5.25h-9A2.25 2.25 0 002.25 8.25v9A2.25 2.25 0 004.5 18.75z" />
                 </svg>
                 <span className="text-sm font-medium text-slate-600">
-                  HacÃ© click para subir un video
+                  Hacé click para subir un video
                 </span>
                 <span className="text-xs text-slate-400">
-                  MP4 Â· MOV Â· WebM Â· mÃ¡x. 100 MB
+                  MP4 Â· MOV Â· WebM Â· máx. 100 MB
                 </span>
               </button>
             )}
           </CldUploadWidget>
           <p className="text-xs text-slate-400">
-            Para videos mÃ¡s pesados, subÃ­los a YouTube o Vimeo y pegÃ¡ el link en el campo
-            "Video / Tour virtual" de la secciÃ³n DescripciÃ³n.
+            Para videos más pesados, subílos a YouTube o Vimeo y pegá el link en el campo
+            "Video / Tour virtual" de la sección Descripción.
           </p>
         </div>
       )}

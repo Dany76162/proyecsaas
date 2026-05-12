@@ -161,7 +161,7 @@ export async function processWhatsAppInboundJob(
     throw new ConversationWorkerError("missing-phone", "Participant phone is missing.");
   }
 
-  // Solo procesamos texto por ahora en automatizaciÃ³n
+  // Solo procesamos texto por ahora en automatización
   if (data.message.type !== "text") {
     return { status: "ignored", reason: "unsupported-message-type" } as const;
   }
@@ -198,7 +198,7 @@ export async function processWhatsAppInboundJob(
     }
   }
 
-  // 2. Persistencia atÃ³mica (Conversation + Inbound Message)
+  // 2. Persistencia atómica (Conversation + Inbound Message)
   let createdFirstLead = false;
 
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {

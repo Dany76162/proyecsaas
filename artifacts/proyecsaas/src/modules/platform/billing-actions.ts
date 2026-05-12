@@ -11,10 +11,10 @@ import { createMercadoPagoPreference } from "@/server/billing/mercadopago";
 import { logAudit } from "@/server/audit/log";
 
 const createBillingRecordSchema = z.object({
-  organizationId: z.string().min(1, "SeleccionÃ¡ una organizaciÃ³n."),
-  description: z.string().trim().min(2, "La descripciÃ³n es requerida.").max(200),
+  organizationId: z.string().min(1, "Seleccioná una organización."),
+  description: z.string().trim().min(2, "La descripción es requerida.").max(200),
   amountARS: z
-    .number({ invalid_type_error: "IngresÃ¡ un monto vÃ¡lido." })
+    .number({ invalid_type_error: "Ingresá un monto válido." })
     .positive("El monto debe ser mayor a 0."),
   notes: z.string().trim().max(500).optional(),
   // Plan this payment is intended to activate. When set, the MP webhook will
@@ -23,13 +23,13 @@ const createBillingRecordSchema = z.object({
 });
 
 const updateCommercialStateSchema = z.object({
-  organizationId: z.string().min(1, "OrganizaciÃ³n invÃ¡lida."),
-  planId: z.string().trim().min(1, "SeleccionÃ¡ un plan."),
+  organizationId: z.string().min(1, "Organización inválida."),
+  planId: z.string().trim().min(1, "Seleccioná un plan."),
   subscriptionStatus: z.nativeEnum(SubscriptionStatus),
   billingMode: z.nativeEnum(BillingMode),
   currentPeriodEnd: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "IngresÃ¡ una fecha de vencimiento vÃ¡lida."),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Ingresá una fecha de vencimiento válida."),
   internalBillingNotes: z.string().trim().max(1000).optional(),
 });
 
@@ -48,7 +48,7 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
   if (!parsed.success) {
     return {
       success: false,
-      message: parsed.error.issues[0]?.message ?? "Datos invÃ¡lidos.",
+      message: parsed.error.issues[0]?.message ?? "Datos inválidos.",
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -61,7 +61,7 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
       select: { id: true },
     });
     if (!org) {
-      return { success: false, message: "OrganizaciÃ³n no encontrada o inactiva." };
+      return { success: false, message: "Organización no encontrada o inactiva." };
     }
 
     await prisma.orgBillingRecord.create({
@@ -87,7 +87,7 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
     return { success: true, message: "Registro de cobro creado correctamente." };
   } catch (error) {
     console.error("[createBillingRecordAction]", error);
-    return { success: false, message: "Error al crear el registro. IntentÃ¡ nuevamente." };
+    return { success: false, message: "Error al crear el registro. Intentá nuevamente." };
   }
 }
 
@@ -115,11 +115,11 @@ export async function generateMPPaymentLinkAction(recordId: string): Promise<Act
     }
 
     if (record.status === BillingStatus.PAID) {
-      return { success: false, message: "Este cobro ya estÃ¡ marcado como pagado." };
+      return { success: false, message: "Este cobro ya está marcado como pagado." };
     }
 
     if (record.status === BillingStatus.CANCELLED) {
-      return { success: false, message: "Este cobro estÃ¡ cancelado." };
+      return { success: false, message: "Este cobro está cancelado." };
     }
 
     const { preferenceId, checkoutUrl } = await createMercadoPagoPreference({
@@ -143,14 +143,14 @@ export async function generateMPPaymentLinkAction(recordId: string): Promise<Act
     console.error("[generateMPPaymentLinkAction]", error);
     const message =
       error instanceof Error && error.message.startsWith("MERCADO_PAGO_ACCESS_TOKEN")
-        ? "Mercado Pago no estÃ¡ configurado. AgregÃ¡ MERCADO_PAGO_ACCESS_TOKEN."
+        ? "Mercado Pago no está configurado. Agregá MERCADO_PAGO_ACCESS_TOKEN."
         : "Error al generar el link de pago.";
     return { success: false, message };
   }
 }
 
 /**
- * Updates the payment status of a billing record (PENDING â†’ PAID | CANCELLED).
+ * Updates the payment status of a billing record (PENDING → PAID | CANCELLED).
  */
 export async function updateBillingStatusAction(
   recordId: string,
@@ -217,7 +217,7 @@ export async function setOrganizationCommercialStateAction(input: unknown): Prom
   if (!parsed.success) {
     return {
       success: false,
-      message: parsed.error.issues[0]?.message ?? "Datos comerciales invÃ¡lidos.",
+      message: parsed.error.issues[0]?.message ?? "Datos comerciales inválidos.",
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -246,7 +246,7 @@ export async function setOrganizationCommercialStateAction(input: unknown): Prom
   });
 
   if (!org) {
-    return { success: false, message: "OrganizaciÃ³n no encontrada." };
+    return { success: false, message: "Organización no encontrada." };
   }
 
   const plan = await prisma.plan.findFirst({
@@ -255,7 +255,7 @@ export async function setOrganizationCommercialStateAction(input: unknown): Prom
   });
 
   if (!plan) {
-    return { success: false, message: "El plan seleccionado no estÃ¡ disponible." };
+    return { success: false, message: "El plan seleccionado no está disponible." };
   }
 
   const currentPeriodEnd = parseEndOfDayUTC(currentPeriodEndInput);
@@ -333,7 +333,7 @@ export async function setOrganizationCommercialStateAction(input: unknown): Prom
       success: true,
       message:
         subscriptionStatus === SubscriptionStatus.SUSPENDED
-          ? `La organizaciÃ³n "${org.name}" quedÃ³ suspendida manualmente.`
+          ? `La organización "${org.name}" quedó suspendida manualmente.`
           : `Estado comercial actualizado para "${org.name}".`,
     };
   } catch (error) {

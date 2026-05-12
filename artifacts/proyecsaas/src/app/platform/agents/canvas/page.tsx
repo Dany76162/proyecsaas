@@ -7,17 +7,17 @@ import { getAgentCanvasData } from "@/modules/agents/service";
 const statusCopy = {
   operational: {
     label: "Operativo",
-    description: "AgentOS no registra bloqueos crÃ­ticos en el estado agregado.",
+    description: "AgentOS no registra bloqueos críticos en el estado agregado.",
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   attention: {
-    label: "Requiere atenciÃ³n",
+    label: "Requiere atención",
     description: "Hay aprobaciones pendientes, errores recientes o tareas fallidas para revisar.",
     className: "border-amber-200 bg-amber-50 text-amber-800",
   },
   empty: {
     label: "Sin actividad",
-    description: "El canvas estÃ¡ listo. Crea una tarea para iniciar el flujo operativo.",
+    description: "El canvas está listo. Crea una tarea para iniciar el flujo operativo.",
     className: "border-slate-200 bg-slate-50 text-slate-700",
   },
 } as const;
@@ -91,7 +91,7 @@ export default async function PlatformAgentsCanvasPage() {
               <FileText className="h-5 w-5 text-brand-600" />
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Borradores</p>
-                <p className="text-sm font-semibold text-slate-700">Contenido para revisiÃ³n humana.</p>
+                <p className="text-sm font-semibold text-slate-700">Contenido para revisión humana.</p>
               </div>
             </div>
           </div>

@@ -10,7 +10,7 @@ type SettingsNavProps = {
 };
 
 const NAV_ITEMS = [
-  { label: "OrganizaciÃ³n", path: "/settings/organization" },
+  { label: "Organización", path: "/settings/organization" },
   { label: "Disponibilidad", path: "/settings/availability" },
   { label: "Usuarios", path: "/settings/users" },
   { label: "Integraciones", path: "/settings/integrations" },

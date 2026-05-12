@@ -56,7 +56,7 @@ function SaveFeedback({ error, saved }: { error: string; saved: boolean }) {
     return (
       <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
         <CheckCircle2 className="h-4 w-4" />
-        ConfiguraciÃ³n actualizada con Ã©xito.
+        Configuración actualizada con éxito.
       </div>
     );
   return null;
@@ -125,7 +125,7 @@ export function OrganizationProfileForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Perfil bÃ¡sico */}
+      {/* Perfil básico */}
       <div>
         <GroupLabel>Identidad Corporativa</GroupLabel>
         <div className="grid gap-5 md:grid-cols-2">
@@ -138,7 +138,7 @@ export function OrganizationProfileForm({
               placeholder="Ej. Raices Inmobiliaria"
             />
           </Field>
-          <Field label="Zona de operaciÃ³n">
+          <Field label="Zona de operación">
             <Input
               value={city}
               onChange={(e) => setCity(e.target.value)}
@@ -155,7 +155,7 @@ export function OrganizationProfileForm({
             />
           </Field>
           <div className="md:col-span-2">
-            <Field label="DescripciÃ³n de marca">
+            <Field label="Descripción de marca">
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -170,7 +170,7 @@ export function OrganizationProfileForm({
 
       {/* Contacto */}
       <div>
-        <GroupLabel>InformaciÃ³n de Contacto</GroupLabel>
+        <GroupLabel>Información de Contacto</GroupLabel>
         <div className="grid gap-5 md:grid-cols-2">
           <Field label="Email institucional">
             <Input
@@ -181,7 +181,7 @@ export function OrganizationProfileForm({
               placeholder="contacto@empresa.com"
             />
           </Field>
-          <Field label="TelÃ©fono de oficina">
+          <Field label="Teléfono de oficina">
             <Input
               type="tel"
               value={contactPhone}
@@ -211,10 +211,10 @@ export function OrganizationProfileForm({
         </div>
       </div>
 
-      {/* OperaciÃ³n */}
+      {/* Operación */}
       <div>
-        <GroupLabel>AtenciÃ³n al Cliente</GroupLabel>
-        <Field label="Horarios de atenciÃ³n">
+        <GroupLabel>Atención al Cliente</GroupLabel>
+        <Field label="Horarios de atención">
           <Input
             value={businessHours}
             onChange={(e) => setBusinessHours(e.target.value)}
@@ -320,7 +320,7 @@ export function PropertySourceForm({
         setSyncResult({ success: false, message: data.error ?? "Error al sincronizar" });
       }
     } catch {
-      setSyncResult({ success: false, message: "Error de conexiÃ³n al sincronizar" });
+      setSyncResult({ success: false, message: "Error de conexión al sincronizar" });
     } finally {
       setIsSyncing(false);
     }
@@ -360,7 +360,7 @@ export function PropertySourceForm({
             />
           </Field>
           <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
-            Pega la URL donde se encuentra el catÃ¡logo pÃºblico. La IA de RaicesPilot escanearÃ¡ esta pÃ¡gina para mantener tu inventario sincronizado.
+            Pega la URL donde se encuentra el catálogo público. La IA de RaicesPilot escaneará esta página para mantener tu inventario sincronizado.
           </p>
         </div>
         <Field label="Tipo de conector">
@@ -368,13 +368,13 @@ export function PropertySourceForm({
             value={type}
             onChange={(e) => setType(e.target.value)}
           >
-            <option value="website">ExploraciÃ³n Web (IA)</option>
+            <option value="website">Exploración Web (IA)</option>
             <option value="sitemap">Sitemap XML</option>
             <option value="listing">Listado directo</option>
           </Select>
         </Field>
         <div className="flex flex-col gap-1.5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Estado de sincronizaciÃ³n</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Estado de sincronización</p>
           <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-2">
             <StatusBadge label={statusUi.label} tone={
               initial.propertySourceStatus === "OK" ? "success" : 
@@ -382,7 +382,7 @@ export function PropertySourceForm({
               initial.propertySourceStatus === "SYNCING" ? "warning" : "neutral"
             } dot />
             <span className="text-[10px] font-bold text-slate-400 uppercase tabular-nums">
-              Ãšltimo: {formatDate(initial.propertySourceSyncedAt)}
+              Último: {formatDate(initial.propertySourceSyncedAt)}
             </span>
           </div>
         </div>

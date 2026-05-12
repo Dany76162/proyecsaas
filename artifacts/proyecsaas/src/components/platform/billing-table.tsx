@@ -211,7 +211,7 @@ export function BillingTable({
           <TableHeader>
             <TableRow>
               <TableHead className="px-5">Inmobiliaria</TableHead>
-              <TableHead className="px-5">DescripciÃ³n</TableHead>
+              <TableHead className="px-5">Descripción</TableHead>
               <TableHead className="px-5">Monto</TableHead>
               <TableHead className="px-5">Cobro</TableHead>
               <TableHead className="px-5">Factura</TableHead>
@@ -322,15 +322,15 @@ export function BillingTable({
                   onChange={(e) => setOrgId(e.target.value)}
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                 >
-                  <option value="">SeleccionÃ¡...</option>
+                  <option value="">Seleccioná...</option>
                   {activeOrgs.map((o) => (
                     <option key={o.id} value={o.id}>{o.name}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">DescripciÃ³n *</label>
-                <Input required value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ej: SuscripciÃ³n mensual" />
+                <label className="text-sm font-bold text-slate-700">Descripción *</label>
+                <Input required value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ej: Suscripción mensual" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700">Monto en ARS *</label>

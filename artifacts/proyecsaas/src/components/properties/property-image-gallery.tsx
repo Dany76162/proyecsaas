@@ -151,7 +151,7 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
           ))}
         </div>
       ) : (
-        <p className="text-sm text-slate-400">Sin imÃ¡genes todavÃ­a. SubÃ­ la primera desde abajo.</p>
+        <p className="text-sm text-slate-400">Sin imágenes todavía. Subí la primera desde abajo.</p>
       )}
 
       {/* â”€â”€ Tab switcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
@@ -203,16 +203,16 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
                 <span className="text-sm font-medium text-slate-600">
-                  HacÃ© click para seleccionar imÃ¡genes
+                  Hacé click para seleccionar imágenes
                 </span>
                 <span className="text-xs text-slate-400">
-                  JPG, PNG, WEBP Â· mÃ¡x. 4 MB por imagen Â· hasta 8 a la vez
+                  JPG, PNG, WEBP Â· máx. 4 MB por imagen Â· hasta 8 a la vez
                 </span>
               </button>
             )}
           </CldUploadWidget>
           <p className="text-xs text-slate-400">
-            Funciona desde PC y celular. Las imÃ¡genes se suben al CDN de Cloudinary y quedan vinculadas
+            Funciona desde PC y celular. Las imágenes se suben al CDN de Cloudinary y quedan vinculadas
             a esta propiedad.
           </p>
         </div>
@@ -236,13 +236,13 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="https://ejemplo.com/foto.jpg  Ã³  https://drive.google.com/file/d/â€¦"
+                placeholder="https://ejemplo.com/foto.jpg  ó  https://drive.google.com/file/d/â€¦"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div className="w-full sm:w-40">
               <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                DescripciÃ³n (opcional)
+                Descripción (opcional)
               </label>
               <input
                 type="text"
@@ -262,12 +262,12 @@ export function PropertyImageGallery({ orgSlug, propertyId, images }: PropertyIm
           </form>
           {urlInput && isDriveUrl(urlInput) && (
             <p className="text-xs text-emerald-600">
-              Link de Google Drive detectado â€” se convertirÃ¡ automÃ¡ticamente a URL directa.
+              Link de Google Drive detectado â€” se convertirá automáticamente a URL directa.
               El archivo debe estar compartido como "Cualquiera con el enlace".
             </p>
           )}
           <p className="text-xs text-slate-400">
-            PegÃ¡ la URL de una imagen alojada externamente, o un link compartido de Google Drive.
+            Pegá la URL de una imagen alojada externamente, o un link compartido de Google Drive.
           </p>
         </div>
       )}

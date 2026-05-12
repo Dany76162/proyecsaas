@@ -20,9 +20,9 @@ export function parsePrice(text: string): ParsedPrice | null {
 
   const t = text.replace(/\s+/g, " ");
 
-  // Pattern 1: Currency prefix â€” USD/U$S/u$s/DÃ“LARES followed by number
+  // Pattern 1: Currency prefix â€” USD/U$S/u$s/DÓLARES followed by number
   const usdPrefix = t.match(
-    /(?:USD?|U\$S|u\$s|dÃ³lar(?:es)?)\s*[:$]?\s*([\d.,]+)/i
+    /(?:USD?|U\$S|u\$s|dólar(?:es)?)\s*[:$]?\s*([\d.,]+)/i
   );
   if (usdPrefix) {
     const cents = parseAmountToCents(usdPrefix[1]);
@@ -30,7 +30,7 @@ export function parsePrice(text: string): ParsedPrice | null {
   }
 
   // Pattern 2: Number followed by USD/U$S
-  const usdSuffix = t.match(/([\d.,]+)\s*(?:USD?|U\$S|u\$s|dÃ³lar(?:es)?)/i);
+  const usdSuffix = t.match(/([\d.,]+)\s*(?:USD?|U\$S|u\$s|dólar(?:es)?)/i);
   if (usdSuffix) {
     const cents = parseAmountToCents(usdSuffix[1]);
     if (cents !== null) return { cents, currency: "USD" };
@@ -48,9 +48,9 @@ export function parsePrice(text: string): ParsedPrice | null {
 
 /**
  * Converts a Spanish/Argentine number string to cents (integer).
- * "120.000" â†’ 12000000 (USD 120,000 â†’ 12,000,000 cents)
- * "1.500.000" â†’ 150000000 (ARS 1,500,000 â†’ 150,000,000 cents)
- * "54.900" â†’ 5490000
+ * "120.000" → 12000000 (USD 120,000 → 12,000,000 cents)
+ * "1.500.000" → 150000000 (ARS 1,500,000 → 150,000,000 cents)
+ * "54.900" → 5490000
  */
 function parseAmountToCents(raw: string): number | null {
   if (!raw) return null;
@@ -81,7 +81,7 @@ export function parseSurfaceM2(text: string): number | null {
 
 /**
  * Extracts number of ambientes (rooms) from text.
- * "2 ambientes" â†’ 2, "3 amb." â†’ 3, "Monoambiente" â†’ 1
+ * "2 ambientes" → 2, "3 amb." → 3, "Monoambiente" → 1
  */
 export function parseRooms(text: string): number | null {
   if (!text) return null;
@@ -94,7 +94,7 @@ export function parseRooms(text: string): number | null {
 
 /**
  * Extracts bedrooms from text.
- * "3 dormitorios" â†’ 3, "2 habitaciones" â†’ 2, "2 dorm." â†’ 2
+ * "3 dormitorios" → 3, "2 habitaciones" → 2, "2 dorm." → 2
  */
 export function parseBedrooms(text: string): number | null {
   if (!text) return null;
@@ -106,11 +106,11 @@ export function parseBedrooms(text: string): number | null {
 
 /**
  * Extracts bathrooms from text.
- * "2 baÃ±os" â†’ 2, "1 baÃ±o" â†’ 1
+ * "2 baños" → 2, "1 baño" → 1
  */
 export function parseBathrooms(text: string): number | null {
   if (!text) return null;
-  const match = text.match(/(\d+)\s*(?:baÃ±os?|baths?)/i);
+  const match = text.match(/(\d+)\s*(?:baños?|baths?)/i);
   if (!match) return null;
   const val = parseInt(match[1], 10);
   return isNaN(val) ? null : val;
@@ -141,7 +141,7 @@ const PROPERTY_TYPE_MAP: Array<[RegExp, string]> = [
   [/local\s*comercial|local/i, "Local"],
   [/oficina|consultorio/i, "Oficina"],
   [/cochera|garaje|garage/i, "Cochera"],
-  [/galpÃ³n|depÃ³sito|bodega/i, "GalpÃ³n"],
+  [/galpón|depósito|bodega/i, "Galpón"],
 ];
 
 /**

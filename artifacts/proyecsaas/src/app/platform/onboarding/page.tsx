@@ -78,7 +78,7 @@ export default async function PlatformOnboardingPage() {
             <thead>
               <tr className="border-b bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <th className="px-5 py-3.5">Usuario</th>
-                <th className="px-5 py-3.5">OrganizaciÃ³n</th>
+                <th className="px-5 py-3.5">Organización</th>
                 <th className="px-5 py-3.5">Estado</th>
                 <th className="px-5 py-3.5">Generada</th>
                 <th className="px-5 py-3.5">Expira / Usada</th>
@@ -120,7 +120,7 @@ export default async function PlatformOnboardingPage() {
                   <td colSpan={5} className="px-5 py-12 text-center">
                     <p className="text-base font-semibold text-slate-900">Sin invitaciones generadas</p>
                     <p className="mt-1 text-sm text-slate-500">
-                      CreÃ¡ una inmobiliaria y generÃ¡ el primer acceso desde la tabla de Clientes.
+                      Creá una inmobiliaria y generá el primer acceso desde la tabla de Clientes.
                     </p>
                   </td>
                 </tr>

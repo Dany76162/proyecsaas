@@ -82,7 +82,7 @@ export async function createLeadAction(formData: FormData) {
       source: "Ingreso manual",
       notes: "Creado manualmente desde el workspace del CRM.",
       interestLabel: "Nueva consulta",
-      budgetLabel: "Pendiente de calificaciÃ³n",
+      budgetLabel: "Pendiente de calificación",
       lastContactAt: new Date(),
     },
   });
@@ -221,8 +221,8 @@ export async function updateLeadAction(formData: FormData) {
           extractedPreferences: currentSignals.extractedPreferences,
           nextBestAction: currentSignals.nextBestAction,
           automationSummary: parsed.data.propertyId
-            ? `Un miembro del equipo ${currentLead.propertyId ? "modificÃ³" : "confirmÃ³"} manualmente la propiedad vinculada al lead.`
-            : "Un miembro del equipo eliminÃ³ manualmente la propiedad vinculada al lead.",
+            ? `Un miembro del equipo ${currentLead.propertyId ? "modificó" : "confirmó"} manualmente la propiedad vinculada al lead.`
+            : "Un miembro del equipo eliminó manualmente la propiedad vinculada al lead.",
           requiresFollowUp: currentSignals.requiresFollowUp,
           followUpReason: currentSignals.followUpReason,
           propertyMatch: parsed.data.propertyId
@@ -236,8 +236,8 @@ export async function updateLeadAction(formData: FormData) {
                 shortlist: currentSignals.propertyMatch?.shortlist ?? [],
                 reasons: [
                   currentLead.propertyId
-                    ? "Un miembro del equipo reemplazÃ³ manualmente la propiedad vinculada desde el workspace."
-                    : "Un miembro del equipo confirmÃ³ manualmente una propiedad desde el contexto sugerido.",
+                    ? "Un miembro del equipo reemplazó manualmente la propiedad vinculada desde el workspace."
+                    : "Un miembro del equipo confirmó manualmente una propiedad desde el contexto sugerido.",
                 ],
               }
             : {
@@ -247,7 +247,7 @@ export async function updateLeadAction(formData: FormData) {
                 score: null,
                 consideredSignals: currentSignals.propertyMatch?.consideredSignals ?? [],
                 shortlist: currentSignals.propertyMatch?.shortlist ?? [],
-                reasons: ["Un miembro del equipo eliminÃ³ manualmente la propiedad vinculada."],
+                reasons: ["Un miembro del equipo eliminó manualmente la propiedad vinculada."],
               },
         }),
       },
@@ -328,8 +328,8 @@ export async function confirmLeadPropertyAction(formData: FormData) {
           extractedPreferences: currentSignals.extractedPreferences,
           nextBestAction: currentSignals.nextBestAction,
           automationSummary: lead.propertyId
-            ? "Un miembro del equipo reemplazÃ³ la propiedad vinculada desde la lista sugerida."
-            : "Un miembro del equipo confirmÃ³ una propiedad desde la lista sugerida.",
+            ? "Un miembro del equipo reemplazó la propiedad vinculada desde la lista sugerida."
+            : "Un miembro del equipo confirmó una propiedad desde la lista sugerida.",
           requiresFollowUp: currentSignals.requiresFollowUp,
           followUpReason: currentSignals.followUpReason,
           propertyMatch: {
@@ -344,8 +344,8 @@ export async function confirmLeadPropertyAction(formData: FormData) {
             shortlist: currentSignals.propertyMatch?.shortlist ?? [],
             reasons: [
               lead.propertyId
-                ? "Un miembro del equipo seleccionÃ³ manualmente una propiedad diferente de la lista sugerida."
-                : "Un miembro del equipo confirmÃ³ manualmente esta propiedad sugerida.",
+                ? "Un miembro del equipo seleccionó manualmente una propiedad diferente de la lista sugerida."
+                : "Un miembro del equipo confirmó manualmente esta propiedad sugerida.",
             ],
           },
         }),
@@ -359,8 +359,8 @@ export async function confirmLeadPropertyAction(formData: FormData) {
       data: {
         propertyId: property.id,
         propertyContextNote: lead.propertyId
-          ? "El vÃ­nculo de propiedad fue reemplazado manualmente desde la lista sugerida."
-          : "El vÃ­nculo de propiedad fue confirmado manualmente desde la lista sugerida.",
+          ? "El vínculo de propiedad fue reemplazado manualmente desde la lista sugerida."
+          : "El vínculo de propiedad fue confirmado manualmente desde la lista sugerida.",
       },
     }),
   ]);

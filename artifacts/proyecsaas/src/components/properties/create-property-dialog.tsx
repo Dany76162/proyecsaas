@@ -93,7 +93,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
       if (res.ok && json.success) {
         setSyncStatus("success");
-        setSyncMessage(`SincronizaciÃ³n exitosa: ${json.total} propiedades procesadas.`);
+        setSyncMessage(`Sincronización exitosa: ${json.total} propiedades procesadas.`);
         setTimeout(() => {
           router.refresh();
           handleClose();
@@ -141,7 +141,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
             {mode === "selector" && (
               <div className="px-6 py-6 flex flex-col gap-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
-                  Selecciona el mÃ©todo de carga
+                  Selecciona el método de carga
                 </p>
 
                 <button
@@ -176,7 +176,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
                 <div className="mt-4 flex flex-col gap-2">
                   <Button variant="ghost" onClick={handleClose} className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    Cancelar operaciÃ³n
+                    Cancelar operación
                   </Button>
                 </div>
               </div>
@@ -186,7 +186,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
             {mode === "manual" && (
               <div className="px-6 py-6">
                 <p className="text-xs text-slate-500 leading-relaxed mb-6">
-                  Carga los datos principales. Al finalizar, podrÃ¡s completar fotos y detalles tÃ©cnicos en la ficha de propiedad.
+                  Carga los datos principales. Al finalizar, podrás completar fotos y detalles técnicos en la ficha de propiedad.
                 </p>
 
                 {error && (
@@ -198,13 +198,13 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                 <form onSubmit={handleManualSubmit} className="flex flex-col gap-5">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      TÃ­tulo comercial
+                      Título comercial
                     </label>
-                    <Input required name="title" placeholder="Ej. Depto 2 amb. luminoso con balcÃ³n" />
+                    <Input required name="title" placeholder="Ej. Depto 2 amb. luminoso con balcón" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">DirecciÃ³n</label>
-                    <Input required name="address" placeholder="Calle y nÃºmero" />
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dirección</label>
+                    <Input required name="address" placeholder="Calle y número" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -243,7 +243,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
             {mode === "import" && (
               <div className="px-6 py-6">
                 <p className="text-xs text-slate-500 leading-relaxed mb-6">
-                  Nuestra IA escanearÃ¡ tu sitio web para extraer las fichas automÃ¡ticamente. AsegÃºrate de que sea una pÃ¡gina de listado.
+                  Nuestra IA escaneará tu sitio web para extraer las fichas automáticamente. Asegúrate de que sea una página de listado.
                 </p>
 
                 {syncStatus === "success" && (
@@ -270,7 +270,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                       disabled={syncStatus === "loading" || syncStatus === "success"}
                     />
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Soporta sitios inmobiliarios estÃ¡ndar y portales compatibles.
+                      Soporta sitios inmobiliarios estándar y portales compatibles.
                     </p>
                   </div>
 
@@ -291,7 +291,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                       className="min-w-[180px]"
                     >
                       {syncStatus === "loading" && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                      {syncStatus === "loading" ? "Escaneando sitio..." : syncStatus === "success" ? "Â¡Importado!" : "Iniciar sincronizaciÃ³n"}
+                      {syncStatus === "loading" ? "Escaneando sitio..." : syncStatus === "success" ? "¡Importado!" : "Iniciar sincronización"}
                     </Button>
                   </div>
                 </form>

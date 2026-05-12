@@ -4,7 +4,7 @@ const CLIENTS = [
   { main: "MelePropiedades", sub: "Inmobiliaria" },
   { main: "Alberto Capelli", sub: "Martillero" },
   { main: "SevenToop", sub: "Marketing Digital" },
-  { main: "RaicesPilot", sub: "TecnologÃ­a Inmobiliaria", isPlaceholder: true },
+  { main: "RaicesPilot", sub: "Tecnología Inmobiliaria", isPlaceholder: true },
 ];
 
 export function ClientMarquee() {

@@ -311,7 +311,7 @@ export function OnboardingControls({
               </button>
             </div>
 
-            {/* Soporte tÃ©cnico (excepcional) */}
+            {/* Soporte técnico (excepcional) */}
             <div className="border-t border-slate-100 py-1">
               <button
                 onClick={() => {
@@ -321,7 +321,7 @@ export function OnboardingControls({
                 className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
               >
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span>Soporte tÃ©cnico</span>
+                <span>Soporte técnico</span>
               </button>
             </div>
           </div>,
@@ -334,7 +334,7 @@ export function OnboardingControls({
       {/* â”€â”€ DESKTOP: acciones inline visibles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {/* hidden on mobile/tablet, shown as stacked action links on lg+ */}
       <div className="hidden lg:flex flex-col items-end gap-0.5">
-        {/* AcciÃ³n principal de onboarding */}
+        {/* Acción principal de onboarding */}
         {hasUsers ? (
           <button
             type="button"
@@ -405,7 +405,7 @@ export function OnboardingControls({
           Agentes ({aiAgentCount}/{maxAiAgents})
         </button>
 
-        {/* Soporte tÃ©cnico â€” terciaria, apenas visible */}
+        {/* Soporte técnico â€” terciaria, apenas visible */}
         <button
           type="button"
           onClick={() => setSupportModalOpen(true)}
@@ -415,7 +415,7 @@ export function OnboardingControls({
         </button>
       </div>
 
-      {/* â”€â”€ MOBILE / TABLET: menÃº â‹® â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â”€â”€ MOBILE / TABLET: menú â‹® â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex lg:hidden">
         <button
           ref={triggerRef}
@@ -438,17 +438,17 @@ export function OnboardingControls({
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">Acceso de Soporte TÃ©cnico</h3>
+                <h3 className="font-bold text-slate-900">Acceso de Soporte Técnico</h3>
                 <p className="text-xs text-slate-500">{orgName}</p>
               </div>
             </div>
             <p className="mt-4 text-sm text-slate-700">
-              EstÃ¡s por acceder al <strong>workspace privado</strong> de este cliente como operador
+              Estás por acceder al <strong>workspace privado</strong> de este cliente como operador
               de soporte de plataforma.
             </p>
             <p className="mt-2 text-xs text-slate-500">
-              Esta acciÃ³n es de carÃ¡cter excepcional. Solo debe usarse para resolver incidencias
-              tÃ©cnicas.
+              Esta acción es de carácter excepcional. Solo debe usarse para resolver incidencias
+              técnicas.
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
@@ -480,7 +480,7 @@ export function OnboardingControls({
             <p className="mt-2 text-sm text-slate-600">
               Vas a remover <strong>todos los accesos humanos</strong> de la inmobiliaria &ldquo;
               {orgName}&rdquo;. Esto es irreversible, aunque los usuarios globales y los datos
-              operativos permanecerÃ¡n intactos.
+              operativos permanecerán intactos.
             </p>
 
             <form onSubmit={handleClean} className="mt-6">
@@ -536,7 +536,7 @@ export function OnboardingControls({
             </div>
 
             <p className="mt-2 text-sm text-slate-600">
-              CreÃ¡ el administrador inicial (Titular) para <strong>{orgName}</strong>.
+              Creá el administrador inicial (Titular) para <strong>{orgName}</strong>.
             </p>
 
             {!inviteUrl ? (
@@ -556,7 +556,7 @@ export function OnboardingControls({
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                      Correo electrÃ³nico
+                      Correo electrónico
                     </label>
                     <input
                       required
@@ -642,7 +642,7 @@ export function OnboardingControls({
               <p className="mt-1 text-xs text-slate-500">El plan mensual incluye 1 agente. Cada agente adicional tiene costo extra.</p>
               {agentQuotaNote && (
                 <div className="mt-3 border-t border-slate-200 pt-3">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Ãšltimo registro</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Último registro</p>
                   <p className="text-xs text-slate-600 leading-relaxed">{agentQuotaNote}</p>
                 </div>
               )}
@@ -651,7 +651,7 @@ export function OnboardingControls({
             <form onSubmit={handleQuota} className="mt-5 space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Agentes habilitados (mÃ¡ximo)
+                  Agentes habilitados (máximo)
                 </label>
                 <input
                   type="number"
@@ -665,7 +665,7 @@ export function OnboardingControls({
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Motivo / nota de facturaciÃ³n
+                  Motivo / nota de facturación
                 </label>
                 <textarea
                   rows={2}
@@ -674,7 +674,7 @@ export function OnboardingControls({
                   onChange={(e) => setQuotaNote(e.target.value)}
                   className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 />
-                <p className="mt-1 text-xs text-slate-400">Opcional. Se guarda con fecha y hora automÃ¡ticos.</p>
+                <p className="mt-1 text-xs text-slate-400">Opcional. Se guarda con fecha y hora automáticos.</p>
               </div>
 
               {quotaError && <p className="text-sm font-medium text-red-600">{quotaError}</p>}
@@ -720,7 +720,7 @@ export function OnboardingControls({
                 Vas a restaurar el acceso completo al workspace.
               </p>
               <p className="mt-1 text-xs text-emerald-700">
-                Todos los usuarios con membresÃ­a activa podrÃ¡n ingresar nuevamente.
+                Todos los usuarios con membresía activa podrán ingresar nuevamente.
               </p>
             </div>
 
@@ -738,7 +738,7 @@ export function OnboardingControls({
                 onClick={handleReactivate}
                 className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 shadow-sm shadow-emerald-500/20 disabled:opacity-50"
               >
-                {isPending ? "Reactivando..." : "Confirmar reactivaciÃ³n"}
+                {isPending ? "Reactivando..." : "Confirmar reactivación"}
               </button>
             </div>
           </div>
@@ -761,12 +761,12 @@ export function OnboardingControls({
 
             <div className="mt-4 rounded-xl border border-red-100 bg-red-50 p-4">
               <p className="text-sm font-semibold text-red-800">
-                Esta acciÃ³n desactivarÃ¡ permanentemente el acceso al workspace.
+                Esta acción desactivará permanentemente el acceso al workspace.
               </p>
               <ul className="mt-2 space-y-1 text-xs text-red-700 list-disc list-inside">
-                <li>Los usuarios de esta inmobiliaria no podrÃ¡n ingresar</li>
-                <li>Los datos quedarÃ¡n archivados pero inaccesibles</li>
-                <li>La automatizaciÃ³n IA dejarÃ¡ de procesar esta cuenta</li>
+                <li>Los usuarios de esta inmobiliaria no podrán ingresar</li>
+                <li>Los datos quedarán archivados pero inaccesibles</li>
+                <li>La automatización IA dejará de procesar esta cuenta</li>
               </ul>
             </div>
 
@@ -828,7 +828,7 @@ export function OnboardingControls({
 
             <p className="mt-2 text-sm text-slate-600">
               Vas a generar un nuevo enlace de acceso para <strong>{ownerEmail}</strong>. 
-              La clave actual dejarÃ¡ de funcionar hasta que el usuario establezca una nueva.
+              La clave actual dejará de funcionar hasta que el usuario establezca una nueva.
             </p>
 
             {!resetUrl ? (
@@ -873,7 +873,7 @@ export function OnboardingControls({
                   </button>
                 </div>
                 <p className="mt-3 text-[11px] text-slate-500">
-                  CopiÃ¡ este link y enviaselo al cliente por WhatsApp. 
+                  Copiá este link y enviaselo al cliente por WhatsApp. 
                   Tiene validez por 48 horas.
                 </p>
                 <div className="mt-6">

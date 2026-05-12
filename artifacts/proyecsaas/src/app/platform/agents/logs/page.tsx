@@ -11,7 +11,7 @@ export default async function PlatformAgentsLogsPage() {
       </div>
 
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="px-6 py-4 text-xs uppercase tracking-[0.2em] text-slate-500">Ãšltimos eventos</div>
+        <div className="px-6 py-4 text-xs uppercase tracking-[0.2em] text-slate-500">Últimos eventos</div>
         <div className="divide-y divide-slate-200">
           {logs.map((log) => (
             <div key={log.id} className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">

@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/table";
 
 const PERIODS: { value: ImpactPeriod; label: string }[] = [
-  { value: "7d", label: "7 dÃ­as" },
+  { value: "7d", label: "7 días" },
   { value: "30d", label: "Este mes" },
-  { value: "365d", label: "Este aÃ±o" },
+  { value: "365d", label: "Este año" },
 ];
 
 function AgentBadge({ status }: { status: "ACTIVE" | "PAUSED" | "DRAFT" | null }) {

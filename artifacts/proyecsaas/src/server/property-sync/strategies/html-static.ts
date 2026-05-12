@@ -65,7 +65,7 @@ function extractLinkFromBlock(block: string): string | null {
 
 /**
  * Extracts the best available image URL from an HTML block.
- * Priority: src â†’ data-src â†’ first srcset URL.
+ * Priority: src → data-src → first srcset URL.
  * Only returns http(s) URLs â€” ignores data: URIs and relative paths.
  */
 function extractImageFromBlock(block: string): string | null {

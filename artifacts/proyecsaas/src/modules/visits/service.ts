@@ -198,7 +198,7 @@ export async function createVisitForAutomation(
         createdById: ownerId,
         scheduledAt,
         status: params.status ?? VisitStatus.PENDING,
-        notes: params.notes ?? "Visita creada desde el flujo de automatizaciÃ³n.",
+        notes: params.notes ?? "Visita creada desde el flujo de automatización.",
       },
     });
 

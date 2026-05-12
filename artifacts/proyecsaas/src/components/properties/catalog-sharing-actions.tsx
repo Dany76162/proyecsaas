@@ -32,7 +32,7 @@ export function CatalogSharingActions({ orgSlug, orgName }: CatalogSharingAction
   };
 
   const handleWhatsAppShare = () => {
-    const message = `Hola, te comparto nuestro catÃ¡logo de propiedades disponibles para que puedas ver mÃ¡s opciones: ${catalogUrl}`;
+    const message = `Hola, te comparto nuestro catálogo de propiedades disponibles para que puedas ver más opciones: ${catalogUrl}`;
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
     window.open(whatsappUrl, "_blank");
@@ -40,17 +40,17 @@ export function CatalogSharingActions({ orgSlug, orgName }: CatalogSharingAction
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* BotÃ³n original: Ver catÃ¡logo */}
+      {/* Botón original: Ver catálogo */}
       <Link
         href={`/${orgSlug}/catalog`}
         target="_blank"
         className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 shadow-soft"
       >
         <ExternalLink className="h-4 w-4" />
-        <span className="hidden sm:inline">Ver catÃ¡logo</span>
+        <span className="hidden sm:inline">Ver catálogo</span>
       </Link>
 
-      {/* BotÃ³n: Copiar Link */}
+      {/* Botón: Copiar Link */}
       <button
         type="button"
         onClick={handleCopy}
@@ -62,10 +62,10 @@ export function CatalogSharingActions({ orgSlug, orgName }: CatalogSharingAction
         )}
       >
         {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-        {copied ? "Â¡Copiado!" : "Copiar link"}
+        {copied ? "¡Copiado!" : "Copiar link"}
       </button>
 
-      {/* BotÃ³n: WhatsApp */}
+      {/* Botón: WhatsApp */}
       <button
         type="button"
         onClick={handleWhatsAppShare}

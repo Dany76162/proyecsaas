@@ -28,9 +28,9 @@ export function buildOnboardingSteps(
       key: "profile",
       done: status.profileComplete,
       href: `/${orgSlug}/settings/organization`,
-      title: "ConfigurÃ¡ tu inmobiliaria",
-      explanation: "CompletÃ¡ los datos bÃ¡sicos del negocio para personalizar el workspace.",
-      benefit: "Esto ordena la operaciÃ³n y hace que el sistema represente correctamente a tu marca.",
+      title: "Configurá tu inmobiliaria",
+      explanation: "Completá los datos básicos del negocio para personalizar el workspace.",
+      benefit: "Esto ordena la operación y hace que el sistema represente correctamente a tu marca.",
       result: "Tu inmobiliaria queda identificada con nombre, zona y datos principales.",
       cta: "Configurar inmobiliaria",
     },
@@ -38,18 +38,18 @@ export function buildOnboardingSteps(
       key: "properties",
       done: status.propertiesLoaded,
       href: `/${orgSlug}/properties`,
-      title: "CargÃ¡ tus propiedades",
-      explanation: "SubÃ­ tu catÃ¡logo manualmente y dejÃ¡ lista la base de inmuebles.",
+      title: "Cargá tus propiedades",
+      explanation: "Subí tu catálogo manualmente y dejá lista la base de inmuebles.",
       benefit: "Sin propiedades cargadas, el sistema no puede recomendar opciones ni ayudarte a captar mejor.",
-      result: "Tu catÃ¡logo queda listo para compartir, mostrar y usar en conversaciones.",
+      result: "Tu catálogo queda listo para compartir, mostrar y usar en conversaciones.",
       cta: "Cargar propiedades",
     },
     {
       key: "agent",
       done: status.agentConfigured,
       href: `/${orgSlug}/agents`,
-      title: "ActivÃ¡ tu agente IA",
-      explanation: "ConfigurÃ¡ el agente de inteligencia artificial incluido en tu plan.",
+      title: "Activá tu agente IA",
+      explanation: "Configurá el agente de inteligencia artificial incluido en tu plan.",
       benefit: "El agente puede responder consultas, mostrar propiedades y ayudarte a no perder oportunidades.",
       result: "Tu inmobiliaria queda con un agente listo para empezar a trabajar.",
       cta: "Activar agente IA",
@@ -58,8 +58,8 @@ export function buildOnboardingSteps(
       key: "whatsapp",
       done: status.whatsappConnected,
       href: `/${orgSlug}/settings/integrations`,
-      title: "ConectÃ¡ WhatsApp",
-      explanation: "VerificÃ¡ que el canal de WhatsApp de la plataforma estÃ© activo para tu inmobiliaria.",
+      title: "Conectá WhatsApp",
+      explanation: "Verificá que el canal de WhatsApp de la plataforma esté activo para tu inmobiliaria.",
       benefit: "Es el punto de entrada principal para que el agente IA atienda consultas reales.",
       result: "Tu inmobiliaria queda lista para recibir mensajes desde el enlace compartible.",
       cta: "Conectar WhatsApp",
@@ -68,9 +68,9 @@ export function buildOnboardingSteps(
       key: "operate",
       done: status.readyToOperate,
       href: `/${orgSlug}/properties`,
-      title: "EmpezÃ¡ a operar",
-      explanation: "CompartÃ­ tu catÃ¡logo y activÃ¡ el flujo comercial desde propiedades y conversaciones.",
-      benefit: "AcÃ¡ es donde la plataforma empieza a generar valor real en la captaciÃ³n y atenciÃ³n de leads.",
+      title: "Empezá a operar",
+      explanation: "Compartí tu catálogo y activá el flujo comercial desde propiedades y conversaciones.",
+      benefit: "Acá es donde la plataforma empieza a generar valor real en la captación y atención de leads.",
       result: "Tu inmobiliaria ya puede mostrar propiedades, atender consultas y ordenar el seguimiento.",
       cta: "Empezar a operar",
     },
@@ -92,11 +92,11 @@ export function SetupChecklist({ orgSlug, status }: SetupChecklistProps) {
             Onboarding Guiado
           </p>
           <h2 className="mt-2 text-xl font-semibold text-slate-950">
-            ConfigurÃ¡ tu inmobiliaria en 5 pasos
+            Configurá tu inmobiliaria en 5 pasos
           </h2>
           <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-slate-600 font-medium">
             Cada paso te acerca a tener tu agente IA atendiendo consultas y mostrando propiedades
-            por WhatsApp de forma automÃ¡tica.
+            por WhatsApp de forma automática.
           </p>
         </div>
         <span className="inline-flex w-fit rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-bold tabular-nums text-slate-700">
