@@ -133,6 +133,7 @@ model User {
   createdVisits     Visit[]            @relation("VisitCreatedBy")
   createdAgentTasks AgentTask[]        @relation("TaskCreatedBy")
   decidedApprovals  AgentApproval[]    @relation("ApprovalDecidedBy")
+  automations      AgentAutomation[]
   inviteTokens      InviteToken[]
   passwordResetTokens PasswordResetToken[]
   termsAcceptedAt   DateTime?
@@ -671,6 +672,7 @@ model Agent {
   // Relaciones
   tasks         AgentTask[]
   runs          AgentRun[]
+  automations   AgentAutomation[]
   requestedApprovals AgentApproval[] @relation("ApprovalRequestedBy")
   @@index([scope, organizationId, type])
 }
@@ -685,6 +687,7 @@ model AgentTask {
   status        TaskStatus   @default(PENDING)
   priority      AgentPriority @default(MEDIUM)
   goalId        String?      // Asociado a un objetivo operativo
+  automationId  String?      // Creada por una automatización
   createdById   String       // User (Superadmin)
   metadata      Json?        // Datos específicos (ej: {"contentType": "post"})
   createdAt     DateTime     @default(now())
@@ -693,6 +696,7 @@ model AgentTask {
   // Relaciones
   agent         Agent?       @relation(fields: [agentId], references: [id])
   goal          AgentGoal?   @relation(fields: [goalId], references: [id])
+  automation    AgentAutomation? @relation(fields: [automationId], references: [id])
   createdBy     User         @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   runs          AgentRun[]
   approvals     AgentApproval[]
@@ -760,18 +764,71 @@ model AgentLog {
 }
 
 model AgentGoal {
-  id              String       @id @default(cuid())
-  title           String
-  description     String?
-  status          GoalStatus   @default(PENDING)
-  priority        AgentPriority @default(MEDIUM)
-  type            GoalType
-  targetDate      DateTime?
-  progress        Int          @default(0) // 0-100 calculado
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  
-  tasks           AgentTask[]
+  id             String      @id @default(cuid())
+  title          String
+  description    String?
+  status         GoalStatus  @default(PENDING)
+  type           GoalType
+  priority       AgentPriority @default(MEDIUM)
+  progress       Int         @default(0)
+  targetDate     DateTime?
+  tasks          AgentTask[]
+  automations    AgentAutomation[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+enum AutomationType {
+  CONTENT
+  REPORT
+  GOAL_REVIEW
+  AUDIT
+  CUSTOM
+}
+
+enum AutomationFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  MANUAL
+}
+
+enum AutomationStatus {
+  ACTIVE
+  PAUSED
+  FAILED
+}
+
+model AgentAutomation {
+  id             String              @id @default(cuid())
+  title          String
+  description    String?
+  scope          AgentScope          @default(PLATFORM)
+  organizationId String?
+  agentId        String?
+  agent          Agent?              @relation(fields: [agentId], references: [id])
+  goalId         String?
+  goal           AgentGoal?          @relation(fields: [goalId], references: [id])
+  type           AutomationType      @default(CONTENT)
+  frequency      AutomationFrequency @default(MANUAL)
+  dayOfWeek      Int?                // 0-6 for weekly
+  timeOfDay      String?             // HH:mm
+  timezone       String              @default("UTC")
+  isActive       Boolean             @default(true)
+  status         AutomationStatus    @default(ACTIVE)
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  createdById    String
+  createdBy      User                @relation(fields: [createdById], references: [id])
+  metadata       Json?
+  tasks          AgentTask[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([organizationId])
+  @@index([agentId])
+  @@index([goalId])
+  @@index([createdById])
 }
 
 model ContentDraft {

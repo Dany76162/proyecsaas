@@ -33,6 +33,8 @@ export type AgentDashboardSummary = {
   hasOpenAIQuotaError: boolean;
   totalGoals: number;
   activeGoals: number;
+  totalAutomations: number;
+  activeAutomations: number;
 };
 
 export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary> {
@@ -59,7 +61,9 @@ export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary>
     quotaErrorLog,
     approvalsWithTime,
     totalGoals,
-    activeGoals
+    activeGoals,
+    totalAutomations,
+    activeAutomations
   ] = await Promise.all([
     safeCount(() => prisma.agentTask.count()),
     safeCount(() => prisma.agentApproval.count({ where: { status: ApprovalStatus.PENDING } })),
@@ -93,7 +97,9 @@ export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary>
       orderBy: { decidedAt: 'desc' }
     }),
     safeCount(() => prisma.agentGoal.count()),
-    safeCount(() => prisma.agentGoal.count({ where: { status: { not: "COMPLETED" } } }))
+    safeCount(() => prisma.agentGoal.count({ where: { status: { not: "COMPLETED" } } })),
+    safeCount(() => prisma.agentAutomation.count()),
+    safeCount(() => prisma.agentAutomation.count({ where: { isActive: true } }))
   ]);
 
   const totalDecided = approvedCount + rejectedCount;
@@ -123,6 +129,8 @@ export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary>
     hasOpenAIQuotaError: !!quotaErrorLog,
     totalGoals,
     activeGoals,
+    totalAutomations,
+    activeAutomations,
   };
 }
 
@@ -321,6 +329,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
     recentLogs,
     runStatusCountsRaw,
     activeGoalsRaw,
+    automationsRaw,
   ] = await Promise.all([
     prisma.agent.findMany({
       where: { scope: PLATFORM_SCOPE },
@@ -358,6 +367,12 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
       take: 5,
       orderBy: { createdAt: "desc" },
       select: { title: true, progress: true }
+    }),
+    prisma.agentAutomation.findMany({
+      where: { isActive: true },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      select: { title: true, nextRunAt: true }
     })
   ]);
 
@@ -530,6 +545,21 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
           { label: "Activos", value: agents.filter(a => a.isActive).length, tone: "success" },
           { label: "Disponibles", value: 6, tone: "info" }
         ],
+        activities: [],
+      },
+      automations: {
+        id: "automations",
+        title: "Automatizaciones",
+        subtitle: "Reglas de generación de tareas programadas.",
+        type: "AUTOMATION_RULES",
+        status: automationsRaw.length > 0 ? `${automationsRaw.length} Activas` : "Sin reglas activas",
+        description: "Define cuándo y cómo se deben crear tareas internas automáticamente. Todo resultado está sujeto a revisión humana.",
+        href: "/platform/agents/automations",
+        metrics: automationsRaw.map(a => ({ 
+          label: a.title, 
+          value: a.nextRunAt ? new Date(a.nextRunAt).toLocaleDateString() : "Manual", 
+          tone: "info" 
+        })),
         activities: [],
       }
     },

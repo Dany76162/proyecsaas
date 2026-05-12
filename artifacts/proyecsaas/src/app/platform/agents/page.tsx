@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Layers, FileText, CheckCircle2, Activity, Clock, Network, Terminal, Plus, ShieldCheck, AlertCircle, Target } from "lucide-react";
+import { ArrowRight, Layers, FileText, CheckCircle2, Activity, Clock, Network, Terminal, Plus, ShieldCheck, AlertCircle, Target, Zap } from "lucide-react";
 import { getAgentDashboardSummary } from "@/modules/agents/service";
 import { cn } from "@/lib/utils";
 
@@ -8,9 +8,9 @@ export default async function PlatformAgentsPage() {
 
   const metrics = [
     { label: "Objetivos Activos", value: summary.activeGoals, icon: Target, color: "text-brand-600 bg-brand-50" },
+    { label: "Automatizaciones", value: summary.activeAutomations, icon: Zap, color: "text-amber-600 bg-amber-50" },
     { label: "Tareas Totales", value: summary.totalTasks, icon: Layers, color: "text-blue-600 bg-blue-50" },
-    { label: "Borradores", value: summary.draftCount, icon: FileText, color: "text-indigo-600 bg-indigo-50" },
-    { label: "Por Aprobar", value: summary.pendingApproval, icon: Activity, color: summary.pendingApproval > 0 ? "text-amber-600 bg-amber-50 animate-pulse" : "text-slate-400 bg-slate-50" },
+    { label: "Por Aprobar", value: summary.pendingApproval, icon: Activity, color: (summary.pendingApproval ?? 0) > 0 ? "text-amber-600 bg-amber-50 animate-pulse" : "text-slate-400 bg-slate-50" },
   ];
 
   return (
@@ -21,19 +21,19 @@ export default async function PlatformAgentsPage() {
              <Terminal className="h-5 w-5" />
              <span className="text-[10px] font-black uppercase tracking-[0.2em]">System Overview</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">AgentOS 2.3 <span className="text-brand-600">PRO</span></h1>
+          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">AgentOS 2.4 <span className="text-brand-600">PRO</span></h1>
           <p className="text-sm font-medium text-slate-500">
             Estrategia operativa y gestión de agentes para administración de plataforma.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
-           <Link
-            href="/platform/agents/goals/new"
+          <Link
+            href="/platform/agents/automations/new"
             className="inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-6 py-3.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-brand-600/20 transition hover:bg-brand-700 active:scale-95"
           >
             <Plus className="h-4 w-4" />
-            Nuevo objetivo
+            Nueva automatización
           </Link>
           <Link
             href="/platform/agents/canvas"
@@ -186,16 +186,27 @@ export default async function PlatformAgentsPage() {
                   <p className="mt-2 text-3xl font-black text-red-950">{summary.rejectedCount}</p>
                </div>
             </div>
-            <div className="rounded-[2.5rem] border border-slate-200 bg-slate-900 p-8 text-white relative overflow-hidden group">
+            <Link
+               href="/platform/agents/automations"
+               className="rounded-[2.5rem] border border-slate-200 bg-slate-900 p-8 text-white relative overflow-hidden group block transition-all hover:shadow-2xl hover:shadow-slate-900/40"
+            >
                <div className="relative z-10 space-y-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">Next Step: 2.4</p>
-                  <h4 className="text-xl font-black uppercase tracking-tight">Automatización Controlada</h4>
+                  <div className="flex items-center gap-2">
+                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/20 text-brand-400 border border-brand-500/30">
+                        <Zap className="h-4 w-4 fill-current" />
+                     </div>
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">Status: {summary.activeAutomations} Active</p>
+                  </div>
+                  <h4 className="text-xl font-black uppercase tracking-tight">Automatizaciones Controladas</h4>
                   <p className="text-xs text-slate-400 leading-relaxed max-w-[240px]">
-                    La próxima fase permitirá programar borradores aprobados para su publicación manual asistida.
+                    Programa tareas recurrentes de forma segura. El sistema no publica contenido sin revisión.
                   </p>
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-400 group-hover:translate-x-1 transition-transform">
+                     Gestionar reglas <ArrowRight className="h-3 w-3" />
+                  </div>
                </div>
-               <Plus className="absolute -right-4 -bottom-4 h-32 w-32 text-white/5 group-hover:scale-110 transition-transform duration-700" />
-            </div>
+               <Zap className="absolute -right-4 -bottom-4 h-32 w-32 text-white/5 group-hover:scale-110 transition-transform duration-700" />
+            </Link>
          </div>
       </div>
 

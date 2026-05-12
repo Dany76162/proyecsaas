@@ -9,6 +9,8 @@ import { assertMinimumRole, requireOrganizationMembership, requirePlatformAdmin 
 import { ApprovalStatus, AgentType, AgentLogLevel, TaskStatus, RunStatus, DraftStatus, MembershipRole, GoalType, GoalStatus } from "@prisma/client";
 import type { ContentPlatform, AgentPriority } from "@prisma/client";
 import { createAgentGoal, suggestTasksForGoal } from "./goals-service";
+import { createAgentAutomation, runAgentAutomationNow, toggleAutomationStatus } from "./automations-service";
+import { AutomationType, AutomationFrequency } from "@prisma/client";
 
 export async function createAgentTask(formData: FormData) {
   const sessionUser = await requirePlatformAdmin();
@@ -412,6 +414,61 @@ export async function createSuggestedTasksAction(goalId: string, tasks: { title:
 
   revalidatePath(`/platform/agents/goals/${goalId}`);
   revalidatePath("/platform/agents/tasks");
+  
+  return { success: true };
+}
+
+export async function createAutomationAction(formData: FormData) {
+  const sessionUser = await requirePlatformAdmin();
+
+  const title = formData.get("title")?.toString().trim();
+  const description = formData.get("description")?.toString().trim();
+  const type = formData.get("type")?.toString() as AutomationType;
+  const frequency = formData.get("frequency")?.toString() as AutomationFrequency;
+  const agentId = formData.get("agentId")?.toString();
+  const goalId = formData.get("goalId")?.toString();
+  const dayOfWeek = formData.get("dayOfWeek") ? Number(formData.get("dayOfWeek")) : undefined;
+  const timeOfDay = formData.get("timeOfDay")?.toString();
+
+  if (!title || !type || !frequency) {
+    throw new Error("Título, tipo y frecuencia son obligatorios");
+  }
+
+  await createAgentAutomation({
+    title,
+    description,
+    type,
+    frequency,
+    agentId: agentId || undefined,
+    goalId: goalId || undefined,
+    dayOfWeek,
+    timeOfDay,
+    createdById: sessionUser.id
+  });
+
+  revalidatePath("/platform/agents/automations");
+  revalidatePath("/platform/agents");
+  
+  redirect("/platform/agents/automations");
+}
+
+export async function runAutomationNowAction(automationId: string) {
+  const sessionUser = await requirePlatformAdmin();
+  
+  await runAgentAutomationNow(automationId, sessionUser.id);
+  
+  revalidatePath("/platform/agents/automations");
+  revalidatePath("/platform/agents/tasks");
+  
+  return { success: true };
+}
+
+export async function toggleAutomationAction(automationId: string, active: boolean) {
+  await requirePlatformAdmin();
+  
+  await toggleAutomationStatus(automationId, active);
+  
+  revalidatePath("/platform/agents/automations");
   
   return { success: true };
 }

@@ -17,6 +17,7 @@ import {
   Bot,
   Megaphone,
   Network,
+  Zap,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -24,7 +25,8 @@ import { logoutAction } from "@/server/auth/actions";
 
 const PLATFORM_NAV = [
   { name: "Resumen", href: "/platform", icon: LayoutDashboard, exact: true },
-  { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/canvas"] },
+  { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/canvas", "/platform/agents/automations"] },
+  { name: "Automatizaciones", href: "/platform/agents/automations", icon: Zap },
   { name: "Canvas", href: "/platform/agents/canvas", icon: Network },
   { name: "Clientes", href: "/platform/organizations", icon: Building2 },
   { name: "Atención a Clientes", href: "/platform/support", icon: MessageSquare },

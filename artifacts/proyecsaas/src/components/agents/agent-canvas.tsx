@@ -35,6 +35,7 @@ import {
   Sparkles,
   Target,
   Users,
+  Zap,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -79,6 +80,8 @@ function NodeIcon({ id }: { id: string }) {
       return <Target className={iconClass} />;
     case "library":
       return <Users className={iconClass} />;
+    case "automations":
+      return <Zap className={iconClass} />;
     default:
       return <Activity className={iconClass} />;
   }
@@ -178,6 +181,12 @@ function buildNodes(data: AgentCanvasData): CanvasFlowNode[] {
       data: { ...data.nodes.goals, variant: "workflow" },
     },
     {
+      id: "automations",
+      type: "agentCard",
+      position: { x: -350, y: 400 },
+      data: { ...data.nodes.automations, variant: "workflow" },
+    },
+    {
       id: "library",
       type: "agentCard",
       position: { x: 50, y: -150 },
@@ -218,8 +227,13 @@ function buildNodes(data: AgentCanvasData): CanvasFlowNode[] {
 
 const initialEdges: Edge[] = [
   {
-    id: "goals-orchestrator",
+    id: "goals-automations",
     source: "goals",
+    target: "automations",
+  },
+  {
+    id: "automations-orchestrator",
+    source: "automations",
     target: "orchestrator",
   },
   {

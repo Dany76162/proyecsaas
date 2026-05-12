@@ -69,6 +69,7 @@ export type AgentCanvasData = {
     logs: AgentCanvasNode;
     goals: AgentCanvasNode;
     library: AgentCanvasNode;
+    automations: AgentCanvasNode;
   };
 };
 
