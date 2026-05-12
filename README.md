@@ -1,57 +1,96 @@
-# RaicesPilot SaaS
+# RaicesPilot SaaS 🚀
 
-Plataforma SaaS multi-tenant B2B diseñada para automatizar la captación y calificación de leads en inmobiliarias de Argentina mediante Inteligencia Artificial (WhatsApp API + GPT-4).
+Plataforma SaaS multi-tenant B2B industrial diseñada para automatizar la captación y calificación de leads en el sector inmobiliario mediante Inteligencia Artificial (WhatsApp Cloud API + GPT-4).
 
-## Estructura del Proyecto
+---
+
+## 🌟 Funcionalidades Core
+
+### 1. Motor Conversacional IA
+- **Agentes Especializados**: Cada inmobiliaria tiene un bot con tono, persona y conocimientos específicos.
+- **Conocimiento de Inventario**: La IA tiene acceso en tiempo real a las propiedades para responder consultas técnicas.
+- **Agendamiento Autónomo**: La IA propone turnos de visita basados en la disponibilidad real del equipo comercial.
+
+### 2. Gestión de Inventario (PropertySource)
+- **Scraping Inteligente**: Permite importar propiedades desde sitios web externos pegando una URL.
+- **Indexación Vectorial**: Los datos se procesan para ser consumidos de forma eficiente por el modelo de lenguaje.
+- **Catálogo Público**: Generación automática de `/catalog` y `/map` interactivo para cada cliente.
+
+### 3. CRM y Pipeline de Ventas
+- **Lead Scoring**: Calificación automática de leads según intención de compra/alquiler.
+- **Inbox Unificado**: Gestión de chats de WhatsApp con control humano (Handoff).
+- **Notificaciones Push**: Alertas inmediatas vía WhatsApp y web cuando un lead está listo para el cierre.
+
+### 4. Panel Superadmin (Plataforma)
+- **Radar IA**: Monitoreo de la performance de los bots por cliente.
+- **Control de Facturación**: Integración con Mercado Pago para gestión de suscripciones.
+- **Hardening de Seguridad**: Auditoría de accesos administrativos y aceptación obligatoria de políticas.
+
+---
+
+## 🛠 Stack Tecnológico
+
+- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS, Lucide Icons.
+- **Backend**: Node.js, Next.js Server Actions, BullMQ (Colas de procesamiento).
+- **Base de Datos**: PostgreSQL + Prisma ORM (Cifrado en reposo para tokens).
+- **IA**: OpenAI API (GPT-4o / GPT-4o-mini), LangChain.
+- **Mensajería**: WhatsApp Business Cloud API.
+- **Infraestructura**: Railway, Redis (para BullMQ), UploadThing (Media).
+
+---
+
+## 📂 Estructura del Proyecto
 
 El proyecto es un monorepo basado en `pnpm workspaces`:
 
-- **Raíz (`/`)**: Configuración global del workspace y dependencias compartidas.
-- **App Principal (`artifacts/proyecsaas/`)**: Núcleo de la aplicación Next.js, esquemas de Prisma y worker.
+- **`artifacts/proyecsaas/src/app`**: Rutas y páginas (Estructura Next.js).
+- **`artifacts/proyecsaas/src/modules`**: Lógica de negocio desacoplada (Platform, Organizations, Agents, etc.).
+- **`artifacts/proyecsaas/src/server`**: Servicios centrales (Auth, DB, Audit, Billing).
+- **`artifacts/proyecsaas/src/components`**: Design System y componentes de UI (Workspace y Platform).
 
-## Rama de Trabajo
+---
 
-- **Rama Actual/Recomendada**: `proyecsaas2`
-- **Flujo de Promoción**: Los desarrollos se estabilizan en `proyecsaas2` antes de ser integrados a `main` para despliegues definitivos.
+## ⚙️ Configuración (Variables de Envorno)
 
-## Guía de Desarrollo Local
+Se requiere un archivo `.env` en `artifacts/proyecsaas/` con las siguientes claves:
 
-### Comandos Mínimos (desde la raíz)
+| Variable | Descripción |
+| :--- | :--- |
+| `DATABASE_URL` | Conexión a PostgreSQL. |
+| `REDIS_URL` | Conexión a Redis para el worker de colas. |
+| `OPENAI_API_KEY` | API Key para GPT-4. |
+| `WHATSAPP_TOKEN` | Token de acceso a Meta Cloud API. |
+| `WHATSAPP_ORGANIZATION_ID` | ID de la organización de plataforma para captación central. |
+| `NEXT_PUBLIC_APP_URL` | URL base de la aplicación (ej. https://raicespilot.com). |
 
+---
+
+## 🚀 Guía de Desarrollo y Despliegue
+
+### Desarrollo Local
 ```bash
-# Instalar dependencias
+# Instalar dependencias (raíz)
 pnpm install
 
-# Generar cliente Prisma
-pnpm --filter @workspace/proyecsaas run prisma:generate
-
-# Iniciar Next.js en desarrollo
+# Iniciar Next.js
 pnpm --filter @workspace/proyecsaas run dev
 
-# Iniciar el Worker de IA/WhatsApp en desarrollo
+# Iniciar Worker (procesamiento de mensajes)
 pnpm --filter @workspace/proyecsaas run worker:dev
 ```
 
-## Guía de Deployment
-
-### Pipeline de Producción (Railway + Nixpacks)
-
+### Despliegue en Producción
 El sistema opera bajo una política de **estabilidad absoluta**:
-
-- **Cero Mutaciones Automáticas**: El pipeline de build y el arranque (`start`) NO ejecutan comandos que alteren la base de datos (`db push`, `migrate`).
-- **Intervenciones**: Cualquier cambio en el esquema debe ser regularizado mediante intervenciones manuales controladas fuera del flujo de despliegue automático.
-
-## Notas de Seguridad
-
-- **Auth Standard**: Flujo basado en invitaciones (`InviteToken`) que fuerzan la creación de contraseñas seguras.
-- **Fallback Legacy**: El sistema permite el acceso mediante `AUTH_SHARED_PASSWORD` **exclusivamente** para usuarios marcados como `isPlatformAdmin: true` que no poseen un hash de contraseña previo. No debe usarse para usuarios regulares.
+- **Cero Mutaciones Automáticas**: El build de producción NO ejecuta `db push` ni `migrate`.
+- **Rama Recomendada**: `proyecsaas2` (entorno de estabilización).
+- **Manual Operativo**: Para detalles de administración, consultar el [Manual Operativo Vivo](/platform/manual-operativo).
 
 ---
-Para más detalles técnicos, consultar: [AUDITORIA_TECNICA.md](./AUDITORIA_TECNICA.md)
 
-## Filosofía de Operación
+## 🛡 Seguridad y Cumplimiento
+- **Audit Log**: Registro inmutable de acciones administrativas sensibles.
+- **Aislamiento Multi-tenant**: Validación estricta de `organizationId` en cada capa de datos.
+- **Recovery**: Sistema de reinicio de claves gestionado por Superadmin para cuentas bloqueadas.
 
-- El sistema prioriza estabilidad sobre automatización agresiva.
-- No se ejecutan mutaciones de base de datos automáticamente.
-- Cada cambio estructural es explícito, revisado y controlado.
-- La rama `proyecsaas2` actúa como entorno de estabilización previo a producción.
+---
+© 2026 Inmuebles Digitales — RaicesPilot Enterprise.
