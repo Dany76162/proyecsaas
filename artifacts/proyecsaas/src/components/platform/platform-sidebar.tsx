@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,15 +27,15 @@ const PLATFORM_NAV = [
   { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/canvas"] },
   { name: "Canvas", href: "/platform/agents/canvas", icon: Network },
   { name: "Clientes", href: "/platform/organizations", icon: Building2 },
-  { name: "AtenciÃ³n a Clientes", href: "/platform/support", icon: MessageSquare },
-  { name: "CaptaciÃ³n", href: "/platform/captacion", icon: Megaphone },
+  { name: "Atención a Clientes", href: "/platform/support", icon: MessageSquare },
+  { name: "Captación", href: "/platform/captacion", icon: Megaphone },
   { name: "Onboarding", href: "/platform/onboarding", icon: UserPlus },
-  { name: "ActivaciÃ³n", href: "/platform/activation", icon: TrendingUp },
+  { name: "Activación", href: "/platform/activation", icon: TrendingUp },
   { name: "Salud del sistema", href: "/platform/health", icon: ActivitySquare },
   { name: "Manual Vivo", href: "/platform/manual-operativo", icon: BookOpen },
   { name: "Manual Maestro", href: "/platform/master-manual", icon: BookOpen },
   { name: "Comercial", href: "/platform/billing", icon: CreditCard },
-  { name: "ConfiguraciÃ³n", href: "/platform/settings", icon: Settings },
+  { name: "Configuración", href: "/platform/settings", icon: Settings },
 ];
 
 type PlatformSidebarProps = {
@@ -90,7 +90,7 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
 
       <nav className="flex-1 px-4 pb-4">
         <p className="mb-3 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
-          AdministraciÃ³n
+          Administración
         </p>
         <ul className="space-y-0.5">
           {PLATFORM_NAV.map((item) => {
@@ -136,11 +136,10 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
             className="group flex w-full items-center gap-3.5 rounded-lg px-3.5 py-2.5 text-[15px] font-semibold text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
           >
             <LogOut className="h-4 w-4" />
-            Cerrar sesiÃ³n
+            Cerrar sesión
           </button>
         </form>
       </div>
     </aside>
-
   );
 }
