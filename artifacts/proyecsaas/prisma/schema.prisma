@@ -107,6 +107,13 @@ enum SubscriptionStatus {
   SUSPENDED
 }
 
+enum ContentCalendarStatus {
+  UNSCHEDULED
+  SCHEDULED
+  USED_MANUALLY
+  ARCHIVED
+}
+
 enum BillingMode {
   ONLINE
   CASH
@@ -843,6 +850,13 @@ model ContentDraft {
   hashtags      String[]        // Array de hashtags
   imagePrompt   String?         // Prompt para imagen (futuro)
   status        DraftStatus     @default(DRAFT)
+  
+  // Calendario y Programación Interna
+  scheduledFor     DateTime?
+  calendarStatus   ContentCalendarStatus @default(UNSCHEDULED)
+  plannedPlatform  ContentPlatform?
+  notes            String?
+
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   
