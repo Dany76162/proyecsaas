@@ -208,10 +208,3 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     </div>
   );
 }
-
-
-
-  );
-}
-
-import { Building2 } from "lucide-react";
