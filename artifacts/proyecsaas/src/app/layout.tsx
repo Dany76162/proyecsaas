@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 import "@/app/globals.css";
@@ -6,8 +6,8 @@ import "@/app/globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "RaicesPilot",
-  description: "Multi-tenant real-estate SaaS foundation for CRM, properties, visits, and automations.",
+  title: "RaicesPilot | Infraestructura Operativa Inmobiliaria",
+  description: "Infraestructura operativa para inmobiliarias que centraliza leads, propiedades, conversaciones y seguimiento comercial.",
 };
 
 export default function RootLayout({
