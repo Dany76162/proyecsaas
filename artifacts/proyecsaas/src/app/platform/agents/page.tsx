@@ -1,5 +1,20 @@
 import Link from "next/link";
-import { ArrowRight, Layers, FileText, CheckCircle2, Activity, Clock, Network, Terminal, Plus, ShieldCheck, AlertCircle, Target, Zap } from "lucide-react";
+import { 
+  ArrowRight, 
+  Layers, 
+  CheckCircle2, 
+  Activity, 
+  Network, 
+  Terminal, 
+  Plus, 
+  ShieldCheck, 
+  AlertCircle, 
+  Target, 
+  Zap, 
+  Calendar, 
+  Share2,
+  Rocket
+} from "lucide-react";
 import { getAgentDashboardSummary } from "@/modules/agents/service";
 import { cn } from "@/lib/utils";
 
@@ -21,9 +36,9 @@ export default async function PlatformAgentsPage() {
              <Terminal className="h-5 w-5" />
              <span className="text-[10px] font-black uppercase tracking-[0.2em]">System Overview</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">AgentOS 2.4 <span className="text-brand-600">PRO</span></h1>
+          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">AgentOS 3.1 <span className="text-brand-600">GOVERNANCE</span></h1>
           <p className="text-sm font-medium text-slate-500">
-            Estrategia operativa y gestión de agentes para administración de plataforma.
+            Gobernanza operativa, control de límites y seguridad para administración de plataforma.
           </p>
         </div>
 
@@ -71,58 +86,153 @@ export default async function PlatformAgentsPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
         <Link
           href="/platform/agents/goals"
-          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
         >
           <div className="space-y-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
                <Target className="h-6 w-6" />
             </div>
             <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Objetivos</h3>
-            <p className="text-sm leading-relaxed text-slate-500 font-medium">
-              Define metas estratégicas para RaicesPilot y deja que el Director Operativo IA planifique las tareas.
+            <p className="text-xs leading-relaxed text-slate-500 font-medium">
+              Metas estratégicas que el Director Operativo IA desglosa en tareas.
             </p>
           </div>
-          <div className="mt-10 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
             Ver estrategia <ArrowRight className="h-4 w-4" />
           </div>
         </Link>
 
         <Link
-          href="/platform/agents/library"
-          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+          href="/platform/agents/approvals"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
         >
           <div className="space-y-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-               <ShieldCheck className="h-6 w-6" />
+            <div className={cn(
+              "flex h-12 w-12 items-center justify-center rounded-2xl",
+              summary.pendingApproval > 0 ? "bg-amber-50 text-amber-600 animate-pulse" : "bg-slate-50 text-slate-400"
+            )}>
+               <CheckCircle2 className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Biblioteca</h3>
-            <p className="text-sm leading-relaxed text-slate-500 font-medium">
-              Gestiona el equipo de agentes disponibles, sus roles, capacidades y estado de activación.
+            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Aprobaciones</h3>
+            <p className="text-xs leading-relaxed text-slate-500 font-medium">
+              Control humano centralizado de borradores generados.
             </p>
           </div>
-          <div className="mt-10 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
-            Equipo de Agentes <ArrowRight className="h-4 w-4" />
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
+            {summary.pendingApproval} Pendientes <ArrowRight className="h-4 w-4" />
           </div>
         </Link>
 
         <Link
-          href="/platform/agents/approvals"
-          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+          href="/platform/agents/governance"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-slate-950 p-8 shadow-sm transition-all hover:shadow-xl"
+        >
+          <div className="space-y-4 text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/20 text-brand-400">
+               <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-black uppercase tracking-tight">Gobernanza</h3>
+            <p className="text-xs leading-relaxed text-slate-400 font-medium">
+              Control de límites operativos (Budget Guard) y autonomía.
+            </p>
+          </div>
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-400 group-hover:translate-x-1 transition-transform">
+            Ver límites <ArrowRight className="h-4 w-4" />
+          </div>
+        </Link>
+
+        <Link
+          href="/platform/agents/readiness"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-amber-200 hover:shadow-xl"
         >
           <div className="space-y-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
-               <CheckCircle2 className="h-6 w-6" />
+               <Rocket className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Aprobaciones</h3>
-            <p className="text-sm leading-relaxed text-slate-500 font-medium">
-              Control humano centralizado. Valida borradores generados por los agentes antes de su uso.
+            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Readiness</h3>
+            <p className="text-xs leading-relaxed text-slate-500 font-medium">
+              Checklist crítico pre-deploy y validación técnica.
             </p>
           </div>
-          <div className="mt-10 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
-            Revisar pendientes <ArrowRight className="h-4 w-4" />
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-600 group-hover:translate-x-1 transition-transform">
+            Validar deploy <ArrowRight className="h-4 w-4" />
+          </div>
+        </Link>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
+        <Link
+          href="/platform/agents/org-chart"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-indigo-200 hover:shadow-xl"
+        >
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+               <Network className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Estructura</h3>
+            <p className="text-xs leading-relaxed text-slate-500 font-medium">
+              Organigrama y jerarquía del equipo de agentes IA.
+            </p>
+          </div>
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-600 group-hover:translate-x-1 transition-transform">
+            Ver equipo <ArrowRight className="h-4 w-4" />
+          </div>
+        </Link>
+
+        <Link
+          href="/platform/agents/feature-flags"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+        >
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+               <Zap className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Flags</h3>
+            <p className="text-xs leading-relaxed text-slate-500 font-medium">
+              Capacidades dinámicas y riesgo operativo.
+            </p>
+          </div>
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
+            Ver flags <ArrowRight className="h-4 w-4" />
+          </div>
+        </Link>
+
+        <Link
+          href="/platform/agents/automations"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-slate-900 p-8 shadow-sm transition-all hover:shadow-xl"
+        >
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/20 text-brand-400">
+               <Zap className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-black text-white uppercase tracking-tight">Automation</h3>
+            <p className="text-xs leading-relaxed text-slate-400 font-medium">
+               Motor de tareas recurrentes y flujos programados.
+            </p>
+          </div>
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-400 group-hover:translate-x-1 transition-transform">
+            Gestionar <ArrowRight className="h-4 w-4" />
+          </div>
+        </Link>
+
+        <Link
+          href="/platform/agents/calendar"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:shadow-xl"
+        >
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+               <Calendar className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Calendario</h3>
+            <p className="text-xs leading-relaxed text-slate-500 font-medium">
+              Agenda interna y planificación de contenidos.
+            </p>
+          </div>
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:translate-x-1 transition-transform">
+            Ver agenda <ArrowRight className="h-4 w-4" />
           </div>
         </Link>
       </div>
@@ -150,80 +260,39 @@ export default async function PlatformAgentsPage() {
                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 space-y-2">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tiempo de Revisión</p>
                   <div className="flex items-end gap-2">
-                     <p className="text-3xl font-black text-slate-900">
-                        {summary.avgApprovalTimeMinutes ? `${summary.avgApprovalTimeMinutes.toFixed(0)}m` : '---'}
-                     </p>
-                     <span className="mb-1 text-[10px] font-bold text-blue-600">Response Time</span>
-                  </div>
-               </div>
-               <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Throughput</p>
-                  <div className="flex items-end gap-2">
-                     <p className="text-3xl font-black text-slate-900">{summary.completedLast7Days}</p>
-                     <span className="mb-1 text-[10px] font-bold text-indigo-600">Tasks / week</span>
-                  </div>
-               </div>
-               <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Errores Críticos</p>
-                  <div className="flex items-end gap-2">
-                     <p className={cn("text-3xl font-black", summary.recentErrors > 0 ? "text-red-600" : "text-slate-900")}>
-                        {summary.recentErrors}
-                     </p>
-                     <span className="mb-1 text-[10px] font-bold text-slate-400">System Stability</span>
+                     <p className="text-3xl font-black text-slate-900">{summary.avgApprovalTimeMinutes ? `${summary.avgApprovalTimeMinutes}m` : 'N/A'}</p>
+                     <span className="mb-1 text-[10px] font-bold text-blue-600">Decision Speed</span>
                   </div>
                </div>
             </div>
          </section>
 
-         <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-               <div className="rounded-3xl border border-emerald-100 bg-emerald-50/30 p-6 flex flex-col justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Aprobados</p>
-                  <p className="mt-2 text-3xl font-black text-emerald-950">{summary.approvedCount}</p>
+         <section className="rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm">
+            <div className="mb-8 flex items-center justify-between">
+               <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600">Audit Trail</p>
+                  <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Eventos Recientes</h3>
                </div>
-               <div className="rounded-3xl border border-red-100 bg-red-50/30 p-6 flex flex-col justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-red-600">Rechazados</p>
-                  <p className="mt-2 text-3xl font-black text-red-950">{summary.rejectedCount}</p>
-               </div>
+               <Link href="/platform/agents/logs" className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:underline">
+                  Ver todos
+               </Link>
             </div>
-            <Link
-               href="/platform/agents/automations"
-               className="rounded-[2.5rem] border border-slate-200 bg-slate-900 p-8 text-white relative overflow-hidden group block transition-all hover:shadow-2xl hover:shadow-slate-900/40"
-            >
-               <div className="relative z-10 space-y-4">
-                  <div className="flex items-center gap-2">
-                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/20 text-brand-400 border border-brand-500/30">
-                        <Zap className="h-4 w-4 fill-current" />
-                     </div>
-                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">Status: {summary.activeAutomations} Active</p>
-                  </div>
-                  <h4 className="text-xl font-black uppercase tracking-tight">Automatizaciones Controladas</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed max-w-[240px]">
-                    Programa tareas recurrentes de forma segura. El sistema no publica contenido sin revisión.
-                  </p>
-                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-400 group-hover:translate-x-1 transition-transform">
-                     Gestionar reglas <ArrowRight className="h-3 w-3" />
-                  </div>
-               </div>
-               <Zap className="absolute -right-4 -bottom-4 h-32 w-32 text-white/5 group-hover:scale-110 transition-transform duration-700" />
-            </Link>
-         </div>
-      </div>
 
-      {summary.pendingApproval > 0 && !summary.hasOpenAIQuotaError && (
-        <div className="flex items-center gap-4 rounded-[2rem] border border-amber-200 bg-amber-50/50 p-6">
-           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-              <AlertCircle className="h-5 w-5" />
-           </div>
-           <div className="flex-1">
-              <p className="text-sm font-black text-amber-900 uppercase tracking-tight">Acción requerida</p>
-              <p className="text-xs font-bold text-amber-700/80">Hay {summary.pendingApproval} borradores esperando tu aprobación para completar el flujo operativo.</p>
-           </div>
-           <Link href="/platform/agents/approvals" className="rounded-xl bg-amber-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-amber-600/20 transition hover:bg-amber-700">
-              Revisar ahora
-           </Link>
-        </div>
-      )}
+            <div className="space-y-4">
+               <div className="flex items-center gap-4 rounded-2xl border border-slate-50 bg-slate-50/30 p-4">
+                  <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                     <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                     <p className="text-xs font-bold text-slate-900">Sistema AgentOS 3.1 Operativo</p>
+                     <p className="text-[10px] text-slate-500">Gobernanza y seguridad integradas.</p>
+                  </div>
+                  <div className="ml-auto text-[10px] font-bold text-slate-400">Ahora</div>
+               </div>
+               {/* Más logs simplificados aquí si fuera necesario */}
+            </div>
+         </section>
+      </div>
     </div>
   );
 }

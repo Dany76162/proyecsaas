@@ -6,7 +6,8 @@ import {
   AutomationFrequency, 
   AutomationType,
   TaskStatus,
-  AgentLogLevel 
+  AgentLogLevel,
+  AgentScope 
 } from "@prisma/client";
 import { createAgentLog, getActiveAgentByType } from "./service";
 import { AgentType } from "@prisma/client";
@@ -118,6 +119,81 @@ export async function runAgentAutomationNow(automationId: string, userId: string
   });
 
   return task;
+}
+
+export async function runDueAgentAutomations(userId?: string) {
+  const now = new Date();
+  
+  const dueAutomations = await prisma.agentAutomation.findMany({
+    where: {
+      isActive: true,
+      nextRunAt: { lte: now },
+      frequency: { not: AutomationFrequency.MANUAL }
+    }
+  });
+
+  const results = {
+    processed: 0,
+    tasksCreated: 0,
+    errors: 0
+  };
+
+  for (const automation of dueAutomations) {
+    try {
+      // Si no tiene agente asignado, intentamos buscar el Orquestador por defecto
+      let targetAgentId = automation.agentId;
+      if (!targetAgentId) {
+        const orchestrator = await getActiveAgentByType(AgentType.ORCHESTRATOR);
+        targetAgentId = orchestrator?.id || null;
+      }
+
+      await prisma.agentTask.create({
+        data: {
+          scope: "PLATFORM",
+          automationId: automation.id,
+          goalId: automation.goalId,
+          agentId: targetAgentId,
+          status: targetAgentId ? TaskStatus.ASSIGNED : TaskStatus.PENDING,
+          title: `[AUTO-SCHED] ${automation.title}`,
+          description: automation.description || `Tarea generada por scheduler para: ${automation.title}`,
+          priority: "MEDIUM",
+          createdById: userId || automation.createdById,
+          metadata: { 
+            isScheduled: true, 
+            automationType: automation.type 
+          }
+        }
+      });
+
+      await prisma.agentAutomation.update({
+        where: { id: automation.id },
+        data: { 
+          lastRunAt: now,
+          nextRunAt: calculateNextRun(automation.frequency, automation.dayOfWeek, automation.timeOfDay, automation.timezone)
+        }
+      });
+
+      await createAgentLog({
+        level: AgentLogLevel.INFO,
+        message: `Scheduler: Automatización procesada - ${automation.title}`,
+        metadata: { automationId: automation.id }
+      });
+
+      results.processed++;
+      results.tasksCreated++;
+    } catch (err) {
+      console.error(`Error processing automation ${automation.id}:`, err);
+      results.errors++;
+      
+      await createAgentLog({
+        level: AgentLogLevel.ERROR,
+        message: `Scheduler Error: Falló procesamiento de ${automation.title}`,
+        metadata: { automationId: automation.id, error: String(err) }
+      });
+    }
+  }
+
+  return results;
 }
 
 export async function toggleAutomationStatus(id: string, active: boolean) {

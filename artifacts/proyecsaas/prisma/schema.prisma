@@ -6,6 +6,7 @@ datasource db {
   provider          = "postgresql"
   url               = env("DATABASE_URL")
   directUrl         = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 enum MembershipRole {
@@ -665,6 +666,27 @@ enum AgentLogLevel {
   ERROR
 }
 
+enum MetaIntegrationStatus {
+  DISCONNECTED
+  CONNECTED
+  EXPIRED
+  ERROR
+}
+
+enum MetaPlatformType {
+  FACEBOOK
+  INSTAGRAM
+  WHATSAPP_BUSINESS
+}
+
+enum PublicationStatus {
+  DRAFT
+  READY
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}
+
 model Agent {
   id            String      @id @default(cuid())
   scope         AgentScope  // PLATFORM para MVP
@@ -680,6 +702,7 @@ model Agent {
   tasks         AgentTask[]
   runs          AgentRun[]
   automations   AgentAutomation[]
+  governance    AgentGovernancePolicy?
   requestedApprovals AgentApproval[] @relation("ApprovalRequestedBy")
   @@index([scope, organizationId, type])
 }
@@ -862,8 +885,63 @@ model ContentDraft {
   
   // Relaciones
   task          AgentTask       @relation(fields: [taskId], references: [id])
+  publications  ContentPublication[]
   
   @@index([scope, organizationId, status])
+}
+
+model MetaIntegration {
+  id              String   @id @default(cuid())
+  scope           AgentScope @default(PLATFORM)
+  organizationId  String?
+  accessToken     String   // Cifrado
+  refreshToken    String?  // Cifrado
+  expiresAt       DateTime?
+  scopes          String[]
+  status          MetaIntegrationStatus @default(DISCONNECTED)
+  lastSyncAt      DateTime?
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pages           MetaPage[]
+  @@index([scope, organizationId])
+}
+
+model MetaPage {
+  id              String   @id @default(cuid())
+  integrationId   String
+  pageId          String
+  name            String
+  platform        MetaPlatformType
+  accessToken     String?  // Token específico de página (si aplica, cifrado)
+  status          String?
+  metadata        Json?
+  lastSyncAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  integration     MetaIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  @@index([integrationId])
+  @@index([pageId])
+}
+
+model ContentPublication {
+  id              String   @id @default(cuid())
+  draftId         String
+  pageId          String
+  platform        MetaPlatformType
+  status          PublicationStatus @default(DRAFT)
+  externalPostId  String?
+  errorMessage    String?
+  publishedById   String?  // ID del Superadmin que publicó
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  draft           ContentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  @@index([draftId])
+  @@index([status])
 }
 
 model AuditLog {
@@ -891,4 +969,30 @@ model GlobalSetting {
   updatedAt   DateTime @updatedAt
 
   @@index([key])
+}
+
+enum AgentAutonomyLevel {
+  SUGGEST_ONLY
+  CREATE_DRAFTS
+  REQUIRE_APPROVAL
+  MANUAL_ONLY
+}
+
+model AgentGovernancePolicy {
+  id                        String   @id @default(cuid())
+  agentId                   String   @unique
+  scope                     AgentScope @default(PLATFORM)
+  organizationId            String?
+  maxTasksPerDay            Int?     @default(10)
+  maxRunsPerDay             Int?     @default(50)
+  maxAutomationRunsPerDay   Int?     @default(20)
+  maxEstimatedCostPerMonth  Decimal? @default(50.00)
+  autonomyLevel             AgentAutonomyLevel @default(REQUIRE_APPROVAL)
+  isPaused                  Boolean  @default(false)
+  pauseReason               String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  agent                     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  @@index([scope, organizationId])
 }

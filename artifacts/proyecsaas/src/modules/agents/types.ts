@@ -66,10 +66,15 @@ export type AgentCanvasData = {
     tasks: AgentCanvasNode;
     drafts: AgentCanvasNode;
     approvals: AgentCanvasNode;
+    calendar: AgentCanvasNode;
     logs: AgentCanvasNode;
     goals: AgentCanvasNode;
     library: AgentCanvasNode;
     automations: AgentCanvasNode;
+    meta: AgentCanvasNode;
+    governance: AgentCanvasNode;
+    readiness: AgentCanvasNode;
+    orgchart: AgentCanvasNode;
   };
 };
 

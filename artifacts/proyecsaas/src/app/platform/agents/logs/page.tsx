@@ -3,6 +3,7 @@ import { AgentLogLevel } from "@prisma/client";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { AlertCircle, Info, AlertTriangle, Clock, Terminal } from "lucide-react";
+import LogExportButton from "./LogExportButton";
 
 const LEVEL_CONFIG: Record<AgentLogLevel, { label: string; className: string; icon: any }> = {
   INFO: { label: "Info", className: "text-blue-600 bg-blue-50 border-blue-100", icon: Info },
@@ -40,24 +41,28 @@ export default async function PlatformAgentsLogsPage({
         <p className="text-sm font-medium text-slate-500">Historial técnico de ejecuciones, decisiones y eventos de AgentOS.</p>
       </div>
 
-      <div className="flex items-center gap-1 overflow-x-auto rounded-2xl bg-slate-100 p-1.5 w-fit">
-        {filters.map((filter) => {
-          const isActive = resolvedParams.level === filter.value || (!resolvedParams.level && filter.value === "ALL");
-          return (
-            <Link
-              key={filter.value}
-              href={`/platform/agents/logs?level=${filter.value}`}
-              className={cn(
-                "rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all",
-                isActive 
-                  ? "bg-white text-slate-900 shadow-sm shadow-slate-200" 
-                  : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-              )}
-            >
-              {filter.label}
-            </Link>
-          );
-        })}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-1 overflow-x-auto rounded-2xl bg-slate-100 p-1.5 w-fit">
+          {filters.map((filter) => {
+            const isActive = resolvedParams.level === filter.value || (!resolvedParams.level && filter.value === "ALL");
+            return (
+              <Link
+                key={filter.value}
+                href={`/platform/agents/logs?level=${filter.value}`}
+                className={cn(
+                  "rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all",
+                  isActive 
+                    ? "bg-white text-slate-900 shadow-sm shadow-slate-200" 
+                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                )}
+              >
+                {filter.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <LogExportButton />
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">

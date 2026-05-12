@@ -36,6 +36,10 @@ import {
   Target,
   Users,
   Zap,
+  Share2,
+  Calendar,
+  Rocket,
+  Network,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -82,6 +86,16 @@ function NodeIcon({ id }: { id: string }) {
       return <Users className={iconClass} />;
     case "automations":
       return <Zap className={iconClass} />;
+    case "calendar":
+      return <Calendar className={iconClass} />;
+    case "meta":
+      return <Share2 className={iconClass} />;
+    case "governance":
+      return <ShieldCheck className={iconClass} />;
+    case "readiness":
+      return <Rocket className={iconClass} />;
+    case "orgchart":
+      return <Network className={iconClass} />;
     default:
       return <Activity className={iconClass} />;
   }
@@ -222,6 +236,18 @@ function buildNodes(data: AgentCanvasData): CanvasFlowNode[] {
       position: { x: 1250, y: 200 },
       data: { ...data.nodes.approvals, variant: "workflow" },
     },
+    {
+      id: "calendar",
+      type: "agentCard",
+      position: { x: 1650, y: 200 },
+      data: { ...data.nodes.calendar, variant: "workflow" },
+    },
+    {
+      id: "meta",
+      type: "agentCard",
+      position: { x: 2050, y: 200 },
+      data: { ...data.nodes.meta, variant: "workflow" },
+    },
   ];
 }
 
@@ -270,6 +296,11 @@ const initialEdges: Edge[] = [
     id: "approvals-logs",
     source: "approvals",
     target: "logs",
+  },
+  {
+    id: "calendar-meta",
+    source: "calendar",
+    target: "meta",
   },
 ].map((edge) => ({
   ...edge,

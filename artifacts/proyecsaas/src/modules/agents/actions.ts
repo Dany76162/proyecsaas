@@ -9,8 +9,9 @@ import { assertMinimumRole, requireOrganizationMembership, requirePlatformAdmin 
 import { ApprovalStatus, AgentType, AgentLogLevel, TaskStatus, RunStatus, DraftStatus, MembershipRole, GoalType, GoalStatus } from "@prisma/client";
 import type { ContentPlatform, AgentPriority } from "@prisma/client";
 import { createAgentGoal, suggestTasksForGoal } from "./goals-service";
-import { createAgentAutomation, runAgentAutomationNow, toggleAutomationStatus } from "./automations-service";
-import { AutomationType, AutomationFrequency } from "@prisma/client";
+import { createAgentAutomation, runAgentAutomationNow, toggleAutomationStatus, runDueAgentAutomations } from "./automations-service";
+import { AutomationType, AutomationFrequency, ContentCalendarStatus } from "@prisma/client";
+import { getSessionUser } from "@/server/auth/session";
 
 export async function createAgentTask(formData: FormData) {
   const sessionUser = await requirePlatformAdmin();
@@ -470,6 +471,46 @@ export async function toggleAutomationAction(automationId: string, active: boole
   
   revalidatePath("/platform/agents/automations");
   
+  return { success: true };
+}
+
+export async function runDueAutomationsAction() {
+  await requirePlatformAdmin();
+  const sessionUser = await getSessionUser();
+  const results = await runDueAgentAutomations(sessionUser?.id);
+  revalidatePath("/platform/agents/automations");
+  revalidatePath("/platform/agents");
+  return results;
+}
+
+// CALENDAR ACTIONS
+export async function scheduleContentDraftAction(draftId: string, data: { date: Date, platform?: ContentPlatform, notes?: string }) {
+  await requirePlatformAdmin();
+  
+  await prisma.contentDraft.update({
+    where: { id: draftId },
+    data: {
+      scheduledFor: data.date,
+      plannedPlatform: data.platform,
+      notes: data.notes,
+      calendarStatus: "SCHEDULED"
+    }
+  });
+
+  revalidatePath("/platform/agents/calendar");
+  revalidatePath("/platform/agents/content");
+  return { success: true };
+}
+
+export async function updateCalendarStatusAction(draftId: string, status: ContentCalendarStatus) {
+  await requirePlatformAdmin();
+  
+  await prisma.contentDraft.update({
+    where: { id: draftId },
+    data: { calendarStatus: status }
+  });
+
+  revalidatePath("/platform/agents/calendar");
   return { success: true };
 }
 

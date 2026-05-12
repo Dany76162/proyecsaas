@@ -35,6 +35,11 @@ export type AgentDashboardSummary = {
   activeGoals: number;
   totalAutomations: number;
   activeAutomations: number;
+  scheduledContent: number;
+  unscheduledApproved: number;
+  isMetaConnected: boolean;
+  metaPagesCount: number;
+  metaStatus: string | null;
 };
 
 export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary> {
@@ -63,7 +68,10 @@ export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary>
     totalGoals,
     activeGoals,
     totalAutomations,
-    activeAutomations
+    activeAutomations,
+    scheduledContent,
+    unscheduledApproved,
+    metaIntegration
   ] = await Promise.all([
     safeCount(() => prisma.agentTask.count()),
     safeCount(() => prisma.agentApproval.count({ where: { status: ApprovalStatus.PENDING } })),
@@ -99,7 +107,13 @@ export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary>
     safeCount(() => prisma.agentGoal.count()),
     safeCount(() => prisma.agentGoal.count({ where: { status: { not: "COMPLETED" } } })),
     safeCount(() => prisma.agentAutomation.count()),
-    safeCount(() => prisma.agentAutomation.count({ where: { isActive: true } }))
+    safeCount(() => prisma.agentAutomation.count({ where: { isActive: true } })),
+    safeCount(() => prisma.contentDraft.count({ where: { calendarStatus: "SCHEDULED" } })),
+    safeCount(() => prisma.contentDraft.count({ where: { status: "APPROVED", calendarStatus: "UNSCHEDULED" } })),
+    prisma.metaIntegration.findUnique({ 
+      where: { id: "platform-meta-default" },
+      include: { _count: { select: { pages: true } } }
+    })
   ]);
 
   const totalDecided = approvedCount + rejectedCount;
@@ -131,6 +145,11 @@ export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary>
     activeGoals,
     totalAutomations,
     activeAutomations,
+    scheduledContent,
+    unscheduledApproved,
+    isMetaConnected: metaIntegration?.status === "CONNECTED",
+    metaPagesCount: metaIntegration?._count?.pages ?? 0,
+    metaStatus: metaIntegration?.status ?? null
   };
 }
 
@@ -232,6 +251,10 @@ export async function listAgentContentDrafts() {
           }
         }
       },
+      publications: {
+        orderBy: { createdAt: "desc" },
+        take: 1
+      }
     },
   });
 }
@@ -330,6 +353,10 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
     runStatusCountsRaw,
     activeGoalsRaw,
     automationsRaw,
+    scheduledCount,
+    unscheduledApproved,
+    usedManually,
+    metaIntegration,
   ] = await Promise.all([
     prisma.agent.findMany({
       where: { scope: PLATFORM_SCOPE },
@@ -373,7 +400,14 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
       take: 5,
       orderBy: { createdAt: "desc" },
       select: { title: true, nextRunAt: true }
-    })
+    }),
+    prisma.contentDraft.count({ where: { calendarStatus: "SCHEDULED" } }),
+    prisma.contentDraft.count({ where: { status: "APPROVED", calendarStatus: "UNSCHEDULED" } }),
+    prisma.contentDraft.count({ where: { calendarStatus: "USED_MANUALLY" } }),
+    prisma.metaIntegration.findUnique({
+      where: { id: "platform-meta-default" },
+      include: { _count: { select: { pages: true } } }
+    }),
   ]);
 
   const taskCounts = countByKey(taskCountsRaw, [
@@ -507,6 +541,21 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
         ),
         activities: recentActivities.slice(0, 3),
       },
+      calendar: {
+        id: "calendar",
+        title: "Calendario de Contenido",
+        subtitle: "Planificación interna para uso manual.",
+        type: "PLANNING",
+        status: scheduledCount > 0 ? `${scheduledCount} Programados` : "Sin programación",
+        description: "Organiza borradores aprobados. Permite marcar como usados manualmente para trazabilidad.",
+        href: "/platform/agents/calendar",
+        metrics: [
+          { label: "Programados", value: scheduledCount, tone: "info" },
+          { label: "Por Planificar", value: unscheduledApproved, tone: unscheduledApproved > 0 ? "warning" : "neutral" },
+          { label: "Usados", value: usedManually, tone: "success" },
+        ],
+        activities: [],
+      },
       logs: {
         id: "logs",
         title: "Logs / Actividad",
@@ -560,6 +609,62 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
           value: a.nextRunAt ? new Date(a.nextRunAt).toLocaleDateString() : "Manual", 
           tone: "info" 
         })),
+        activities: [],
+      },
+      meta: {
+        id: "meta",
+        title: "Meta Read-Only",
+        subtitle: "Integración con Facebook e Instagram.",
+        type: "EXTERNAL_INTEGRATION",
+        status: metaIntegration?.status === "CONNECTED" ? "Conectado" : "No conectado",
+        description: "Valida cuentas y permisos para futura publicación manual. No realiza acciones de escritura.",
+        href: "/platform/agents/integrations/meta",
+        metrics: [
+          { label: "Cuentas", value: metaIntegration?._count?.pages ?? 0, tone: "info" },
+          { label: "Estado", value: metaIntegration?.status ?? "N/A", tone: metaIntegration?.status === "CONNECTED" ? "success" : "neutral" },
+          { label: "Último Sync", value: metaIntegration?.lastSyncAt ? new Date(metaIntegration.lastSyncAt).toLocaleDateString() : "Nunca", tone: "info" },
+        ],
+        activities: [],
+      },
+      governance: {
+        id: "governance",
+        title: "Gobernanza & Budget",
+        subtitle: "Límites operativos y autonomía.",
+        type: "GOVERNANCE",
+        status: "Operativo",
+        description: "Regula el consumo de recursos de los agentes (Budget Guard) y define niveles de autonomía.",
+        href: "/platform/agents/governance",
+        metrics: [
+          { label: "Límites", value: "Activos", tone: "success" },
+          { label: "H-i-T-L", value: "Requerido", tone: "info" }
+        ],
+        activities: [],
+      },
+      readiness: {
+        id: "readiness",
+        title: "Readiness Center",
+        subtitle: "Validación de producción.",
+        type: "READINESS",
+        status: "Checked",
+        description: "Checklist crítico pre-deploy y validación de variables de entorno.",
+        href: "/platform/agents/readiness",
+        metrics: [
+          { label: "Pre-deploy", value: "Validado", tone: "success" }
+        ],
+        activities: [],
+      },
+      orgchart: {
+        id: "orgchart",
+        title: "Estructura Operativa",
+        subtitle: "Jerarquía de Agentes.",
+        type: "ORG_CHART",
+        status: "Definida",
+        description: "Organigrama real y jerarquía de reporteo del ecosistema AgentOS.",
+        href: "/platform/agents/org-chart",
+        metrics: [
+          { label: "Niveles", value: 2, tone: "info" },
+          { label: "Agentes", value: 4, tone: "info" }
+        ],
         activities: [],
       }
     },

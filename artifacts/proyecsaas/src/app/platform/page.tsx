@@ -5,7 +5,7 @@ import { AlertTriangle, UserPlus, Activity, Database, ArrowRight } from "lucide-
 
 import { listOrganizationsForPlatform, getWorkerHeartbeatStatus } from "@/modules/platform/service";
 import { HealthBadge, formatRelativeTime } from "@/components/platform/platform-ui";
-import { getImpactMetrics } from "./analytics-actions";
+import { getImpactMetrics, type ImpactMetrics } from "./analytics-actions";
 import ImpactSection from "./ImpactSection";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +14,41 @@ import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/ui/layout-ui";
 import { cn } from "@/lib/utils";
 
+const emptyImpactMetrics: ImpactMetrics = {
+  totals: { leads: 0, visits: 0, conversations: 0 },
+  byOrg: [],
+};
+
+function logPlatformDataError(source: string, reason: unknown) {
+  console.error(`[platform] ${source} failed while rendering /platform`, reason);
+}
+
 export default async function PlatformPage() {
-  const [orgs, workerStatus, impactMetrics] = await Promise.all([
+  const [orgsResult, workerStatusResult, impactMetricsResult] = await Promise.allSettled([
     listOrganizationsForPlatform(),
     getWorkerHeartbeatStatus(),
     getImpactMetrics("30d"),
   ]);
+
+  if (orgsResult.status === "rejected") {
+    logPlatformDataError("listOrganizationsForPlatform", orgsResult.reason);
+  }
+
+  if (workerStatusResult.status === "rejected") {
+    logPlatformDataError("getWorkerHeartbeatStatus", workerStatusResult.reason);
+  }
+
+  if (impactMetricsResult.status === "rejected") {
+    logPlatformDataError("getImpactMetrics", impactMetricsResult.reason);
+  }
+
+  const orgs = orgsResult.status === "fulfilled" ? orgsResult.value : [];
+  const workerStatus =
+    workerStatusResult.status === "fulfilled"
+      ? workerStatusResult.value
+      : { status: "down" as const, lastSeenAt: null, secondsAgo: null };
+  const impactMetrics =
+    impactMetricsResult.status === "fulfilled" ? impactMetricsResult.value : emptyImpactMetrics;
 
   const activeOrgs = orgs.filter((org) => !org.isTrashed);
 

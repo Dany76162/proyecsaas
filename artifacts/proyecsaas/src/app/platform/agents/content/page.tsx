@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 import { CheckCircle2, XCircle, Clock, ExternalLink, Camera, Globe, Users, MessageSquare, Terminal, Eye } from "lucide-react";
 import Link from "next/link";
 import { PostPreview } from "@/components/agents/post-preview";
+import { getMetaConnectionStatus } from "@/modules/agents/meta-service";
+import { MetaPublisherAction } from "./MetaPublisherAction";
 
 const PLATFORM_ICONS: Record<string, any> = {
   INSTAGRAM: Camera,
@@ -33,7 +35,10 @@ const DRAFT_STATUS_CONFIG: Record<string, { label: string; className: string; ic
 };
 
 export default async function PlatformAgentsContentPage() {
-  const drafts = await listAgentContentDrafts();
+  const [drafts, metaStatus] = await Promise.all([
+    listAgentContentDrafts(),
+    getMetaConnectionStatus()
+  ]);
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
@@ -125,14 +130,19 @@ export default async function PlatformAgentsContentPage() {
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                        Tarea: <span className="text-slate-600">{draft.task?.title}</span>
                     </div>
-                    {approvalId && (
-                      <Link 
-                        href={`/platform/agents/approvals?status=${draft.status === 'DRAFT' ? 'PENDING' : draft.status}`}
-                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-600 hover:text-brand-700 transition-colors"
-                      >
-                        Gestionar Aprobación <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    )}
+                    <div className="flex items-center gap-4">
+                      {draft.status === "APPROVED" && (
+                        <MetaPublisherAction draft={draft} metaStatus={metaStatus as any} />
+                      )}
+                      {approvalId && (
+                        <Link 
+                          href={`/platform/agents/approvals?status=${draft.status === 'DRAFT' ? 'PENDING' : draft.status}`}
+                          className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-600 hover:text-brand-700 transition-colors"
+                        >
+                          Gestionar Aprobación <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

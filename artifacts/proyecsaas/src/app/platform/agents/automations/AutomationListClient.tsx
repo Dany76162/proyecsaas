@@ -5,8 +5,9 @@ import { Zap, Clock, Play, Pause, ChevronRight, Activity, Calendar, Bot, Target,
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { runAutomationNowAction, toggleAutomationAction } from "@/modules/agents/actions";
+import { runAutomationNowAction, toggleAutomationAction, runDueAutomationsAction } from "@/modules/agents/actions";
 import Link from "next/link";
+import { RefreshCw } from "lucide-react";
 
 export default function AutomationListClient({ initialAutomations }: { initialAutomations: any[] }) {
   const [automations, setAutomations] = useState(initialAutomations);
@@ -49,8 +50,28 @@ export default function AutomationListClient({ initialAutomations }: { initialAu
     MANUAL: "Manual",
   };
 
+  const handleRunDue = async () => {
+    try {
+      const results = await runDueAutomationsAction();
+      alert(`Scheduler finalizado: ${results.processed} automatizaciones procesadas, ${results.tasksCreated} tareas creadas.`);
+    } catch (err) {
+      alert("Error al ejecutar scheduler");
+    }
+  };
+
   return (
-    <div className="grid gap-6">
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          onClick={handleRunDue}
+          className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 transition-all hover:bg-slate-50 hover:shadow-sm"
+        >
+          <RefreshCw className="h-3 w-3" />
+          Revisar vencidas ahora
+        </button>
+      </div>
+
+      <div className="grid gap-6">
       {automations.map((auto) => {
         const Icon = typeIcons[auto.type] || Bot;
         const isActive = auto.isActive;
@@ -172,6 +193,7 @@ export default function AutomationListClient({ initialAutomations }: { initialAu
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
