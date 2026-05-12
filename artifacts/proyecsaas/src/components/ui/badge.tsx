@@ -1,8 +1,8 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "neutral" | "success" | "warning" | "danger" | "info" | "brand";
+  variant?: "neutral" | "success" | "warning" | "danger" | "info" | "brand" | "outline";
 }
 
 function Badge({ className, variant = "neutral", ...props }: BadgeProps) {
@@ -13,6 +13,7 @@ function Badge({ className, variant = "neutral", ...props }: BadgeProps) {
     danger: "border-red-100 bg-red-50 text-red-700",
     info: "border-blue-100 bg-blue-50 text-blue-700",
     brand: "border-brand-100 bg-brand-50 text-brand-700",
+    outline: "border-slate-200 bg-transparent text-slate-600",
   };
 
   return (

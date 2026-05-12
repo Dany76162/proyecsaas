@@ -72,6 +72,8 @@ enum BillingStatus {
   PENDING
   PAID
   CANCELLED
+  OVERDUE
+  ARCHIVED
 }
 
 enum InvoiceStatus {
@@ -498,12 +500,25 @@ model OrgBillingRecord {
   invoiceStatus  InvoiceStatus @default(PENDING)
   invoiceNumber  String?
   notes          String?
+
+  // Commercial Pro fields
+  dueDate             DateTime?
+  paidAt              DateTime?
+  archivedAt          DateTime?
+  paymentMethod       String?
+  receiptNumber       String?
+  internalNotes       String?       @db.Text
+  reminderEnabled     Boolean       @default(true)
+  reminderPausedAt    DateTime?
+  reminderPauseReason String?
+
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
+  @@index([dueDate, status])
 }
 
 // ─── Commercial catalog ───────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { BillingMode, BillingStatus, InvoiceStatus, Prisma, SubscriptionStatus } from "@prisma/client";
@@ -16,10 +16,20 @@ const createBillingRecordSchema = z.object({
   amountARS: z
     .number({ invalid_type_error: "Ingresá un monto válido." })
     .positive("El monto debe ser mayor a 0."),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de vencimiento inválida.").optional(),
   notes: z.string().trim().max(500).optional(),
-  // Plan this payment is intended to activate. When set, the MP webhook will
-  // automatically create or renew the organization's Subscription on payment confirmation.
   planId: z.string().trim().min(1).optional(),
+});
+
+const updateBillingProSchema = z.object({
+  id: z.string(),
+  status: z.nativeEnum(BillingStatus).optional(),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida.").optional().nullable(),
+  paidAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida.").optional().nullable(),
+  paymentMethod: z.string().max(50).optional().nullable(),
+  receiptNumber: z.string().max(50).optional().nullable(),
+  internalNotes: z.string().max(2000).optional().nullable(),
+  reminderEnabled: z.boolean().optional(),
 });
 
 const updateCommercialStateSchema = z.object({
@@ -38,6 +48,11 @@ function parseEndOfDayUTC(input: string) {
   return new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 }
 
+function parseDateUTC(input: string) {
+  const [year, month, day] = input.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+}
+
 /**
  * Creates a new billing record for an organization.
  */
@@ -53,7 +68,7 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
     };
   }
 
-  const { organizationId, description, amountARS, notes, planId } = parsed.data;
+  const { organizationId, description, amountARS, dueDate, notes, planId } = parsed.data;
 
   try {
     const org = await prisma.organization.findFirst({
@@ -69,6 +84,7 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
         organizationId,
         description,
         amountCents: Math.round(amountARS * 100),
+        dueDate: dueDate ? parseDateUTC(dueDate) : null,
         notes: notes || null,
         planId: planId || null,
       },
@@ -82,12 +98,151 @@ export async function createBillingRecordAction(input: unknown): Promise<ActionR
       actorEmail: actor.email,
       entityType: "Organization",
       entityId: organizationId,
-      metadata: { description, amountARS },
+      metadata: { description, amountARS, dueDate },
     });
     return { success: true, message: "Registro de cobro creado correctamente." };
   } catch (error) {
     console.error("[createBillingRecordAction]", error);
     return { success: false, message: "Error al crear el registro. Intentá nuevamente." };
+  }
+}
+
+/**
+ * Updates a billing record with Commercial Pro fields.
+ */
+export async function updateBillingProAction(input: unknown): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  const parsed = updateBillingProSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Datos inválidos." };
+  }
+
+  const { id, status, dueDate, paidAt, paymentMethod, receiptNumber, internalNotes, reminderEnabled } = parsed.data;
+
+  try {
+    await prisma.orgBillingRecord.update({
+      where: { id },
+      data: {
+        status,
+        dueDate: dueDate ? parseDateUTC(dueDate) : dueDate === null ? null : undefined,
+        paidAt: paidAt ? parseDateUTC(paidAt) : paidAt === null ? null : undefined,
+        paymentMethod,
+        receiptNumber,
+        internalNotes,
+        reminderEnabled,
+        ...(status === "PAID" && !paidAt ? { paidAt: new Date() } : {}),
+      },
+    });
+
+    revalidatePath("/platform/billing");
+    return { success: true, message: "Registro actualizado correctamente." };
+  } catch (error) {
+    console.error("[updateBillingProAction]", error);
+    return { success: false, message: "Error al actualizar el registro." };
+  }
+}
+
+/**
+ * Archives a billing record (soft delete / commercial off).
+ */
+export async function archiveBillingRecordAction(recordId: string): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  try {
+    await prisma.orgBillingRecord.update({
+      where: { id: recordId },
+      data: {
+        status: BillingStatus.ARCHIVED,
+        archivedAt: new Date(),
+        reminderEnabled: false,
+      },
+    });
+
+    revalidatePath("/platform/billing");
+    const actor = await requirePlatformAdmin();
+    await logAudit({
+      event: "billing.archived",
+      actorId: actor.id,
+      actorEmail: actor.email,
+      entityType: "OrgBillingRecord",
+      entityId: recordId,
+    });
+    return { success: true, message: "Registro archivado correctamente." };
+  } catch (error) {
+    console.error("[archiveBillingRecordAction]", error);
+    return { success: false, message: "Error al archivar el registro." };
+  }
+}
+
+/**
+ * Pauses or resumes billing reminders for a record.
+ */
+export async function toggleBillingRemindersAction(recordId: string, enabled: boolean, reason?: string): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  try {
+    await prisma.orgBillingRecord.update({
+      where: { id: recordId },
+      data: {
+        reminderEnabled: enabled,
+        reminderPausedAt: enabled ? null : new Date(),
+        reminderPauseReason: enabled ? null : reason || "Pausado manualmente",
+      },
+    });
+
+    revalidatePath("/platform/billing");
+    return { success: true, message: enabled ? "Recordatorios activados." : "Recordatorios pausados." };
+  } catch (error) {
+    console.error("[toggleBillingRemindersAction]", error);
+    return { success: false, message: "Error al cambiar estado de recordatorios." };
+  }
+}
+
+/**
+ * Agente de Cobranzas IA: Sugiere un mensaje de cobranza basado en el estado del registro.
+ */
+export async function suggestBillingMessageAction(recordId: string): Promise<ActionResult> {
+  await requirePlatformAdmin();
+
+  try {
+    const record = await prisma.orgBillingRecord.findUnique({
+      where: { id: recordId },
+      include: { organization: true },
+    });
+
+    if (!record) return { success: false, message: "Registro no encontrado." };
+
+    const now = new Date();
+    const isOverdue = record.dueDate && record.dueDate < now && record.status !== "PAID";
+    const daysOverdue = record.dueDate ? Math.floor((now.getTime() - record.dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    
+    const amountStr = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(record.amountCents / 100);
+    const orgName = record.organization.name;
+    const paymentLink = record.mpPaymentUrl || "[Link no generado]";
+
+    let message = "";
+
+    if (record.status === "PAID") {
+      message = `Hola ${orgName}, recibimos tu pago de ${amountStr} correctamente. ¡Muchas gracias!`;
+    } else if (isOverdue) {
+      if (daysOverdue > 15) {
+        message = `Estimados ${orgName}, el pago de su suscripción (${amountStr}) tiene un retraso importante de ${daysOverdue} días. Por favor, regularicen la situación a la brevedad para evitar la suspensión del servicio. Link: ${paymentLink}`;
+      } else {
+        message = `Hola ${orgName}, notamos que el pago de ${amountStr} se encuentra vencido hace unos días. Te adjuntamos el link para que puedas ponerte al día: ${paymentLink}. Saludos!`;
+      }
+    } else {
+      message = `Hola ${orgName}, te recordamos que el próximo vencimiento de tu suscripción (${amountStr}) es el ${record.dueDate?.toLocaleDateString("es-AR")}. Podés abonar aquí: ${paymentLink}`;
+    }
+
+    return {
+      success: true,
+      message: "Sugerencia generada.",
+      data: { message },
+    };
+  } catch (error) {
+    console.error("[suggestBillingMessageAction]", error);
+    return { success: false, message: "Error al sugerir mensaje." };
   }
 }
 
@@ -161,7 +316,10 @@ export async function updateBillingStatusAction(
   try {
     await prisma.orgBillingRecord.update({
       where: { id: recordId },
-      data: { status: status as BillingStatus },
+      data: { 
+        status: status as BillingStatus,
+        ...(status === "PAID" ? { paidAt: new Date() } : {}),
+      },
     });
     revalidatePath("/platform/billing");
     const actor = await requirePlatformAdmin();

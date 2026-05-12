@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 import { prisma } from "@/server/db/prisma";
 
 export type AuditEvent =
@@ -16,8 +16,13 @@ export type AuditEvent =
   | "admin.access_granted"
   | "admin.access_revoked"
   | "subscription.updated_manual"
+  | "billing.archived"
   | "user.deleted_completely"
   | "user.password_reset";
+
+export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: "neutral" | "success" | "warning" | "danger" | "info" | "brand" | "outline";
+}
 
 export async function logAudit(params: {
   event: AuditEvent;
