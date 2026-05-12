@@ -37,13 +37,13 @@ function Navbar() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <div className="flex items-center gap-0">
+        <div className="flex items-center gap-0 shrink-0">
           <img 
             src="/brand/logo_transparent_icon.png" 
             alt="RaícesPilot Logo" 
-            className="h-16 w-auto object-contain brightness-0" 
+            className="h-10 sm:h-16 w-auto object-contain brightness-0" 
           />
-          <span className="text-xl font-bold tracking-tight text-slate-900 -ml-1">
+          <span className="text-base sm:text-xl font-bold tracking-tight text-slate-900 -ml-1">
             <span className="text-brand-600">RAÍCES</span><span className="font-light">Pilot</span>
           </span>
         </div>
@@ -54,11 +54,16 @@ function Navbar() {
           <a href="#beneficios" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Beneficios</a>
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button variant="ghost" asChild className="hidden sm:inline-flex">
             <Link href="/login">Acceder</Link>
           </Button>
-          <Button asChild>
+          <Button asChild size="sm" className="sm:hidden">
+            <Link href="/login">
+              Acceder
+            </Link>
+          </Button>
+          <Button asChild className="hidden sm:inline-flex">
             <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
               Solicitar demo
             </a>
