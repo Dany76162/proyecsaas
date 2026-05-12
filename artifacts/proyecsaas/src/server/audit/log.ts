@@ -16,7 +16,8 @@ export type AuditEvent =
   | "admin.access_granted"
   | "admin.access_revoked"
   | "subscription.updated_manual"
-  | "user.deleted_completely"; // ✅ agregado
+  | "user.deleted_completely"
+  | "user.password_reset";
 
 export async function logAudit(params: {
   event: AuditEvent;
