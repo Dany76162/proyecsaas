@@ -610,7 +610,7 @@ export async function processWhatsAppInboundJob(
       deliveryResult =
         options.deliveryMode === "simulate"
           ? await attemptSimulatedWhatsAppOutboundDelivery({
-              phoneNumberId: channel.phoneNumberId,
+              phoneNumberId: channel.phoneNumberId ?? "",
               responseText: decision.responseText,
             })
           : await attemptWhatsAppOutboundDelivery(prisma, deliveryInput);
