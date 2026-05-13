@@ -1,4 +1,4 @@
-﻿import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE_NAME = "proyecsaas_session";
 
@@ -15,6 +15,7 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   /^\/api\/whatsapp\/webhook(\/|$)/,
   /^\/api\/properties\/sync-from-source/,
   /^\/[^/]+\/catalog(\/|$)/,
+  /^\/google.*\.html$/,
 ];
 
 const DEV_ONLY_PUBLIC_PATHS: Array<string | RegExp> = [
