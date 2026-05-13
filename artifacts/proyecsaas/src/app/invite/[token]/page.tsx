@@ -1,12 +1,17 @@
-export const dynamic = "force-dynamic";
-
+import { redirect } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ShieldCheck, Zap, AlertCircle, Building2, ArrowLeft } from "lucide-react";
+import { Montserrat } from "next/font/google";
 
 import { prisma } from "@/server/db/prisma";
 import { InviteAcceptForm } from "./invite-accept-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+const montserrat = Montserrat({ subsets: ["latin"] });
 
 type InvitePageState = {
   usedAt: Date | null;
@@ -107,125 +112,143 @@ export default async function InvitePage({
   ) : null;
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row bg-white">
+    <div className={cn("flex min-h-screen flex-col lg:flex-row bg-white", montserrat.className)}>
       {/* Lado Izquierdo - Institucional (60%) */}
-      <div className="relative hidden lg:flex lg:w-[60%] flex-col justify-center bg-slate-950 px-16 py-12 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute top-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-brand-600 blur-[120px]" />
-          <div className="absolute bottom-[-10%] left-[-10%] h-[400px] w-[400px] rounded-full bg-brand-900 blur-[100px]" />
+      <div className="relative hidden lg:flex lg:w-[60%] flex-col items-center justify-center bg-[#020617] px-24 py-12 text-white overflow-hidden border-r border-white/5">
+        {/* Fondo abstracto institucional refinado */}
+        <div className="absolute inset-0 opacity-30 pointer-events-none">
+          <div className="absolute top-[-10%] right-[-10%] h-[800px] w-[800px] rounded-full bg-brand-900/10 blur-[160px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] h-[700px] w-[700px] rounded-full bg-slate-900/30 blur-[140px]" />
           <div 
             className="absolute inset-0" 
             style={{ 
-              backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)`,
-              backgroundSize: '32px 32px' 
+              backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.015) 1px, transparent 0)`,
+              backgroundSize: '64px 64px' 
             }} 
           />
         </div>
 
-        <div className="relative z-10 max-w-xl">
-          <Badge variant="brand" className="mb-6 border-brand-500/30 bg-brand-500/10 text-brand-400">
-            Bienvenida Enterprise
-          </Badge>
+        <div className="relative z-10 w-full max-w-2xl flex flex-col items-center text-center">
+          {/* Logo Oficial RaícesPilot (Tamaño Imponente) */}
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 -mt-36 -mb-36">
+            <Image
+              src="/brand/raices_pilot_logo_transparent.png"
+              alt="RaícesPilot"
+              width={1000}
+              height={500}
+              className="h-auto w-[750px] max-w-full opacity-100 drop-shadow-2xl pointer-events-none"
+              priority
+            />
+          </div>
           
-          <h1 className="text-5xl font-extrabold tracking-tight leading-[1.1]">
-            Estás a un paso de<br />
-            <span className="text-brand-400">potenciar tu equipo.</span>
-          </h1>
-          
-          <p className="mt-6 text-xl text-slate-400 leading-relaxed">
+          <p className="-mt-12 text-xl text-slate-400 leading-relaxed font-medium max-w-lg animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 relative z-20">
             Unite a la inmobiliaria y empezá a gestionar tus operaciones con la infraestructura comercial más avanzada.
           </p>
 
-          <div className="mt-12 space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
-                <CheckCircle2 className="h-5 w-5 text-brand-400" />
+          <div className="mt-24 grid grid-cols-2 gap-12 w-full animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
+            <div className="flex flex-col items-center group">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 shadow-xl transition-all duration-300 group-hover:bg-white/10 group-hover:border-white/20">
+                <CheckCircle2 className="h-7 w-7 text-brand-400" />
               </div>
-              <div>
-                <h3 className="font-bold text-slate-100">Todo en un solo lugar</h3>
-                <p className="text-sm text-slate-400">CRM, WhatsApp e IA integrados para que no pierdas ningún lead.</p>
+              <div className="mt-5">
+                <h3 className="font-bold text-lg text-slate-100">Atención 24/7</h3>
+                <p className="mt-1.5 text-sm text-slate-500 font-medium">CRM, WhatsApp e IA integrados.</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
-                <Zap className="h-5 w-5 text-brand-400" />
+            <div className="flex flex-col items-center group">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 shadow-xl transition-all duration-300 group-hover:bg-white/10 group-hover:border-white/20">
+                <Zap className="h-7 w-7 text-brand-400" />
               </div>
-              <div>
-                <h3 className="font-bold text-slate-100">Velocidad de respuesta</h3>
-                <p className="text-sm text-slate-400">Respondé en segundos y aumentá tu tasa de conversión.</p>
+              <div className="mt-5">
+                <h3 className="font-bold text-lg text-slate-100">Conversión</h3>
+                <p className="mt-1.5 text-sm text-slate-500 font-medium">Respondé en segundos y vendé más.</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="absolute bottom-12 left-16 right-16 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-          <span>RaícesPilot v2.0</span>
-          <span>© 2026 Inmuebles Digitales</span>
+        {/* Footer institucional */}
+        <div className="absolute bottom-12 inset-x-0 flex items-center justify-center gap-12 text-[10px] font-bold uppercase tracking-[0.5em] text-slate-600/80">
+          <span>v3.1 Stable</span>
+          <span className="h-1 w-1 rounded-full bg-slate-800" />
+          <span>Inmuebles Digitales © 2026</span>
         </div>
       </div>
 
       {/* Lado Derecho - Formulario / Estado (40%) */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:w-[40%] bg-slate-50">
-        <div className="w-full max-w-sm">
-          <div className="mb-10 flex flex-col items-center lg:items-start">
-            <div className="flex items-center gap-2.5 mb-8">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 shadow-lg shadow-brand-500/20">
-                <Building2 className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-black tracking-tighter text-slate-900">
-                Raíces<span className="text-brand-600">Pilot</span>
-              </span>
+      <div className="flex flex-1 flex-col items-center justify-center px-12 py-12 lg:w-[40%] bg-slate-50/20">
+        <div className="w-full max-w-[440px] animate-in fade-in slide-in-from-right-4 duration-700">
+          <div className="mb-12 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-4 duration-700">
+            {/* Ícono de Brújula Oscuro */}
+            <div className="-mb-4">
+              <Image 
+                src="/brand/logo_transparent_icon.png" 
+                alt="Logo RaícesPilot" 
+                width={300} 
+                height={300} 
+                className="h-auto w-[240px] brightness-0 opacity-95 pointer-events-none" 
+              />
             </div>
             
             {invalidState ? (
               <>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600 border border-red-100">
-                  <AlertCircle className="h-6 w-6" />
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-600 border border-red-100 shadow-sm">
+                  <AlertCircle className="h-8 w-8" />
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h3 className="text-4xl font-black tracking-tight text-slate-950">
                   {invalidState.title}
-                </h2>
-                <p className="mt-1.5 text-sm text-slate-500">
+                </h3>
+                <p className="mt-3 text-slate-500 font-medium text-lg">
                   {invalidState.message}
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h3 className="text-4xl font-black tracking-tight text-slate-950">
                   Activá tu acceso
-                </h2>
-                <p className="mt-1.5 text-sm text-slate-500">
+                </h3>
+                <p className="mt-3 text-slate-500 font-medium text-lg">
                   Completá tu perfil para ingresar al workspace.
                 </p>
               </>
             )}
           </div>
 
-          {!invalidState ? (
-            <InviteAcceptForm
-              token={token}
-              email={invite!.user?.email ?? ""}
-              organizationName={invite!.organization?.name ?? "Inmobiliaria"}
-              organizationSlug={invite!.organization?.slug ?? ""}
-            />
-          ) : (
-            <div className="space-y-6">
-              {invite?.organization && (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Inmobiliaria</p>
-                  <p className="mt-1 text-sm font-bold text-slate-900">{invite.organization.name}</p>
-                  <p className="text-xs text-slate-500">/{invite.organization.slug}</p>
+          <Card variant="default" className="border-none bg-transparent shadow-none p-0">
+            {!invalidState ? (
+              <InviteAcceptForm
+                token={token}
+                email={invite!.user?.email ?? ""}
+                organizationName={invite!.organization?.name ?? "Inmobiliaria"}
+                organizationSlug={invite!.organization?.slug ?? ""}
+              />
+            ) : (
+              <div className="space-y-8">
+                {invite?.organization && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-2">Inmobiliaria</p>
+                    <p className="text-xl font-black text-slate-900">{invite.organization.name}</p>
+                    <p className="text-sm font-medium text-brand-600">/{invite.organization.slug}</p>
+                  </div>
+                )}
+                <div className="pt-4">
+                  <Button asChild size="lg" className="w-full h-14 text-sm font-black uppercase tracking-[0.25em] shadow-xl shadow-brand-500/15 active:scale-[0.98] transition-all bg-brand-600 hover:bg-brand-700 rounded-xl">
+                    <Link href={invalidState.actionHref}>
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      {invalidState.actionLabel}
+                    </Link>
+                  </Button>
                 </div>
-              )}
-              <Button asChild variant="outline" className="w-full h-11">
-                <Link href={invalidState.actionHref}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  {invalidState.actionLabel}
-                </Link>
-              </Button>
-            </div>
-          )}
+              </div>
+            )}
+          </Card>
+
+          <div className="mt-20 pt-10 border-t border-slate-200/60">
+            <p className="text-center text-[13px] text-slate-400 font-medium">
+              ¿Tenés problemas? <a href="https://wa.me/5491161630205?text=Hola%2C%20tengo%20un%20problema%20con%20mi%20invitación%20a%20RaicesPilot." target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-brand-600 transition-colors underline decoration-slate-300 underline-offset-8 decoration-2">Contactá a soporte</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
