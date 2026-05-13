@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { MetaChannelStatus } from "@/server/whatsapp/platform-channel-status";
 
 type Props = {
@@ -8,6 +9,8 @@ type Props = {
   orgName: string;
   platformPhone: string | null;
   metaStatus: MetaChannelStatus;
+  tenantChannels?: any[];
+  connectionRequests?: any[];
 };
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
@@ -56,17 +59,35 @@ export function WhatsAppConnectionForm({
   orgName,
   platformPhone,
   metaStatus,
+  tenantChannels = [],
+  connectionRequests = [],
 }: Props) {
   const [copied, setCopied] = useState(false);
 
+  // ── Priority Logic ───────────────────────────────────────────────────────────
+  const activeTenantChannel = 
+    tenantChannels.find((ch) => ch.isPrimary && ch.status === "ACTIVE") ||
+    tenantChannels.find((ch) => ch.status === "ACTIVE");
+
+  const hasOwnChannel = !!activeTenantChannel;
+  const isPlatformFallback = !hasOwnChannel && !!platformPhone;
+  const hasPendingRequest = !hasOwnChannel && connectionRequests.some(r => r.status === "PENDING" || r.status === "IN_REVIEW");
+
+  // Determine which number to use for QR/Link
+  const activeNumber = hasOwnChannel ? activeTenantChannel.displayPhoneNumber : platformPhone;
+  
+  // Prefilled text: if platform fallback, MUST include [ref:slug]
   const routingCode = `[ref:${orgSlug}]`;
-  const prefilledText = `${routingCode} Hola, me interesan sus propiedades.`;
-  const waLink = platformPhone
-    ? `https://wa.me/${platformPhone}?text=${encodeURIComponent(prefilledText)}`
+  const prefilledText = isPlatformFallback 
+    ? `${routingCode} Hola, me interesan sus propiedades.`
+    : `Hola, me interesan sus propiedades de ${orgName}.`;
+
+  const waLink = activeNumber
+    ? `https://wa.me/${activeNumber.replace(/\D/g, '')}?text=${encodeURIComponent(prefilledText)}`
     : null;
 
   const qrSrc = waLink
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(waLink)}&margin=10`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(waLink)}&margin=10`
     : null;
 
   async function handleCopy() {
@@ -80,152 +101,174 @@ export function WhatsAppConnectionForm({
     }
   }
 
-  // ── Status panel ─────────────────────────────────────────────────────────────
-
-  const fullyActive = !!platformPhone && metaStatus === "connected";
+  // ── Status flags ─────────────────────────────────────────────────────────────
+  const platformFullyActive = !!platformPhone && metaStatus === "connected";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
-      {/* ── Estado del canal ─────────────────────────────────────────────────── */}
-      <div className={`rounded-2xl border p-5 ${
-        fullyActive
-          ? "border-emerald-200 bg-emerald-50/60"
-          : "border-slate-200 bg-slate-50/60"
-      }`}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-950">Canal administrado por la plataforma</p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              El número oficial de WhatsApp y la conexión con Meta Cloud API son gestionados
-              centralmente por el superadmin. No necesitás hacer ninguna configuración adicional.
-            </p>
+      {/* ── CASE A: Own active channel ────────────────────────────────────────── */}
+      {hasOwnChannel && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-sm font-bold text-emerald-900">Canal propio activo</p>
+              </div>
+              <p className="mt-1 text-sm leading-6 text-emerald-800">
+                Tu inmobiliaria está usando un número de WhatsApp Business exclusivo. Los mensajes llegan directo a tu marca.
+              </p>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+              Personalizado
+            </span>
           </div>
-          {fullyActive ? (
-            <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Canal activo
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-              En configuración
-            </span>
-          )}
-        </div>
-
-        {/* Sub-estados: número + Meta */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          <PhoneStatusBadge phone={platformPhone} />
-          <MetaBadge status={metaStatus} />
-        </div>
-      </div>
-
-      {/* ── Número no configurado ────────────────────────────────────────────── */}
-      {!platformPhone && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
-          <p className="text-sm font-semibold text-amber-900">Número de plataforma pendiente</p>
-          <p className="mt-1 text-sm leading-6 text-amber-800">
-            El superadmin aún no configuró el número de WhatsApp de la plataforma. Sin este número
-            no es posible generar el enlace ni el código QR. Contactalo para activar este canal.
-          </p>
+          <div className="mt-4 p-3 rounded-xl bg-white/50 border border-emerald-100 inline-block">
+            <p className="text-sm font-mono font-bold text-emerald-950">+{activeTenantChannel.displayPhoneNumber}</p>
+          </div>
         </div>
       )}
 
-      {/* ── Meta no conectado (pero número OK) ──────────────────────────────── */}
-      {platformPhone && metaStatus !== "connected" && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
-          <p className="text-sm font-semibold text-amber-900">
-            {metaStatus === "partial"
-              ? "Conexión con Meta incompleta"
-              : "Canal Meta no conectado"}
-          </p>
-          <p className="mt-1 text-sm leading-6 text-amber-800">
-            {metaStatus === "partial"
-              ? "La integración con Meta Cloud API está configurada parcialmente. El superadmin debe completar las credenciales (Phone Number ID, Access Token y Organization ID)."
-              : "La plataforma aún no está conectada a Meta Cloud API. Los mensajes entrantes no se procesarán hasta que el superadmin complete la integración."}
-          </p>
-          <p className="mt-3 text-sm leading-6 text-amber-800">
-            Tu enlace y código QR están disponibles, pero los mensajes no llegarán hasta que el canal
-            Meta esté activo.
-          </p>
+      {/* ── CASE B: Platform fallback ────────────────────────────────────────── */}
+      {isPlatformFallback && (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-blue-500" />
+                <p className="text-sm font-bold text-blue-900">Canal compartido de plataforma</p>
+              </div>
+              <p className="mt-1 text-sm leading-6 text-blue-800">
+                Este canal te permite recibir consultas mientras configurás tu número propio. No es un número exclusivo de tu inmobiliaria.
+              </p>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
+              Fallback
+            </span>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href={`/${orgSlug}/settings/integrations/whatsapp`} className="text-xs font-bold text-blue-700 hover:underline">
+              Solicitar número propio →
+            </Link>
+          </div>
         </div>
       )}
 
-      {/* ── QR + enlace (solo si hay número, independiente del estado Meta) ─── */}
-      {platformPhone && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-          <p className="text-sm font-semibold text-slate-950">Tu enlace de WhatsApp</p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            Compartí este enlace o código QR en tu sitio web, redes sociales o avisos. Cuando un
-            cliente lo toque, se abrirá WhatsApp listo para escribirte.
-          </p>
+      {/* ── CASE C: Pending request ───────────────────────────────────────────── */}
+      {hasPendingRequest && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⏳</span>
+            <div>
+              <p className="text-sm font-bold text-amber-900">Solicitud de conexión pendiente</p>
+              <p className="mt-0.5 text-sm text-amber-800">
+                Estamos procesando tu solicitud para conectar tu propio número. Mientras tanto, podés seguir usando el canal compartido.
+              </p>
+            </div>
+          </div>
+          <Link href={`/${orgSlug}/settings/integrations/whatsapp`} className="mt-3 inline-block text-xs font-bold text-amber-700 hover:underline">
+            Ver estado de solicitud
+          </Link>
+        </div>
+      )}
 
-          <div className="mt-5 flex flex-wrap gap-6">
+      {/* ── CASE D: No channel active ─────────────────────────────────────────── */}
+      {!activeNumber && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
+          <div className="mx-auto h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center text-xl mb-4">⚠️</div>
+          <p className="text-sm font-bold text-rose-900">No hay un canal de WhatsApp activo</p>
+          <p className="mt-1 text-sm text-rose-800">
+            Necesitás configurar al menos un canal para generar tu enlace de captación.
+          </p>
+          <Link href={`/${orgSlug}/settings/integrations/whatsapp`} className="mt-4 inline-block rounded-full bg-rose-600 px-6 py-2 text-sm font-bold text-white hover:bg-rose-700 transition">
+            Configurar WhatsApp
+          </Link>
+        </div>
+      )}
+
+      {/* ── QR + Link Section ────────────────────────────────────────────────── */}
+      {activeNumber && (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+            <div>
+              <p className="text-sm font-bold text-slate-950">Tu código QR de Captación</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Escaneá este código para probar el flujo de entrada.
+              </p>
+            </div>
+            <div className="flex gap-2">
+               <Link href={`/${orgSlug}/settings/integrations/whatsapp`} className="text-xs font-bold text-slate-500 hover:text-slate-700 underline">
+                Gestionar canales
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-[auto_1fr]">
             {/* QR code */}
-            <div className="flex-shrink-0 rounded-xl border border-slate-200 bg-white p-2.5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={qrSrc!}
-                alt={`Código QR de WhatsApp para ${orgName}`}
-                width={180}
-                height={180}
-                className="block"
-              />
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex-shrink-0 rounded-[2rem] border-4 border-white bg-white p-4 shadow-soft">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrSrc!}
+                  alt={`Código QR de WhatsApp para ${orgName}`}
+                  width={200}
+                  height={200}
+                  className="block"
+                />
+              </div>
+              <a href={qrSrc!} download={`qr-whatsapp-${orgSlug}.png`} className="text-xs font-bold text-brand-600 hover:underline">
+                Descargar QR (PNG)
+              </a>
             </div>
 
             {/* Link + copy */}
-            <div className="min-w-0 flex-1 space-y-3">
+            <div className="min-w-0 space-y-5">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
                   Enlace para compartir
                 </label>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="text"
                     readOnly
                     value={waLink!}
-                    className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:outline-none"
+                    className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none font-medium"
                   />
                   <button
                     type="button"
                     onClick={handleCopy}
-                    className="flex-shrink-0 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                    className="flex-shrink-0 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none"
                   >
-                    {copied ? "¡Copiado!" : "Copiar"}
+                    {copied ? "¡Copiado!" : "Copiar enlace"}
                   </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Código de identificación
-                </label>
-                <p className="mt-2 font-mono text-sm text-slate-700 bg-slate-100 rounded-xl px-3 py-2 inline-block">
-                  {routingCode}
+              {isPlatformFallback && (
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                    Código de identificación necesario
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <p className="font-mono text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl px-4 py-2">
+                      {routingCode}
+                    </p>
+                    <p className="text-xs text-slate-400 max-w-[240px]">
+                      Como usás el canal compartido, este código permite que los mensajes lleguen a tu panel.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 border-t border-slate-200">
+                <p className="text-xs font-bold text-slate-900">Uso recomendado:</p>
+                <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                  Pegalo en la Bio de Instagram, en el botón de WhatsApp de tu web o en tus anuncios de Meta Ads.
                 </p>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ── Cómo funciona (solo cuando está completamente activo) ────────────── */}
-      {fullyActive && (
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
-          <p className="text-sm font-semibold text-blue-900">¿Cómo funciona?</p>
-          <ol className="mt-3 space-y-2 text-sm leading-6 text-blue-800 list-none">
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">1</span>
-              Copiá el enlace de arriba y ponelo en tu sitio web o redes sociales como botón de WhatsApp.
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">2</span>
-              Cuando un cliente lo toque, se abrirá WhatsApp con un mensaje pre-completado listo para enviar.
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">3</span>
-              El sistema identifica automáticamente que el mensaje es para <strong>{orgName}</strong> y lo asigna a tu agente de IA.
-            </li>
-          </ol>
         </div>
       )}
     </div>

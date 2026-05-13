@@ -5,6 +5,7 @@ import Link from "next/link";
 import { requireOrganizationMembership, assertMinimumRole } from "@/server/auth/access";
 import { getAvailableChannels } from "@/modules/agents/service";
 import { createAgent } from "@/modules/agents/actions";
+import { prisma } from "@/server/db/prisma";
 import { AgentForm } from "../agent-form";
 
 export default async function NewAgentPage({
@@ -20,16 +21,19 @@ export default async function NewAgentPage({
 
     const orgId = membership.organization.id;
     
-    // getAvailableChannels uses isActive filter which might fail if DB is out of sync
-    let channels: any[] = [];
-    try {
-      channels = await getAvailableChannels(orgId);
-    } catch (err) {
-      console.error("[NewAgentPage] Error fetching channels:", err);
-      // Fallback: try without isActive filter if it fails
-      // Note: we can't easily change the service here without modifying it, 
-      // but we can at least catch the error and continue with empty channels.
-    }
+    // Fetch channels, connection requests, and org contact info in parallel
+    const [channels, connectionRequests, orgData] = await Promise.all([
+      getAvailableChannels(orgId).catch(() => []),
+      prisma.whatsAppChannelConnectionRequest.findMany({
+        where: { organizationId: orgId },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, requestedPhoneNumber: true, businessName: true, status: true, createdAt: true },
+      }).catch(() => []),
+      prisma.organization.findUnique({
+        where: { id: orgId },
+        select: { contactWhatsapp: true, contactPhone: true, name: true },
+      }),
+    ]);
 
     async function handleCreate(formData: FormData) {
       "use server";
@@ -66,6 +70,12 @@ export default async function NewAgentPage({
         orgSlug={orgSlug}
         action={handleCreate}
         channels={channels}
+        connectionRequests={connectionRequests}
+        orgContact={{
+          whatsapp: orgData?.contactWhatsapp || null,
+          phone: orgData?.contactPhone || null,
+          name: orgData?.name || "",
+        }}
         mode="create"
       />
     );
@@ -80,11 +90,11 @@ export default async function NewAgentPage({
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-4">Antes de crear tu agente IA</h2>
           <p className="text-slate-500 mb-8 leading-relaxed">
-            Ocurrió un error al cargar la configuración. Asegúrate de tener al menos un canal de WhatsApp conectado o contacta a soporte técnico si el problema persiste.
+            Ocurrió un error al cargar la configuración. Contacta a soporte técnico si el problema persiste.
           </p>
           <div className="flex flex-col gap-3">
             <Link 
-              href={`/${orgSlug}/settings/integrations`}
+              href={`/${orgSlug}/settings/integrations/whatsapp`}
               className="bg-brand-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-brand-600 transition"
             >
               Configurar WhatsApp

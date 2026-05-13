@@ -6,6 +6,7 @@ import { requireOrganizationMembership } from "@/server/auth/access";
 import { getAgentDetail, getAvailableChannels } from "@/modules/agents/service";
 import { updateAgent, deleteAgent } from "@/modules/agents/actions";
 import { STATUS_LABELS, TONE_LABELS } from "@/modules/agents/types";
+import { prisma } from "@/server/db/prisma";
 import { AgentForm } from "../agent-form";
 import { ToggleAgentButton } from "../toggle-agent-button";
 import { AgentTestChat } from "./agent-test-chat";
@@ -21,9 +22,18 @@ export default async function AgentDetailPage({
   const orgId = membership.organization.id;
   const isManager = membership.role === "OWNER" || membership.role === "ADMIN";
 
-  const [agent, channels] = await Promise.all([
+  const [agent, channels, connectionRequests, orgData] = await Promise.all([
     getAgentDetail(agentId, orgId),
     isManager ? getAvailableChannels(orgId) : Promise.resolve([]),
+    prisma.whatsAppChannelConnectionRequest.findMany({
+      where: { organizationId: orgId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, requestedPhoneNumber: true, businessName: true, status: true, createdAt: true },
+    }).catch(() => []),
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { contactWhatsapp: true, contactPhone: true, name: true },
+    }),
   ]);
 
   if (!agent) notFound();
@@ -157,6 +167,12 @@ export default async function AgentDetailPage({
         orgSlug={orgSlug}
         action={handleUpdate}
         channels={channels}
+        connectionRequests={connectionRequests}
+        orgContact={{
+          whatsapp: orgData?.contactWhatsapp || null,
+          phone: orgData?.contactPhone || null,
+          name: orgData?.name || "",
+        }}
         agent={agent}
         mode="edit"
       />

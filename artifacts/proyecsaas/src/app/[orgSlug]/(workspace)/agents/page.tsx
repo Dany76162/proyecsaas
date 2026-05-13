@@ -235,9 +235,13 @@ function AgentCard({
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
             Canal WA
           </p>
-          <p className="mt-0.5 text-sm font-medium text-slate-800">
-            {agent.whatsappChannelId ? "Asignado" : "Sin canal"}
-          </p>
+          {agent.whatsappChannelId ? (
+            <p className="mt-0.5 text-sm font-medium text-emerald-700">✓ Asignado</p>
+          ) : (
+            <Link href={`/${orgSlug}/settings/integrations/whatsapp`} className="mt-0.5 text-sm font-medium text-amber-600 hover:underline">
+              Sin número →
+            </Link>
+          )}
         </div>
         {agent.zoneFilters.length > 0 && (
           <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">

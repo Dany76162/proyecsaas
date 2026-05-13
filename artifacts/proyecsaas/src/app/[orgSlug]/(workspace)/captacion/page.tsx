@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/workspace/status-badge";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { getPlatformWhatsAppStatus } from "@/server/whatsapp/platform-channel-status";
 import { WhatsAppConnectionForm } from "../settings/integrations/whatsapp/whatsapp-connection-form";
+import { prisma } from "@/server/db/prisma";
 
 const channelIdeas = [
   {
@@ -29,9 +30,9 @@ const channelIdeas = [
 
 const flowSteps = [
   "La persona toca el enlace y se abre WhatsApp con un mensaje ya preparado.",
-  "Ese mensaje incluye un código de referencia que identifica a tu inmobiliaria.",
+  "Si usás el canal compartido, incluimos una referencia que identifica a tu inmobiliaria.",
   "Cuando el cliente lo envía, el sistema enruta la conversación a tu espacio de trabajo.",
-  "La IA responde, registra el lead y deja el contexto listo para que el equipo intervenga cuando haga falta.",
+  "La IA responde, registra el lead y deja el contexto listo para que el equipo intervenga.",
 ] as const;
 
 export default async function WorkspaceCaptacionPage({
@@ -40,9 +41,16 @@ export default async function WorkspaceCaptacionPage({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  const [organization, channelStatus] = await Promise.all([
+  const [organization, channelStatus, tenantChannels, connectionRequests] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     getPlatformWhatsAppStatus(),
+    prisma.whatsAppChannel.findMany({
+      where: { organization: { slug: orgSlug }, isActive: true }
+    }),
+    prisma.whatsAppChannelConnectionRequest.findMany({
+      where: { organization: { slug: orgSlug } },
+      orderBy: { createdAt: "desc" }
+    })
   ]);
 
   if (!organization) {
@@ -79,14 +87,13 @@ export default async function WorkspaceCaptacionPage({
               <div className="flex flex-wrap gap-2">
                 <StatusBadge label="WhatsApp de captación" tone="success" />
                 <StatusBadge
-                  label={channelStatus.fullyActive ? "Canal operativo" : "Configuración pendiente"}
-                  tone={channelStatus.fullyActive ? "success" : "warning"}
+                  label={tenantChannels.length > 0 ? "Canal propio activo" : channelStatus.fullyActive ? "Canal compartido activo" : "Configuración pendiente"}
+                  tone={tenantChannels.length > 0 || channelStatus.fullyActive ? "success" : "warning"}
                 />
               </div>
 
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                Esta pantalla no crea un sistema nuevo: expone de forma clara el flujo real que ya
-                usa la plataforma para recibir mensajes por WhatsApp, identificar tu inmobiliaria y
+                Esta pantalla expone de forma clara el flujo real que usa la plataforma para recibir mensajes por WhatsApp, identificar tu inmobiliaria y
                 convertir la consulta en lead dentro del panel.
               </p>
 
@@ -126,6 +133,8 @@ export default async function WorkspaceCaptacionPage({
             orgName={organization.name}
             platformPhone={channelStatus.platformPhone}
             metaStatus={channelStatus.metaStatus}
+            tenantChannels={tenantChannels}
+            connectionRequests={connectionRequests}
           />
         </SectionCard>
 
