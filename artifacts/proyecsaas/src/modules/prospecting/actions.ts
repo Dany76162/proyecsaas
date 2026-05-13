@@ -25,6 +25,42 @@ import { generateUnsubscribeToken } from "./campaign-service";
 
 // ─── Search API Integration (Serper.dev) ────────────────────────────────────
 
+export async function convertToOrganizationAction(prospectId: string) {
+  const p = await prisma.commercialProspect.findUnique({ where: { id: prospectId } });
+  if (!p) throw new Error("Prospecto no encontrado");
+
+  const slug = p.companyName.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Math.random().toString(36).substring(2, 5);
+
+  const org = await prisma.organization.create({
+    data: {
+      name: p.companyName,
+      slug,
+      city: p.city,
+      contactEmail: p.email,
+      website: p.website,
+      marketFocus: p.companyType,
+      isActive: true,
+      planLabel: "PROSPECT_CONVERTED"
+    }
+  });
+
+  await prisma.commercialProspect.update({
+    where: { id: prospectId },
+    data: { 
+      status: "CONVERTED" as any,
+      manualStatus: "APTO_CONTACTO" 
+    }
+  });
+
+  await logProspectActivity(
+    prospectId,
+    "converted_to_org" as any,
+    `Convertido a organización real: ${org.name} (Slug: ${slug})`
+  );
+
+  return org;
+}
+
 async function searchWebViaSerper(query: string) {
   const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) throw new Error("SERPER_API_KEY no configurada");

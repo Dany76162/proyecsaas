@@ -40,7 +40,8 @@ import {
   markDraftSentAction, 
   updateProspectStatusAction,
   updateManualQualificationAction,
-  recalculateScoresAction
+  recalculateScoresAction,
+  convertToOrganizationAction
 } from "@/modules/prospecting/actions";
 import { Card } from "@/components/ui/card";
 
@@ -337,19 +338,30 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           <Card className="p-6 rounded-[2rem] border-slate-200 shadow-sm bg-slate-50/50">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6">Acciones Rápidas</h3>
             <div className="flex flex-col gap-3">
+              {prospect.status === "CONVERTED" ? (
+                <div className="w-full p-4 rounded-xl bg-emerald-50 border border-emerald-100 flex flex-col items-center text-center gap-2">
+                   <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                   <p className="text-xs font-black text-emerald-800 uppercase tracking-widest">Prospecto Convertido</p>
+                   <p className="text-[10px] text-emerald-600 font-bold">Este prospecto ya es una organización real.</p>
+                </div>
+              ) : (
+                <form action={async () => { "use server"; await convertToOrganizationAction(prospect.id); }}>
+                  <Button type="submit" className="w-full h-11 bg-brand-600 hover:bg-brand-700 font-black shadow-lg shadow-brand-200">
+                    🚀 Convertir en Organización
+                  </Button>
+                </form>
+              )}
+              
+              <div className="w-full h-px bg-slate-200 my-2" />
+
               <form action={async () => { "use server"; await updateProspectStatusAction(prospect.id, "APPROVED"); }}>
-                <Button type="submit" disabled={prospect.status === "APPROVED" || prospect.status === "CONTACT_READY"} className="w-full h-11 bg-emerald-600 font-bold">
+                <Button type="submit" disabled={prospect.status === "APPROVED" || prospect.status === "CONTACT_READY" || prospect.status === "CONVERTED"} className="w-full h-11 bg-slate-900 font-bold">
                   ✅ Aprobar para contacto
                 </Button>
               </form>
               <form action={async () => { "use server"; await updateProspectStatusAction(prospect.id, "DISCARDED"); }}>
-                <Button type="submit" variant="outline" className="w-full h-11 font-bold text-slate-600 border-slate-200">
+                <Button type="submit" variant="outline" disabled={prospect.status === "CONVERTED"} className="w-full h-11 font-bold text-slate-600 border-slate-200">
                   ❌ Descartar
-                </Button>
-              </form>
-              <form action={async () => { "use server"; await updateProspectStatusAction(prospect.id, "DO_NOT_CONTACT"); }}>
-                <Button type="submit" variant="outline" className="w-full h-11 font-bold text-rose-600 border-rose-100 hover:bg-rose-50">
-                  🚫 No contactar
                 </Button>
               </form>
             </div>

@@ -1039,6 +1039,7 @@ enum ProspectStatus {
   DEMO_REQUESTED
   CUSTOMER
   DO_NOT_CONTACT
+  CONVERTED
 }
 
 enum ProspectActivityType {
@@ -1048,6 +1049,7 @@ enum ProspectActivityType {
   discarded
   marked_duplicate
   marked_do_not_contact
+  converted_to_org
   email_draft_generated
   contact_marked_sent
   reply_logged
@@ -1261,6 +1263,8 @@ model ProspectingCampaign {
   sentCount        Int                  @default(0)
   failedCount      Int                  @default(0)
   skippedCount     Int                  @default(0)
+  openCount        Int                  @default(0)
+  clickCount       Int                  @default(0)
   
   createdByUserId  String?
   approvedByUserId String?
@@ -1280,9 +1284,11 @@ model ProspectingCampaignRecipient {
   email               String
   status              CampaignRecipientStatus @default(PENDING)
   skipReason          String?
-  providerMessageId   String?
+  providerMessageId   String?                 @unique
   sentAt              DateTime?
   failedAt            DateTime?
+  openedAt            DateTime?
+  clickedAt           DateTime?
   errorMessage        String?                 @db.Text
   
   createdAt           DateTime                @default(now())
@@ -1293,6 +1299,7 @@ model ProspectingCampaignRecipient {
   @@index([campaignId])
   @@index([prospectId])
   @@index([status])
+  @@index([providerMessageId])
 }
 
 model ProspectingSuppression {

@@ -10,6 +10,11 @@ import { getOpenAIClient, OPENAI_MODEL } from "@/modules/agents/service";
 import crypto from "crypto";
 import { canGenerateEmail } from "./service";
 
+export function validateEmailSyntax(email: string): boolean {
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return re.test(email);
+}
+
 // ─── Unsubscribe Security ──────────────────────────────────────────────────
 
 const UNSUBSCRIBE_SECRET = process.env.AUTH_SESSION_SECRET || "default-secret-for-prospecting-unsubscribe";
@@ -122,8 +127,8 @@ export async function addRecipientsToCampaign(campaignId: string, prospectIds: s
   for (const p of prospects) {
     const email = p.email?.toLowerCase();
     
-    if (!email) {
-      skipped.push({ prospectId: p.id, reason: "Email vacío" });
+    if (!email || !validateEmailSyntax(email)) {
+      skipped.push({ prospectId: p.id, reason: "Email inválido o vacío" });
       continue;
     }
 
