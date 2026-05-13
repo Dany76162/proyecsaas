@@ -6,7 +6,33 @@ import {
   ManualProspectStatus,
   Prisma
 } from "@prisma/client";
+import { getOpenAIClient, OPENAI_MODEL } from "@/modules/agents/service";
+import crypto from "crypto";
 import { canGenerateEmail } from "./service";
+
+// ─── Unsubscribe Security ──────────────────────────────────────────────────
+
+const UNSUBSCRIBE_SECRET = process.env.AUTH_SESSION_SECRET || "default-secret-for-prospecting-unsubscribe";
+
+export function generateUnsubscribeToken(prospectId: string) {
+  // Simple HMAC token for security
+  const hash = crypto.createHmac("sha256", UNSUBSCRIBE_SECRET)
+    .update(prospectId)
+    .digest("hex");
+  return `${prospectId}.${hash.substring(0, 16)}`;
+}
+
+export function verifyUnsubscribeToken(token: string) {
+  const [prospectId, hash] = token.split(".");
+  if (!prospectId || !hash) return null;
+  
+  const expectedHash = crypto.createHmac("sha256", UNSUBSCRIBE_SECRET)
+    .update(prospectId)
+    .digest("hex")
+    .substring(0, 16);
+    
+  return hash === expectedHash ? prospectId : null;
+}
 
 export async function getCampaigns() {
   return prisma.prospectingCampaign.findMany({
@@ -157,10 +183,13 @@ export async function sendTestEmail(campaignId: string, testEmail: string, userI
     throw new Error("Campaña incompleta para enviar prueba");
   }
 
+  const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://raicespilot.com"}/unsubscribe/test-token`;
+  const bodyWithFooter = `${campaign.body}\n\n---\n[PRUEBA] Enlace de desuscripción: ${unsubscribeUrl}`;
+
   const result = await sendEmailViaMailgun({
     to: testEmail,
     subject: `[PRUEBA] ${campaign.subject}`,
-    body: campaign.body,
+    body: bodyWithFooter,
     tags: ["prospecting-test"],
     metadata: { campaignId: campaign.id, userId: userId || "unknown" }
   });
@@ -200,10 +229,23 @@ export async function processCampaignBatch(campaignId: string, limit: number = 2
   let failed = 0;
 
   for (const recipient of campaign.recipients) {
+    const token = generateUnsubscribeToken(recipient.prospectId);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://raicespilot.com";
+    const unsubscribeUrl = `${appUrl}/unsubscribe/${token}`;
+
+    // Inject variable and footer
+    let finalBody = campaign.body
+      .replace(/{{unsubscribeUrl}}/g, unsubscribeUrl)
+      .replace(/{{companyName}}/g, recipient.prospect.companyName);
+
+    if (!finalBody.includes(unsubscribeUrl)) {
+      finalBody += `\n\n---\nSi no deseas recibir más correos de RaicesPilot, puedes desuscribirte aquí: ${unsubscribeUrl}`;
+    }
+
     const result = await sendEmailViaMailgun({
       to: recipient.email,
       subject: campaign.subject,
-      body: campaign.body,
+      body: finalBody,
       tags: ["prospecting-campaign"],
       metadata: { 
         campaignId: campaign.id, 

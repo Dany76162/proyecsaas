@@ -21,6 +21,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { getOpenAIClient, OPENAI_MODEL } from "@/modules/agents/service";
+import { generateUnsubscribeToken } from "./campaign-service";
 
 // ─── Search API Integration (Serper.dev) ────────────────────────────────────
 
@@ -224,11 +225,15 @@ Devuelve un JSON con:
 
   const content = JSON.parse(response.choices[0].message.content || "{}");
 
+  const token = generateUnsubscribeToken(p.id);
+  const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://raicespilot.com"}/unsubscribe/${token}`;
+  const bodyWithUnsubscribe = `${content.body}\n\n---\nSi no deseas recibir más información, puedes desuscribirte aquí: ${unsubscribeUrl}`;
+
   const draft = await prisma.prospectingMessageDraft.create({
     data: {
       prospectId: p.id,
       subject: content.subject,
-      body: content.body,
+      body: bodyWithUnsubscribe,
       generatedByAgent: true,
       status: "DRAFT"
     }
