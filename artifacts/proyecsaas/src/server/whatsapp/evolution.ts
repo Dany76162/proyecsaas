@@ -21,30 +21,43 @@ export class EvolutionApiError extends Error {
 
 async function request(path: string, options: RequestInit = {}) {
   if (!EVOLUTION_URL || !EVOLUTION_KEY) {
-    throw new EvolutionApiError("Evolution API configuration missing (URL or KEY)");
+    console.error("[EvolutionAPI] Missing configuration: URL or KEY is not set in environment variables.");
+    throw new EvolutionApiError("Configuración de Evolution API faltante (URL o KEY)");
   }
 
   const url = `${EVOLUTION_URL.replace(/\/$/, "")}${path}`;
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "apikey": EVOLUTION_KEY,
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    cache: "no-store",
-  });
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "apikey": EVOLUTION_KEY,
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      cache: "no-store",
+    });
 
-  const data = await response.json().catch(() => null);
+    const data = await response.json().catch(() => null);
 
-  if (!response.ok) {
-    throw new EvolutionApiError(
-      data?.message || `Evolution API error: ${response.status}`,
-      response.status
-    );
+    if (!response.ok) {
+      console.error(`[EvolutionAPI] Error at ${path}:`, {
+        status: response.status,
+        data,
+      });
+      throw new EvolutionApiError(
+        data?.message || `Error del servidor de WhatsApp (${response.status})`,
+        response.status
+      );
+    }
+
+    return data;
+  } catch (error: any) {
+    if (error instanceof EvolutionApiError) throw error;
+    
+    console.error(`[EvolutionAPI] Connection failed at ${path}:`, error.message);
+    throw new EvolutionApiError("No se pudo conectar con el servidor de WhatsApp. Verificá la URL.");
   }
-
-  return data;
 }
 
 /**

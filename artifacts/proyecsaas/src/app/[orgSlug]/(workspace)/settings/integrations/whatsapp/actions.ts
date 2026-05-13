@@ -290,9 +290,12 @@ export async function getEvolutionQrAction(orgSlug: string) {
     });
 
     return { success: true, qrCode: qrData.qrcode?.base64 };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[getEvolutionQrAction] Error:", error);
-    return { success: false, message: "No se pudo generar el código QR." };
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : "No se pudo generar el código QR." 
+    };
   }
 }
 
