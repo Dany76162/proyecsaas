@@ -23,6 +23,8 @@ const PROPERTY_STATUS_CONFIG: Record<string, { label: string; tone: "neutral" | 
   SOLD:      { label: "Vendida",    tone: "info" },
 };
 
+import { OnboardingFooter } from "@/components/workspace/onboarding-footer";
+
 export default async function PropertiesPage({
   params,
 }: {
@@ -217,6 +219,18 @@ export default async function PropertiesPage({
           )}
         </div>
       </SectionCard>
+
+      <div className="h-24" />
+
+      <OnboardingFooter
+        orgSlug={orgSlug}
+        stepKey="properties"
+        stepNumber={4}
+        title="Agregar / revisar propiedades"
+        description="Asegurá tu inventario. Podés sincronizar automáticamente o cargar a mano."
+        nextLabel="Continuar al paso 5"
+        nextRoute={`/${orgSlug}/agents`}
+      />
     </>
   );
 }

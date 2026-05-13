@@ -16,6 +16,8 @@ function AgentStatusBadge({ status }: { status: AgentSummary["status"] }) {
   return <StatusBadge label={STATUS_LABELS[status]} tone={tone} />;
 }
 
+import { OnboardingFooter } from "@/components/workspace/onboarding-footer";
+
 export default async function AgentsPage({
   params,
 }: {
@@ -171,6 +173,18 @@ export default async function AgentsPage({
           ))}
         </div>
       </SectionCard>
+
+      <div className="h-24" />
+
+      <OnboardingFooter
+        orgSlug={orgSlug}
+        stepKey="agents"
+        stepNumber={5}
+        title="Activar agentes / automatizaciones"
+        description="Configurá tus agentes IA para que atiendan las 24hs. ¡Ya estás casi listo!"
+        nextLabel="Finalizar Onboarding"
+        nextRoute={`/${orgSlug}/onboarding`}
+      />
     </>
   );
 }

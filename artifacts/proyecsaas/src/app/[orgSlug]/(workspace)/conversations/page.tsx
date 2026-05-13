@@ -6,6 +6,8 @@ import { ConversationInbox } from "@/components/crm/conversation-inbox";
 import { listOrganizationConversations } from "@/modules/conversations/service";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 
+import { OnboardingFooter } from "@/components/workspace/onboarding-footer";
+
 export default async function ConversationsPage({
   params,
   searchParams,
@@ -82,6 +84,18 @@ export default async function ConversationsPage({
         orgSlug={orgSlug}
         currentCursor={cursor}
         initialSelectedId={selected}
+      />
+
+      <div className="h-24" />
+
+      <OnboardingFooter
+        orgSlug={orgSlug}
+        stepKey="conversations"
+        stepNumber={3}
+        title="Abrir conversaciones"
+        description="Acá es donde ocurre la magia. Revisá cómo la IA atiende a tus clientes."
+        nextLabel="Continuar al paso 4"
+        nextRoute={`/${orgSlug}/properties`}
       />
     </>
   );
