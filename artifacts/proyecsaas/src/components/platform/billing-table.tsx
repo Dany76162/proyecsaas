@@ -83,7 +83,7 @@ const formatARS = (cents: number) =>
   }).format(cents / 100);
 
 const formatDate = (d: Date | null) => {
-  if (!d) return "â€”";
+  if (!d) return "—";
   return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" });
 };
 

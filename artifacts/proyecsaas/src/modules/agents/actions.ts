@@ -312,8 +312,21 @@ export async function createAgent(orgSlug: string, data: any) {
 
   const agent = await prisma.aiAgent.create({
     data: {
-      ...data,
       organizationId: membership.organization.id,
+      name: data.name,
+      status: data.status || "ACTIVE",
+      tone: data.tone || "FRIENDLY",
+      persona: data.persona,
+      language: data.language || "Spanish",
+      whatsappChannelId: data.whatsappChannelId,
+      zoneFilters: data.zoneFilters || [],
+      propertyTypes: data.propertyTypes || [],
+      minBudget: data.minBudget,
+      maxBudget: data.maxBudget,
+      escalateAfterMessages: data.escalateAfterMessages || 5,
+      escalateOnKeywords: data.escalateOnKeywords || [],
+      humanHandoffMessage: data.humanHandoffMessage,
+      isActive: data.isActive ?? true,
     },
   });
 
@@ -327,7 +340,22 @@ export async function updateAgent(orgSlug: string, agentId: string, data: any) {
 
   const agent = await prisma.aiAgent.update({
     where: { id: agentId, organizationId: membership.organization.id },
-    data,
+    data: {
+      name: data.name,
+      status: data.status,
+      tone: data.tone,
+      persona: data.persona,
+      language: data.language,
+      whatsappChannelId: data.whatsappChannelId,
+      zoneFilters: data.zoneFilters,
+      propertyTypes: data.propertyTypes,
+      minBudget: data.minBudget,
+      maxBudget: data.maxBudget,
+      escalateAfterMessages: data.escalateAfterMessages,
+      escalateOnKeywords: data.escalateOnKeywords,
+      humanHandoffMessage: data.humanHandoffMessage,
+      isActive: data.isActive,
+    },
   });
 
   revalidatePath(`/${orgSlug}/agents`);

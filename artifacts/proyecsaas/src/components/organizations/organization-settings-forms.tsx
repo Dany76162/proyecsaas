@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,7 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { cn } from "@/lib/utils";
 
-// â”€â”€â”€ Shared UI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Shared UI helpers -------------------------------------------------------
 
 function Field({
   label,
@@ -62,7 +62,7 @@ function SaveFeedback({ error, saved }: { error: string; saved: boolean }) {
   return null;
 }
 
-// â”€â”€â”€ OrganizationProfileForm â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- OrganizationProfileForm -------------------------------------------------
 
 export type OrgContactInitial = {
   name: string;
@@ -219,7 +219,7 @@ export function OrganizationProfileForm({
             value={businessHours}
             onChange={(e) => setBusinessHours(e.target.value)}
             maxLength={200}
-            placeholder="Ej: Lunâ€“Vie 9â€“18 h"
+            placeholder="Ej: Lun-Vie 9-18 h"
           />
         </Field>
       </div>
@@ -240,7 +240,7 @@ export function OrganizationProfileForm({
   );
 }
 
-// â”€â”€â”€ PropertySourceForm â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- PropertySourceForm ------------------------------------------------------
 
 export type PropertySourceInitial = {
   propertySourceUrl: string | null;
@@ -259,7 +259,7 @@ const SOURCE_STATUS_UI: Record<string, { label: string; cls: string }> = {
 };
 
 function formatDate(iso: string | null): string {
-  if (!iso) return "â€”";
+  if (!iso) return "—";
   return new Date(iso).toLocaleDateString("es-AR", {
     day: "2-digit",
     month: "2-digit",

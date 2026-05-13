@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { MembershipRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -26,30 +26,38 @@ export async function createPropertyAction(
   orgSlug: string,
   input: unknown,
 ): Promise<ActionResult> {
-  const { membership } = await requireOrganizationMembership(orgSlug);
-  assertMinimumRole(membership.role, MembershipRole.AGENT);
+  try {
+    const { membership } = await requireOrganizationMembership(orgSlug);
+    assertMinimumRole(membership.role, MembershipRole.AGENT);
 
-  const parsed = createPropertySchema.safeParse(input);
+    const parsed = createPropertySchema.safeParse(input);
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: "Los datos de la propiedad son inválidos.",
+        fieldErrors: parsed.error.flatten().fieldErrors,
+      };
+    }
+
+    const property = await prisma.property.create({
+      data: {
+        organizationId: membership.organization.id,
+        ...parsed.data,
+        status: "DRAFT",
+        publicVisible: false,
+      },
+      select: { id: true },
+    });
+
+    return { success: true, message: "Propiedad creada.", data: { propertyId: property.id } };
+  } catch (error: any) {
+    console.error("[createPropertyAction] Error:", error);
     return {
       success: false,
-      message: "Property input is invalid.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
+      message: error.message || "Error inesperado al crear la propiedad.",
     };
   }
-
-  const property = await prisma.property.create({
-    data: {
-      organizationId: membership.organization.id,
-      ...parsed.data,
-      status: "DRAFT",
-      publicVisible: false,
-    },
-    select: { id: true },
-  });
-
-  return { success: true, message: "Property created.", data: { propertyId: property.id } };
 }
 
 function redirectToPropertyResult(

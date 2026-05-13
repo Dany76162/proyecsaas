@@ -766,16 +766,35 @@ export async function getAgentDetail(orgId: string, agentId: string) {
 }
 
 export async function getAvailableChannels(orgId: string) {
-  return prisma.whatsAppChannel.findMany({
-    where: { organizationId: orgId, isActive: true },
-    select: {
-      id: true,
-      name: true,
-      displayPhoneNumber: true,
-      verifiedDisplayName: true,
-      status: true,
-    },
-  });
+  try {
+    return await prisma.whatsAppChannel.findMany({
+      where: { organizationId: orgId, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        displayPhoneNumber: true,
+        verifiedDisplayName: true,
+        status: true,
+      },
+    });
+  } catch (error) {
+    console.error("[getAvailableChannels] Error with isActive filter, trying without it:", error);
+    try {
+      return await prisma.whatsAppChannel.findMany({
+        where: { organizationId: orgId },
+        select: {
+          id: true,
+          name: true,
+          displayPhoneNumber: true,
+          verifiedDisplayName: true,
+          status: true,
+        },
+      });
+    } catch (finalError) {
+      console.error("[getAvailableChannels] Final failure:", finalError);
+      return [];
+    }
+  }
 }
 
 export function getOpenAIClient() {

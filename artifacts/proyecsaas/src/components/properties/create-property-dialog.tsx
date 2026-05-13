@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
     setIsOpen(false);
   }
 
-  // â”€â”€â”€ Manual creation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Manual creation -----------------------------------------------------
   async function handleManualSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -53,16 +53,20 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
 
     startTransition(async () => {
       setError(null);
-      const result = await createPropertyAction(orgSlug, data);
-      if (result.success && result.data?.propertyId) {
-        router.push(`/${orgSlug}/properties/${result.data.propertyId}?success=property-created`);
-      } else {
-        setError(result.message || "Error al guardar la propiedad.");
+      try {
+        const result = await createPropertyAction(orgSlug, data);
+        if (result.success && result.data?.propertyId) {
+          router.push(`/${orgSlug}/properties/${result.data.propertyId}?success=property-created`);
+        } else {
+          setError(result.message || "Error al guardar la propiedad.");
+        }
+      } catch (err: any) {
+        setError(err.message || "Ocurrió un error inesperado.");
       }
     });
   }
 
-  // â”€â”€â”€ Sync from URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Sync from URL -------------------------------------------------------
   async function handleSyncSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -119,7 +123,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
       </Button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md overflow-hidden rounded-[1.5rem] bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/40 px-6 py-4">
@@ -137,7 +141,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
               </button>
             </div>
 
-            {/* â”€â”€ Mode Selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* --- Mode Selector ------------------------------------------- */}
             {mode === "selector" && (
               <div className="px-6 py-6 flex flex-col gap-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
@@ -182,7 +186,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
               </div>
             )}
 
-            {/* â”€â”€ Manual form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* --- Manual form ----------------------------------------------- */}
             {mode === "manual" && (
               <div className="px-6 py-6">
                 <p className="text-xs text-slate-500 leading-relaxed mb-6">
@@ -224,7 +228,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                       onClick={() => setMode("selector")}
                       className="text-xs font-bold uppercase tracking-widest"
                     >
-                      â† Volver
+                      Volver
                     </Button>
                     <Button
                       type="submit"
@@ -239,7 +243,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
               </div>
             )}
 
-            {/* â”€â”€ Sync from URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* --- Sync from URL ----------------------------------------- */}
             {mode === "import" && (
               <div className="px-6 py-6">
                 <p className="text-xs text-slate-500 leading-relaxed mb-6">
@@ -282,7 +286,7 @@ export function CreatePropertyDialog({ orgSlug }: { orgSlug: string }) {
                       disabled={syncStatus === "loading"}
                       className="text-xs font-bold uppercase tracking-widest"
                     >
-                      â† Volver
+                      Volver
                     </Button>
                     <Button
                       type="submit"

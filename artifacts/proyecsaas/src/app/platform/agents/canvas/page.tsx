@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { Activity, ArrowRight, CheckCircle2, ClipboardList, FileText, Plus } from "lucide-react";
 
 import { AgentCanvas } from "@/components/agents/agent-canvas";
@@ -28,7 +28,7 @@ export default async function PlatformAgentsCanvasPage() {
 
   return (
     <div className="flex flex-col" style={{ height: "calc(100dvh - 3.5rem)" }}>
-      {/* â”€â”€ Header section with its own padding â”€â”€ */}
+      {/* -- Header section with its own padding -- */}
       <div className="shrink-0 space-y-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
@@ -107,7 +107,7 @@ export default async function PlatformAgentsCanvasPage() {
         </div>
       </div>
 
-      {/* â”€â”€ Canvas fills ALL remaining space â”€â”€ */}
+      {/* -- Canvas fills ALL remaining space -- */}
       <div className="min-h-0 flex-1">
         <AgentCanvas data={data} />
       </div>

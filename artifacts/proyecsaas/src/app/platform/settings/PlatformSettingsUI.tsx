@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useTransition } from "react";
 import {
@@ -18,7 +18,7 @@ import {
 } from "./actions/settings-actions";
 import { cn } from "@/lib/utils";
 
-// â”€â”€â”€ Editable Setting Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Editable Setting Row ----------------------------------------------------
 
 function EditableSetting({
   label,
@@ -93,7 +93,7 @@ function EditableSetting({
   );
 }
 
-// â”€â”€â”€ Status Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Status Row --------------------------------------------------------------
 
 function StatusRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
@@ -115,7 +115,7 @@ function StatusRow({ label, value, ok }: { label: string; value: string; ok: boo
   );
 }
 
-// â”€â”€â”€ Delegated Admin Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Delegated Admin Section -------------------------------------------------
 
 function DelegatedAdminSection({
   initial,
@@ -246,7 +246,7 @@ function DelegatedAdminSection({
   );
 }
 
-// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Main Component ----------------------------------------------------------
 
 interface Settings {
   waContact: string;

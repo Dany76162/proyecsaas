@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 
 export async function GET() {
@@ -26,7 +26,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      status: "AgentOS MVP 1 - AUDITORÍA COMPLETADA âœ…",
+      status: "AgentOS MVP 1 - AUDITORÍA COMPLETADA ✅",
       agents: {
         count: agents.length,
         list: agents

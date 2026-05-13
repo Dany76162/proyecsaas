@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
@@ -36,7 +36,7 @@ import { HandoffBanner } from "@/components/inbox/handoff-banner";
 import { SectionCard } from "@/components/workspace/section-card";
 import { EmptyState } from "@/components/ui/empty-state";
 
-// â”€â”€â”€ types & helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- types & helpers ---------------------------------------------------------
 
 type FilterKey = "all" | "followup" | "failed";
 
@@ -74,7 +74,7 @@ function ConversationDetail({
 
   return (
     <div className="flex h-full flex-col gap-5 overflow-hidden">
-      {/* â”€â”€â”€ Header: Mesa de Operación â”€â”€â”€ */}
+      {/* --- Header: Mesa de Operación --- */}
       <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-6 py-4 shadow-sm">
         <div className="flex items-center gap-4 min-w-0">
           <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 font-bold">
@@ -118,7 +118,7 @@ function ConversationDetail({
       </div>
 
       <div className="flex flex-1 gap-5 min-h-0 overflow-hidden">
-        {/* â”€â”€â”€ Chat Area â”€â”€â”€ */}
+        {/* --- Chat Area --- */}
         <div className="flex flex-1 flex-col gap-4 min-w-0">
           
           <HandoffBanner 
@@ -230,7 +230,7 @@ function ConversationDetail({
           </form>
         </div>
 
-        {/* â”€â”€â”€ Sidebar: Intelligence Center â”€â”€â”€ */}
+        {/* --- Sidebar: Intelligence Center --- */}
         <aside className="w-80 shrink-0 flex flex-col gap-5 overflow-y-auto custom-scrollbar">
           <IaAssistantPanel 
             summary={conv.automationSummary}
@@ -308,7 +308,7 @@ function ConversationDetail({
   );
 }
 
-// â”€â”€â”€ main inbox â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- main inbox --------------------------------------------------------------
 
 export function ConversationInbox({
   conversations,
@@ -351,7 +351,7 @@ export function ConversationInbox({
 
   return (
     <div className="grid h-[calc(100vh-160px)] min-h-[500px] gap-4 lg:grid-cols-[340px_1fr]">
-      {/* â”€â”€â”€ List Panel â”€â”€â”€ */}
+      {/* --- List Panel --- */}
       <div className={cn("flex flex-col gap-3 overflow-hidden", mobileShowDetail ? "hidden lg:flex" : "flex")}>
         {/* Navigation Filters */}
         <div className="flex gap-1 rounded-xl bg-slate-100/50 p-1 ring-1 ring-slate-200/50">
@@ -420,14 +420,14 @@ export function ConversationInbox({
         </div>
       </div>
 
-      {/* â”€â”€â”€ Detail Panel â”€â”€â”€ */}
+      {/* --- Detail Panel --- */}
       <div className={cn(
         "overflow-hidden rounded-3xl border border-slate-200 bg-slate-50/30 p-4 sm:p-8 shadow-inner",
         !mobileShowDetail ? "hidden lg:block" : "block"
       )}>
         {selected ? (
           <>
-            {/* Back button â€” mobile only */}
+            {/* Back button — mobile only */}
             <button
               type="button"
               onClick={() => setMobileShowDetail(false)}

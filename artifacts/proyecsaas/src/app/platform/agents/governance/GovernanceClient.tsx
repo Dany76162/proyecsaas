@@ -127,7 +127,7 @@ export default function GovernanceClient({ initialOverview }: { initialOverview:
                       <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
                         <span className="text-slate-400">Tareas Hoy</span>
                         <span className={agent.tasksToday >= (agent.policy.maxTasksPerDay || 0) ? "text-red-600" : "text-slate-600"}>
-                          {agent.tasksToday} / {agent.policy.maxTasksPerDay || "âˆž"}
+                          {agent.tasksToday} / {agent.policy.maxTasksPerDay || "∞"}
                         </span>
                       </div>
                       <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -144,7 +144,7 @@ export default function GovernanceClient({ initialOverview }: { initialOverview:
                       <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
                         <span className="text-slate-400">Runs Hoy</span>
                         <span className={agent.runsToday >= (agent.policy.maxRunsPerDay || 0) ? "text-red-600" : "text-slate-600"}>
-                          {agent.runsToday} / {agent.policy.maxRunsPerDay || "âˆž"}
+                          {agent.runsToday} / {agent.policy.maxRunsPerDay || "∞"}
                         </span>
                       </div>
                       <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
