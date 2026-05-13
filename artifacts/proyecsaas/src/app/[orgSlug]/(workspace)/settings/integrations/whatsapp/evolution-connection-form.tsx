@@ -1,0 +1,156 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { 
+  getEvolutionQrAction, 
+  checkEvolutionStatusAction, 
+  disconnectEvolutionAction 
+} from "./actions";
+
+type Props = {
+  orgSlug: string;
+  initialStatus?: string;
+};
+
+export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }: Props) {
+  const [status, setStatus] = useState(initialStatus);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchQr = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getEvolutionQrAction(orgSlug);
+      if (result.success && result.qrCode) {
+        setQrCode(result.qrCode);
+      } else {
+        setError(result.message || "Error al obtener QR");
+      }
+    } catch (err) {
+      setError("Error de conexión");
+    } finally {
+      setLoading(false);
+    }
+  }, [orgSlug]);
+
+  // Polling for connection status
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (status !== "ACTIVE" && qrCode) {
+      interval = setInterval(async () => {
+        const result = await checkEvolutionStatusAction(orgSlug);
+        if (result.success && result.status === "CONNECTED") {
+          setStatus("ACTIVE");
+          setQrCode(null);
+          clearInterval(interval);
+        }
+      }, 5000);
+    }
+
+    return () => clearInterval(interval);
+  }, [status, qrCode, orgSlug]);
+
+  async function handleDisconnect() {
+    if (!confirm("¿Estás seguro de desconectar tu número?")) return;
+    setLoading(true);
+    try {
+      await disconnectEvolutionAction(orgSlug);
+      setStatus("INACTIVE");
+      setQrCode(null);
+    } catch (err) {
+      setError("Error al desconectar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (status === "ACTIVE") {
+    return (
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-soft">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-emerald-950">WhatsApp Conectado</p>
+              <p className="text-xs text-emerald-700">Tu número personal está vinculado y la IA está activa.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleDisconnect}
+            disabled={loading}
+            className="rounded-xl bg-white border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition shadow-sm"
+          >
+            {loading ? "Procesando..." : "Desconectar número"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {!qrCode ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center">
+          <div className="mx-auto h-16 w-16 rounded-full bg-white border border-slate-100 flex items-center justify-center text-2xl mb-4 shadow-sm">📱</div>
+          <h3 className="text-lg font-bold text-slate-900">Conectá tu propio WhatsApp</h3>
+          <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">
+            Escaneá un código QR para que la IA responda desde tu propio número. Sin trámites en Meta Business.
+          </p>
+          <button
+            onClick={fetchQr}
+            disabled={loading}
+            className="mt-6 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-8 py-3 text-sm font-bold text-white shadow-soft transition hover:bg-slate-800 disabled:opacity-50"
+          >
+            {loading ? "Generando QR..." : "Vincular con QR"}
+          </button>
+          {error && <p className="mt-4 text-xs font-bold text-rose-600">{error}</p>}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-200 bg-white p-8">
+          <div className="grid gap-8 md:grid-cols-[auto_1fr] items-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="p-4 bg-white rounded-3xl border-4 border-slate-50 shadow-soft">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrCode} alt="WhatsApp QR Code" className="w-48 h-48 block" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Esperando escaneo...</span>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-xl font-bold text-slate-900">Pasos para vincular:</h4>
+              <ol className="space-y-3">
+                <li className="flex gap-3 text-sm text-slate-600">
+                  <span className="flex-shrink-0 h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">1</span>
+                  Abrí WhatsApp en tu teléfono.
+                </li>
+                <li className="flex gap-3 text-sm text-slate-600">
+                  <span className="flex-shrink-0 h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">2</span>
+                  Tocá Menú o Configuración y seleccioná <b>Dispositivos vinculados</b>.
+                </li>
+                <li className="flex gap-3 text-sm text-slate-600">
+                  <span className="flex-shrink-0 h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">3</span>
+                  Tocá <b>Vincular un dispositivo</b> y apunta tu cámara a este código.
+                </li>
+              </ol>
+              <button
+                onClick={() => setQrCode(null)}
+                className="mt-4 text-xs font-bold text-slate-400 hover:text-slate-600 underline"
+              >
+                Cancelar y volver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

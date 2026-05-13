@@ -1,4 +1,4 @@
-﻿import {
+import {
   ConversationStatus,
   FollowUpCategory,
   LeadStatus,
@@ -62,9 +62,11 @@ import { ACTIVATION_EVENTS, trackActivationEventOnce } from "@/server/activation
 
 export type WhatsAppInboundJobData = {
   source: "whatsapp";
+  provider?: "whatsapp" | "evolution";
   organizationId?: string;
   channel: {
-    phoneNumberId: string;
+    phoneNumberId?: string;
+    instanceName?: string;
     accessToken?: string;
   };
   contact: {
@@ -82,7 +84,9 @@ export type WhatsAppInboundJobData = {
 
 type AutomationChannelContext = {
   organizationId: string;
-  phoneNumberId: string;
+  provider: "whatsapp" | "evolution";
+  phoneNumberId?: string;
+  instanceName?: string;
   accessToken?: string;
 };
 
@@ -136,17 +140,23 @@ export async function processWhatsAppInboundJob(
   options: ProcessWhatsAppInboundOptions = {},
 ) {
   const phoneNumberId = data.channel.phoneNumberId;
+  const instanceName = data.channel.instanceName;
 
   // 1. Resolve Channel (Web o DB)
-  const channel =
-    options.channelOverride && options.channelOverride.phoneNumberId === phoneNumberId
-      ? options.channelOverride
-      : await resolveInboundByPhoneNumberId(prisma, phoneNumberId);
+  let channel = options.channelOverride;
+
+  if (!channel) {
+    if (instanceName) {
+      channel = await resolveDatabaseChannelByInstanceName(prisma, instanceName);
+    } else if (phoneNumberId) {
+      channel = await resolveInboundByPhoneNumberId(prisma, phoneNumberId);
+    }
+  }
 
   if (!channel) {
     throw new ConversationWorkerError(
       "missing-channel",
-      `No WhatsApp channel configured for phone number ID: ${phoneNumberId}`,
+      `No WhatsApp channel configured for ${instanceName ? `instance: ${instanceName}` : `phone number ID: ${phoneNumberId}`}`,
     );
   }
 
@@ -596,8 +606,9 @@ export async function processWhatsAppInboundJob(
         recipientPhone: participantPhone,
         senderKind: "automation" as const,
         channel: {
-          provider: "whatsapp" as const,
+          provider: channel.provider,
           phoneNumberId: channel.phoneNumberId,
+          instanceName: channel.instanceName,
           accessToken: channel.accessToken,
         },
       };
@@ -643,6 +654,7 @@ export async function processWhatsAppInboundJob(
           reason: deliveryResult.reason,
           deliveryMode: options.deliveryMode ?? "runtime",
           phoneNumberId: channel.phoneNumberId,
+          instanceName: channel.instanceName,
         }),
       );
     }

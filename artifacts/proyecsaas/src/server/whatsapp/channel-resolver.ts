@@ -1,4 +1,4 @@
-﻿import {
+import {
   Prisma,
   PrismaClient,
 } from "@prisma/client";
@@ -12,9 +12,10 @@ import { decryptToken } from "@/server/security/token-encryption";
 
 export type ResolvedWhatsAppChannel = {
   source: "legacy-env" | "database";
-  provider: "whatsapp";
+  provider: "whatsapp" | "evolution";
   organizationId: string;
-  phoneNumberId: string;
+  phoneNumberId?: string;
+  instanceName?: string;
   accessToken?: string;
   channelId?: string;
   status?: WhatsAppChannelStatus;
@@ -29,7 +30,7 @@ function logResolutionEventOnce(
   event: string,
   payload: Record<string, string | null | undefined>,
 ) {
-  const key = `${event}:${payload.phoneNumberId ?? "unknown"}:${payload.organizationId ?? "unknown"}:${payload.reason ?? "none"}`;
+  const key = `${event}:${payload.phoneNumberId ?? payload.instanceName ?? "unknown"}:${payload.organizationId ?? "unknown"}:${payload.reason ?? "none"}`;
 
   if (loggedResolutionEvents.has(key)) {
     return;
@@ -85,6 +86,7 @@ async function resolveDatabaseChannelByPhoneNumberId(
         status: true,
         verificationStatus: true,
         phoneNumberId: true,
+        instanceName: true,
         wabaId: true,
         displayPhoneNumber: true,
         accessTokenEncrypted: true,
@@ -111,21 +113,43 @@ async function resolveDatabaseChannelByPhoneNumberId(
       return null;
     }
 
-    if (channel.provider !== "WHATSAPP_CLOUD") {
-      logResolutionEventOnce("db-invalid", {
-        phoneNumberId,
-        organizationId: channel.organizationId,
-        reason: "unsupported-provider",
-      });
-
-      return null;
-    }
-
     if (channel.status !== "ACTIVE") {
       logResolutionEventOnce("db-invalid", {
         phoneNumberId,
         organizationId: channel.organizationId,
         reason: "channel-not-active",
+      });
+
+      return null;
+    }
+
+    if (channel.provider === "EVOLUTION_API") {
+      if (!channel.instanceName) {
+        logResolutionEventOnce("db-invalid", {
+          phoneNumberId,
+          organizationId: channel.organizationId,
+          reason: "missing-instance-name",
+        });
+        return null;
+      }
+
+      return {
+        source: "database",
+        provider: "evolution",
+        organizationId: channel.organizationId,
+        instanceName: channel.instanceName,
+        channelId: channel.id,
+        status: channel.status,
+        verificationStatus: channel.verificationStatus,
+        displayPhoneNumber: channel.displayPhoneNumber,
+      };
+    }
+
+    if (channel.provider !== "WHATSAPP_CLOUD") {
+      logResolutionEventOnce("db-invalid", {
+        phoneNumberId,
+        organizationId: channel.organizationId,
+        reason: "unsupported-provider",
       });
 
       return null;
@@ -295,4 +319,50 @@ export async function resolveInboundByPhoneNumberId(
   });
 
   return null;
+}
+
+export async function resolveDatabaseChannelByInstanceName(
+  prisma: PrismaClient | Prisma.TransactionClient,
+  instanceName: string,
+): Promise<ResolvedWhatsAppChannel | null> {
+  try {
+    const channel = await prisma.whatsAppChannel.findUnique({
+      where: {
+        instanceName,
+      },
+      select: {
+        id: true,
+        organizationId: true,
+        provider: true,
+        status: true,
+        verificationStatus: true,
+        phoneNumberId: true,
+        instanceName: true,
+        displayPhoneNumber: true,
+        organization: {
+          select: {
+            id: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!channel || !channel.organization?.isActive || channel.status !== "ACTIVE") {
+      return null;
+    }
+
+    return {
+      source: "database",
+      provider: "evolution",
+      organizationId: channel.organizationId,
+      instanceName: channel.instanceName!,
+      channelId: channel.id,
+      status: channel.status,
+      verificationStatus: channel.verificationStatus,
+      displayPhoneNumber: channel.displayPhoneNumber,
+    };
+  } catch (error) {
+    return null;
+  }
 }

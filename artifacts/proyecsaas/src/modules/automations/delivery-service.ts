@@ -1,5 +1,6 @@
-﻿import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
+import { sendEvolutionMessage } from "@/server/whatsapp/evolution";
 
 export type PersistedOutboundResponse = {
   organizationId: string;
@@ -10,8 +11,9 @@ export type PersistedOutboundResponse = {
   senderKind?: "automation" | "human";
   deliveryLink?: string;
   channel: {
-    provider: "whatsapp";
-    phoneNumberId: string;
+    provider: "whatsapp" | "evolution";
+    phoneNumberId?: string;
+    instanceName?: string;
     accessToken?: string;
   };
 };
@@ -23,8 +25,9 @@ export type DeliveryAttemptResult = {
   awaitingRealDelivery: boolean;
   attemptedAt: string | null;
   channel: {
-    provider: "whatsapp";
-    phoneNumberId: string;
+    provider: "whatsapp" | "evolution";
+    phoneNumberId?: string;
+    instanceName?: string;
   };
   providerMessageId?: string;
 };
@@ -133,7 +136,23 @@ export async function attemptWhatsAppOutboundDelivery(
   prisma: PrismaClient | Prisma.TransactionClient,
   input: PersistedOutboundResponse,
 ): Promise<DeliveryAttemptResult> {
-  if (!input.channel.phoneNumberId) {
+  const isEvolution = input.channel.provider === "evolution";
+
+  if (isEvolution && !input.channel.instanceName) {
+    return {
+      deliveryStatus: "skipped",
+      sendAttempted: false,
+      reason: "missing-instance-name",
+      awaitingRealDelivery: true,
+      attemptedAt: null,
+      channel: {
+        provider: "evolution",
+        instanceName: "",
+      },
+    };
+  }
+
+  if (!isEvolution && !input.channel.phoneNumberId) {
     return {
       deliveryStatus: "skipped",
       sendAttempted: false,
@@ -141,7 +160,7 @@ export async function attemptWhatsAppOutboundDelivery(
       awaitingRealDelivery: true,
       attemptedAt: null,
       channel: {
-        provider: input.channel.provider,
+        provider: "whatsapp",
         phoneNumberId: "",
       },
     };
@@ -157,6 +176,7 @@ export async function attemptWhatsAppOutboundDelivery(
       channel: {
         provider: input.channel.provider,
         phoneNumberId: input.channel.phoneNumberId,
+        instanceName: input.channel.instanceName,
       },
     };
   }
@@ -171,10 +191,61 @@ export async function attemptWhatsAppOutboundDelivery(
       channel: {
         provider: input.channel.provider,
         phoneNumberId: input.channel.phoneNumberId,
+        instanceName: input.channel.instanceName,
       },
     };
   }
 
+  const attemptedAt = new Date().toISOString();
+
+  // FLOW FOR EVOLUTION API (QR)
+  if (isEvolution) {
+    try {
+      const data = await sendEvolutionMessage(
+        input.channel.instanceName!,
+        input.recipientPhone,
+        input.responseText
+      );
+
+      const deliveryResult: DeliveryAttemptResult = {
+        deliveryStatus: "delivered",
+        sendAttempted: true,
+        reason: "evolution-accepted",
+        awaitingRealDelivery: false,
+        attemptedAt,
+        channel: {
+          provider: "evolution",
+          instanceName: input.channel.instanceName,
+        },
+        providerMessageId: data?.key?.id,
+      };
+
+      if (input.senderKind === "human") {
+        await resolveConversationFollowUp(prisma, {
+          organizationId: input.organizationId,
+          conversationId: input.conversationId,
+          resolutionMethod: "AUTO_REPLY",
+          link: input.deliveryLink,
+        });
+      }
+
+      return deliveryResult;
+    } catch (error) {
+      return {
+        deliveryStatus: "failed",
+        sendAttempted: true,
+        reason: error instanceof Error ? error.message : "evolution-request-failed",
+        awaitingRealDelivery: false,
+        attemptedAt,
+        channel: {
+          provider: "evolution",
+          instanceName: input.channel.instanceName,
+        },
+      };
+    }
+  }
+
+  // FLOW FOR META CLOUD API (EXISTING)
   if (!input.channel.accessToken) {
     return {
       deliveryStatus: "skipped",
@@ -183,7 +254,7 @@ export async function attemptWhatsAppOutboundDelivery(
       awaitingRealDelivery: true,
       attemptedAt: null,
       channel: {
-        provider: input.channel.provider,
+        provider: "whatsapp",
         phoneNumberId: input.channel.phoneNumberId,
       },
     };
@@ -195,7 +266,6 @@ export async function attemptWhatsAppOutboundDelivery(
   }, DELIVERY_TIMEOUT_MS);
 
   const finalTo = normalizeWhatsAppRecipientPhone(input.recipientPhone);
-  const attemptedAt = new Date().toISOString();
 
   try {
     const response = await fetch(
@@ -248,7 +318,7 @@ export async function attemptWhatsAppOutboundDelivery(
         awaitingRealDelivery: false,
         attemptedAt,
         channel: {
-          provider: input.channel.provider,
+          provider: "whatsapp",
           phoneNumberId: input.channel.phoneNumberId,
         },
       };
@@ -261,7 +331,7 @@ export async function attemptWhatsAppOutboundDelivery(
       awaitingRealDelivery: false,
       attemptedAt,
       channel: {
-        provider: input.channel.provider,
+        provider: "whatsapp",
         phoneNumberId: input.channel.phoneNumberId,
       },
       providerMessageId: payload?.messages?.[0]?.id,

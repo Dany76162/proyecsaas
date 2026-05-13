@@ -12,6 +12,12 @@ import {
   MetaWhatsAppValidationError,
   validateWhatsAppCloudNumber,
 } from "@/server/whatsapp/meta";
+import { 
+  createEvolutionInstance, 
+  getEvolutionQrCode, 
+  getEvolutionInstanceStatus,
+  logoutEvolutionInstance 
+} from "@/server/whatsapp/evolution";
 
 export type WhatsAppConnectionActionState = {
   success: boolean;
@@ -248,5 +254,104 @@ export async function requestWhatsAppConnectionAction(
       success: false,
       message: "No se pudo enviar la solicitud. Intentá de nuevo más tarde.",
     };
+  }
+}
+
+// --- Evolution API (QR Scan) Actions ---
+
+export async function getEvolutionQrAction(orgSlug: string) {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+  const organizationId = membership.organization.id;
+  const instanceName = `org_${orgSlug.replace(/[^a-z0-9]/g, "")}`;
+
+  try {
+    // 1. Ensure instance exists
+    await createEvolutionInstance(instanceName);
+
+    // 2. Fetch QR
+    const qrData = await getEvolutionQrCode(instanceName);
+
+    // 3. Upsert channel record in DB (inactive until connected)
+    await prisma.whatsAppChannel.upsert({
+      where: { instanceName },
+      update: { 
+        status: "INACTIVE",
+        provider: "EVOLUTION_API" 
+      },
+      create: {
+        organizationId,
+        instanceName,
+        phoneNumberId: `evolution_${instanceName}`, // Fake unique phone id
+        provider: "EVOLUTION_API",
+        status: "INACTIVE",
+        isPrimary: false
+      }
+    });
+
+    return { success: true, qrCode: qrData.qrcode?.base64 };
+  } catch (error) {
+    console.error("[getEvolutionQrAction] Error:", error);
+    return { success: false, message: "No se pudo generar el código QR." };
+  }
+}
+
+export async function checkEvolutionStatusAction(orgSlug: string) {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  const instanceName = `org_${orgSlug.replace(/[^a-z0-9]/g, "")}`;
+
+  try {
+    const status = await getEvolutionInstanceStatus(instanceName);
+    
+    if (status === "CONNECTED") {
+      // Update DB if connected
+      await prisma.whatsAppChannel.update({
+        where: { instanceName },
+        data: { 
+          status: "ACTIVE",
+          isPrimary: true 
+        }
+      });
+      
+      // Mark others as inactive
+      await prisma.whatsAppChannel.updateMany({
+        where: { 
+          organizationId: membership.organization.id,
+          NOT: { instanceName }
+        },
+        data: { 
+          status: "INACTIVE",
+          isPrimary: false 
+        }
+      });
+
+      revalidatePath(`/${orgSlug}/settings/integrations/whatsapp`);
+    }
+
+    return { success: true, status };
+  } catch (error) {
+    return { success: false, status: "ERROR" };
+  }
+}
+
+export async function disconnectEvolutionAction(orgSlug: string) {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+  const instanceName = `org_${orgSlug.replace(/[^a-z0-9]/g, "")}`;
+
+  try {
+    await logoutEvolutionInstance(instanceName);
+    await prisma.whatsAppChannel.update({
+      where: { instanceName },
+      data: { 
+        status: "INACTIVE",
+        isPrimary: false 
+      }
+    });
+
+    revalidatePath(`/${orgSlug}/settings/integrations/whatsapp`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: "No se pudo desconectar." };
   }
 }
