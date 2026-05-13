@@ -154,118 +154,116 @@ export default function ProspectingSearchPage() {
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="p-10">
-                  <TabsContent value="paste" className="space-y-6 mt-0">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
-                          Texto, URLs o resultados copiados
-                        </label>
-                        <Badge variant="outline" className="text-[9px] bg-brand-50 text-brand-700 border-brand-200 font-black tracking-widest px-2 py-1">
-                          EXTRACCIÓN IA
-                        </Badge>
-                      </div>
-                      <Textarea 
-                        placeholder="Pegá aquí listas de empresas, URLs de sitios web o resultados de Google Maps..."
-                        className="min-h-[280px] rounded-[2rem] p-6 border-slate-200 shadow-inner resize-none font-medium text-slate-600 leading-relaxed bg-slate-50/30"
-                        value={rawText}
-                        onChange={(e) => setRawText(e.target.value)}
-                      />
-                      <div className="flex items-center justify-between pt-4">
-                        <p className="text-[11px] text-slate-400 font-bold max-w-[250px]">
-                          Copiá cualquier texto y la IA estructurará nombres, emails y webs automáticamente.
-                        </p>
-                        <Button 
-                          onClick={handleAnalyze}
-                          disabled={!rawText || isAnalyzing}
-                          className="h-14 px-10 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl shadow-xl shadow-brand-100 transition-all active:scale-95 disabled:opacity-50"
-                        >
-                          {isAnalyzing ? (
-                            <>
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analizando...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="mr-2 h-5 w-5" /> Analizar con IA
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                <TabsContent value="paste" className="space-y-6 mt-0 p-10">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                        Texto, URLs o resultados copiados
+                      </label>
+                      <Badge variant="outline" className="text-[9px] bg-brand-50 text-brand-700 border-brand-200 font-black tracking-widest px-2 py-1">
+                        EXTRACCIÓN IA
+                      </Badge>
                     </div>
-                  </TabsContent>
-
-                  <TabsContent value="search" className="space-y-8 mt-0">
-                    <div className="bg-brand-50/30 border border-brand-100 p-6 rounded-3xl flex items-center gap-4">
-                       <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-600 border border-brand-50">
-                          <Globe className="h-6 w-6" />
-                       </div>
-                       <div>
-                          <p className="text-sm font-black text-slate-900">Agente de Búsqueda Activa</p>
-                          <p className="text-[11px] font-bold text-slate-500">Buscá prospectos en cualquier país de LATAM automáticamente.</p>
-                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Qué buscás (Rubro)</label>
-                        <div className="relative">
-                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input 
-                            placeholder="Ej: Inmobiliarias, Desarrolladoras..." 
-                            className="h-12 pl-12 rounded-xl"
-                            value={searchTopic}
-                            onChange={(e) => setSearchTopic(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">País</label>
-                        <Select 
-                          value={searchCountry} 
-                          onChange={(e) => setSearchCountry(e.target.value)}
-                          className="h-12 rounded-xl"
-                        >
-                          {LATAM_COUNTRIES.map(c => (
-                            <option key={c.code} value={c.code}>{c.name}</option>
-                          ))}
-                        </Select>
-                      </div>
-                      <div className="md:col-span-2 space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Ciudad / Región (Opcional)</label>
-                        <div className="relative">
-                          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input 
-                            placeholder="Ej: Córdoba, Santiago, Medellín..." 
-                            className="h-12 pl-12 rounded-xl"
-                            value={searchCity}
-                            onChange={(e) => setSearchCity(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-4">
+                    <Textarea 
+                      placeholder="Pegá aquí listas de empresas, URLs de sitios web o resultados de Google Maps..."
+                      className="min-h-[280px] rounded-[2rem] p-6 border-slate-200 shadow-inner resize-none font-medium text-slate-600 leading-relaxed bg-slate-50/30"
+                      value={rawText}
+                      onChange={(e) => setRawText(e.target.value)}
+                    />
+                    <div className="flex items-center justify-between pt-4">
+                      <p className="text-[11px] text-slate-400 font-bold max-w-[250px]">
+                        Copiá cualquier texto y la IA estructurará nombres, emails y webs automáticamente.
+                      </p>
                       <Button 
-                        onClick={handleWebSearch}
-                        disabled={!searchTopic || isAnalyzing}
-                        className="w-full h-14 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+                        onClick={handleAnalyze}
+                        disabled={!rawText || isAnalyzing}
+                        className="h-14 px-10 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl shadow-xl shadow-brand-100 transition-all active:scale-95 disabled:opacity-50"
                       >
                         {isAnalyzing ? (
                           <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Escaneando la web...
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analizando...
                           </>
                         ) : (
                           <>
-                            <Search className="mr-2 h-5 w-5" /> Iniciar Búsqueda Automática
+                            <Sparkles className="mr-2 h-5 w-5" /> Analizar con IA
                           </>
                         )}
                       </Button>
-                      <p className="text-[10px] text-center text-slate-400 font-bold mt-4 uppercase tracking-widest">
-                        El proceso puede tardar hasta 30 segundos
-                      </p>
                     </div>
-                  </TabsContent>
-                </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="search" className="space-y-8 mt-0 p-10">
+                  <div className="bg-brand-50/30 border border-brand-100 p-6 rounded-3xl flex items-center gap-4">
+                     <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-600 border border-brand-50">
+                        <Globe className="h-6 w-6" />
+                     </div>
+                     <div>
+                        <p className="text-sm font-black text-slate-900">Agente de Búsqueda Activa</p>
+                        <p className="text-[11px] font-bold text-slate-500">Buscá prospectos en cualquier país de LATAM automáticamente.</p>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Qué buscás (Rubro)</label>
+                      <div className="relative">
+                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input 
+                          placeholder="Ej: Inmobiliarias, Desarrolladoras..." 
+                          className="h-12 pl-12 rounded-xl"
+                          value={searchTopic}
+                          onChange={(e) => setSearchTopic(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">País</label>
+                      <Select 
+                        value={searchCountry} 
+                        onChange={(e) => setSearchCountry(e.target.value)}
+                        className="h-12 rounded-xl"
+                      >
+                        {LATAM_COUNTRIES.map(c => (
+                          <option key={c.code} value={c.code}>{c.name}</option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Ciudad / Región (Opcional)</label>
+                      <div className="relative">
+                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input 
+                          placeholder="Ej: Córdoba, Santiago, Medellín..." 
+                          className="h-12 pl-12 rounded-xl"
+                          value={searchCity}
+                          onChange={(e) => setSearchCity(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <Button 
+                      onClick={handleWebSearch}
+                      disabled={!searchTopic || isAnalyzing}
+                      className="w-full h-14 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Escaneando la web...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="mr-2 h-5 w-5" /> Iniciar Búsqueda Automática
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-[10px] text-center text-slate-400 font-bold mt-4 uppercase tracking-widest">
+                      El proceso puede tardar hasta 30 segundos
+                    </p>
+                  </div>
+                </TabsContent>
               </Tabs>
 
               {error && (
