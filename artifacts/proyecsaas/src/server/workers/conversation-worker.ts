@@ -46,6 +46,7 @@ import {
 import { getQueueConnection } from "@/server/queues/connection";
 import {
   resolveInboundByPhoneNumberId,
+  resolveDatabaseChannelByInstanceName,
   stripRoutingCodeFromMessage,
 } from "@/server/whatsapp/channel-resolver";
 
