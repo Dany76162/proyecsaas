@@ -184,6 +184,7 @@ export async function POST(request: NextRequest) {
     deliveryMode: "simulate",
     channelOverride: {
       organizationId: organization.id,
+      source: "database",
       provider: "whatsapp",
       phoneNumberId,
     },
