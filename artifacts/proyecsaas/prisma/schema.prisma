@@ -1053,6 +1053,31 @@ enum ProspectActivityType {
   reply_logged
   demo_requested
   note_added
+  manual_rating_updated
+  priority_updated
+  manual_status_updated
+  review_completed
+}
+
+enum ManualRating {
+  A
+  B
+  C
+  D
+}
+
+enum ProspectPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ManualProspectStatus {
+  APTO_CONTACTO
+  REVISAR
+  DESCARTAR
+  NO_CONTACTAR
+  CONTACTAR_MAS_ADELANTE
 }
 
 enum ProspectMessageChannel {
@@ -1092,6 +1117,18 @@ model CommercialProspect {
   
   confidenceScore  Int?                @default(0)
   qualityScore     Int?                @default(0)
+  fitScore         Int?                @default(0)
+  riskScore        Int?                @default(0)
+  aiScoringNotes   String?             @db.Text
+  
+  // Manual qualification by Superadmin
+  manualRating     ManualRating?
+  priority         ProspectPriority?   @default(MEDIUM)
+  manualStatus     ManualProspectStatus?
+  manualNotes      String?             @db.Text
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  contactLaterDate DateTime?
   
   notes            String?             @db.Text
   agentNotes       String?             @db.Text

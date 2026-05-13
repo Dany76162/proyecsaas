@@ -7,15 +7,21 @@ import {
   createProspect, 
   updateProspect, 
   logProspectActivity, 
-  calculateProspectScores 
+  calculateProspectScores,
+  canGenerateEmail
 } from "./service";
 import { 
   ProspectStatus, 
   ProspectCompanyType, 
+  ManualRating,
+  ProspectPriority,
+  ManualProspectStatus,
   Prisma 
 } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { getOpenAIClient, OPENAI_MODEL } from "@/modules/agents/service";
+
+// ─── Create ─────────────────────────────────────────────────────────────────
 
 export async function createProspectAction(formData: FormData) {
   const user = await requirePlatformAdmin();
@@ -48,6 +54,8 @@ export async function createProspectAction(formData: FormData) {
   redirect(`/platform/agents/prospecting/${prospect.id}`);
 }
 
+// ─── Status ─────────────────────────────────────────────────────────────────
+
 export async function updateProspectStatusAction(id: string, status: ProspectStatus, reason?: string) {
   const user = await requirePlatformAdmin();
   
@@ -56,12 +64,17 @@ export async function updateProspectStatusAction(id: string, status: ProspectSta
   if (status === "APPROVED") {
     data.approvedAt = new Date();
     data.approvedByUserId = user.id;
+    data.manualStatus = "APTO_CONTACTO";
+    data.reviewedByUserId = user.id;
+    data.reviewedAt = new Date();
   } else if (status === "DISCARDED") {
     data.discardedAt = new Date();
     data.discardedReason = reason;
+    data.manualStatus = "DESCARTAR";
   } else if (status === "DO_NOT_CONTACT") {
     data.isDoNotContact = true;
     data.doNotContactReason = reason;
+    data.manualStatus = "NO_CONTACTAR";
   }
 
   await updateProspect(id, data, user.id);
@@ -72,14 +85,80 @@ export async function updateProspectStatusAction(id: string, status: ProspectSta
   return { success: true };
 }
 
+// ─── Manual Qualification ───────────────────────────────────────────────────
+
+export async function updateManualQualificationAction(formData: FormData) {
+  const user = await requirePlatformAdmin();
+  
+  const prospectId = formData.get("prospectId") as string;
+  if (!prospectId) throw new Error("ID del prospecto es obligatorio");
+
+  const manualRating = (formData.get("manualRating") as ManualRating) || null;
+  const priority = (formData.get("priority") as ProspectPriority) || null;
+  const manualStatus = (formData.get("manualStatus") as ManualProspectStatus) || null;
+  const manualNotes = (formData.get("manualNotes") as string) || null;
+  const contactLaterDateStr = formData.get("contactLaterDate") as string;
+
+  const data: Prisma.CommercialProspectUpdateInput = {
+    reviewedByUserId: user.id,
+    reviewedAt: new Date(),
+  };
+
+  if (manualRating) data.manualRating = manualRating;
+  if (priority) data.priority = priority;
+  if (manualNotes !== null) data.manualNotes = manualNotes;
+  if (contactLaterDateStr) data.contactLaterDate = new Date(contactLaterDateStr);
+
+  if (manualStatus) {
+    data.manualStatus = manualStatus;
+    
+    // Sync system status based on manual decision
+    if (manualStatus === "APTO_CONTACTO") {
+      data.status = "CONTACT_READY";
+      data.approvedAt = new Date();
+      data.approvedByUserId = user.id;
+    } else if (manualStatus === "DESCARTAR") {
+      data.status = "DISCARDED";
+      data.discardedAt = new Date();
+    } else if (manualStatus === "NO_CONTACTAR") {
+      data.status = "DO_NOT_CONTACT";
+      data.isDoNotContact = true;
+    } else if (manualStatus === "REVISAR") {
+      data.status = "NEEDS_REVIEW";
+    }
+  }
+
+  await prisma.commercialProspect.update({ where: { id: prospectId }, data });
+
+  // Log individual changes
+  if (manualRating) {
+    await logProspectActivity(prospectId, "manual_rating_updated", `Calificación manual: ${manualRating}`, user.id);
+  }
+  if (priority) {
+    await logProspectActivity(prospectId, "priority_updated", `Prioridad: ${priority}`, user.id);
+  }
+  if (manualStatus) {
+    await logProspectActivity(prospectId, "manual_status_updated", `Estado manual: ${manualStatus}`, user.id);
+  }
+
+  await logProspectActivity(prospectId, "review_completed", "Revisión manual completada", user.id);
+
+  revalidatePath("/platform/agents/prospecting");
+  revalidatePath(`/platform/agents/prospecting/${prospectId}`);
+}
+
+// ─── Email Generation (with eligibility check) ─────────────────────────────
+
 export async function generateProspectingEmailAction(prospectId: string) {
   const user = await requirePlatformAdmin();
   
   const p = await prisma.commercialProspect.findUnique({ where: { id: prospectId } });
   if (!p) throw new Error("Prospecto no encontrado");
 
-  if (p.isDoNotContact) {
-    throw new Error("No se puede generar mensajes para prospectos marcados como 'No contactar'");
+  // Check eligibility using manual qualification rules
+  const eligibility = canGenerateEmail(p);
+  if (!eligibility.allowed) {
+    throw new Error(eligibility.reason);
   }
 
   const openai = getOpenAIClient();
@@ -133,6 +212,8 @@ Devuelve un JSON con:
   return { success: true, draft };
 }
 
+// ─── Mark Sent ──────────────────────────────────────────────────────────────
+
 export async function markDraftSentAction(draftId: string) {
   const user = await requirePlatformAdmin();
   
@@ -157,6 +238,16 @@ export async function markDraftSentAction(draftId: string) {
 
   await logProspectActivity(draft.prospectId, "contact_marked_sent", "Mensaje marcado como enviado manualmente", user.id);
   
+  revalidatePath("/platform/agents/prospecting");
+  return { success: true };
+}
+
+// ─── Recalculate Scores ─────────────────────────────────────────────────────
+
+export async function recalculateScoresAction(prospectId: string) {
+  await requirePlatformAdmin();
+  await calculateProspectScores(prospectId);
+  revalidatePath(`/platform/agents/prospecting/${prospectId}`);
   revalidatePath("/platform/agents/prospecting");
   return { success: true };
 }

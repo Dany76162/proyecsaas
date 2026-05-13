@@ -1,124 +1,169 @@
 "use client";
 
 import Link from "next/link";
-import { 
-  Eye, 
-  Target,
-  Mail,
-  Globe,
-  Phone
-} from "lucide-react";
-import { 
-  PROSPECT_COMPANY_TYPE_LABELS, 
-  PROSPECT_STATUS_LABELS, 
-  PROSPECT_STATUS_COLORS 
-} from "@/modules/prospecting/types";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import {
+  PROSPECT_COMPANY_TYPE_LABELS,
+  PROSPECT_STATUS_LABELS,
+  PROSPECT_STATUS_COLORS,
+  MANUAL_RATING_LABELS,
+  MANUAL_RATING_COLORS,
+  PRIORITY_LABELS,
+  PRIORITY_COLORS,
+  MANUAL_STATUS_LABELS,
+  MANUAL_STATUS_COLORS,
+  getScoreLevel,
+  getScoreBadgeColor,
+  getRiskLevel,
+  getRiskBadgeColor,
+} from "@/modules/prospecting/types";
+import type { ProspectCompanyType, ProspectStatus, ManualRating, ProspectPriority, ManualProspectStatus } from "@prisma/client";
 
-export function ProspectsTable({ prospects }: { prospects: any[] }) {
+type Prospect = {
+  id: string;
+  companyName: string;
+  companyType: string;
+  status: string;
+  email: string | null;
+  website: string | null;
+  city: string | null;
+  country: string | null;
+  qualityScore: number | null;
+  fitScore: number | null;
+  confidenceScore: number | null;
+  riskScore: number | null;
+  manualRating: string | null;
+  priority: string | null;
+  manualStatus: string | null;
+};
+
+export function ProspectsTable({ prospects }: { prospects: Prospect[] }) {
+  if (prospects.length === 0) {
+    return (
+      <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+        <p className="text-sm font-medium text-slate-400">
+          No hay prospectos registrados. Creá el primero.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-      <Table>
-        <TableHeader className="bg-slate-50/50">
-          <TableRow>
-            <TableHead className="w-[280px]">Empresa</TableHead>
-            <TableHead>Tipo / Ubicación</TableHead>
-            <TableHead>Contacto</TableHead>
-            <TableHead className="text-center">Estado</TableHead>
-            <TableHead className="text-center">Calidad</TableHead>
-            <TableHead className="text-right">Acción</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {prospects.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="h-40 text-center text-slate-400">
-                <div className="flex flex-col items-center gap-2">
-                  <Target className="h-8 w-8 opacity-20" />
-                  <p className="font-medium">No se encontraron prospectos</p>
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : (
-            prospects.map((p) => (
-              <TableRow key={p.id} className="group hover:bg-slate-50/50 transition-colors">
-                <TableCell className="py-4">
-                  <div>
-                    <p className="font-bold text-slate-900 line-clamp-1">{p.companyName}</p>
-                    {p.sourceName && (
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">
-                        Fuente: {p.sourceName}
-                      </p>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <p className="text-xs font-semibold text-slate-600">
-                    {PROSPECT_COMPANY_TYPE_LABELS[p.companyType as keyof typeof PROSPECT_COMPANY_TYPE_LABELS]}
-                  </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    {[p.city, p.country].filter(Boolean).join(", ")}
-                  </p>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {p.email && <Mail className="h-3.5 w-3.5 text-slate-400" />}
-                    {p.website && <Globe className="h-3.5 w-3.5 text-slate-400" />}
-                    {(p.phone || p.whatsapp) && <Phone className="h-3.5 w-3.5 text-slate-400" />}
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <Badge 
-                    variant="outline" 
-                    className={cn(
-                      "px-2 py-0.5 text-[10px] font-black uppercase tracking-wider",
-                      PROSPECT_STATUS_COLORS[p.status as keyof typeof PROSPECT_STATUS_COLORS]
-                    )}
-                  >
-                    {PROSPECT_STATUS_LABELS[p.status as keyof typeof PROSPECT_STATUS_LABELS]}
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <th className="py-4 px-3">Empresa</th>
+            <th className="py-4 px-3">Estado</th>
+            <th className="py-4 px-3 text-center">Score IA</th>
+            <th className="py-4 px-3 text-center">Riesgo</th>
+            <th className="py-4 px-3 text-center">Calif.</th>
+            <th className="py-4 px-3 text-center">Prioridad</th>
+            <th className="py-4 px-3">Decisión</th>
+            <th className="py-4 px-3">Contacto</th>
+            <th className="py-4 px-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {prospects.map((p) => {
+            const qualityLevel = getScoreLevel(p.qualityScore);
+            const riskLevel = getRiskLevel(p.riskScore);
+
+            return (
+              <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                {/* Company */}
+                <td className="py-4 px-3">
+                  <Link href={`/platform/agents/prospecting/${p.id}`} className="block">
+                    <p className="font-bold text-slate-900 hover:text-brand-600 transition truncate max-w-[200px]">{p.companyName}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                      {PROSPECT_COMPANY_TYPE_LABELS[p.companyType as ProspectCompanyType]}
+                    </p>
+                  </Link>
+                </td>
+
+                {/* Status */}
+                <td className="py-4 px-3">
+                  <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-wider", PROSPECT_STATUS_COLORS[p.status as ProspectStatus])}>
+                    {PROSPECT_STATUS_LABELS[p.status as ProspectStatus]}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-center">
+                </td>
+
+                {/* AI Score */}
+                <td className="py-4 px-3 text-center">
                   <div className="flex flex-col items-center gap-1">
-                    <span className={cn(
-                      "text-[11px] font-bold",
-                      p.qualityScore > 70 ? "text-emerald-600" : p.qualityScore > 40 ? "text-amber-600" : "text-slate-400"
-                    )}>
-                      {p.qualityScore}%
+                    <span className="text-lg font-black text-slate-900 tabular-nums">{p.qualityScore ?? 0}</span>
+                    <span className={cn("text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full", getScoreBadgeColor(qualityLevel))}>
+                      {qualityLevel}
                     </span>
-                    <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className={cn(
-                          "h-full",
-                          p.qualityScore > 70 ? "bg-emerald-500" : p.qualityScore > 40 ? "bg-amber-500" : "bg-slate-300"
-                        )}
-                        style={{ width: `${p.qualityScore}%` }}
-                      />
-                    </div>
                   </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button asChild variant="ghost" size="sm" className="h-8 font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg px-3">
-                    <Link href={`/platform/agents/prospecting/${p.id}`}>
-                      <Eye className="mr-2 h-3.5 w-3.5" /> Ver
-                    </Link>
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                </td>
+
+                {/* Risk */}
+                <td className="py-4 px-3 text-center">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-lg font-black text-slate-900 tabular-nums">{p.riskScore ?? 0}</span>
+                    <span className={cn("text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full", getRiskBadgeColor(riskLevel))}>
+                      {riskLevel}
+                    </span>
+                  </div>
+                </td>
+
+                {/* Manual Rating */}
+                <td className="py-4 px-3 text-center">
+                  {p.manualRating ? (
+                    <Badge variant="outline" className={cn("text-[10px] font-black", MANUAL_RATING_COLORS[p.manualRating as ManualRating])}>
+                      {p.manualRating}
+                    </Badge>
+                  ) : (
+                    <span className="text-[10px] text-slate-300 font-bold">—</span>
+                  )}
+                </td>
+
+                {/* Priority */}
+                <td className="py-4 px-3 text-center">
+                  {p.priority ? (
+                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase", PRIORITY_COLORS[p.priority as ProspectPriority])}>
+                      {PRIORITY_LABELS[p.priority as ProspectPriority]}
+                    </Badge>
+                  ) : (
+                    <span className="text-[10px] text-slate-300 font-bold">—</span>
+                  )}
+                </td>
+
+                {/* Manual Status */}
+                <td className="py-4 px-3">
+                  {p.manualStatus ? (
+                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase", MANUAL_STATUS_COLORS[p.manualStatus as ManualProspectStatus])}>
+                      {MANUAL_STATUS_LABELS[p.manualStatus as ManualProspectStatus]}
+                    </Badge>
+                  ) : (
+                    <span className="text-[10px] text-slate-300 font-bold">Sin decisión</span>
+                  )}
+                </td>
+
+                {/* Contact */}
+                <td className="py-4 px-3">
+                  <div className="flex flex-col gap-0.5">
+                    {p.email && <p className="text-xs text-slate-600 truncate max-w-[160px]">{p.email}</p>}
+                    {p.city && <p className="text-[10px] text-slate-400">{[p.city, p.country].filter(Boolean).join(", ")}</p>}
+                  </div>
+                </td>
+
+                {/* Action */}
+                <td className="py-4 px-3">
+                  <Link
+                    href={`/platform/agents/prospecting/${p.id}`}
+                    className="text-xs font-bold text-brand-600 hover:underline whitespace-nowrap"
+                  >
+                    Ver detalle →
+                  </Link>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
