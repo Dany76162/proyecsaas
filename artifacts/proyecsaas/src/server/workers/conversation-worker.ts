@@ -48,6 +48,7 @@ import {
   resolveInboundByPhoneNumberId,
   resolveDatabaseChannelByInstanceName,
   stripRoutingCodeFromMessage,
+  type ResolvedWhatsAppChannel,
 } from "@/server/whatsapp/channel-resolver";
 
 import {
@@ -80,20 +81,9 @@ export type WhatsAppInboundJobData = {
     timestamp: string | null;
     type: string;
     body: string;
-  };
-};
-
-type AutomationChannelContext = {
-  organizationId: string;
-  provider: "whatsapp" | "evolution";
-  phoneNumberId?: string;
-  instanceName?: string;
-  accessToken?: string;
-};
-
 type ProcessWhatsAppInboundOptions = {
   deliveryMode?: "runtime" | "simulate";
-  channelOverride?: AutomationChannelContext;
+  channelOverride?: ResolvedWhatsAppChannel;
 };
 
 
