@@ -1,4 +1,4 @@
-﻿/**
+/**
  * WordPress REST API strategy.
  *
  * Works with any WordPress site that exposes a property custom post type
@@ -118,7 +118,7 @@ async function fetchAllPosts(origin: string, restBase: string): Promise<WpPost[]
 /**
  * Extracts neighborhood from title patterns like:
  * "Departamento 3 ambientes. La Perla"  → "La Perla"
- * "Casa en venta - GÃ¼emes"              → "GÃ¼emes"
+ * "Casa en venta - Güemes"              → "Güemes"
  */
 function extractNeighborhoodFromTitle(title: string): string | null {
   // Pattern: "PROPERTY DESC. NEIGHBORHOOD" (after last dot or dash separator)
@@ -126,11 +126,11 @@ function extractNeighborhoodFromTitle(title: string): string | null {
   if (dotSplit) {
     const candidate = dotSplit[1].trim();
     // Must start with uppercase and not look like a sentence (no verbs, short)
-    if (/^[A-ZÁÉÍÓÚÃœÑ]/.test(candidate) && candidate.split(" ").length <= 4) {
+    if (/^[A-ZÁÉÍÓÚÑ]/.test(candidate) && candidate.split(" ").length <= 4) {
       return candidate;
     }
   }
-  const dashSplit = title.match(/[-â€“]\s*([A-ZÁÉÍÓÚÃœÑ][^-â€“]{2,30})$/);
+  const dashSplit = title.match(/[-–—]\s*([A-ZÁÉÍÓÚÑ][^-–—]{2,30})$/);
   if (dashSplit) {
     const candidate = dashSplit[1].trim();
     if (candidate.split(" ").length <= 4) return candidate;
@@ -236,7 +236,7 @@ function normalizeOperationType(raw: string): string {
   return raw;
 }
 
-// â”€â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────── Public API ─────────────────────────────────────────────────────────────
 
 export interface WordPressApiResult {
   properties: SyncProperty[];

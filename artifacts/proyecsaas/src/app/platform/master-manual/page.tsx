@@ -134,7 +134,7 @@ export default function MasterManualPage() {
             <Calendar className="h-6 w-6" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
-            RaicesPilot Technical Blueprint v3.1 â€” Propiedad Intelectual de Inmuebles Digitales
+            RaicesPilot Technical Blueprint v3.1 — Propiedad Intelectual de Inmuebles Digitales
           </p>
         </div>
       </div>

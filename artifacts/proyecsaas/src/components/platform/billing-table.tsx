@@ -174,7 +174,7 @@ export function BillingTable({
   };
 
   const handleArchive = (recordId: string) => {
-    if (!confirm("Â¿Seguro que querÃ©s archivar este cobro? DejarÃ¡ de aparecer en la lista activa.")) return;
+    if (!confirm("¿Seguro que querés archivar este cobro? Dejará de aparecer en la lista activa.")) return;
     startTransition(async () => {
       await archiveBillingRecordAction(recordId);
       router.refresh();
@@ -284,7 +284,7 @@ export function BillingTable({
               </div>
               <div className="bg-slate-900 rounded-2xl p-6 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp size={80} /></div>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">ProyecciÃ³n Anual</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Proyección Anual</p>
                 <h2 className="text-4xl font-black mt-2 text-brand-400">
                   {formatARS(records.reduce((s, r) => s + r.amountCents, 0))}
                 </h2>
@@ -602,7 +602,7 @@ export function BillingTable({
               <div className="pt-10 border-t border-slate-100 text-center">
                 <p className="text-[9px] text-slate-400 font-bold leading-relaxed">
                   Este documento es un comprobante interno de gestión administrativa de RaicesPilot.<br />
-                  No posee valor fiscal como factura A/B/C. Los pagos vÃa Mercado Pago son procesados por su respectiva pasarela.
+                  No posee valor fiscal como factura A/B/C. Los pagos vía Mercado Pago son procesados por su respectiva pasarela.
                 </p>
               </div>
             </div>

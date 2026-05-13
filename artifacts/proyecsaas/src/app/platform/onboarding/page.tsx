@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import { prisma } from "@/server/db/prisma";
 
@@ -100,7 +100,7 @@ export default async function PlatformOnboardingPage() {
                           <p className="text-xs text-slate-400">/{invite.organization.slug}</p>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400">â€”</span>
+                        <span className="text-xs text-slate-400">—</span>
                       )}
                     </td>
                     <td className="px-5 py-4">
