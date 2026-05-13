@@ -22,6 +22,33 @@ import {
 import { prisma } from "@/server/db/prisma";
 import { getOpenAIClient, OPENAI_MODEL } from "@/modules/agents/service";
 
+// ─── Search API Integration (Serper.dev) ────────────────────────────────────
+
+async function searchWebViaSerper(query: string) {
+  const apiKey = process.env.SERPER_API_KEY;
+  if (!apiKey) throw new Error("SERPER_API_KEY no configurada");
+
+  const response = await fetch("https://google.serper.dev/search", {
+    method: "POST",
+    headers: {
+      "X-API-KEY": apiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      q: query,
+      gl: "ar", // Default to Argentina, but will be dynamic
+      hl: "es"
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Error en Serper: ${error}`);
+  }
+
+  return response.json();
+}
+
 // ─── Create ─────────────────────────────────────────────────────────────────
 
 export async function createProspectAction(formData: FormData) {
@@ -358,4 +385,42 @@ export async function recalculateScoresAction(prospectId: string) {
   revalidatePath(`/platform/agents/prospecting/${prospectId}`);
   revalidatePath("/platform/agents/prospecting");
   return { success: true };
+}
+// ─── Automated Web Search ───────────────────────────────────────────────────
+
+export async function performWebSearchAction(params: {
+  topic: string;
+  city?: string;
+  country?: string;
+  region?: string;
+}) {
+  await requirePlatformAdmin();
+  
+  const { topic, city, country, region } = params;
+  if (!topic) throw new Error("El rubro/tema es obligatorio");
+
+  // Construct a powerful search query
+  let query = `${topic}`;
+  if (city) query += ` en ${city}`;
+  if (region) query += `, ${region}`;
+  if (country) query += `, ${country}`;
+  
+  // Specific terms to find contact info
+  query += ' "email" "contacto" "web"';
+
+  console.log(`[ProspectingSearch] Searching for: ${query}`);
+
+  const searchResults = await searchWebViaSerper(query);
+  
+  // Convert results to a single text block for LLM analysis
+  const resultsText = searchResults.organic?.map((r: any) => 
+    `TITLE: ${r.title}\nLINK: ${r.link}\nSNIPPET: ${r.snippet}\n---`
+  ).join("\n") || "";
+
+  if (!resultsText) {
+    return { success: true, candidates: [], message: "No se encontraron resultados relevantes." };
+  }
+
+  // Use the existing analysis logic but with the search results
+  return analyzeProspectsAction(`RESULTADOS DE BÚSQUEDA WEB PARA: ${query}\n\n${resultsText}`);
 }
