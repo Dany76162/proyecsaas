@@ -30,6 +30,15 @@ const whatsappConnectionSchema = z.object({
   accessToken: z.string().trim().min(1, "Access Token is required.").max(4096),
 });
 
+const whatsappRequestSchema = z.object({
+  orgSlug: z.string().trim().min(1),
+  requestedPhoneNumber: z.string().trim().min(5, "Número de teléfono inválido"),
+  businessName: z.string().trim().min(2, "Nombre comercial requerido"),
+  contactName: z.string().trim().min(2, "Nombre de contacto requerido"),
+  contactEmail: z.string().email("Email inválido"),
+  notes: z.string().optional(),
+});
+
 export async function saveWhatsAppChannelAction(
   _prevState: WhatsAppConnectionActionState | null,
   formData: FormData,
@@ -191,6 +200,53 @@ export async function saveWhatsAppChannelAction(
       success: false,
       message:
         "The number could not be connected right now. Check the Meta credentials and try again.",
+    };
+  }
+}
+
+export async function requestWhatsAppConnectionAction(
+  _prevState: any,
+  formData: FormData
+) {
+  const parsed = whatsappRequestSchema.safeParse({
+    orgSlug: String(formData.get("orgSlug") ?? ""),
+    requestedPhoneNumber: String(formData.get("requestedPhoneNumber") ?? ""),
+    businessName: String(formData.get("businessName") ?? ""),
+    contactName: String(formData.get("contactName") ?? ""),
+    contactEmail: String(formData.get("contactEmail") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Error en los datos",
+    };
+  }
+
+  const { orgSlug, ...data } = parsed.data;
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+  try {
+    await prisma.whatsAppChannelConnectionRequest.create({
+      data: {
+        organizationId: membership.organization.id,
+        ...data,
+        status: "PENDING",
+      },
+    });
+
+    revalidatePath(`/${orgSlug}/settings/integrations/whatsapp`);
+    return {
+      success: true,
+      message: "Tu solicitud ha sido enviada. El equipo de RaicesPilot se pondrá en contacto pronto.",
+    };
+  } catch (error) {
+    console.error("[requestWhatsAppConnectionAction] Error:", error);
+    return {
+      success: false,
+      message: "No se pudo enviar la solicitud. Intentá de nuevo más tarde.",
     };
   }
 }

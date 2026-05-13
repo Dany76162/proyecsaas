@@ -208,6 +208,7 @@ model Organization {
   visits                 Visit[]
   automations            AutomationRule[]
   whatsappChannels       WhatsAppChannel[]
+  whatsappConnectionRequests WhatsAppChannelConnectionRequest[]
   billingRecords         OrgBillingRecord[]
   aiAgents               AiAgent[]
   subscription           Subscription?
@@ -584,7 +585,7 @@ enum AiAgentTone {
 model AiAgent {
   id             String       @id @default(cuid())
   organizationId String       @unique // restored @unique for upsert
-  whatsappChannelId String?    @unique
+  whatsappChannelId String?
   name           String       @default("Asistente IA")
   status         String       @default("ACTIVE")
   tone           AiAgentTone  @default(FRIENDLY)
@@ -1155,4 +1156,31 @@ model ProspectingMessageDraft {
   prospect         CommercialProspect     @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   @@index([prospectId])
   @@index([status])
+}
+enum ConnectionRequestStatus {
+  PENDING
+  IN_REVIEW
+  CONNECTED
+  REJECTED
+  CANCELED
+}
+
+model WhatsAppChannelConnectionRequest {
+  id                  String                  @id @default(cuid())
+  organizationId      String
+  requestedPhoneNumber String
+  businessName        String
+  contactName         String
+  contactEmail        String
+  notes               String?                 @db.Text
+  status              ConnectionRequestStatus @default(PENDING)
+  internalNotes       String?                 @db.Text
+  reviewedByUserId    String?
+  reviewedAt          DateTime?
+  
+  organization        Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  @@index([organizationId, status])
 }
