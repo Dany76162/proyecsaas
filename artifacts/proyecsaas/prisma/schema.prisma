@@ -84,6 +84,7 @@ enum InvoiceStatus {
 
 enum WhatsAppProvider {
   WHATSAPP_CLOUD
+  EVOLUTION_API
 }
 
 enum WhatsAppChannelStatus {
@@ -459,6 +460,8 @@ model WhatsAppChannel {
   status                       WhatsAppChannelStatus             @default(INACTIVE)
   verificationStatus           WhatsAppChannelVerificationStatus @default(PENDING)
   phoneNumberId                String                            @unique
+  instanceName                 String?                           @unique
+  instanceKey                  String?
   wabaId                       String?
   businessAccountId            String?
   businessId                   String?
