@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   PROSPECT_COMPANY_TYPE_LABELS,
@@ -41,10 +43,25 @@ type Prospect = {
 export function ProspectsTable({ prospects }: { prospects: Prospect[] }) {
   if (prospects.length === 0) {
     return (
-      <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-        <p className="text-sm font-medium text-slate-400">
-          No hay prospectos registrados. Creá el primero.
+      <div className="p-16 text-center border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-300 mb-4 border border-slate-100">
+           <Users className="h-8 w-8" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900">Todavía no hay prospectos registrados</h3>
+        <p className="text-sm font-medium text-slate-400 mt-1 mb-8 max-w-sm mx-auto">
+          Podés buscar empresas en la web, pegar resultados o crear uno manualmente para empezar la prospección.
         </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Button asChild variant="outline" size="sm" className="h-10 font-bold border-slate-200 bg-white">
+            <Link href="/platform/agents/prospecting/search">Buscar prospectos</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="h-10 font-bold border-slate-200 bg-white">
+            <Link href="/platform/agents/prospecting/search?tab=paste">Pegar datos / URLs</Link>
+          </Button>
+          <Button asChild size="sm" className="h-10 font-bold bg-slate-900">
+            <Link href="/platform/agents/prospecting/new">Crear prospecto manual</Link>
+          </Button>
+        </div>
       </div>
     );
   }

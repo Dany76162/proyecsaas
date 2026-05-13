@@ -1,7 +1,7 @@
 import { getProspects } from "@/modules/prospecting/service";
 import { ProspectsTable } from "@/components/prospecting/prospects-table";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Filter, Target, CheckCircle2, AlertCircle, Users } from "lucide-react";
+import { Plus, Download, Filter, Target, CheckCircle2, AlertCircle, Users, Mail } from "lucide-react";
 import Link from "next/link";
 import { PROSPECT_STATUS_LABELS } from "@/modules/prospecting/types";
 import { cn } from "@/lib/utils";
@@ -28,12 +28,27 @@ export default async function ProspectingPage() {
           <p className="text-slate-500 mt-1 font-medium">Gestión de prospección comercial B2B para RaicesPilot.</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button asChild variant="outline" size="sm" className="h-10 font-bold border-slate-200">
+            <Link href="/platform/agents/prospecting/campaigns">
+              <Mail className="mr-2 h-4 w-4 text-brand-600" /> Campañas
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="h-10 font-bold border-slate-200">
+            <Link href="/platform/agents/prospecting/search">
+              <Plus className="mr-2 h-4 w-4 text-brand-600" /> Buscar Prospectos
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="h-10 font-bold border-slate-200">
+            <Link href="/platform/agents/prospecting/search?tab=paste">
+              <Download className="mr-2 h-4 w-4 text-brand-600" /> Pegar Datos
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" className="h-10 font-bold border-slate-200">
             <Download className="mr-2 h-4 w-4" /> Exportar
           </Button>
           <Button asChild size="sm" className="h-10 font-bold bg-slate-900">
             <Link href="/platform/agents/prospecting/new">
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Prospecto
+              <Plus className="mr-2 h-4 w-4" /> Nuevo Manual
             </Link>
           </Button>
         </div>

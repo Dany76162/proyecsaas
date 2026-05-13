@@ -8,7 +8,8 @@ import {
   updateProspect, 
   logProspectActivity, 
   calculateProspectScores,
-  canGenerateEmail
+  canGenerateEmail,
+  detectPotentialDuplicates
 } from "./service";
 import { 
   ProspectStatus, 
@@ -240,6 +241,113 @@ export async function markDraftSentAction(draftId: string) {
   
   revalidatePath("/platform/agents/prospecting");
   return { success: true };
+}
+
+// ─── Analysis & Extraction ──────────────────────────────────────────────────
+
+export async function analyzeProspectsAction(rawText: string) {
+  await requirePlatformAdmin();
+  
+  if (!rawText || rawText.length < 10) {
+    throw new Error("El texto es demasiado corto para analizar.");
+  }
+
+  const openai = getOpenAIClient();
+  
+  const prompt = `Analiza el siguiente texto y extrae una lista de empresas candidatas para prospección comercial en el rubro inmobiliario.
+Texto:
+"${rawText}"
+
+Para cada empresa detectada, extrae:
+- companyName (obligatorio)
+- companyType (elige uno de: REAL_ESTATE_AGENCY, CONSTRUCTION_COMPANY, DEVELOPER, PROPERTY_MANAGER, ARCHITECTURE_STUDIO, REAL_ESTATE_INVESTOR, BROKER_AGENT, LAND_DEVELOPER, REAL_ESTATE_GROUP, OTHER_REAL_ESTATE)
+- country
+- region (provincia/estado)
+- city
+- website (url completa si es posible)
+- email
+- phone
+- whatsapp
+- sourceName (donde se encontró, ej: Google, Directorio X, etc)
+- notes (breve descripción de lo que hace o por qué es candidato)
+
+Devuelve un JSON con una lista:
+{
+  "candidates": [
+    { ... },
+    { ... }
+  ]
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: OPENAI_MODEL,
+    messages: [
+      { role: "system", content: "Eres un experto en extracción de datos y lead generation para el sector inmobiliario." },
+      { role: "user", content: prompt }
+    ],
+    response_format: { type: "json_object" }
+  });
+
+  const content = JSON.parse(response.choices[0].message.content || '{"candidates": []}');
+  const candidates = content.candidates || [];
+
+  // Check for duplicates/existing clients in the database for each candidate
+  const enrichedCandidates = await Promise.all(candidates.map(async (c: any) => {
+    const duplicates = await detectPotentialDuplicates(c.email, c.website, c.companyName);
+    return {
+      ...c,
+      isDuplicate: duplicates.length > 0,
+      existingId: duplicates[0]?.id || null,
+      status: duplicates[0]?.status || null
+    };
+  }));
+
+  return { success: true, candidates: enrichedCandidates };
+}
+
+// ─── Bulk Import ───────────────────────────────────────────────────────────
+
+export async function importProspectsAction(candidates: any[]) {
+  const user = await requirePlatformAdmin();
+  
+  const results = [];
+  for (const c of candidates) {
+    try {
+      // Basic validation
+      if (!c.companyName) continue;
+
+      const prospect = await createProspect({
+        companyName: c.companyName,
+        companyType: c.companyType || "OTHER_REAL_ESTATE",
+        country: c.country || null,
+        region: c.region || null,
+        city: c.city || null,
+        website: c.website || null,
+        email: c.email || null,
+        phone: c.phone || null,
+        whatsapp: c.whatsapp || null,
+        instagramUrl: c.instagramUrl || null,
+        facebookUrl: c.facebookUrl || null,
+        linkedinUrl: c.linkedinUrl || null,
+        sourceUrl: c.sourceUrl || null,
+        sourceName: c.sourceName || "Importación Asistida",
+        notes: c.notes || null,
+        status: "NEEDS_REVIEW",
+        manualStatus: "REVISAR"
+      }, user.id);
+
+      await calculateProspectScores(prospect.id);
+      
+      await logProspectActivity(prospect.id, "imported_from_search" as any, "Prospecto importado desde búsqueda asistida", user.id);
+      
+      results.push(prospect.id);
+    } catch (err) {
+      console.error(`Error importing candidate ${c.companyName}:`, err);
+    }
+  }
+
+  revalidatePath("/platform/agents/prospecting");
+  return { success: true, count: results.length };
 }
 
 // ─── Recalculate Scores ─────────────────────────────────────────────────────

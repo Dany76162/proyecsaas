@@ -1155,6 +1155,7 @@ model CommercialProspect {
 
   activities       CommercialProspectActivity[]
   messageDrafts    ProspectingMessageDraft[]
+  campaigns        ProspectingCampaignRecipient[]
 
   @@index([status])
   @@index([companyType])
@@ -1220,4 +1221,84 @@ model WhatsAppChannelConnectionRequest {
   updatedAt           DateTime                @updatedAt
 
   @@index([organizationId, status])
+}
+
+enum CampaignStatus {
+  DRAFT
+  READY
+  SENDING
+  SENT
+  PAUSED
+  FAILED
+  CANCELED
+}
+
+enum CampaignRecipientStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+  BOUNCED
+  UNSUBSCRIBED
+}
+
+enum SuppressionReason {
+  UNSUBSCRIBED
+  DO_NOT_CONTACT
+  BOUNCED
+  MANUAL_BLOCK
+  CUSTOMER
+}
+
+model ProspectingCampaign {
+  id               String               @id @default(cuid())
+  name             String
+  subject          String?
+  body             String?              @db.Text
+  status           CampaignStatus       @default(DRAFT)
+  segmentRules     Json?
+  totalRecipients  Int                  @default(0)
+  sentCount        Int                  @default(0)
+  failedCount      Int                  @default(0)
+  skippedCount     Int                  @default(0)
+  
+  createdByUserId  String?
+  approvedByUserId String?
+  approvedAt       DateTime?
+  sentAt           DateTime?
+  
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  recipients       ProspectingCampaignRecipient[]
+}
+
+model ProspectingCampaignRecipient {
+  id                  String                  @id @default(cuid())
+  campaignId          String
+  prospectId          String
+  email               String
+  status              CampaignRecipientStatus @default(PENDING)
+  skipReason          String?
+  providerMessageId   String?
+  sentAt              DateTime?
+  failedAt            DateTime?
+  errorMessage        String?                 @db.Text
+  
+  createdAt           DateTime                @default(now())
+  
+  campaign            ProspectingCampaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  prospect            CommercialProspect      @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([prospectId])
+  @@index([status])
+}
+
+model ProspectingSuppression {
+  id        String            @id @default(cuid())
+  email     String            @unique
+  reason    SuppressionReason
+  source    String?
+  createdAt DateTime          @default(now())
 }
