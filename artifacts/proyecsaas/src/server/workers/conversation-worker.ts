@@ -81,6 +81,9 @@ export type WhatsAppInboundJobData = {
     timestamp: string | null;
     type: string;
     body: string;
+  };
+};
+
 type ProcessWhatsAppInboundOptions = {
   deliveryMode?: "runtime" | "simulate";
   channelOverride?: ResolvedWhatsAppChannel;
