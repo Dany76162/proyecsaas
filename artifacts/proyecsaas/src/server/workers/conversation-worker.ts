@@ -137,7 +137,7 @@ export async function processWhatsAppInboundJob(
   const instanceName = data.channel.instanceName;
 
   // 1. Resolve Channel (Web o DB)
-  let channel = options.channelOverride;
+  let channel: ResolvedWhatsAppChannel | null | undefined = options.channelOverride;
 
   if (!channel) {
     if (instanceName) {
