@@ -75,10 +75,12 @@ export async function updateProspectStatusAction(id: string, status: ProspectSta
 export async function generateProspectingEmailAction(prospectId: string) {
   const user = await requirePlatformAdmin();
   
-  const prospect = await prisma.commercialProspect.findUnique({ where: { prospectId: prospectId } as any }); // Fix Prisma where if needed
-  // Correct Prisma syntax for unique find:
   const p = await prisma.commercialProspect.findUnique({ where: { id: prospectId } });
   if (!p) throw new Error("Prospecto no encontrado");
+
+  if (p.isDoNotContact) {
+    throw new Error("No se puede generar mensajes para prospectos marcados como 'No contactar'");
+  }
 
   const openai = getOpenAIClient();
   
