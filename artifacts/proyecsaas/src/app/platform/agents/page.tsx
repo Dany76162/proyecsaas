@@ -235,6 +235,24 @@ export default async function PlatformAgentsPage() {
             Ver agenda <ArrowRight className="h-4 w-4" />
           </div>
         </Link>
+
+        <Link
+          href="/platform/agents/prospecting"
+          className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+        >
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+               <Target className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Prospección</h3>
+            <p className="text-xs leading-relaxed text-slate-500 font-medium">
+              Gestión B2B asistida para búsqueda de nuevos clientes inmobiliarios.
+            </p>
+          </div>
+          <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
+            Abrir Prospecting Center <ArrowRight className="h-4 w-4" />
+          </div>
+        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

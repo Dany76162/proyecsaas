@@ -17,6 +17,7 @@ import {
   Bot,
   Megaphone,
   Network,
+  Target,
   Zap,
   Calendar,
   Link2,
@@ -27,8 +28,9 @@ import { logoutAction } from "@/server/auth/actions";
 
 const PLATFORM_NAV = [
   { name: "Resumen", href: "/platform", icon: LayoutDashboard, exact: true },
-  { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/canvas", "/platform/agents/automations"] },
+  { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/canvas", "/platform/agents/automations", "/platform/agents/prospecting"] },
   { name: "Automatizaciones", href: "/platform/agents/automations", icon: Zap },
+  { name: "Prospección", href: "/platform/agents/prospecting", icon: Target },
   { name: "Calendario", href: "/platform/agents/calendar", icon: Calendar },
   { name: "Integraciones", href: "/platform/agents/integrations", icon: Link2 },
   { name: "Canvas", href: "/platform/agents/canvas", icon: Network },

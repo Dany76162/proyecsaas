@@ -1010,3 +1010,149 @@ model AgentGovernancePolicy {
   agent                     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
   @@index([scope, organizationId])
 }
+
+// ─── Prospecting Center ───────────────────────────────────────────────────
+
+enum ProspectCompanyType {
+  REAL_ESTATE_AGENCY
+  CONSTRUCTION_COMPANY
+  DEVELOPER
+  BROKER_AGENT
+  PROPERTY_MANAGER
+  LAND_DEVELOPER
+  REAL_ESTATE_GROUP
+  ARCHITECTURE_STUDIO
+  REAL_ESTATE_INVESTOR
+  OTHER_REAL_ESTATE
+}
+
+enum ProspectStatus {
+  NEW
+  NEEDS_REVIEW
+  APPROVED
+  DISCARDED
+  DUPLICATE
+  CONTACT_READY
+  CONTACTED
+  REPLIED
+  DEMO_REQUESTED
+  CUSTOMER
+  DO_NOT_CONTACT
+}
+
+enum ProspectActivityType {
+  created
+  imported
+  approved
+  discarded
+  marked_duplicate
+  marked_do_not_contact
+  email_draft_generated
+  contact_marked_sent
+  reply_logged
+  demo_requested
+  note_added
+}
+
+enum ProspectMessageChannel {
+  EMAIL
+  WHATSAPP
+  LINKEDIN
+  OTHER
+}
+
+enum ProspectDraftStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  SENT_MANUALLY
+}
+
+model CommercialProspect {
+  id               String              @id @default(cuid())
+  companyName      String
+  companyType      ProspectCompanyType @default(OTHER_REAL_ESTATE)
+  status           ProspectStatus      @default(NEW)
+  
+  country          String?
+  region           String?
+  city             String?
+  website          String?
+  email            String?
+  phone            String?
+  whatsapp         String?
+  
+  instagramUrl     String?
+  facebookUrl      String?
+  linkedinUrl      String?
+  
+  sourceUrl        String?
+  sourceName       String?
+  
+  confidenceScore  Int?                @default(0)
+  qualityScore     Int?                @default(0)
+  
+  notes            String?             @db.Text
+  agentNotes       String?             @db.Text
+  internalTags     String[]            @default([])
+  
+  isDoNotContact   Boolean             @default(false)
+  doNotContactReason String?
+  
+  duplicateOfId    String?
+  
+  approvedAt       DateTime?
+  approvedByUserId String?
+  
+  discardedAt      DateTime?
+  discardedReason  String?
+  
+  contactedAt      DateTime?
+  lastContactedAt  DateTime?
+  repliedAt        DateTime?
+  demoRequestedAt  DateTime?
+  
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  activities       CommercialProspectActivity[]
+  messageDrafts    ProspectingMessageDraft[]
+
+  @@index([status])
+  @@index([companyType])
+  @@index([email])
+  @@index([website])
+}
+
+model CommercialProspectActivity {
+  id               String               @id @default(cuid())
+  prospectId       String
+  type             ProspectActivityType
+  message          String
+  metadata         Json?
+  createdByUserId  String?
+  createdAt        DateTime             @default(now())
+
+  prospect         CommercialProspect   @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  @@index([prospectId])
+}
+
+model ProspectingMessageDraft {
+  id               String                 @id @default(cuid())
+  prospectId       String
+  channel          ProspectMessageChannel @default(EMAIL)
+  subject          String?
+  body             String                 @db.Text
+  status           ProspectDraftStatus    @default(DRAFT)
+  generatedByAgent Boolean                @default(false)
+  
+  approvedAt       DateTime?
+  approvedByUserId String?
+  
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  prospect         CommercialProspect     @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  @@index([prospectId])
+  @@index([status])
+}
