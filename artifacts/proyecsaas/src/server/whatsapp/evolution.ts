@@ -100,19 +100,21 @@ export async function createEvolutionInstance(instanceName: string) {
       }),
     });
   } catch (error: any) {
-    // If instance already exists, Evolution API v2 might return 400 with a specific message
-    // or 403/409. We catch it to allow the flow to continue to getEvolutionQrCode.
+    // Evolution v2 is very inconsistent with error messages for existing instances.
+    // We will be permissive: if it's 400, 403, 409 or the message suggests it exists, we continue.
     const isAlreadyExists = 
       error.status === 403 || 
       error.status === 409 || 
-      (error.status === 400 && error.message?.toLowerCase().includes("already exists"));
+      error.status === 400 ||
+      error.message?.toLowerCase().includes("exists") ||
+      error.message?.toLowerCase().includes("already");
 
     if (isAlreadyExists) {
-      console.log(`[EvolutionAPI] Instance ${instanceName} already exists, skipping creation.`);
+      console.log(`[EvolutionAPI] Instance ${instanceName} might already exist (Status: ${error.status}), continuing to fetch QR.`);
       return { instanceName };
     }
     
-    console.error(`[EvolutionAPI] Failed to create instance ${instanceName}:`, error.message);
+    console.error(`[EvolutionAPI] Critical failure creating instance ${instanceName}:`, error.message);
     throw error;
   }
 }
