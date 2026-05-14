@@ -284,7 +284,14 @@ export async function getEvolutionQrAction(orgSlug: string) {
     // 3. Extract QR (Evolution API v2 might return it in different fields)
     console.log(`[getEvolutionQrAction] Raw QR Data keys for ${instanceName}:`, Object.keys(qrData));
     
-    let qrCode = qrData.base64 || qrData.qrcode?.base64 || qrData.instance?.qrcode?.base64;
+    let qrCode = qrData.base64 || qrData.qrcode?.base64;
+    
+    // Check in instance.qrcode (Evolution v2 nested structure)
+    if (!qrCode && qrData.instance?.qrcode) {
+      qrCode = typeof qrData.instance.qrcode === "string" 
+        ? qrData.instance.qrcode 
+        : qrData.instance.qrcode.base64;
+    }
     
     // Ensure base64 has the correct data URI prefix if it's a raw base64 string
     if (qrCode && !qrCode.startsWith("data:image")) {

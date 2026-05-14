@@ -10,6 +10,12 @@ export type EvolutionQrResponse = {
     base64?: string;
     code?: string;
   };
+  instance?: {
+    qrcode?: {
+      base64?: string;
+      code?: string;
+    } | string;
+  };
   base64?: string;
   code?: string;
   status?: string;
