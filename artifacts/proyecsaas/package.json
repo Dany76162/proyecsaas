@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
+    "@types/pg": "^8.20.0",
     "@uploadthing/react": "^7.3.3",
     "@xyflow/react": "^12.10.2",
     "bullmq": "^5.46.1",
@@ -27,6 +28,7 @@
     "next": "^15.2.0",
     "next-cloudinary": "^6.17.5",
     "openai": "^6.33.0",
+    "pg": "^8.20.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
