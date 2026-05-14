@@ -101,7 +101,13 @@ export async function createEvolutionInstance(instanceName: string) {
  * Gets the QR code for an instance.
  */
 export async function getEvolutionQrCode(instanceName: string): Promise<EvolutionQrResponse> {
-  return await request(`/instance/connect/${instanceName}`);
+  try {
+    return await request(`/instance/connect/${instanceName}`);
+  } catch (error: any) {
+    console.error(`[EvolutionAPI] Failed to get QR for ${instanceName}:`, error.message);
+    // If it's 404, maybe the instance was deleted? Let's throw so the action can handle it.
+    throw error;
+  }
 }
 
 /**

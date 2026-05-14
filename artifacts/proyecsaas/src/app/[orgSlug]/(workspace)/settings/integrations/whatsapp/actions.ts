@@ -270,7 +270,16 @@ export async function getEvolutionQrAction(orgSlug: string) {
     await createEvolutionInstance(instanceName);
 
     // 2. Fetch QR
-    const qrData = await getEvolutionQrCode(instanceName);
+    let qrData;
+    try {
+      qrData = await getEvolutionQrCode(instanceName);
+    } catch (err) {
+      console.warn(`[getEvolutionQrAction] QR fetch failed, attempting instance reset for ${instanceName}`);
+      // Nuclear option: if instance is stuck, delete and recreate
+      await logoutEvolutionInstance(instanceName);
+      await createEvolutionInstance(instanceName);
+      qrData = await getEvolutionQrCode(instanceName);
+    }
 
     // 3. Extract QR (Evolution API v2 might return it in different fields)
     const qrCode = qrData.base64 || qrData.qrcode?.base64;
