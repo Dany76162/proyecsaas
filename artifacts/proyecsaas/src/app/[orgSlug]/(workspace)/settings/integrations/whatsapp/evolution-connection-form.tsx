@@ -145,12 +145,21 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
                   Tocá <b>Vincular un dispositivo</b> y apunta tu cámara a este código.
                 </li>
               </ol>
-              <button
-                onClick={() => setQrCode(null)}
-                className="mt-4 text-xs font-bold text-slate-400 hover:text-slate-600 underline"
-              >
-                Cancelar y volver
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={fetchQr}
+                  disabled={loading}
+                  className="mt-4 text-xs font-bold text-brand-600 hover:text-brand-700 underline flex items-center gap-1"
+                >
+                  {loading ? "Generando..." : "Generar nuevo QR"}
+                </button>
+                <button
+                  onClick={() => setQrCode(null)}
+                  className="mt-4 text-xs font-bold text-slate-400 hover:text-slate-600 underline"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         </div>

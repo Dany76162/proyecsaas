@@ -282,7 +282,22 @@ export async function getEvolutionQrAction(orgSlug: string) {
     }
 
     // 3. Extract QR (Evolution API v2 might return it in different fields)
-    const qrCode = qrData.base64 || qrData.qrcode?.base64;
+    console.log(`[getEvolutionQrAction] Raw QR Data keys for ${instanceName}:`, Object.keys(qrData));
+    
+    let qrCode = qrData.base64 || qrData.qrcode?.base64 || qrData.instance?.qrcode?.base64;
+    
+    // Ensure base64 has the correct data URI prefix if it's a raw base64 string
+    if (qrCode && !qrCode.startsWith("data:image")) {
+      qrCode = `data:image/png;base64,${qrCode}`;
+    }
+
+    if (!qrCode) {
+      console.error(`[getEvolutionQrAction] No QR code found in response for ${instanceName}`, qrData);
+      return { 
+        success: false, 
+        message: "El servidor de WhatsApp no entregó un código QR válido. Reintentá en un momento." 
+      };
+    }
 
     // 4. Upsert channel record in DB (inactive until connected)
     await prisma.whatsAppChannel.upsert({

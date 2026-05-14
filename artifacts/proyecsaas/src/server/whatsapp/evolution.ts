@@ -70,13 +70,27 @@ async function request(path: string, options: RequestInit = {}) {
 export async function createEvolutionInstance(instanceName: string) {
   try {
     console.log(`[EvolutionAPI] Creating instance: ${instanceName}`);
+    
+    // Construct webhook URL from environment
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.WEBHOOK_GLOBAL_URL;
+    const webhookUrl = appUrl ? `${appUrl.replace(/\/$/, "")}/api/webhooks/whatsapp/evolution` : null;
+
     return await request("/instance/create", {
       method: "POST",
       body: JSON.stringify({
         instanceName,
-        token: instanceName, // We use instanceName as the local token
+        token: instanceName,
         integration: "WHATSAPP-BAILEYS",
         qrcode: true,
+        ...(webhookUrl && {
+          webhook_url: webhookUrl,
+          webhook_by_events: true,
+          webhook_events: [
+            "MESSAGES_UPSERT",
+            "CONNECTION_UPDATE",
+            "QRCODE_UPDATED"
+          ]
+        })
       }),
     });
   } catch (error: any) {

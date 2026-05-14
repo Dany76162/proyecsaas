@@ -31,6 +31,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "invalid-payload" }, { status: 400 });
   }
 
+  // Handle Connection Updates
+  if (payload.event === "connection.update") {
+    const instanceName = payload.instance;
+    const state = payload.data?.state;
+    
+    if (instanceName && state) {
+      console.log(`[Evolution Webhook] Connection update for ${instanceName}: ${state}`);
+      await prisma.whatsAppChannel.update({
+        where: { instanceName },
+        data: { 
+          status: state === "open" ? "ACTIVE" : "INACTIVE",
+          isPrimary: state === "open" ? true : undefined
+        }
+      }).catch(() => null); // Silent if instance not in DB yet
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // Handle QR Updates (if we want to store/cache it)
+  if (payload.event === "qrcode.updated") {
+    // We don't strictly need to store it if the UI is polling/fetching, 
+    // but we could use it to push via sockets in the future.
+    return NextResponse.json({ ok: true });
+  }
+
   // We only care about messages.upsert (new messages)
   if (payload.event !== "messages.upsert") {
     return NextResponse.json({ ok: true, ignored: true });
