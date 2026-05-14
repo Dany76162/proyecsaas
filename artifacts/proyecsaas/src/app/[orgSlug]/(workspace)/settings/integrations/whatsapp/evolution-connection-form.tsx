@@ -26,10 +26,14 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
       if (result.success && result.qrCode) {
         setQrCode(result.qrCode);
       } else {
-        setError(result.message || "Error al obtener QR");
+        // More descriptive error for the user
+        const displayError = result.message?.includes("Configuración") 
+          ? "El servidor no está configurado correctamente (faltan variables)." 
+          : result.message || "No se pudo generar el QR. Reintentá en unos segundos.";
+        setError(displayError);
       }
     } catch (err) {
-      setError("Error de conexión");
+      setError("Error de conexión con el puente de WhatsApp.");
     } finally {
       setLoading(false);
     }

@@ -8,7 +8,10 @@ export type EvolutionInstanceStatus = "CONNECTED" | "CONNECTING" | "DISCONNECTED
 export type EvolutionQrResponse = {
   qrcode?: {
     base64?: string;
+    code?: string;
   };
+  base64?: string;
+  code?: string;
   status?: string;
 };
 
@@ -66,20 +69,30 @@ async function request(path: string, options: RequestInit = {}) {
  */
 export async function createEvolutionInstance(instanceName: string) {
   try {
+    console.log(`[EvolutionAPI] Creating instance: ${instanceName}`);
     return await request("/instance/create", {
       method: "POST",
       body: JSON.stringify({
         instanceName,
-        token: instanceName, // We use instanceName as the local token too for simplicity
+        token: instanceName, // We use instanceName as the local token
+        integration: "WHATSAPP-BAILEYS",
         qrcode: true,
       }),
     });
   } catch (error: any) {
-    // If instance already exists, it might throw an error depending on the API version.
-    // Usually, we should check if it exists first or handle the error.
-    if (error.status === 403 || error.status === 409) {
+    // If instance already exists, Evolution API v2 might return 400 with a specific message
+    // or 403/409. We catch it to allow the flow to continue to getEvolutionQrCode.
+    const isAlreadyExists = 
+      error.status === 403 || 
+      error.status === 409 || 
+      (error.status === 400 && error.message?.toLowerCase().includes("already exists"));
+
+    if (isAlreadyExists) {
+      console.log(`[EvolutionAPI] Instance ${instanceName} already exists, skipping creation.`);
       return { instanceName };
     }
+    
+    console.error(`[EvolutionAPI] Failed to create instance ${instanceName}:`, error.message);
     throw error;
   }
 }

@@ -272,7 +272,10 @@ export async function getEvolutionQrAction(orgSlug: string) {
     // 2. Fetch QR
     const qrData = await getEvolutionQrCode(instanceName);
 
-    // 3. Upsert channel record in DB (inactive until connected)
+    // 3. Extract QR (Evolution API v2 might return it in different fields)
+    const qrCode = qrData.base64 || qrData.qrcode?.base64;
+
+    // 4. Upsert channel record in DB (inactive until connected)
     await prisma.whatsAppChannel.upsert({
       where: { instanceName },
       update: { 
@@ -289,7 +292,7 @@ export async function getEvolutionQrAction(orgSlug: string) {
       }
     });
 
-    return { success: true, qrCode: qrData.qrcode?.base64 };
+    return { success: true, qrCode };
   } catch (error: any) {
     console.error("[getEvolutionQrAction] Error:", error);
     return { 
