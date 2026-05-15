@@ -259,6 +259,19 @@ export async function requestWhatsAppConnectionAction(
 
 // --- Evolution API (QR Scan) Actions ---
 
+function findQrDeep(obj: any): string | null {
+  if (!obj || typeof obj !== 'object') return null;
+  if (typeof obj.base64 === 'string' && obj.base64.length > 100) return obj.base64;
+  if (typeof obj.qrcode === 'string' && obj.qrcode.length > 100) return obj.qrcode;
+  if (typeof obj.code === 'string' && obj.code.startsWith('data:image')) return obj.code;
+  
+  for (const key in obj) {
+    const found = findQrDeep(obj[key]);
+    if (found) return found;
+  }
+  return null;
+}
+
 export async function getEvolutionQrAction(orgSlug: string) {
   const { membership } = await requireOrganizationMembership(orgSlug);
   assertMinimumRole(membership.role, MembershipRole.ADMIN);
@@ -269,37 +282,25 @@ export async function getEvolutionQrAction(orgSlug: string) {
     // 1. Ensure instance exists
     await createEvolutionInstance(instanceName);
 
-    // 2. Fetch QR
-    let qrData;
-    try {
-      qrData = await getEvolutionQrCode(instanceName);
-    } catch (err) {
-      console.warn(`[getEvolutionQrAction] QR fetch failed, attempting instance reset for ${instanceName}`);
-      // Nuclear option: if instance is stuck, delete and recreate
-      await logoutEvolutionInstance(instanceName);
+    // 2. Fetch QR with auto-recovery if missing
+    let qrData = await getEvolutionQrCode(instanceName).catch(() => null);
+    let qrCode = findQrDeep(qrData);
+
+    if (!qrCode) {
+      console.warn(`[getEvolutionQrAction] No QR found or error on first try for ${instanceName}, forcing reset...`);
+      await logoutEvolutionInstance(instanceName).catch(() => null);
       await createEvolutionInstance(instanceName);
       qrData = await getEvolutionQrCode(instanceName);
-    }
-
-    // 3. Extract QR (Evolution API v2 might return it in different fields)
-    console.log(`[getEvolutionQrAction] Raw QR Data keys for ${instanceName}:`, Object.keys(qrData));
-    
-    let qrCode = qrData.base64 || qrData.qrcode?.base64;
-    
-    // Check in instance.qrcode (Evolution v2 nested structure)
-    if (!qrCode && qrData.instance?.qrcode) {
-      qrCode = typeof qrData.instance.qrcode === "string" 
-        ? qrData.instance.qrcode 
-        : qrData.instance.qrcode.base64;
+      qrCode = findQrDeep(qrData);
     }
     
     // Ensure base64 has the correct data URI prefix if it's a raw base64 string
-    if (qrCode && !qrCode.startsWith("data:image")) {
+    if (qrCode && !qrCode.startsWith("data:image") && qrCode.length > 100) {
       qrCode = `data:image/png;base64,${qrCode}`;
     }
 
     if (!qrCode) {
-      console.error(`[getEvolutionQrAction] No QR code found in response for ${instanceName}`, qrData);
+      console.error(`[getEvolutionQrAction] Deep search failed to find QR even after reset for ${instanceName}`, JSON.stringify(qrData));
       return { 
         success: false, 
         message: "El servidor de WhatsApp no entregó un código QR válido. Reintentá en un momento." 
