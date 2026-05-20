@@ -291,6 +291,7 @@ model Property {
   availability      AvailabilitySlot[]
   visits            Visit[]            @relation("PropertyVisits")
   images            PropertyImage[]
+  panoramas         PropertyPanorama[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -307,6 +308,23 @@ model PropertyImage {
   altText        String?
   sortOrder      Int      @default(0)
   isPrimary      Boolean  @default(false)
+  property       Property @relation(fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([organizationId, propertyId])
+}
+
+model PropertyPanorama {
+  id             String   @id @default(cuid())
+  propertyId     String
+  organizationId String
+  url            String
+  label          String?
+  sortOrder      Int      @default(0)
+  initialYaw     Float    @default(0)
+  initialPitch   Float    @default(0)
+  initialHfov    Float    @default(100)
   property       Property @relation(fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Cascade)
   createdAt      DateTime @default(now())
 

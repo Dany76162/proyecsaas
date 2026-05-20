@@ -1,4 +1,4 @@
-﻿import { PropertyStatus } from "@prisma/client";
+import { PropertyStatus } from "@prisma/client";
 import { z } from "zod";
 
 function emptyStringToNull(value: unknown) {
@@ -86,4 +86,24 @@ export const setPropertyImagePrimarySchema = z.object({
 
 export const deletePropertySchema = z.object({
   propertyId: z.string().min(1),
+});
+
+export const addPropertyPanoramaSchema = z.object({
+  propertyId: z.string().min(1),
+  url: z.string().url().max(1000),
+  label: z.string().max(100).optional(),
+});
+
+export const removePropertyPanoramaSchema = z.object({
+  panoramaId: z.string().min(1),
+  propertyId: z.string().min(1),
+});
+
+export const updatePanoramaSettingsSchema = z.object({
+  panoramaId: z.string().min(1),
+  propertyId: z.string().min(1),
+  label: z.string().max(100).optional(),
+  initialYaw: z.number().min(-180).max(180).optional(),
+  initialPitch: z.number().min(-90).max(90).optional(),
+  initialHfov: z.number().min(30).max(120).optional(),
 });

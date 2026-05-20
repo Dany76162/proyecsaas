@@ -7,6 +7,7 @@ import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { PropertyImageGallery } from "@/components/properties/property-image-gallery";
 import { PropertyVideoUpload } from "@/components/properties/property-video-upload";
+import { PanoramaUpload } from "@/components/properties/panorama-upload";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
@@ -464,6 +465,19 @@ export default async function PropertyDetailPage({
           orgSlug={orgSlug}
           propertyId={property.id}
           videoUrl={property.videoUrl}
+        />
+      </SectionCard>
+
+      {/* Tour 360° — panoramas inmersivos */}
+      <SectionCard
+        eyebrow="Tour 360°"
+        title="Escenas panorámicas"
+        description="Subí imágenes panorámicas 360° para crear recorridos virtuales inmersivos de la propiedad. Aplica para propiedades creadas a mano o sincronizadas."
+      >
+        <PanoramaUpload
+          orgSlug={orgSlug}
+          propertyId={property.id}
+          panoramas={property.panoramas}
         />
       </SectionCard>
 

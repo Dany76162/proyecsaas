@@ -57,6 +57,9 @@ export default async function PublicCatalogPage({
         take: 1,
         select: { url: true },
       },
+      _count: {
+        select: { panoramas: true },
+      },
     },
   });
 
@@ -155,6 +158,11 @@ export default async function PublicCatalogPage({
                             {prop.propertyType}
                           </span>
                         )}
+                        {prop._count.panoramas > 0 && (
+                          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 flex items-center gap-1">
+                            🔄 Tour 360°
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="font-semibold text-slate-900 text-sm leading-tight line-clamp-2">
@@ -206,6 +214,16 @@ export default async function PublicCatalogPage({
                               className="flex-1 flex items-center justify-center rounded-xl border py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
                             >
                               Ver más
+                            </a>
+                          )}
+                          {prop._count.panoramas > 0 && (
+                            <a
+                              href={`/map/${prop.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 flex items-center justify-center rounded-xl bg-indigo-50 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition"
+                            >
+                              Ver Tour
                             </a>
                           )}
                         </div>

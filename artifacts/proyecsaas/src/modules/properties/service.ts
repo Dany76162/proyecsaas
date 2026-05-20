@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import { PropertyStatus } from "@prisma/client";
 
@@ -79,6 +79,9 @@ export async function getPropertyDetail(
       images: {
         orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
       },
+      panoramas: {
+        orderBy: { sortOrder: "asc" },
+      },
       interestedLeads: {
         include: {
           owner: true,
@@ -126,6 +129,16 @@ export async function getPropertyDetail(
     isPrimary: img.isPrimary,
   }));
 
+  const panoramas = property.panoramas.map((pan) => ({
+    id: pan.id,
+    url: pan.url,
+    label: pan.label,
+    sortOrder: pan.sortOrder,
+    initialYaw: pan.initialYaw,
+    initialPitch: pan.initialPitch,
+    initialHfov: pan.initialHfov,
+  }));
+
   return {
     id: property.id,
     title: property.title,
@@ -153,6 +166,7 @@ export async function getPropertyDetail(
     interestedLeads,
     visits,
     images,
+    panoramas,
     organizationSlug: property.organization.slug,
   };
 }

@@ -399,3 +399,120 @@ export async function setPropertyImagePrimaryAction(
   revalidatePath(`/${orgSlug}/properties/${image.propertyId}`);
   return { success: true, message: "Imagen principal actualizada." };
 }
+
+// ─── Panorama actions ────────────────────────────────────────────────────────
+
+import {
+  addPropertyPanoramaSchema,
+  removePropertyPanoramaSchema,
+  updatePanoramaSettingsSchema,
+} from "@/modules/properties/schemas";
+
+export async function addPropertyPanoramaAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = addPropertyPanoramaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "URL o datos inválidos.", fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const property = await prisma.property.findFirst({
+    where: { id: parsed.data.propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  const lastPanorama = await prisma.propertyPanorama.findFirst({
+    where: { propertyId: property.id },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+  const nextSortOrder = (lastPanorama?.sortOrder ?? -1) + 1;
+
+  await prisma.propertyPanorama.create({
+    data: {
+      propertyId: property.id,
+      organizationId: membership.organization.id,
+      url: parsed.data.url,
+      label: parsed.data.label ?? null,
+      sortOrder: nextSortOrder,
+    },
+  });
+
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  return { success: true, message: "Escena 360° agregada." };
+}
+
+export async function removePropertyPanoramaAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = removePropertyPanoramaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Solicitud inválida." };
+  }
+
+  const panorama = await prisma.propertyPanorama.findFirst({
+    where: {
+      id: parsed.data.panoramaId,
+      propertyId: parsed.data.propertyId,
+      organizationId: membership.organization.id,
+    },
+    select: { id: true, propertyId: true },
+  });
+  if (!panorama) {
+    return { success: false, message: "Escena no encontrada." };
+  }
+
+  await prisma.propertyPanorama.delete({ where: { id: panorama.id } });
+
+  revalidatePath(`/${orgSlug}/properties/${panorama.propertyId}`);
+  return { success: true, message: "Escena 360° eliminada." };
+}
+
+export async function updatePanoramaSettingsAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = updatePanoramaSettingsSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Datos inválidos.", fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const panorama = await prisma.propertyPanorama.findFirst({
+    where: {
+      id: parsed.data.panoramaId,
+      propertyId: parsed.data.propertyId,
+      organizationId: membership.organization.id,
+    },
+    select: { id: true, propertyId: true },
+  });
+  if (!panorama) {
+    return { success: false, message: "Escena no encontrada." };
+  }
+
+  await prisma.propertyPanorama.update({
+    where: { id: panorama.id },
+    data: {
+      label: parsed.data.label !== undefined ? parsed.data.label : undefined,
+      initialYaw: parsed.data.initialYaw !== undefined ? parsed.data.initialYaw : undefined,
+      initialPitch: parsed.data.initialPitch !== undefined ? parsed.data.initialPitch : undefined,
+      initialHfov: parsed.data.initialHfov !== undefined ? parsed.data.initialHfov : undefined,
+    },
+  });
+
+  revalidatePath(`/${orgSlug}/properties/${panorama.propertyId}`);
+  return { success: true, message: "Escena 360° actualizada." };
+}

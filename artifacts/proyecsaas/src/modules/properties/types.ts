@@ -1,4 +1,4 @@
-﻿import type { PropertyStatus, VisitStatus } from "@prisma/client";
+import type { PropertyStatus, VisitStatus } from "@prisma/client";
 
 export type PropertyListItem = {
   id: string;
@@ -49,6 +49,16 @@ export type PropertyImageItem = {
   isPrimary: boolean;
 };
 
+export type PropertyPanoramaItem = {
+  id: string;
+  url: string;
+  label: string | null;
+  sortOrder: number;
+  initialYaw: number;
+  initialPitch: number;
+  initialHfov: number;
+};
+
 export type PropertyDetail = PropertyListItem & {
   description: string | null;
   amenities: string | null;
@@ -59,5 +69,6 @@ export type PropertyDetail = PropertyListItem & {
   interestedLeads: PropertyInterestLead[];
   visits: PropertyVisitItem[];
   images: PropertyImageItem[];
+  panoramas: PropertyPanoramaItem[];
   organizationSlug: string;
 };

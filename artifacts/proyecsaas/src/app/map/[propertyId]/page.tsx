@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
+import { PanoramaViewer } from "@/components/properties/panorama-viewer";
 import { getPublicPropertyDetail } from "@/modules/properties/service";
 import { formatCurrency } from "@/lib/utils";
 
@@ -52,6 +53,13 @@ export default async function PublicPropertyDetailPage({
         <MetricCard label="Layout" value={`${property.bedrooms ?? 0} / ${property.bathrooms ?? 0}`} hint="Bedrooms and bathrooms." />
         <MetricCard label="Surface" value={`${property.surfaceM2 ?? 0} m2`} hint="Useful for quick qualification." />
       </section>
+
+      {property.panoramas && property.panoramas.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xl font-bold text-slate-900 mb-4">Tour Virtual 360°</h2>
+          <PanoramaViewer panoramas={property.panoramas} className="h-[500px]" />
+        </section>
+      )}
 
       <SectionCard
         eyebrow="Flow"
