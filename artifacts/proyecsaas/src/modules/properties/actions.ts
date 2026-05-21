@@ -10,9 +10,12 @@ import {
   createPropertySchema,
   deletePropertySchema,
   removePropertyImageSchema,
+  removePropertyMediaBatchSchema,
   setPropertyImagePrimarySchema,
   setPropertyVideoSchema,
   updatePropertySchema,
+  updatePropertyImagesBatchSchema,
+  upsertPropertyMediaSchema,
 } from "@/modules/properties/schemas";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
@@ -360,6 +363,73 @@ export async function removePropertyImageAction(
   return { success: true, message: "Imagen eliminada." };
 }
 
+export async function removePropertyMediaBatchAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = removePropertyMediaBatchSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Solicitud invÃ¡lida.", fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const property = await prisma.property.findFirst({
+    where: { id: parsed.data.propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  const imageIds = [...new Set(parsed.data.imageIds)];
+  const panoramaIds = [...new Set(parsed.data.panoramaIds)];
+
+  const panoramas = panoramaIds.length
+    ? await prisma.propertyPanorama.findMany({
+        where: {
+          id: { in: panoramaIds },
+          propertyId: property.id,
+          organizationId: membership.organization.id,
+        },
+        select: { id: true, url: true },
+      })
+    : [];
+
+  const panoramaUrls = panoramas.map((panorama) => panorama.url);
+  if (imageIds.length === 0 && panoramaUrls.length === 0) {
+    return { success: false, message: "No se encontraron medios para eliminar." };
+  }
+
+  await prisma.$transaction([
+    ...(panoramas.length
+      ? [
+          prisma.propertyPanorama.deleteMany({
+            where: {
+              id: { in: panoramas.map((panorama) => panorama.id) },
+              propertyId: property.id,
+              organizationId: membership.organization.id,
+            },
+          }),
+        ]
+      : []),
+    prisma.propertyImage.deleteMany({
+      where: {
+        propertyId: property.id,
+        organizationId: membership.organization.id,
+        OR: [
+          ...(imageIds.length ? [{ id: { in: imageIds } }] : []),
+          ...(panoramaUrls.length ? [{ url: { in: panoramaUrls } }] : []),
+        ],
+      },
+    }),
+  ]);
+
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  return { success: true, message: "Medios eliminados." };
+}
+
 export async function setPropertyImagePrimaryAction(
   orgSlug: string,
   input: unknown,
@@ -400,7 +470,142 @@ export async function setPropertyImagePrimaryAction(
   return { success: true, message: "Imagen principal actualizada." };
 }
 
+export async function updatePropertyImagesBatchAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = updatePropertyImagesBatchSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Datos inválidos.", fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const property = await prisma.property.findFirst({
+    where: { id: parsed.data.propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  // Transaction: Delete old ones and create new ones in the exact order specified
+  await prisma.$transaction([
+    prisma.propertyImage.deleteMany({
+      where: { propertyId: property.id },
+    }),
+    prisma.propertyImage.createMany({
+      data: parsed.data.images.map((img) => ({
+        propertyId: property.id,
+        organizationId: membership.organization.id,
+        url: img.url,
+        altText: img.altText ?? null,
+        category: img.category ?? "REAL",
+        isPrimary: img.isPrimary,
+        sortOrder: img.sortOrder,
+      })),
+    }),
+  ]);
+
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  return { success: true, message: "Galería de imágenes actualizada correctamente." };
+}
+
 // ─── Panorama actions ────────────────────────────────────────────────────────
+
+export async function upsertPropertyMediaAction(
+  orgSlug: string,
+  propertyId: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = upsertPropertyMediaSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: "Datos de medio invÃ¡lidos.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const property = await prisma.property.findFirst({
+    where: { id: propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  if (parsed.data.category === "PANORAMA") {
+    const lastPanorama = await prisma.propertyPanorama.findFirst({
+      where: { propertyId: property.id, organizationId: membership.organization.id },
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+    const nextSortOrder = (lastPanorama?.sortOrder ?? -1) + 1;
+
+    await prisma.$transaction([
+      prisma.propertyImage.create({
+        data: {
+          propertyId: property.id,
+          organizationId: membership.organization.id,
+          url: parsed.data.url,
+          altText: parsed.data.title,
+          category: "PANORAMA",
+          isPrimary: false,
+          sortOrder: nextSortOrder,
+        },
+      }),
+      prisma.propertyPanorama.create({
+        data: {
+          propertyId: property.id,
+          organizationId: membership.organization.id,
+          url: parsed.data.url,
+          label: parsed.data.title,
+          direction: parsed.data.direction ?? null,
+          sortOrder: nextSortOrder,
+        },
+      }),
+    ]);
+
+    revalidatePath(`/${orgSlug}/properties/${property.id}`);
+    return { success: true, message: "Escena 360Â° agregada." };
+  }
+
+  const lastImage = await prisma.propertyImage.findFirst({
+    where: {
+      propertyId: property.id,
+      organizationId: membership.organization.id,
+      category: parsed.data.category,
+    },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+  const nextSortOrder = (lastImage?.sortOrder ?? -1) + 1;
+
+  const hasPrimary = await prisma.propertyImage.findFirst({
+    where: { propertyId: property.id, organizationId: membership.organization.id, isPrimary: true },
+    select: { id: true },
+  });
+
+  await prisma.propertyImage.create({
+    data: {
+      propertyId: property.id,
+      organizationId: membership.organization.id,
+      url: parsed.data.url,
+      altText: parsed.data.title,
+      category: parsed.data.category,
+      isPrimary: !hasPrimary && parsed.data.category === "REAL",
+      sortOrder: nextSortOrder,
+    },
+  });
+
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  return { success: true, message: "Imagen agregada." };
+}
 
 import {
   addPropertyPanoramaSchema,

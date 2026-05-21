@@ -55,4 +55,8 @@ Thumbs.db
 .next-prod
 *.log
 *.err.log
-*.out.logartifacts/
+*.out.log
+artifacts/proyecsaas/public/uploads/
+artifacts/proyecsaas/scratch/
+flyctl.exe
+flyctl.zip

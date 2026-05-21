@@ -1,4 +1,4 @@
-import { PropertyStatus } from "@prisma/client";
+import { PropertyImageCategory, PropertyStatus } from "@prisma/client";
 import { z } from "zod";
 
 function emptyStringToNull(value: unknown) {
@@ -74,9 +74,26 @@ export const addPropertyImageSchema = z.object({
   isPrimary: z.boolean().optional(),
 });
 
+export const upsertPropertyMediaSchema = z.object({
+  url: z.string().max(1000).refine((value) => value.startsWith("/uploads/") || /^https?:\/\//.test(value), {
+    message: "URL de medio inválida.",
+  }),
+  category: z.nativeEnum(PropertyImageCategory),
+  title: z.string().trim().min(1).max(200),
+  direction: z.enum(["N", "NE", "E", "SE", "S", "SO", "O", "NO", "CENTER"]).optional(),
+});
+
 export const removePropertyImageSchema = z.object({
   imageId: z.string().min(1),
   propertyId: z.string().min(1),
+});
+
+export const removePropertyMediaBatchSchema = z.object({
+  propertyId: z.string().min(1),
+  imageIds: z.array(z.string().min(1)).default([]),
+  panoramaIds: z.array(z.string().min(1)).default([]),
+}).refine((value) => value.imageIds.length > 0 || value.panoramaIds.length > 0, {
+  message: "Selecciona al menos un medio para eliminar.",
 });
 
 export const setPropertyImagePrimarySchema = z.object({
@@ -106,4 +123,15 @@ export const updatePanoramaSettingsSchema = z.object({
   initialYaw: z.number().min(-180).max(180).optional(),
   initialPitch: z.number().min(-90).max(90).optional(),
   initialHfov: z.number().min(30).max(120).optional(),
+});
+
+export const updatePropertyImagesBatchSchema = z.object({
+  propertyId: z.string().min(1),
+  images: z.array(z.object({
+        url: z.string().url().max(1000),
+        altText: z.string().max(200).optional(),
+        category: z.nativeEnum(PropertyImageCategory).optional(),
+        isPrimary: z.boolean(),
+        sortOrder: z.number().int(),
+      })),
 });

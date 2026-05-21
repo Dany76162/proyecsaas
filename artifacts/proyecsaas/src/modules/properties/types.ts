@@ -1,4 +1,4 @@
-import type { PropertyStatus, VisitStatus } from "@prisma/client";
+import type { PropertyImageCategory, PropertyStatus, VisitStatus } from "@prisma/client";
 
 export type PropertyListItem = {
   id: string;
@@ -45,6 +45,7 @@ export type PropertyImageItem = {
   id: string;
   url: string;
   altText: string | null;
+  category: PropertyImageCategory;
   sortOrder: number;
   isPrimary: boolean;
 };
@@ -53,6 +54,7 @@ export type PropertyPanoramaItem = {
   id: string;
   url: string;
   label: string | null;
+  direction: string | null;
   sortOrder: number;
   initialYaw: number;
   initialPitch: number;

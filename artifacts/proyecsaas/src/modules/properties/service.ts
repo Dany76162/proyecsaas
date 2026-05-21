@@ -125,6 +125,7 @@ export async function getPropertyDetail(
     id: img.id,
     url: img.url,
     altText: img.altText,
+    category: img.category,
     sortOrder: img.sortOrder,
     isPrimary: img.isPrimary,
   }));
@@ -133,6 +134,7 @@ export async function getPropertyDetail(
     id: pan.id,
     url: pan.url,
     label: pan.label,
+    direction: pan.direction,
     sortOrder: pan.sortOrder,
     initialYaw: pan.initialYaw,
     initialPitch: pan.initialPitch,

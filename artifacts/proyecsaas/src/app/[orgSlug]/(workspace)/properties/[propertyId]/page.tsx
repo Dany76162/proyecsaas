@@ -5,9 +5,7 @@ import { notFound } from "next/navigation";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { PropertyImageGallery } from "@/components/properties/property-image-gallery";
-import { PropertyVideoUpload } from "@/components/properties/property-video-upload";
-import { PanoramaUpload } from "@/components/properties/panorama-upload";
+import { MediaManager } from "@/components/properties/media-manager";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
@@ -442,44 +440,13 @@ export default async function PropertyDetailPage({
         </div>
       </form>
 
-      {/* Sección 5: Galería (client component — fuera del form) */}
-      <SectionCard
-        eyebrow="Galería"
-        title="Imágenes"
-        description="Subí fotos desde tu PC o celular, pegá URLs, o usá links de Google Drive. La primera imagen se marca como principal."
-      >
-        <PropertyImageGallery
-          orgSlug={orgSlug}
-          propertyId={property.id}
-          images={property.images}
-        />
-      </SectionCard>
-
-      {/* Video — upload directo o enlace externo */}
-      <SectionCard
-        eyebrow="Video"
-        title="Tour virtual / Video"
-        description="Subí un video desde tu PC o celular (MP4, MOV, WebM · máx. 128 MB). Para videos más pesados, pegá el link en el campo 'Video / Tour virtual' de la sección Descripción."
-      >
-        <PropertyVideoUpload
-          orgSlug={orgSlug}
-          propertyId={property.id}
-          videoUrl={property.videoUrl}
-        />
-      </SectionCard>
-
-      {/* Tour 360° — panoramas inmersivos */}
-      <SectionCard
-        eyebrow="Tour 360°"
-        title="Escenas panorámicas"
-        description="Subí imágenes panorámicas 360° para crear recorridos virtuales inmersivos de la propiedad. Aplica para propiedades creadas a mano o sincronizadas."
-      >
-        <PanoramaUpload
-          orgSlug={orgSlug}
-          propertyId={property.id}
-          panoramas={property.panoramas}
-        />
-      </SectionCard>
+      {/* Gestor unificado de medios */}
+      <MediaManager
+        orgSlug={orgSlug}
+        propertyId={property.id}
+        images={property.images}
+        panoramas={property.panoramas}
+      />
 
       {/* CRM sections */}
       <section className="grid gap-6 xl:grid-cols-2">

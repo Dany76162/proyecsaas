@@ -31,6 +31,13 @@ enum PropertyStatus {
   RENTED
 }
 
+enum PropertyImageCategory {
+  PANORAMA
+  REAL
+  RENDER
+  PROGRESS
+}
+
 enum VisitStatus {
   PENDING
   CONFIRMED
@@ -306,6 +313,7 @@ model PropertyImage {
   organizationId String
   url            String
   altText        String?
+  category       PropertyImageCategory @default(REAL)
   sortOrder      Int      @default(0)
   isPrimary      Boolean  @default(false)
   property       Property @relation(fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Cascade)
@@ -321,6 +329,7 @@ model PropertyPanorama {
   organizationId String
   url            String
   label          String?
+  direction      String?
   sortOrder      Int      @default(0)
   initialYaw     Float    @default(0)
   initialPitch   Float    @default(0)

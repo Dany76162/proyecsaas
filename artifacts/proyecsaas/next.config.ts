@@ -6,6 +6,9 @@ export default function nextConfig(phase: string): NextConfig {
 
   return {
     reactStrictMode: true,
+    experimental: {
+      middlewareClientMaxBodySize: "512mb",
+    },
     // Use default .next for production (Railway compatibility).
     // Dev uses .next-dev to keep artifacts separate from production build.
     distDir: isDev ? ".next-dev" : ".next",
