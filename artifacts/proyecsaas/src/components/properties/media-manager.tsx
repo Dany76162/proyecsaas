@@ -71,6 +71,12 @@ export function MediaManager({
         url: payload.url,
         label: payload.title,
         direction: payload.direction ?? null,
+        roomName: payload.title,
+        floor: 0,
+        positionX: panoramas.length * 3,
+        positionY: 0,
+        positionZ: 0,
+        connections: [],
         sortOrder: panoramas.length,
         initialYaw: 0,
         initialPitch: 0,
@@ -123,6 +129,7 @@ export function MediaManager({
               key={activePanorama.id}
               panoramas={orderedPanoramas}
               showSceneNavigation={false}
+              immersiveControls={false}
               className="h-full gap-0 [&>div:first-child]:h-full [&>div:first-child]:rounded-none [&>div:first-child]:border-0 [&>div:first-child]:shadow-none"
             />
           ) : primaryImage ? (

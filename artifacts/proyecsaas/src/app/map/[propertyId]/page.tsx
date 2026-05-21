@@ -1,13 +1,14 @@
 export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PanoramaViewer } from "@/components/properties/panorama-viewer";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
-import { PanoramaViewer } from "@/components/properties/panorama-viewer";
-import { getPublicPropertyDetail } from "@/modules/properties/service";
 import { formatCurrency } from "@/lib/utils";
+import { getPublicPropertyDetail } from "@/modules/properties/service";
 
 export default async function PublicPropertyDetailPage({
   params,
@@ -22,55 +23,62 @@ export default async function PublicPropertyDetailPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-10">
-      <section className="rounded-[2rem] border bg-white p-8 shadow-soft">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge label={property.status} tone="success" />
-              <StatusBadge label="Public listing" tone="info" />
+    <main className="min-h-screen bg-[#05070b] text-white">
+      <section className="mx-auto flex w-full max-w-6xl flex-col px-6 py-6">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl backdrop-blur">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusBadge label={property.status} tone="success" />
+                <StatusBadge label="Tour publico" tone="info" />
+              </div>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">{property.title}</h1>
+              <p className="mt-3 text-base leading-7 text-white/65">
+                {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") ||
+                  "Ubicacion pendiente"}
+              </p>
             </div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-              {property.title}
-            </h1>
-            <p className="mt-3 text-base leading-7 text-slate-600">
-              {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Location details pending"}
-            </p>
+
+            <Link
+              href={`/${property.organizationSlug}/properties/${property.id}`}
+              className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+            >
+              Abrir gestion interna
+            </Link>
           </div>
-
-          <Link
-            href={`/${property.organizationSlug}/properties/${property.id}`}
-            className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
-          >
-            Open internal flow
-          </Link>
         </div>
-      </section>
 
-      <section className="mt-6 grid gap-4 md:grid-cols-4">
-        <MetricCard label="Price" value={property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Price on request"} hint="Current public asking price." />
-        <MetricCard label="Type" value={property.propertyType || "Property"} hint="Property classification." />
-        <MetricCard label="Layout" value={`${property.bedrooms ?? 0} / ${property.bathrooms ?? 0}`} hint="Bedrooms and bathrooms." />
-        <MetricCard label="Surface" value={`${property.surfaceM2 ?? 0} m2`} hint="Useful for quick qualification." />
-      </section>
-
-      {property.panoramas && property.panoramas.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Tour Virtual 360°</h2>
-          <PanoramaViewer panoramas={property.panoramas} className="h-[500px]" />
+        <section className="mt-6 grid gap-4 md:grid-cols-4">
+          <MetricCard
+            label="Precio"
+            value={property.priceCents != null ? formatCurrency(property.priceCents, property.currency ?? "USD") : "Consultar"}
+            hint="Precio publico actual."
+          />
+          <MetricCard label="Tipo" value={property.propertyType || "Propiedad"} hint="Clasificacion de la propiedad." />
+          <MetricCard
+            label="Ambientes"
+            value={`${property.bedrooms ?? 0} / ${property.bathrooms ?? 0}`}
+            hint="Dormitorios y banos."
+          />
+          <MetricCard label="Superficie" value={`${property.surfaceM2 ?? 0} m2`} hint="Dato rapido de calificacion." />
         </section>
-      )}
 
-      <SectionCard
-        eyebrow="Flow"
-        title="Next internal steps"
-        description="This page bridges the public inventory entry point with the internal commercial workflow."
-      >
-        <div className="space-y-4 text-sm leading-7 text-slate-600">
-          <p>Open the internal property workspace to review active leads already linked to this listing.</p>
-          <p>From the property page, move into the relevant lead and continue to visit scheduling.</p>
-        </div>
-      </SectionCard>
+        {property.panoramas && property.panoramas.length > 0 && (
+          <section className="mt-8">
+            <PanoramaViewer panoramas={property.panoramas} className="h-[min(76vh,760px)]" immersiveControls />
+          </section>
+        )}
+
+        <SectionCard
+          eyebrow="Recorrido"
+          title="Tour inmersivo"
+          description="Alterna entre recorrido 360 y vista espacial generada desde las escenas capturadas."
+        >
+          <div className="space-y-4 text-sm leading-7 text-slate-600">
+            <p>El modo dollhouse actual usa las escenas 360 como maqueta visual. Cuando carguemos un modelo 3D real, este mismo control va a renderizar la propiedad completa.</p>
+          </div>
+        </SectionCard>
+      </section>
     </main>
   );
 }

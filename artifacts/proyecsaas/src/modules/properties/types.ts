@@ -55,6 +55,12 @@ export type PropertyPanoramaItem = {
   url: string;
   label: string | null;
   direction: string | null;
+  roomName: string | null;
+  floor: number;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  connections: string[];
   sortOrder: number;
   initialYaw: number;
   initialPitch: number;

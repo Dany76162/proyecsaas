@@ -135,6 +135,12 @@ export async function getPropertyDetail(
     url: pan.url,
     label: pan.label,
     direction: pan.direction,
+    roomName: pan.roomName,
+    floor: pan.floor,
+    positionX: pan.positionX,
+    positionY: pan.positionY,
+    positionZ: pan.positionZ,
+    connections: parsePanoramaConnections(pan.connections),
     sortOrder: pan.sortOrder,
     initialYaw: pan.initialYaw,
     initialPitch: pan.initialPitch,
@@ -171,6 +177,17 @@ export async function getPropertyDetail(
     panoramas,
     organizationSlug: property.organization.slug,
   };
+}
+
+function parsePanoramaConnections(value: string | null) {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function listPublicProperties() {

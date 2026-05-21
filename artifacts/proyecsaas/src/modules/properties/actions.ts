@@ -363,6 +363,106 @@ export async function removePropertyImageAction(
   return { success: true, message: "Imagen eliminada." };
 }
 
+const demoTourScenes = [
+  {
+    url: "/uploads/property-media/panoramas360/demo-living.jpg",
+    title: "Living demo",
+    roomName: "Living",
+    positionX: -3,
+    positionY: 0,
+  },
+  {
+    url: "/uploads/property-media/panoramas360/demo-cocina.jpg",
+    title: "Cocina demo",
+    roomName: "Cocina",
+    positionX: 0,
+    positionY: -2.4,
+  },
+  {
+    url: "/uploads/property-media/panoramas360/demo-dormitorio.jpg",
+    title: "Dormitorio demo",
+    roomName: "Dormitorio",
+    positionX: 3,
+    positionY: 0,
+  },
+];
+
+export async function createPropertyDemoTourAction(
+  orgSlug: string,
+  propertyId: string,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const property = await prisma.property.findFirst({
+    where: { id: propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  const existing = await prisma.propertyPanorama.count({
+    where: { propertyId: property.id, organizationId: membership.organization.id },
+  });
+  if (existing > 0) {
+    return { success: false, message: "La propiedad ya tiene escenas 360." };
+  }
+
+  const created = await prisma.$transaction(async (tx) => {
+    const panoramas = [];
+
+    for (let index = 0; index < demoTourScenes.length; index += 1) {
+      const scene = demoTourScenes[index];
+      await tx.propertyImage.create({
+        data: {
+          propertyId: property.id,
+          organizationId: membership.organization.id,
+          url: scene.url,
+          altText: scene.title,
+          category: "PANORAMA",
+          isPrimary: false,
+          sortOrder: index,
+        },
+      });
+
+      const panorama = await tx.propertyPanorama.create({
+        data: {
+          propertyId: property.id,
+          organizationId: membership.organization.id,
+          url: scene.url,
+          label: scene.title,
+          roomName: scene.roomName,
+          direction: "CENTER",
+          floor: 0,
+          positionX: scene.positionX,
+          positionY: scene.positionY,
+          positionZ: 0,
+          sortOrder: index,
+        },
+      });
+
+      panoramas.push(panorama);
+    }
+
+    for (let index = 0; index < panoramas.length; index += 1) {
+      const connections = [panoramas[index - 1]?.id, panoramas[index + 1]?.id].filter(
+        (id): id is string => Boolean(id),
+      );
+
+      await tx.propertyPanorama.update({
+        where: { id: panoramas[index].id },
+        data: { connections: JSON.stringify(connections) },
+      });
+    }
+
+    return panoramas;
+  });
+
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  return { success: true, message: `${created.length} escenas demo creadas.` };
+}
+
 export async function removePropertyMediaBatchAction(
   orgSlug: string,
   input: unknown,
@@ -712,6 +812,12 @@ export async function updatePanoramaSettingsAction(
     where: { id: panorama.id },
     data: {
       label: parsed.data.label !== undefined ? parsed.data.label : undefined,
+      roomName: parsed.data.roomName !== undefined ? parsed.data.roomName : undefined,
+      floor: parsed.data.floor !== undefined ? parsed.data.floor : undefined,
+      positionX: parsed.data.positionX !== undefined ? parsed.data.positionX : undefined,
+      positionY: parsed.data.positionY !== undefined ? parsed.data.positionY : undefined,
+      positionZ: parsed.data.positionZ !== undefined ? parsed.data.positionZ : undefined,
+      connections: parsed.data.connections !== undefined ? JSON.stringify(parsed.data.connections) : undefined,
       initialYaw: parsed.data.initialYaw !== undefined ? parsed.data.initialYaw : undefined,
       initialPitch: parsed.data.initialPitch !== undefined ? parsed.data.initialPitch : undefined,
       initialHfov: parsed.data.initialHfov !== undefined ? parsed.data.initialHfov : undefined,

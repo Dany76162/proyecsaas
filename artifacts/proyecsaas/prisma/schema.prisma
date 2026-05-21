@@ -330,6 +330,12 @@ model PropertyPanorama {
   url            String
   label          String?
   direction      String?
+  roomName       String?
+  floor          Int      @default(0)
+  positionX      Float    @default(0)
+  positionY      Float    @default(0)
+  positionZ      Float    @default(0)
+  connections    String   @default("[]")
   sortOrder      Int      @default(0)
   initialYaw     Float    @default(0)
   initialPitch   Float    @default(0)
