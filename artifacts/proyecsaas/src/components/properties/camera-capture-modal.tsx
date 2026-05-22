@@ -3,14 +3,8 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Camera,
-  Image as ImageIcon,
   Loader2,
-  RectangleHorizontal,
-  RefreshCw,
-  Settings,
-  SwitchCamera,
   VideoOff,
-  ZapOff,
 } from "lucide-react";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -464,20 +458,8 @@ export function CameraCaptureModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="fixed inset-0 h-[100dvh] max-h-[100dvh] w-screen max-w-none overflow-hidden rounded-none border-0 bg-black p-0 text-white shadow-2xl sm:relative sm:max-h-[92vh] sm:max-w-md sm:rounded-[2rem] sm:border-white/10">
         <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-black">
-          <div className="flex h-24 shrink-0 items-center justify-between px-8">
-            <button type="button" className="grid h-11 w-11 place-items-center text-white" aria-label="Ajustes">
-              <Settings className="h-8 w-8" />
-            </button>
-            <button type="button" className="grid h-11 w-11 place-items-center text-white" aria-label="Formato">
-              <RectangleHorizontal className="h-9 w-9" />
-            </button>
-            <span className="text-xl font-black tracking-tight text-white">HDR</span>
-            <button type="button" className="grid h-11 w-11 place-items-center text-white" aria-label="Temporizador">
-              <RefreshCw className="h-8 w-8 rotate-45" />
-            </button>
-            <button type="button" className="grid h-11 w-11 place-items-center text-white" aria-label="Flash">
-              <ZapOff className="h-8 w-8" />
-            </button>
+          <div className="flex h-14 shrink-0 items-center justify-center px-8">
+            {/* Top bar limpia – sin íconos decorativos */}
           </div>
 
           <div className="relative min-h-0 flex-1 overflow-hidden bg-black">
@@ -543,42 +525,11 @@ export function CameraCaptureModal({
               </div>
             )}
 
-            <div className="pointer-events-none absolute right-6 top-1/2 grid h-20 w-20 -translate-y-1/2 place-items-center rounded-full border-4 border-white text-lg font-black text-white">
-              1,0X
-            </div>
+
             <canvas ref={canvasRef} className="hidden" />
           </div>
 
           <div className="shrink-0 bg-black px-6 pb-7 pt-5">
-            <div className="mb-8 flex items-center gap-3 overflow-hidden whitespace-nowrap text-lg font-medium uppercase tracking-wide text-white">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("photo");
-                  handleRetake();
-                  setCategory("REAL");
-                }}
-                className={mode === "photo" ? "text-[#f4c542]" : "text-white"}
-              >
-                Automatico
-              </button>
-              <span>•</span>
-              <span>Video</span>
-              <span>•</span>
-              <span>Filtro</span>
-              <span>•</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("guided360");
-                  handleRetake();
-                  setCategory("PANORAMA");
-                }}
-                className={mode === "guided360" ? "text-[#f4c542]" : "text-white"}
-              >
-                Pan
-              </button>
-            </div>
 
             {mode === "guided360" && (
               <div className="mb-5 flex items-center justify-between text-xs font-bold uppercase tracking-wide text-white/70">
@@ -599,21 +550,13 @@ export function CameraCaptureModal({
               </div>
             )}
 
-            <div className="grid grid-cols-3 items-center">
-              <button type="button" className="grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-white/25 bg-white/10" aria-label="Galeria">
-                {previewUrl ? (
-                  <img src={previewUrl} alt="Ultima captura" className="h-full w-full object-cover" />
-                ) : (
-                  <ImageIcon className="h-7 w-7 text-white" />
-                )}
-              </button>
-
+            <div className="flex items-center justify-center">
               {capturedFile ? (
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={!canSave}
-                  className="mx-auto grid h-24 w-24 place-items-center rounded-full border-[10px] border-white/35 bg-white text-black disabled:opacity-55"
+                  className="grid h-24 w-24 place-items-center rounded-full border-[10px] border-white/35 bg-white text-black disabled:opacity-55"
                   aria-label="Guardar captura"
                 >
                   {isSaving ? <Loader2 className="h-8 w-8 animate-spin" /> : <Camera className="h-10 w-10" />}
@@ -623,16 +566,12 @@ export function CameraCaptureModal({
                   type="button"
                   onClick={handleCapture}
                   disabled={!canCapture}
-                  className="mx-auto grid h-24 w-24 place-items-center rounded-full border-[10px] border-white/35 bg-white text-black disabled:opacity-55"
+                  className="grid h-24 w-24 place-items-center rounded-full border-[10px] border-white/35 bg-white text-black disabled:opacity-55"
                   aria-label="Capturar"
                 >
                   <Camera className="h-10 w-10" />
                 </button>
               )}
-
-              <button type="button" className="ml-auto grid h-16 w-16 place-items-center text-white" aria-label="Cambiar camara">
-                <SwitchCamera className="h-9 w-9" />
-              </button>
             </div>
 
             <div className="mt-6 flex items-center justify-center gap-6">
