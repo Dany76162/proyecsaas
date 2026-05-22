@@ -14,6 +14,23 @@ type PropertyFloorPlanRow = {
   floorPlanUrl: string | null;
 };
 
+type PropertyPanoramaRow = {
+  id: string;
+  url: string;
+  label: string | null;
+  direction: string | null;
+  roomName: string | null;
+  floor: number;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  connections: string | null;
+  sortOrder: number;
+  initialYaw: number;
+  initialPitch: number;
+  initialHfov: number;
+};
+
 export async function listOrganizationProperties(
   orgSlug: string,
 ): Promise<PropertyListItem[]> {
@@ -78,13 +95,34 @@ export async function getPropertyDetail(
         slug: orgSlug,
       },
     },
-    include: {
+    select: {
+      id: true,
+      organizationId: true,
+      title: true,
+      description: true,
+      address: true,
+      city: true,
+      neighborhood: true,
+      propertyType: true,
+      operationType: true,
+      status: true,
+      publicVisible: true,
+      priceCents: true,
+      currency: true,
+      expensesCents: true,
+      rooms: true,
+      bedrooms: true,
+      bathrooms: true,
+      surfaceM2: true,
+      parkingSpots: true,
+      amenities: true,
+      externalLink: true,
+      videoUrl: true,
+      latitude: true,
+      longitude: true,
       organization: true,
       images: {
         orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-      panoramas: {
-        orderBy: { sortOrder: "asc" },
       },
       interestedLeads: {
         include: {
@@ -111,12 +149,10 @@ export async function getPropertyDetail(
     return null;
   }
 
-  const [floorPlan] = await prisma.$queryRaw<PropertyFloorPlanRow[]>`
-    SELECT "floorPlanUrl"
-    FROM "Property"
-    WHERE "id" = ${property.id}
-    LIMIT 1
-  `;
+  const [floorPlanUrl, panoramaRows] = await Promise.all([
+    getPropertyFloorPlanUrl(property.id),
+    listPropertyPanoramas(property.id, property.organizationId),
+  ]);
 
   const interestedLeads = property.interestedLeads.map((lead) => ({
     id: lead.id,
@@ -141,7 +177,7 @@ export async function getPropertyDetail(
     isPrimary: img.isPrimary,
   }));
 
-  const panoramas = property.panoramas.map((pan) => ({
+  const panoramas = panoramaRows.map((pan) => ({
     id: pan.id,
     url: pan.url,
     label: pan.label,
@@ -180,7 +216,7 @@ export async function getPropertyDetail(
     amenities: property.amenities,
     externalLink: property.externalLink,
     videoUrl: property.videoUrl,
-    floorPlanUrl: floorPlan?.floorPlanUrl ?? null,
+    floorPlanUrl,
     latitude: property.latitude ? Number(property.latitude) : undefined,
     longitude: property.longitude ? Number(property.longitude) : undefined,
     interestedLeads,
@@ -189,6 +225,70 @@ export async function getPropertyDetail(
     panoramas,
     organizationSlug: property.organization.slug,
   };
+}
+
+async function getPropertyFloorPlanUrl(propertyId: string) {
+  try {
+    const [floorPlan] = await prisma.$queryRaw<PropertyFloorPlanRow[]>`
+      SELECT "floorPlanUrl"
+      FROM "Property"
+      WHERE "id" = ${propertyId}
+      LIMIT 1
+    `;
+
+    return floorPlan?.floorPlanUrl ?? null;
+  } catch (error) {
+    if (isMissingSchemaFieldError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function listPropertyPanoramas(
+  propertyId: string,
+  organizationId: string,
+): Promise<PropertyPanoramaRow[]> {
+  try {
+    return await prisma.$queryRaw<PropertyPanoramaRow[]>`
+      SELECT
+        "id",
+        "url",
+        "label",
+        "direction",
+        "roomName",
+        "floor",
+        "positionX",
+        "positionY",
+        "positionZ",
+        "connections",
+        "sortOrder",
+        "initialYaw",
+        "initialPitch",
+        "initialHfov"
+      FROM "PropertyPanorama"
+      WHERE "propertyId" = ${propertyId}
+        AND "organizationId" = ${organizationId}
+      ORDER BY "sortOrder" ASC
+    `;
+  } catch (error) {
+    if (isMissingSchemaFieldError(error)) {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
+function isMissingSchemaFieldError(error: unknown) {
+  const details = error instanceof Error ? error.message : String(error);
+
+  return (
+    details.includes("does not exist") ||
+    details.includes("column") ||
+    details.includes("relation")
+  );
 }
 
 function parsePanoramaConnections(value: string | null) {
