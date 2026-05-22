@@ -26,11 +26,14 @@ type CameraCaptureModalProps = {
 
 const guidedYawSteps = [0, 60, 120, 180, 240, 300];
 // Capture order per yaw stop: floor first, then front, then ceiling
-// targetBeta values match real device tilt angles measured empirically
+// DeviceOrientationEvent.beta in portrait with rear camera:
+//   ~0°  = phone flat (screen up)  → camera points at FLOOR
+//   ~90° = phone upright           → camera points STRAIGHT AHEAD
+//   ~140°= phone tilted back       → camera points at CEILING
 const guidedPitchSteps = [
-  { label: "Piso", targetBeta: 70, icon: "↓" },
-  { label: "Frente", targetBeta: 0, icon: "→" },
-  { label: "Techo", targetBeta: -70, icon: "↑" },
+  { label: "Piso", targetBeta: 20, icon: "↓" },
+  { label: "Frente", targetBeta: 80, icon: "→" },
+  { label: "Techo", targetBeta: 140, icon: "↑" },
 ];
 const guidedFrameCount = guidedYawSteps.length * guidedPitchSteps.length;
 
@@ -154,8 +157,8 @@ export function CameraCaptureModal({
   const pitchDelta = orientation.beta - (guidedStep?.targetBeta ?? 0);
   const guideYawDelta = sensorEnabled ? yawDelta : 0;
   const guidePitchDelta = sensorEnabled ? pitchDelta : 0;
-  // Very wide tolerances so floor/ceiling reliably trigger on real devices (±35° pitch, ±18° yaw)
-  const isAligned = Math.abs(guideYawDelta) <= 18 && Math.abs(guidePitchDelta) <= 35;
+  // Very wide tolerances so floor/ceiling reliably trigger on budget phones like TCL 305i (±45° pitch, ±25° yaw)
+  const isAligned = Math.abs(guideYawDelta) <= 25 && Math.abs(guidePitchDelta) <= 45;
   const guideOffsetX = Math.max(-38, Math.min(38, guideYawDelta)) * 1.6;
   const guideOffsetY = Math.max(-30, Math.min(30, guidePitchDelta)) * 1.6;
   // Bubble level offset: positive pitchDelta = tilting too far, move bubble right
@@ -171,7 +174,7 @@ export function CameraCaptureModal({
     !isSaving &&
     !capturedFile &&
     (mode === "photo" ||
-      (guidedFrames.length < guidedFrameCount && autoCaptureCountdown === null && isAligned));
+      (guidedFrames.length < guidedFrameCount && autoCaptureCountdown === null && (isAligned || sensorBypassed)));
   const primaryInstruction = (() => {
     if (isAligned) return "¡Posición correcta!";
     const pitchOff = Math.abs(guidePitchDelta) > 20;

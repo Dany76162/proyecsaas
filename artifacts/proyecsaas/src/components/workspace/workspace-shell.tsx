@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu } from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
@@ -22,6 +22,26 @@ export function WorkspaceShell({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const supportRef = useRef<HTMLAnchorElement>(null);
+
+  // Hide the floating support button whenever a Radix dialog is open.
+  // Radix sets data-scroll-locked on <body> when a modal opens.
+  // We use MutationObserver because CSS :has() is not available on older Android browsers.
+  useEffect(() => {
+    const el = supportRef.current;
+    if (!el) return;
+
+    function sync() {
+      const locked = document.body.hasAttribute("data-scroll-locked");
+      el!.style.display = locked ? "none" : "";
+    }
+
+    sync();
+
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["data-scroll-locked"] });
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-slate-100">
@@ -44,7 +64,7 @@ export function WorkspaceShell({
       <div className="flex flex-1 flex-col min-w-0 lg:ml-64 relative">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-slate-200/70 bg-white/95 backdrop-blur-sm px-4 lg:px-6 print:hidden">
           <div className="flex items-center gap-3">
-            {/* Hamburger â€” visible only on mobile/tablet */}
+            {/* Hamburger – visible only on mobile/tablet */}
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
@@ -61,7 +81,7 @@ export function WorkspaceShell({
             <span className="hidden sm:block text-sm font-bold text-slate-900 truncate max-w-[160px]">
               {userName}
             </span>
-            <span className="hidden sm:block text-slate-300 text-sm">Â·</span>
+            <span className="hidden sm:block text-slate-300 text-sm">·</span>
             <span className="hidden sm:block text-sm text-slate-500 font-medium truncate max-w-[200px]">
               {userEmail}
             </span>
@@ -77,8 +97,9 @@ export function WorkspaceShell({
           </div>
         </main>
 
-        {/* FLOATING SUPPORT BUTTON – se oculta cuando hay un dialog fullscreen abierto (ej: cámara) */}
-        <a 
+        {/* FLOATING SUPPORT BUTTON – hidden via MutationObserver when any dialog is open */}
+        <a
+          ref={supportRef}
           href="https://wa.me/5491161630205?text=Hola%21%20Necesito%20soporte%20técnico%20con%20mi%20plataforma%20RaicesPilot."
           target="_blank"
           rel="noopener noreferrer"
