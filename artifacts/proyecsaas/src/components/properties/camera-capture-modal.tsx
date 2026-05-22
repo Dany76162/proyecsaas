@@ -136,7 +136,7 @@ export function CameraCaptureModal({
   const [guidedFrames, setGuidedFrames] = useState<CapturedFrame[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [orientation, setOrientation] = useState({ alpha: 0, beta: 0 });
+  const [orientation, setOrientation] = useState<{ alpha: number | null; beta: number | null }>({ alpha: null, beta: null });
   const [sensorEnabled, setSensorEnabled] = useState(false);
   const [sensorBypassed, setSensorBypassed] = useState(false);
   const [autoCaptureCountdown, setAutoCaptureCountdown] = useState<number | null>(null);
@@ -153,12 +153,14 @@ export function CameraCaptureModal({
   const guidedPitchIndex = guidedIndex % guidedPitchSteps.length;
   const guidedStep = guidedPitchSteps[Math.min(guidedPitchIndex, guidedPitchSteps.length - 1)];
   const targetYaw = guidedYawSteps[Math.min(guidedYawIndex, guidedYawSteps.length - 1)] ?? 0;
-  const yawDelta = shortestAngleDistance(orientation.alpha, targetYaw);
-  const pitchDelta = orientation.beta - (guidedStep?.targetBeta ?? 0);
-  const guideYawDelta = sensorEnabled ? yawDelta : 0;
-  const guidePitchDelta = sensorEnabled ? pitchDelta : 0;
+  const yawDelta = orientation.alpha !== null ? shortestAngleDistance(orientation.alpha, targetYaw) : null;
+  const pitchDelta = orientation.beta !== null ? orientation.beta - (guidedStep?.targetBeta ?? 0) : null;
+  const hasSensorData = sensorEnabled && yawDelta !== null && pitchDelta !== null;
+  
+  const guideYawDelta = hasSensorData ? yawDelta : 0;
+  const guidePitchDelta = hasSensorData ? pitchDelta : 0;
   // Very wide tolerances so floor/ceiling reliably trigger on budget phones like TCL 305i (±45° pitch, ±25° yaw)
-  const isAligned = Math.abs(guideYawDelta) <= 25 && Math.abs(guidePitchDelta) <= 45;
+  const isAligned = hasSensorData && Math.abs(guideYawDelta) <= 25 && Math.abs(guidePitchDelta) <= 45;
   const guideOffsetX = Math.max(-38, Math.min(38, guideYawDelta)) * 1.6;
   const guideOffsetY = Math.max(-30, Math.min(30, guidePitchDelta)) * 1.6;
   // Bubble level offset: positive pitchDelta = tilting too far, move bubble right
@@ -174,8 +176,9 @@ export function CameraCaptureModal({
     !isSaving &&
     !capturedFile &&
     (mode === "photo" ||
-      (guidedFrames.length < guidedFrameCount && autoCaptureCountdown === null && (isAligned || sensorBypassed)));
+      (guidedFrames.length < guidedFrameCount && autoCaptureCountdown === null && (isAligned || sensorBypassed || !hasSensorData)));
   const primaryInstruction = (() => {
+    if (!hasSensorData || sensorBypassed) return "Toma la foto manualmente";
     if (isAligned) return "¡Posición correcta!";
     const pitchOff = Math.abs(guidePitchDelta) > 20;
     const yawOff = Math.abs(guideYawDelta) > 15;
@@ -269,9 +272,10 @@ export function CameraCaptureModal({
     if (!open || !sensorEnabled) return;
 
     function handleOrientation(event: DeviceOrientationEvent) {
+      if (event.alpha === null || event.beta === null) return;
       setOrientation({
-        alpha: normalizeAngle(event.alpha ?? 0),
-        beta: event.beta ?? 0,
+        alpha: normalizeAngle(event.alpha),
+        beta: event.beta,
       });
     }
 
@@ -595,74 +599,81 @@ export function CameraCaptureModal({
                       Usar Cámara Normal
                     </button>
                   </div>
-                </div>
-              </div>
-            )}
+                  {mode === "guided360" && !previewUrl && !cameraError && (sensorEnabled || sensorBypassed) && (
+              <div className="absolute inset-0 z-20 pointer-events-none">
+                {hasSensorData && !sensorBypassed && (
+                  <>
+                    {/* Central guide frame */}
+                    <div className="absolute inset-x-0 top-1/3 bottom-1/3 border-y-2 border-dashed border-white/20" />
+                    <div className="absolute inset-y-0 left-1/3 right-1/3 border-x-2 border-dashed border-white/20" />
+                    
+                    {/* Dynamic crosshair tracking */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="relative h-full w-full max-w-[80%] max-h-[60%]">
+                        <div
+                          className="absolute left-1/2 top-1/2 h-[1px] w-full -translate-x-1/2 -translate-y-1/2 bg-rose-500/60 transition-transform duration-100"
+                          style={{ transform: `translate(-50%, calc(-50% + ${guideOffsetY}px))` }}
+                        />
+                        <div
+                          className="absolute left-1/2 top-1/2 h-full w-[1px] -translate-x-1/2 -translate-y-1/2 bg-rose-500/60 transition-transform duration-100"
+                          style={{ transform: `translate(calc(-50% + ${guideOffsetX}px), -50%)` }}
+                        />
+                      </div>
+                    </div>
 
-            {mode === "guided360" && !previewUrl && !cameraError && (sensorEnabled || sensorBypassed) && (
-              <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                {/* Crosshair lines */}
-                <div
-                  className={`absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 ${
-                    isAligned ? "bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.65)]" : "bg-rose-500 shadow-[0_0_18px_rgba(244,63,94,0.55)]"
-                  }`}
-                  style={{ transform: `translateY(calc(-50% + ${guideOffsetY}px))` }}
-                />
-                <div
-                  className={`absolute bottom-0 top-0 left-1/2 w-0.5 -translate-x-1/2 ${
-                    isAligned ? "bg-emerald-400/80" : "bg-rose-500/80"
-                  }`}
-                  style={{ transform: `translateX(calc(-50% + ${guideOffsetX}px))` }}
-                />
-                <div className="absolute inset-x-14 top-1/2 h-px -translate-y-1/2 border-t border-dashed border-white/55" />
-                <div className="absolute inset-y-16 left-1/2 w-px -translate-x-1/2 border-l border-dashed border-white/45" />
-                {/* Target reticle */}
-                <div
-                  className={`absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${
-                    isAligned ? "border-emerald-300 bg-emerald-400/20" : "border-rose-300 bg-rose-500/20"
-                  }`}
-                  style={{ transform: `translate(calc(-50% + ${guideOffsetX}px), calc(-50% + ${guideOffsetY}px))` }}
-                >
-                  <span
-                    className={`absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ${
-                      isAligned ? "bg-emerald-300" : "bg-rose-400"
-                    }`}
-                  />
-                </div>
-
-                {/* Vertical pitch level bar – right side */}
-                <div className="absolute right-4 top-1/4 bottom-1/4 w-5 flex flex-col items-center">
-                  <div className="flex-1 w-1 rounded-full bg-white/20 relative overflow-hidden">
-                    {/* Bubble: centered = aligned. Moves along the bar with pitchDelta */}
+                    {/* Target Circle */}
                     <div
-                      className={`absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full transition-all duration-100 ${
-                        isAligned ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" : "bg-rose-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]"
+                      className={`absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${
+                        isAligned ? "border-emerald-300 bg-emerald-400/20" : "border-rose-300 bg-rose-500/20"
                       }`}
-                      style={{ top: `calc(50% + ${Math.max(-40, Math.min(40, guidePitchDelta * 1.2))}% - 6px)` }}
-                    />
-                    <div className="absolute left-0 right-0 top-1/2 h-px bg-white/50" />
-                  </div>
-                  <div className="text-[8px] font-bold text-white/40 mt-1 uppercase tracking-widest">NIV</div>
-                </div>
+                      style={{ transform: `translate(calc(-50% + ${guideOffsetX}px), calc(-50% + ${guideOffsetY}px))` }}
+                    >
+                      <span
+                        className={`absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                          isAligned ? "bg-emerald-300" : "bg-rose-400"
+                        }`}
+                      />
+                    </div>
 
-                {/* Pitch target label – left side */}
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
-                  <span className="text-2xl">{guidedStep?.icon}</span>
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${
-                    isAligned ? "text-emerald-300" : "text-white/60"
-                  }`}>{guidedStep?.label}</span>
-                </div>
+                    {/* Vertical pitch level bar – right side */}
+                    <div className="absolute right-4 top-1/4 bottom-1/4 w-5 flex flex-col items-center">
+                      <div className="flex-1 w-1 rounded-full bg-white/20 relative overflow-hidden">
+                        {/* Bubble: centered = aligned. Moves along the bar with pitchDelta */}
+                        <div
+                          className={`absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full transition-all duration-100 ${
+                            isAligned ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" : "bg-rose-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]"
+                          }`}
+                          style={{ top: `calc(50% + ${Math.max(-40, Math.min(40, guidePitchDelta * 1.2))}% - 6px)` }}
+                        />
+                        <div className="absolute left-0 right-0 top-1/2 h-px bg-white/50" />
+                      </div>
+                      <div className="text-[8px] font-bold text-white/40 mt-1 uppercase tracking-widest">NIV</div>
+                    </div>
+
+                    {/* Pitch target label – left side */}
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
+                      <span className="text-2xl">{guidedStep?.icon}</span>
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${
+                        isAligned ? "text-emerald-300" : "text-white/60"
+                      }`}>{guidedStep?.label}</span>
+                    </div>
+                  </>
+                )}
 
                 {/* Instruction pill */}
                 <div
-                  className={`absolute bottom-10 left-1/2 max-w-[72%] -translate-x-1/2 rounded-full border px-5 py-2 text-center text-xs font-black uppercase tracking-wide ${
+                  className={`absolute bottom-10 left-1/2 max-w-[85%] w-[85%] sm:max-w-[72%] -translate-x-1/2 rounded-full border px-5 py-2.5 text-center text-[11px] sm:text-xs font-black uppercase tracking-wide ${
                     isAligned
-                      ? "border-emerald-300/60 bg-emerald-500/20 text-emerald-100"
-                      : "border-rose-300/60 bg-rose-500/20 text-rose-100"
+                      ? "border-emerald-300/60 bg-emerald-500/20 text-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                      : (!hasSensorData || sensorBypassed)
+                        ? "border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-md"
+                        : "border-rose-300/60 bg-rose-500/20 text-rose-100 shadow-[0_0_20px_rgba(225,29,72,0.3)]"
                   }`}
                 >
                   {autoCaptureCountdown !== null ? `📸 Capturando en ${autoCaptureCountdown}…` : primaryInstruction}
                 </div>
+              </div>
+            )}                </div>
               </div>
             )}
 
