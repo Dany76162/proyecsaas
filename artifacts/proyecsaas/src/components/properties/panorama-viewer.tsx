@@ -112,6 +112,10 @@ function degreesToRadians(value: number) {
   return (value * Math.PI) / 180;
 }
 
+function normalizeRadians(value: number) {
+  return Math.atan2(Math.sin(value), Math.cos(value));
+}
+
 function getScenePosition(index: number, total: number, panorama?: PropertyPanoramaItem) {
   if (panorama && (panorama.positionX !== 0 || panorama.positionY !== 0 || panorama.positionZ !== 0)) {
     return {
@@ -191,15 +195,15 @@ function getVisibleHotspotIndexes(currentIndex: number, panoramas: PropertyPanor
 
 function getHotspotPosition(slot: number, count: number) {
   const presets = [
-    [{ left: 50, top: 62 }],
+    [{ left: 50, top: 74, angle: 90, scale: 1.08 }],
     [
-      { left: 42, top: 64 },
-      { left: 58, top: 61 },
+      { left: 42, top: 75, angle: 135, scale: 1.04 },
+      { left: 58, top: 72, angle: 45, scale: 0.98 },
     ],
     [
-      { left: 36, top: 66 },
-      { left: 50, top: 60 },
-      { left: 64, top: 66 },
+      { left: 36, top: 76, angle: 155, scale: 1 },
+      { left: 50, top: 71, angle: 90, scale: 0.94 },
+      { left: 64, top: 76, angle: 25, scale: 1 },
     ],
   ];
 
@@ -218,8 +222,37 @@ function getSpatialHotspotPosition(currentIndex: number, targetIndex: number, pa
 
   return {
     left: Math.max(26, Math.min(74, 50 + normalizedX * 28)),
-    top: Math.max(48, Math.min(72, 61 + depth * 9 - Math.abs(normalizedX) * 3)),
+    top: Math.max(64, Math.min(80, 72 + depth * 8 - Math.abs(normalizedX) * 4)),
     angle: Math.atan2(dy, dx) * (180 / Math.PI),
+    scale: Math.max(0.86, Math.min(1.16, 0.96 + depth * 0.16)),
+  };
+}
+
+function getAnchoredFloorHotspotPosition(
+  currentIndex: number,
+  targetIndex: number,
+  panoramas: PropertyPanoramaItem[],
+  view: { yaw: number; pitch: number; fov: number; aspect: number },
+) {
+  const current = getScenePosition(currentIndex, panoramas.length, panoramas[currentIndex]);
+  const target = getScenePosition(targetIndex, panoramas.length, panoramas[targetIndex]);
+  const dx = target.x - current.x;
+  const dy = target.y - current.y;
+  const targetYaw = Math.atan2(dx, -dy || 0.001);
+  const yawDelta = normalizeRadians(targetYaw - view.yaw);
+  const verticalFov = degreesToRadians(view.fov);
+  const horizontalFov = verticalFov * Math.max(1, view.aspect);
+  const floorPitch = degreesToRadians(-22);
+  const pitchDelta = floorPitch - view.pitch;
+  const left = 50 + (yawDelta / Math.max(horizontalFov / 2, 0.2)) * 50;
+  const top = 50 - (pitchDelta / Math.max(verticalFov / 2, 0.2)) * 42;
+
+  return {
+    left: Math.max(8, Math.min(92, left)),
+    top: Math.max(58, Math.min(84, top)),
+    angle: Math.atan2(dy, dx) * (180 / Math.PI),
+    scale: Math.max(0.74, Math.min(1.18, 0.78 + (top - 58) / 70)),
+    visible: true,
   };
 }
 
@@ -244,6 +277,7 @@ export function PanoramaViewer({
   const [isLoading, setIsLoading] = useState(true);
   const [viewerError, setViewerError] = useState<string | null>(null);
   const [transitionLabel, setTransitionLabel] = useState<string | null>(null);
+  const [viewSnapshot, setViewSnapshot] = useState({ yaw: 0, pitch: 0, fov: 90, aspect: 16 / 9 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -260,6 +294,7 @@ export function PanoramaViewer({
       pitch: degreesToRadians(panorama.initialPitch || 0),
       fov: panorama.initialHfov || 90,
     };
+    setViewSnapshot((current) => ({ ...current, ...viewRef.current }));
 
     setIsLoading(true);
     setViewerError(null);
@@ -312,7 +347,14 @@ export function PanoramaViewer({
 
     function scheduleRender() {
       cancelAnimationFrame(animationFrame);
-      animationFrame = requestAnimationFrame(render);
+      animationFrame = requestAnimationFrame(() => {
+        render();
+        const rect = canvasElement.getBoundingClientRect();
+        setViewSnapshot({
+          ...viewRef.current,
+          aspect: rect.width / Math.max(rect.height, 1),
+        });
+      });
     }
     renderRef.current = scheduleRender;
 
@@ -593,8 +635,19 @@ export function PanoramaViewer({
           <>
             {visibleHotspotIndexes.map((sceneIndex, slot) => {
               const spatialPosition = getSpatialHotspotPosition(currentSceneIndex, sceneIndex, panoramas);
+              const anchoredPosition = getAnchoredFloorHotspotPosition(
+                currentSceneIndex,
+                sceneIndex,
+                panoramas,
+                viewSnapshot,
+              );
               const fallbackPosition = getHotspotPosition(slot, visibleHotspotIndexes.length);
-              const position = Number.isFinite(spatialPosition.left) ? spatialPosition : fallbackPosition;
+              const position = anchoredPosition.visible
+                ? anchoredPosition
+                : Number.isFinite(spatialPosition.left)
+                  ? { ...fallbackPosition, visible: false }
+                  : { ...fallbackPosition, visible: false };
+              if (!position.visible) return null;
               const pano = panoramas[sceneIndex];
               const isNext = sceneIndex === (currentSceneIndex + 1) % panoramas.length;
               return (
@@ -602,24 +655,41 @@ export function PanoramaViewer({
                   key={pano.id}
                   type="button"
                   onClick={() => selectScene(sceneIndex)}
-                  className="group absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 text-white"
+                  className="group absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center text-white"
                   style={{ left: `${position.left}%`, top: `${position.top}%` }}
                   title={pano.label ?? `Ir a escena ${sceneIndex + 1}`}
                 >
+                  <span className="mb-1 max-w-28 rounded-full bg-black/55 px-2 py-1 text-[10px] font-semibold leading-tight opacity-0 backdrop-blur transition group-hover:opacity-100">
+                    {pano.roomName ?? pano.label ?? `Escena ${sceneIndex + 1}`}
+                  </span>
                   <span
                     className={cn(
-                      "flex h-16 w-16 items-center justify-center rounded-full border shadow-[0_0_30px_rgba(255,255,255,0.35)] backdrop-blur transition group-hover:scale-110",
-                      isNext ? "border-brand-200 bg-brand-500/35" : "border-white/50 bg-white/15",
+                      "relative flex h-16 w-24 items-center justify-center transition duration-200 group-hover:scale-110",
+                      isNext ? "opacity-100" : "opacity-90",
                     )}
+                    style={{
+                      transform: `perspective(260px) rotateX(62deg) rotate(${spatialPosition.angle}deg) scale(${position.scale})`,
+                      transformOrigin: "center",
+                    }}
                   >
-                    <span className="h-7 w-7 rounded-full border-2 border-white/85 bg-white/20" />
+                    <span className="absolute inset-x-2 inset-y-3 rounded-full bg-black/18 blur-sm" />
                     <span
-                      className="absolute h-1 w-7 origin-left rounded-full bg-white/85 opacity-70"
-                      style={{ transform: `translateX(11px) rotate(${spatialPosition.angle}deg)` }}
+                      className={cn(
+                        "absolute inset-x-2 inset-y-3 rounded-full border-2 shadow-[0_0_26px_rgba(255,255,255,0.35)] backdrop-blur-[1px]",
+                        isNext ? "border-white/85 bg-white/18" : "border-white/55 bg-white/10",
+                      )}
                     />
-                  </span>
-                  <span className="max-w-28 rounded-full bg-black/55 px-2 py-1 text-[10px] font-semibold leading-tight opacity-0 backdrop-blur transition group-hover:opacity-100">
-                    {pano.roomName ?? pano.label ?? `Escena ${sceneIndex + 1}`}
+                    <span
+                      className={cn(
+                        "absolute h-8 w-8 rounded-full border shadow-inner",
+                        isNext ? "border-white/90 bg-white/18" : "border-white/60 bg-white/10",
+                      )}
+                    />
+                    <span className="absolute h-3 w-3 rounded-full bg-white/65 shadow-[0_0_14px_rgba(255,255,255,0.75)]" />
+                    <span
+                      className="absolute h-1 w-8 origin-left rounded-full bg-white/75 opacity-80"
+                      style={{ transform: "translateX(13px)" }}
+                    />
                   </span>
                 </button>
               );
