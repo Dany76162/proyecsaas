@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Camera,
+  Compass,
   Loader2,
   VideoOff,
 } from "lucide-react";
@@ -134,6 +135,7 @@ export function CameraCaptureModal({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [orientation, setOrientation] = useState({ alpha: 0, beta: 0 });
   const [sensorEnabled, setSensorEnabled] = useState(false);
+  const [sensorBypassed, setSensorBypassed] = useState(false);
   const [autoCaptureCountdown, setAutoCaptureCountdown] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
   const [isPending, startTransition] = useTransition();
@@ -152,8 +154,8 @@ export function CameraCaptureModal({
   const pitchDelta = orientation.beta - (guidedStep?.targetBeta ?? 0);
   const guideYawDelta = sensorEnabled ? yawDelta : 0;
   const guidePitchDelta = sensorEnabled ? pitchDelta : 0;
-  // Wider tolerances so floor/ceiling positions actually trigger (±20° pitch, ±15° yaw)
-  const isAligned = Math.abs(guideYawDelta) <= 15 && Math.abs(guidePitchDelta) <= 20;
+  // Very wide tolerances so floor/ceiling reliably trigger on real devices (±35° pitch, ±18° yaw)
+  const isAligned = Math.abs(guideYawDelta) <= 18 && Math.abs(guidePitchDelta) <= 35;
   const guideOffsetX = Math.max(-38, Math.min(38, guideYawDelta)) * 1.6;
   const guideOffsetY = Math.max(-30, Math.min(30, guidePitchDelta)) * 1.6;
   // Bubble level offset: positive pitchDelta = tilting too far, move bubble right
@@ -203,6 +205,7 @@ export function CameraCaptureModal({
     setGuidedFrames([]);
     setPreviewUrl(null);
     setProgress(0);
+    setSensorBypassed(false);
     clearAutoCapture();
 
     async function startCamera() {
@@ -334,6 +337,7 @@ export function CameraCaptureModal({
       setCapturedFile(null);
       setGuidedFrames([]);
       setProgress(0);
+      setSensorBypassed(false);
       clearAutoCapture();
     }
     onOpenChange(nextOpen);
@@ -538,7 +542,49 @@ export function CameraCaptureModal({
               </div>
             )}
 
-            {mode === "guided360" && !previewUrl && !cameraError && (
+            {mode === "guided360" && !previewUrl && !cameraError && !sensorEnabled && !sensorBypassed && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 p-6 text-center backdrop-blur-md">
+                <div className="w-full max-w-[320px] space-y-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-7 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-all duration-300">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-500/20 to-cyan-400/20 text-brand-400 border border-brand-500/20 shadow-inner">
+                    <Compass className="h-7 w-7 animate-pulse text-cyan-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white">Giroscopio Requerido</h3>
+                    <p className="text-[11px] leading-relaxed text-white/50">
+                      Para guiarte paso a paso en la captura 360°, necesitamos activar el sensor de orientación de tu teléfono.
+                    </p>
+                  </div>
+                  <div className="space-y-2.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={enableSensors}
+                      className="w-full rounded-2xl bg-white py-3 text-xs font-bold text-black shadow-[0_12px_24px_rgba(255,255,255,0.15)] transition hover:bg-slate-100 active:scale-[0.97]"
+                    >
+                      Activar Sensores
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSensorBypassed(true)}
+                      className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-2.5 text-xs font-bold text-white transition hover:bg-white/[0.08] active:scale-[0.97]"
+                    >
+                      Omitir Guía (Captura Manual)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("photo");
+                        setCategory("REAL");
+                      }}
+                      className="w-full rounded-2xl border border-transparent bg-transparent py-2 text-xs font-semibold text-white/40 transition hover:text-white/60 active:scale-[0.97]"
+                    >
+                      Usar Cámara Normal
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {mode === "guided360" && !previewUrl && !cameraError && (sensorEnabled || sensorBypassed) && (
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 {/* Crosshair lines */}
                 <div

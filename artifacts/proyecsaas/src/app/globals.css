@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -36,6 +36,12 @@ a {
   .animate-marquee {
     animation: none;
   }
+}
+
+/* Ocultar botones flotantes de soporte cuando un modal está abierto o scroll bloqueado */
+body[data-scroll-locked] .floating-support-btn,
+body:has([role="dialog"]) .floating-support-btn {
+  display: none !important;
 }
 
 
