@@ -211,6 +211,12 @@ export function CameraCaptureModal({
     setSensorBypassed(false);
     clearAutoCapture();
 
+    // Hide WhatsApp button directly as fallback for old browsers
+    const supportBtn = document.querySelector('.floating-support-btn') as HTMLElement;
+    if (supportBtn) {
+      supportBtn.style.display = 'none';
+    }
+
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -250,6 +256,12 @@ export function CameraCaptureModal({
       mounted = false;
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
+      
+      // Restore WhatsApp button directly
+      const btn = document.querySelector('.floating-support-btn') as HTMLElement;
+      if (btn) {
+        btn.style.display = '';
+      }
     };
   }, [open]);
 
