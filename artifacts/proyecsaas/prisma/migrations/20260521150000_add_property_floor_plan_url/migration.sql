@@ -1,0 +1,1 @@
+ALTER TABLE "Property" ADD COLUMN IF NOT EXISTS "floorPlanUrl" TEXT;

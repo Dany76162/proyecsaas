@@ -1,29 +1,37 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Camera, Check, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
+import { Camera, Check, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   createPropertyDemoTourAction,
   removePropertyMediaBatchAction,
+  setPropertyFloorPlanAction,
   updatePanoramaSettingsAction,
 } from "@/modules/properties/actions";
 import type { PropertyImageItem, PropertyPanoramaItem } from "@/modules/properties/types";
 import { CameraCaptureModal } from "./camera-capture-modal";
-import { MediaUploadModal, type MediaCategory, type UploadedMediaPayload } from "./media-upload-modal";
+import {
+  MediaUploadModal,
+  type MediaCategory,
+  type UploadedMediaPayload,
+  uploadToPropertyMedia,
+} from "./media-upload-modal";
 
 type MediaPanelProps = {
   orgSlug: string;
   propertyId: string;
   images: PropertyImageItem[];
   panoramas: PropertyPanoramaItem[];
+  floorPlanUrl: string | null;
   activeCategory: MediaCategory;
   activePanoramaId: string | null;
   onCategoryChange: (category: MediaCategory) => void;
   onPanoramaSelect: (panoramaId: string) => void;
   onMediaUploaded: (payload: UploadedMediaPayload) => void;
   onMediaDeleted: (imageIds: string[], panoramaIds: string[]) => void;
+  onFloorPlanUpdated: (url: string | null) => void;
   onSaveChanges: () => void;
 };
 
@@ -61,20 +69,31 @@ function getDemoScenePosition(index: number, total: number) {
   };
 }
 
+function numberOrZero(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function isPdfUrl(url: string | null) {
+  return Boolean(url?.toLowerCase().split("?")[0]?.endsWith(".pdf"));
+}
+
 export function MediaPanel({
   orgSlug,
   propertyId,
   images,
   panoramas,
+  floorPlanUrl,
   activeCategory,
   activePanoramaId,
   onCategoryChange,
   onPanoramaSelect,
   onMediaUploaded,
   onMediaDeleted,
+  onFloorPlanUpdated,
   onSaveChanges,
 }: MediaPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const floorPlanInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -91,8 +110,10 @@ export function MediaPanel({
   });
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [spatialMessage, setSpatialMessage] = useState<string | null>(null);
+  const [floorPlanMessage, setFloorPlanMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isSpatialPending, startSpatialTransition] = useTransition();
+  const [isFloorPlanPending, startFloorPlanTransition] = useTransition();
 
   const filteredImages = images.filter((image) => image.category === activeCategory);
   const selectedCount = selectedImageIds.length + selectedPanoramaIds.length;
@@ -103,11 +124,11 @@ export function MediaPanel({
 
     setSpatialDraft({
       roomName: activePanorama.roomName ?? activePanorama.label ?? "",
-      floor: activePanorama.floor,
-      positionX: activePanorama.positionX,
-      positionY: activePanorama.positionY,
-      positionZ: activePanorama.positionZ,
-      connections: activePanorama.connections,
+      floor: numberOrZero(activePanorama.floor),
+      positionX: numberOrZero(activePanorama.positionX),
+      positionY: numberOrZero(activePanorama.positionY),
+      positionZ: numberOrZero(activePanorama.positionZ),
+      connections: activePanorama.connections ?? [],
     });
     setSpatialMessage(null);
   }, [activePanorama]);
@@ -123,6 +144,42 @@ export function MediaPanel({
   function handleUploaded(payload: UploadedMediaPayload) {
     onMediaUploaded(payload);
     setSelectedFile(null);
+  }
+
+  function handleFloorPlanChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+    if (!file) return;
+
+    setFloorPlanMessage(null);
+    startFloorPlanTransition(async () => {
+      try {
+        const url = await uploadToPropertyMedia(file, "FLOOR_PLAN", orgSlug, propertyId, () => {});
+        const result = await setPropertyFloorPlanAction(orgSlug, { propertyId, url });
+        if (!result.success) {
+          throw new Error(result.message ?? "No se pudo guardar el plano.");
+        }
+        onFloorPlanUpdated(url);
+        setFloorPlanMessage("Plano cargado como referencia.");
+        onSaveChanges();
+      } catch (error: any) {
+        setFloorPlanMessage(error.message ?? "No se pudo subir el plano.");
+      }
+    });
+  }
+
+  function removeFloorPlan() {
+    setFloorPlanMessage(null);
+    startFloorPlanTransition(async () => {
+      const result = await setPropertyFloorPlanAction(orgSlug, { propertyId, url: null });
+      if (!result.success) {
+        setFloorPlanMessage(result.message ?? "No se pudo quitar el plano.");
+        return;
+      }
+      onFloorPlanUpdated(null);
+      setFloorPlanMessage("Plano quitado.");
+      onSaveChanges();
+    });
   }
 
   function findPanoramaForImage(image: PropertyImageItem) {
@@ -319,10 +376,39 @@ export function MediaPanel({
           className="hidden"
           onChange={handleFileChange}
         />
+        <input
+          ref={floorPlanInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+          className="hidden"
+          onChange={handleFloorPlanChange}
+        />
         <Button type="button" onClick={() => fileInputRef.current?.click()} className="mt-4 w-full gap-2">
           <ImagePlus className="h-4 w-4" />
           Subir imagen
         </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => floorPlanInputRef.current?.click()}
+          disabled={isFloorPlanPending}
+          className="mt-2 w-full bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
+        >
+          <FileUp className="mr-2 h-4 w-4" />
+          {floorPlanUrl ? "Cambiar plano PDF/imagen" : "Subir plano PDF/imagen"}
+        </Button>
+        {floorPlanUrl && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={removeFloorPlan}
+            disabled={isFloorPlanPending}
+            className="mt-2 w-full bg-white/[0.03] text-xs text-white/55 hover:bg-white/[0.08] hover:text-white"
+          >
+            Quitar plano
+          </Button>
+        )}
+        {floorPlanMessage && <p className="mt-2 text-xs text-white/55">{floorPlanMessage}</p>}
         {panoramas.length === 0 && (
           <Button
             type="button"
@@ -531,6 +617,23 @@ export function MediaPanel({
                 updatePositionFromPointer(event.currentTarget, event);
               }}
             >
+              {floorPlanUrl && (
+                <div className="pointer-events-none absolute inset-0 bg-white">
+                  {isPdfUrl(floorPlanUrl) ? (
+                    <object
+                      data={`${floorPlanUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                      type="application/pdf"
+                      className="h-full w-full opacity-45"
+                    />
+                  ) : (
+                    <img
+                      src={floorPlanUrl}
+                      alt="Plano de la propiedad"
+                      className="h-full w-full object-contain opacity-55"
+                    />
+                  )}
+                </div>
+              )}
               <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:24px_24px]" />
               <div className="absolute inset-x-4 top-1/2 h-px bg-white/15" />
               <div className="absolute inset-y-4 left-1/2 w-px bg-white/15" />

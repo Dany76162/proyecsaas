@@ -290,6 +290,7 @@ model Property {
   amenities         String?
   externalLink      String?
   videoUrl          String?
+  floorPlanUrl      String?
   externalSourceUrl String?
   externalId        String?
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)

@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { MembershipRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -11,6 +12,7 @@ import {
   deletePropertySchema,
   removePropertyImageSchema,
   removePropertyMediaBatchSchema,
+  setPropertyFloorPlanSchema,
   setPropertyImagePrimarySchema,
   setPropertyVideoSchema,
   updatePropertySchema,
@@ -280,6 +282,37 @@ export async function setPropertyVideoAction(
 
 // â”€â”€â”€ Image actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+export async function setPropertyFloorPlanAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = setPropertyFloorPlanSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Datos de plano invalidos." };
+  }
+
+  const property = await prisma.property.findFirst({
+    where: { id: parsed.data.propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  await prisma.$executeRaw`
+    UPDATE "Property"
+    SET "floorPlanUrl" = ${parsed.data.url}
+    WHERE "id" = ${property.id}
+  `;
+
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  revalidatePath(`/map/${property.id}`);
+  return { success: true, message: parsed.data.url ? "Plano actualizado." : "Plano eliminado." };
+}
+
 export async function addPropertyImageAction(
   orgSlug: string,
   input: unknown,
@@ -426,21 +459,44 @@ export async function createPropertyDemoTourAction(
         },
       });
 
-      const panorama = await tx.propertyPanorama.create({
-        data: {
-          propertyId: property.id,
-          organizationId: membership.organization.id,
-          url: scene.url,
-          label: scene.title,
-          roomName: scene.roomName,
-          direction: "CENTER",
-          floor: 0,
-          positionX: scene.positionX,
-          positionY: scene.positionY,
-          positionZ: 0,
-          sortOrder: index,
-        },
-      });
+      const panorama: { id: string } = {
+        id: randomUUID(),
+      };
+
+      await tx.$executeRaw`
+        INSERT INTO "PropertyPanorama" (
+          "id",
+          "propertyId",
+          "organizationId",
+          "url",
+          "label",
+          "roomName",
+          "direction",
+          "floor",
+          "positionX",
+          "positionY",
+          "positionZ",
+          "connections",
+          "sortOrder",
+          "createdAt"
+        )
+        VALUES (
+          ${panorama.id},
+          ${property.id},
+          ${membership.organization.id},
+          ${scene.url},
+          ${scene.title},
+          ${scene.roomName},
+          ${"CENTER"},
+          ${0},
+          ${scene.positionX},
+          ${scene.positionY},
+          ${0},
+          ${"[]"},
+          ${index},
+          NOW()
+        )
+      `;
 
       panoramas.push(panorama);
     }
@@ -450,10 +506,11 @@ export async function createPropertyDemoTourAction(
         (id): id is string => Boolean(id),
       );
 
-      await tx.propertyPanorama.update({
-        where: { id: panoramas[index].id },
-        data: { connections: JSON.stringify(connections) },
-      });
+      await tx.$executeRaw`
+        UPDATE "PropertyPanorama"
+        SET "connections" = ${JSON.stringify(connections)}
+        WHERE "id" = ${panoramas[index].id}
+      `;
     }
 
     return panoramas;
@@ -808,21 +865,23 @@ export async function updatePanoramaSettingsAction(
     return { success: false, message: "Escena no encontrada." };
   }
 
-  await prisma.propertyPanorama.update({
-    where: { id: panorama.id },
-    data: {
-      label: parsed.data.label !== undefined ? parsed.data.label : undefined,
-      roomName: parsed.data.roomName !== undefined ? parsed.data.roomName : undefined,
-      floor: parsed.data.floor !== undefined ? parsed.data.floor : undefined,
-      positionX: parsed.data.positionX !== undefined ? parsed.data.positionX : undefined,
-      positionY: parsed.data.positionY !== undefined ? parsed.data.positionY : undefined,
-      positionZ: parsed.data.positionZ !== undefined ? parsed.data.positionZ : undefined,
-      connections: parsed.data.connections !== undefined ? JSON.stringify(parsed.data.connections) : undefined,
-      initialYaw: parsed.data.initialYaw !== undefined ? parsed.data.initialYaw : undefined,
-      initialPitch: parsed.data.initialPitch !== undefined ? parsed.data.initialPitch : undefined,
-      initialHfov: parsed.data.initialHfov !== undefined ? parsed.data.initialHfov : undefined,
-    },
-  });
+  const connections = parsed.data.connections !== undefined ? JSON.stringify(parsed.data.connections) : null;
+
+  await prisma.$executeRaw`
+    UPDATE "PropertyPanorama"
+    SET
+      "label" = CASE WHEN ${parsed.data.label !== undefined} THEN ${parsed.data.label ?? null} ELSE "label" END,
+      "roomName" = CASE WHEN ${parsed.data.roomName !== undefined} THEN ${parsed.data.roomName ?? null} ELSE "roomName" END,
+      "floor" = CASE WHEN ${parsed.data.floor !== undefined} THEN ${parsed.data.floor ?? null} ELSE "floor" END,
+      "positionX" = CASE WHEN ${parsed.data.positionX !== undefined} THEN ${parsed.data.positionX ?? null} ELSE "positionX" END,
+      "positionY" = CASE WHEN ${parsed.data.positionY !== undefined} THEN ${parsed.data.positionY ?? null} ELSE "positionY" END,
+      "positionZ" = CASE WHEN ${parsed.data.positionZ !== undefined} THEN ${parsed.data.positionZ ?? null} ELSE "positionZ" END,
+      "connections" = CASE WHEN ${parsed.data.connections !== undefined} THEN ${connections} ELSE "connections" END,
+      "initialYaw" = CASE WHEN ${parsed.data.initialYaw !== undefined} THEN ${parsed.data.initialYaw ?? null} ELSE "initialYaw" END,
+      "initialPitch" = CASE WHEN ${parsed.data.initialPitch !== undefined} THEN ${parsed.data.initialPitch ?? null} ELSE "initialPitch" END,
+      "initialHfov" = CASE WHEN ${parsed.data.initialHfov !== undefined} THEN ${parsed.data.initialHfov ?? null} ELSE "initialHfov" END
+    WHERE "id" = ${panorama.id}
+  `;
 
   revalidatePath(`/${orgSlug}/properties/${panorama.propertyId}`);
   return { success: true, message: "Escena 360° actualizada." };

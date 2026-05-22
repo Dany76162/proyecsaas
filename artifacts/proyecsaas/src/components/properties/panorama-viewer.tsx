@@ -24,6 +24,8 @@ interface PanoramaViewerProps {
   className?: string;
   showSceneNavigation?: boolean;
   immersiveControls?: boolean;
+  variant?: "panel" | "immersive";
+  floorPlanUrl?: string | null;
 }
 
 const VIEWER_WIDTH = 4096;
@@ -131,6 +133,44 @@ function getScenePosition(index: number, total: number, panorama?: PropertyPanor
   };
 }
 
+function getDollhouseLayout(panoramas: PropertyPanoramaItem[]) {
+  const positions = panoramas.map((panorama, index) => getScenePosition(index, panoramas.length, panorama));
+  const minX = Math.min(...positions.map((position) => position.x));
+  const maxX = Math.max(...positions.map((position) => position.x));
+  const minY = Math.min(...positions.map((position) => position.y));
+  const maxY = Math.max(...positions.map((position) => position.y));
+  const spanX = Math.max(1, maxX - minX);
+  const spanY = Math.max(1, maxY - minY);
+
+  return positions.map((position) => ({
+    ...position,
+    x: 12 + ((position.x - minX) / spanX) * 76,
+    y: 16 + ((position.y - minY) / spanY) * 68,
+  }));
+}
+
+function getConnectionPairs(panoramas: PropertyPanoramaItem[]) {
+  const pairs: { from: number; to: number }[] = [];
+  const seen = new Set<string>();
+
+  panoramas.forEach((panorama, from) => {
+    const connectedIndexes = panorama.connections
+      .map((id) => panoramas.findIndex((item) => item.id === id))
+      .filter((index) => index >= 0 && index !== from);
+
+    connectedIndexes.forEach((to) => {
+      const key = [from, to].sort((a, b) => a - b).join("-");
+      if (seen.has(key)) return;
+      seen.add(key);
+      pairs.push({ from, to });
+    });
+  });
+
+  if (pairs.length > 0) return pairs;
+
+  return panoramas.slice(1).map((_, index) => ({ from: index, to: index + 1 }));
+}
+
 function getVisibleHotspotIndexes(currentIndex: number, panoramas: PropertyPanoramaItem[]) {
   const total = panoramas.length;
   if (total <= 1) return [];
@@ -166,11 +206,35 @@ function getHotspotPosition(slot: number, count: number) {
   return presets[Math.max(0, Math.min(count - 1, presets.length - 1))][slot];
 }
 
+function getSpatialHotspotPosition(currentIndex: number, targetIndex: number, panoramas: PropertyPanoramaItem[]) {
+  const current = getScenePosition(currentIndex, panoramas.length, panoramas[currentIndex]);
+  const target = getScenePosition(targetIndex, panoramas.length, panoramas[targetIndex]);
+  const dx = target.x - current.x;
+  const dy = target.y - current.y;
+  const distance = Math.max(1, Math.hypot(dx, dy));
+  const normalizedX = dx / distance;
+  const normalizedY = dy / distance;
+  const depth = Math.max(0, normalizedY);
+
+  return {
+    left: Math.max(26, Math.min(74, 50 + normalizedX * 28)),
+    top: Math.max(48, Math.min(72, 61 + depth * 9 - Math.abs(normalizedX) * 3)),
+    angle: Math.atan2(dy, dx) * (180 / Math.PI),
+  };
+}
+
+function isImageFloorPlan(url: string | null | undefined) {
+  if (!url) return false;
+  return !url.toLowerCase().split("?")[0]?.endsWith(".pdf");
+}
+
 export function PanoramaViewer({
   panoramas,
   className,
   showSceneNavigation = true,
   immersiveControls = true,
+  variant = "panel",
+  floorPlanUrl = null,
 }: PanoramaViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewRef = useRef({ yaw: 0, pitch: 0, fov: 90 });
@@ -179,6 +243,7 @@ export function PanoramaViewer({
   const [mode, setMode] = useState<"walkthrough" | "dollhouse">("walkthrough");
   const [isLoading, setIsLoading] = useState(true);
   const [viewerError, setViewerError] = useState<string | null>(null);
+  const [transitionLabel, setTransitionLabel] = useState<string | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -348,12 +413,21 @@ export function PanoramaViewer({
     };
   }, [currentSceneIndex, panoramas]);
 
+  useEffect(() => {
+    if (!transitionLabel) return;
+    const timeout = window.setTimeout(() => setTransitionLabel(null), 520);
+    return () => window.clearTimeout(timeout);
+  }, [transitionLabel]);
+
   if (panoramas.length === 0) {
     return null;
   }
 
   const currentPanorama = panoramas[currentSceneIndex] ?? panoramas[0];
   const visibleHotspotIndexes = getVisibleHotspotIndexes(currentSceneIndex, panoramas);
+  const canUseFloorPlanImage = isImageFloorPlan(floorPlanUrl);
+  const dollhouseLayout = getDollhouseLayout(panoramas);
+  const connectionPairs = getConnectionPairs(panoramas);
 
   function adjustView(update: (view: typeof viewRef.current) => void) {
     update(viewRef.current);
@@ -361,13 +435,22 @@ export function PanoramaViewer({
   }
 
   function selectScene(index: number) {
+    const nextPanorama = panoramas[index];
+    if (index !== currentSceneIndex && nextPanorama) {
+      setTransitionLabel(nextPanorama.roomName ?? nextPanorama.label ?? `Escena ${index + 1}`);
+    }
     setCurrentSceneIndex(index);
     setMode("walkthrough");
   }
 
   return (
     <div className={cn("flex w-full flex-col gap-3", className)}>
-      <div className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm">
+      <div
+        className={cn(
+          "relative h-full min-h-[420px] w-full overflow-hidden bg-slate-950",
+          variant === "panel" ? "rounded-2xl border border-slate-200 shadow-sm" : "rounded-none border-0",
+        )}
+      >
         <canvas
           ref={canvasRef}
           className={cn(
@@ -378,46 +461,100 @@ export function PanoramaViewer({
 
         {mode === "dollhouse" && (
           <div className="absolute inset-0 z-10 overflow-hidden bg-[#07090d]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.14),transparent_48%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.13),transparent_48%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(30deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:32px_32px]" />
             <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/55 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/75 to-transparent" />
             <div
-              className="absolute left-1/2 top-1/2 h-[min(58vw,420px)] w-[min(72vw,640px)] -translate-x-1/2 -translate-y-1/2"
-              style={{ perspective: "900px" }}
+              className="absolute left-1/2 top-[48%] h-[min(62vw,520px)] w-[min(82vw,820px)] -translate-x-1/2 -translate-y-1/2"
+              style={{ perspective: "1100px" }}
             >
               <div
                 className="relative h-full w-full"
-                style={{ transform: "rotateX(58deg) rotateZ(-18deg)", transformStyle: "preserve-3d" }}
+                style={{ transform: "rotateX(60deg) rotateZ(-22deg)", transformStyle: "preserve-3d" }}
               >
+                <div className="absolute inset-[7%] rounded-2xl border border-white/10 bg-slate-900/55 shadow-[0_28px_80px_rgba(0,0,0,0.6)]" />
+                {canUseFloorPlanImage && (
+                  <img
+                    src={floorPlanUrl ?? ""}
+                    alt="Plano de la propiedad"
+                    className="absolute left-1/2 top-1/2 h-[86%] w-[90%] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/15 object-contain opacity-45 shadow-2xl"
+                  />
+                )}
+                {connectionPairs.map(({ from, to }) => {
+                  const fromPosition = dollhouseLayout[from];
+                  const toPosition = dollhouseLayout[to];
+                  if (!fromPosition || !toPosition) return null;
+
+                  const x1 = fromPosition.x;
+                  const y1 = fromPosition.y;
+                  const x2 = toPosition.x;
+                  const y2 = toPosition.y;
+                  const length = Math.hypot(x2 - x1, y2 - y1);
+                  const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+
+                  return (
+                    <span
+                      key={`${from}-${to}`}
+                      className="absolute h-[3px] origin-left rounded-full bg-cyan-200/50 shadow-[0_0_22px_rgba(103,232,249,0.55)]"
+                      style={{
+                        left: `${x1}%`,
+                        top: `${y1}%`,
+                        width: `${length}%`,
+                        transform: `translateZ(13px) rotate(${angle}deg)`,
+                      }}
+                    />
+                  );
+                })}
                 {panoramas.map((pano, idx) => {
-                  const position = getScenePosition(idx, panoramas.length, pano);
+                  const position = dollhouseLayout[idx];
                   const isActive = idx === currentSceneIndex;
+                  const roomWidth = panoramas.length <= 3 ? 31 : 25;
+                  const roomHeight = panoramas.length <= 3 ? 20 : 17;
+
                   return (
                     <button
                       key={pano.id}
                       type="button"
                       onClick={() => selectScene(idx)}
                       className={cn(
-                        "absolute h-28 w-40 overflow-hidden rounded-md border bg-slate-900 text-left shadow-2xl transition duration-300 hover:z-20 hover:scale-105",
-                        isActive ? "z-20 border-brand-300 ring-2 ring-brand-400/60" : "border-white/20 opacity-80",
+                        "group absolute overflow-visible text-left transition duration-300 hover:z-30 hover:scale-[1.03]",
+                        isActive ? "z-30" : "z-20 opacity-90",
                       )}
                       style={{
                         left: `${position.x}%`,
                         top: `${position.y}%`,
-                        transform: `translate(-50%, -50%) rotate(${position.rotation}deg)`,
+                        width: `${roomWidth}%`,
+                        height: `${roomHeight}%`,
+                        transform: `translate(-50%, -50%) translateZ(${isActive ? 34 : 22}px) rotate(${position.rotation}deg)`,
+                        transformStyle: "preserve-3d",
                       }}
                       title={pano.label ?? `Escena ${idx + 1}`}
                     >
-                      <img src={pano.url} alt={pano.label ?? `Escena ${idx + 1}`} className="h-full w-full object-cover" />
-                      <span className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-400 text-[10px] font-bold text-slate-950">
+                      <span className="absolute inset-0 rounded-md border border-white/20 bg-slate-950 shadow-2xl" />
+                      <span className="absolute inset-x-0 top-0 h-6 origin-bottom rounded-t-md border border-white/15 bg-white/65" style={{ transform: "translateY(-6px) rotateX(70deg)" }} />
+                      <span className="absolute inset-y-0 left-0 w-5 origin-right rounded-l-md border border-white/15 bg-white/55" style={{ transform: "translateX(-5px) rotateY(-68deg)" }} />
+                      <span className="absolute inset-y-0 right-0 w-5 origin-left rounded-r-md border border-white/10 bg-white/35" style={{ transform: "translateX(5px) rotateY(68deg)" }} />
+                      <span className="absolute inset-0 overflow-hidden rounded-md border border-white/15 bg-slate-900">
+                        <img
+                          src={pano.url}
+                          alt={pano.label ?? `Escena ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        <span className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-white/10" />
+                      </span>
+                      <span className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-300 text-[10px] font-bold text-slate-950 shadow-[0_0_16px_rgba(103,232,249,0.8)]">
                         {idx + 1}
                       </span>
+                      <span className="absolute bottom-2 left-2 right-2 truncate rounded bg-black/55 px-2 py-1 text-[10px] font-semibold text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
+                        {pano.roomName ?? pano.label ?? `Escena ${idx + 1}`}
+                      </span>
+                      {isActive && (
+                        <span className="pointer-events-none absolute -inset-1 rounded-lg border-2 border-cyan-200 shadow-[0_0_28px_rgba(103,232,249,0.75)]" />
+                      )}
                     </button>
                   );
                 })}
-                {panoramas.length > 1 && (
-                  <div className="absolute left-[18%] top-[24%] h-[2px] w-[68%] bg-cyan-300/35 shadow-[0_0_18px_rgba(103,232,249,0.45)]" />
-                )}
               </div>
             </div>
           </div>
@@ -455,7 +592,9 @@ export function PanoramaViewer({
         {!viewerError && mode === "walkthrough" && (
           <>
             {visibleHotspotIndexes.map((sceneIndex, slot) => {
-              const position = getHotspotPosition(slot, visibleHotspotIndexes.length);
+              const spatialPosition = getSpatialHotspotPosition(currentSceneIndex, sceneIndex, panoramas);
+              const fallbackPosition = getHotspotPosition(slot, visibleHotspotIndexes.length);
+              const position = Number.isFinite(spatialPosition.left) ? spatialPosition : fallbackPosition;
               const pano = panoramas[sceneIndex];
               const isNext = sceneIndex === (currentSceneIndex + 1) % panoramas.length;
               return (
@@ -474,14 +613,26 @@ export function PanoramaViewer({
                     )}
                   >
                     <span className="h-7 w-7 rounded-full border-2 border-white/85 bg-white/20" />
+                    <span
+                      className="absolute h-1 w-7 origin-left rounded-full bg-white/85 opacity-70"
+                      style={{ transform: `translateX(11px) rotate(${spatialPosition.angle}deg)` }}
+                    />
                   </span>
                   <span className="max-w-28 rounded-full bg-black/55 px-2 py-1 text-[10px] font-semibold leading-tight opacity-0 backdrop-blur transition group-hover:opacity-100">
-                    {pano.label ?? `Escena ${sceneIndex + 1}`}
+                    {pano.roomName ?? pano.label ?? `Escena ${sceneIndex + 1}`}
                   </span>
                 </button>
               );
             })}
           </>
+        )}
+
+        {transitionLabel && (
+          <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/35 text-white backdrop-blur-[2px] transition">
+            <div className="rounded-full border border-white/15 bg-black/55 px-5 py-2 text-sm font-semibold shadow-2xl">
+              {transitionLabel}
+            </div>
+          </div>
         )}
 
         {!viewerError && immersiveControls && mode === "walkthrough" && panoramas.length > 1 && (
@@ -511,6 +662,13 @@ export function PanoramaViewer({
         {!viewerError && immersiveControls && panoramas.length > 1 && (
           <div className="absolute bottom-24 right-4 z-30 hidden h-28 w-40 overflow-hidden rounded-lg border border-white/15 bg-black/45 shadow-2xl backdrop-blur md:block">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.2),transparent_58%)]" />
+            {canUseFloorPlanImage && (
+              <img
+                src={floorPlanUrl ?? ""}
+                alt="Plano de la propiedad"
+                className="absolute inset-0 h-full w-full object-contain opacity-35"
+              />
+            )}
             <div className="absolute left-3 top-2 text-[10px] font-semibold uppercase tracking-wide text-white/55">
               Plano
             </div>

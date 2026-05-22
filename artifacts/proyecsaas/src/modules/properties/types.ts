@@ -72,6 +72,7 @@ export type PropertyDetail = PropertyListItem & {
   amenities: string | null;
   externalLink: string | null;
   videoUrl: string | null;
+  floorPlanUrl: string | null;
   latitude?: number;
   longitude?: number;
   interestedLeads: PropertyInterestLead[];

@@ -14,6 +14,7 @@ type MediaManagerProps = {
   propertyId: string;
   images: PropertyImageItem[];
   panoramas: PropertyPanoramaItem[];
+  floorPlanUrl: string | null;
 };
 
 export function MediaManager({
@@ -21,10 +22,12 @@ export function MediaManager({
   propertyId,
   images: initialImages,
   panoramas: initialPanoramas,
+  floorPlanUrl: initialFloorPlanUrl,
 }: MediaManagerProps) {
   const router = useRouter();
   const [images, setImages] = useState(initialImages);
   const [panoramas, setPanoramas] = useState(initialPanoramas);
+  const [floorPlanUrl, setFloorPlanUrl] = useState(initialFloorPlanUrl);
   const [activeCategory, setActiveCategory] = useState<MediaCategory>(
     initialPanoramas.length > 0 ? "PANORAMA" : "REAL",
   );
@@ -48,6 +51,10 @@ export function MediaManager({
       return initialPanoramas[0]?.id ?? null;
     });
   }, [initialPanoramas]);
+
+  useEffect(() => {
+    setFloorPlanUrl(initialFloorPlanUrl);
+  }, [initialFloorPlanUrl]);
 
   const primaryImage = images.find((image) => image.isPrimary) ?? images.find((image) => image.category === "REAL") ?? images[0] ?? null;
   const activeTitle = activePanorama?.label ?? primaryImage?.altText ?? "Sin medios todavía";
@@ -130,6 +137,7 @@ export function MediaManager({
               panoramas={orderedPanoramas}
               showSceneNavigation={false}
               immersiveControls={false}
+              floorPlanUrl={floorPlanUrl}
               className="h-full gap-0 [&>div:first-child]:h-full [&>div:first-child]:rounded-none [&>div:first-child]:border-0 [&>div:first-child]:shadow-none"
             />
           ) : primaryImage ? (
@@ -183,6 +191,7 @@ export function MediaManager({
           propertyId={propertyId}
           images={images}
           panoramas={panoramas}
+          floorPlanUrl={floorPlanUrl}
           activeCategory={activeCategory}
           activePanoramaId={activePanorama?.id ?? null}
           onCategoryChange={setActiveCategory}
@@ -192,6 +201,7 @@ export function MediaManager({
           }}
           onMediaUploaded={handleUploaded}
           onMediaDeleted={handleMediaDeleted}
+          onFloorPlanUpdated={setFloorPlanUrl}
           onSaveChanges={handleSaveChanges}
         />
       </div>

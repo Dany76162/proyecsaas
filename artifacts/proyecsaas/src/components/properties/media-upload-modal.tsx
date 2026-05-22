@@ -14,6 +14,7 @@ import {
 import { upsertPropertyMediaAction } from "@/modules/properties/actions";
 
 export type MediaCategory = "PANORAMA" | "REAL" | "RENDER" | "PROGRESS";
+export type UploadCategory = MediaCategory | "FLOOR_PLAN";
 
 export type UploadedMediaPayload = {
   url: string;
@@ -41,18 +42,20 @@ export const categoryLabels: Record<MediaCategory, string> = {
   PROGRESS: "Avance de obra",
 };
 
-const folderByCategory: Record<MediaCategory, string> = {
+const folderByCategory: Record<UploadCategory, string> = {
   PANORAMA: "panoramas360",
   REAL: "property-images",
   RENDER: "property-renders",
   PROGRESS: "property-progress",
+  FLOOR_PLAN: "property-floor-plans",
 };
 
-const maxUploadSizeByCategory: Record<MediaCategory, number> = {
+const maxUploadSizeByCategory: Record<UploadCategory, number> = {
   PANORAMA: 512 * 1024 * 1024,
   REAL: 25 * 1024 * 1024,
   RENDER: 25 * 1024 * 1024,
   PROGRESS: 25 * 1024 * 1024,
+  FLOOR_PLAN: 50 * 1024 * 1024,
 };
 
 const directions: { value: DirectionValue; label: string }[] = [
@@ -78,7 +81,7 @@ function formatMegabytes(bytes: number) {
 
 export async function uploadToPropertyMedia(
   file: File,
-  category: MediaCategory,
+  category: UploadCategory,
   orgSlug: string,
   propertyId: string,
   onProgress: (pct: number) => void,

@@ -446,6 +446,7 @@ export default async function PropertyDetailPage({
         propertyId={property.id}
         images={property.images}
         panoramas={property.panoramas}
+        floorPlanUrl={property.floorPlanUrl}
       />
 
       {/* CRM sections */}

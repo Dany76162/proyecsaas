@@ -120,6 +120,8 @@ export function CameraCaptureModal({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const wasAlignedRef = useRef(false);
+  const autoCaptureTimerRef = useRef<number | null>(null);
+  const isAutoCapturingRef = useRef(false);
   const previousWebcamFrameRef = useRef<Uint8ClampedArray | null>(null);
   const webcamStableTicksRef = useRef(0);
   const [mode, setMode] = useState<CaptureMode>("photo");
@@ -132,6 +134,7 @@ export function CameraCaptureModal({
   const [orientation, setOrientation] = useState({ alpha: 0, beta: 0 });
   const [sensorEnabled, setSensorEnabled] = useState(false);
   const [webcamAutoAligned, setWebcamAutoAligned] = useState(false);
+  const [autoCaptureCountdown, setAutoCaptureCountdown] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
   const [isPending, startTransition] = useTransition();
 
@@ -170,6 +173,15 @@ export function CameraCaptureModal({
     return "Ej. Foto desde camara";
   }, [category, mode]);
 
+  function clearAutoCapture() {
+    if (autoCaptureTimerRef.current) {
+      window.clearInterval(autoCaptureTimerRef.current);
+      autoCaptureTimerRef.current = null;
+    }
+    isAutoCapturingRef.current = false;
+    setAutoCaptureCountdown(null);
+  }
+
   useEffect(() => {
     if (!open) return;
 
@@ -180,6 +192,7 @@ export function CameraCaptureModal({
     setPreviewUrl(null);
     setProgress(0);
     setWebcamAutoAligned(false);
+    clearAutoCapture();
 
     async function startCamera() {
       try {
@@ -294,6 +307,41 @@ export function CameraCaptureModal({
   }, [isAligned, mode, guidedFrames.length]);
 
   useEffect(() => {
+    if (
+      !open ||
+      mode !== "guided360" ||
+      !isAligned ||
+      capturedFile ||
+      cameraError ||
+      guidedFrames.length >= guidedFrameCount
+    ) {
+      clearAutoCapture();
+      return;
+    }
+
+    if (isAutoCapturingRef.current) return;
+
+    isAutoCapturingRef.current = true;
+    setAutoCaptureCountdown(2);
+    autoCaptureTimerRef.current = window.setInterval(() => {
+      setAutoCaptureCountdown((current) => {
+        if (current === null) return null;
+        if (current <= 1) {
+          if (autoCaptureTimerRef.current) {
+            window.clearInterval(autoCaptureTimerRef.current);
+            autoCaptureTimerRef.current = null;
+          }
+          void handleCapture();
+          return null;
+        }
+        return current - 1;
+      });
+    }, 450);
+
+    return clearAutoCapture;
+  }, [cameraError, capturedFile, guidedFrames.length, isAligned, mode, open]);
+
+  useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
@@ -308,6 +356,7 @@ export function CameraCaptureModal({
       setCapturedFile(null);
       setGuidedFrames([]);
       setProgress(0);
+      clearAutoCapture();
     }
     onOpenChange(nextOpen);
   }
@@ -338,6 +387,7 @@ export function CameraCaptureModal({
   }
 
   async function handleCapture() {
+    clearAutoCapture();
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.videoWidth === 0 || video.videoHeight === 0) return;
@@ -394,6 +444,7 @@ export function CameraCaptureModal({
     setProgress(0);
     setCameraError(null);
     setWebcamAutoAligned(false);
+    clearAutoCapture();
   }
 
   async function enableSensors() {
@@ -539,7 +590,7 @@ export function CameraCaptureModal({
                         : "border-rose-300/60 bg-rose-500/20 text-rose-100"
                     }`}
                   >
-                    {primaryInstruction}
+                    {autoCaptureCountdown !== null ? `Captura auto en ${autoCaptureCountdown}` : primaryInstruction}
                   </div>
                 </div>
               )}
@@ -679,7 +730,10 @@ export function CameraCaptureModal({
             <Button
               type="button"
               onClick={handleCapture}
-              disabled={Boolean(cameraError) || (mode === "guided360" && guidedFrames.length >= guidedFrameCount)}
+              disabled={
+                Boolean(cameraError) ||
+                (mode === "guided360" && (!isAligned || guidedFrames.length >= guidedFrameCount || autoCaptureCountdown !== null))
+              }
             >
               <Camera className="mr-2 h-4 w-4" />
               {mode === "guided360" ? "Capturar posicion" : "Capturar"}

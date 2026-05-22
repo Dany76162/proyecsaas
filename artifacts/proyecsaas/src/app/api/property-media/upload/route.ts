@@ -10,14 +10,19 @@ import { prisma } from "@/server/db/prisma";
 
 const MAX_STANDARD_IMAGE_SIZE = 25 * 1024 * 1024;
 const MAX_PANORAMA_IMAGE_SIZE = 512 * 1024 * 1024;
+const MAX_FLOOR_PLAN_SIZE = 50 * 1024 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
+const ALLOWED_FLOOR_PLAN_TYPES = new Set([...ALLOWED_IMAGE_TYPES, "application/pdf"]);
 
-const folderByCategory: Record<PropertyImageCategory, string> = {
+type PropertyMediaUploadCategory = PropertyImageCategory | "FLOOR_PLAN";
+
+const folderByCategory: Record<PropertyMediaUploadCategory, string> = {
   PANORAMA: "panoramas360",
   REAL: "property-images",
   RENDER: "property-renders",
   PROGRESS: "property-progress",
+  FLOOR_PLAN: "property-floor-plans",
 };
 
 const PANORAMA_VIEWER_WIDTHS = [8192, 6144, 4096] as const;
@@ -43,7 +48,12 @@ function getPanoramaViewerFilename(filename: string) {
   return filename.replace(/\.[^.]+$/, ".jpg");
 }
 
-function getMaxImageSize(category: PropertyImageCategory) {
+function isUploadCategory(value: string): value is PropertyMediaUploadCategory {
+  return value === "FLOOR_PLAN" || Object.values(PropertyImageCategory).includes(value as PropertyImageCategory);
+}
+
+function getMaxImageSize(category: PropertyMediaUploadCategory) {
+  if (category === "FLOOR_PLAN") return MAX_FLOOR_PLAN_SIZE;
   return category === "PANORAMA" ? MAX_PANORAMA_IMAGE_SIZE : MAX_STANDARD_IMAGE_SIZE;
 }
 
@@ -85,8 +95,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No autenticado." }, { status: 401 });
     }
 
-    const hintedCategory = String(request.headers.get("x-property-media-category") ?? "REAL") as PropertyImageCategory;
-    const validHintedCategory = Object.values(PropertyImageCategory).includes(hintedCategory) ? hintedCategory : "REAL";
+    const hintedCategory = String(request.headers.get("x-property-media-category") ?? "REAL");
+    const validHintedCategory: PropertyMediaUploadCategory = isUploadCategory(hintedCategory) ? hintedCategory : "REAL";
     const maxRequestBodySize = getMaxImageSize(validHintedCategory) + MULTIPART_OVERHEAD_BYTES;
     const contentLength = Number(request.headers.get("content-length") ?? 0);
 
@@ -107,13 +117,13 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file");
     const orgSlug = String(formData.get("orgSlug") ?? "");
     const propertyId = String(formData.get("propertyId") ?? "");
-    const rawCategory = String(formData.get("category") ?? "REAL") as PropertyImageCategory;
+    const rawCategory = String(formData.get("category") ?? "REAL");
 
     if (!(file instanceof File)) {
       return NextResponse.json({ success: false, error: "Archivo inválido." }, { status: 400 });
     }
 
-    if (!Object.values(PropertyImageCategory).includes(rawCategory)) {
+    if (!isUploadCategory(rawCategory)) {
       return NextResponse.json({ success: false, error: "Categoría inválida." }, { status: 400 });
     }
 
@@ -122,8 +132,9 @@ export async function POST(request: NextRequest) {
       return uploadError(`La imagen supera el maximo permitido de ${formatMegabytes(maxImageSize)}.`, 413);
     }
 
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      return NextResponse.json({ success: false, error: "Tipo de imagen no permitido." }, { status: 400 });
+    const allowedFileTypes = rawCategory === "FLOOR_PLAN" ? ALLOWED_FLOOR_PLAN_TYPES : ALLOWED_IMAGE_TYPES;
+    if (!allowedFileTypes.has(file.type)) {
+      return NextResponse.json({ success: false, error: "Tipo de archivo no permitido." }, { status: 400 });
     }
 
     const membership = await prisma.membership.findFirst({

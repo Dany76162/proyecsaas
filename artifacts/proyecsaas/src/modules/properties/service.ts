@@ -10,6 +10,10 @@ import type {
   PropertySummary,
 } from "@/modules/properties/types";
 
+type PropertyFloorPlanRow = {
+  floorPlanUrl: string | null;
+};
+
 export async function listOrganizationProperties(
   orgSlug: string,
 ): Promise<PropertyListItem[]> {
@@ -107,6 +111,13 @@ export async function getPropertyDetail(
     return null;
   }
 
+  const [floorPlan] = await prisma.$queryRaw<PropertyFloorPlanRow[]>`
+    SELECT "floorPlanUrl"
+    FROM "Property"
+    WHERE "id" = ${property.id}
+    LIMIT 1
+  `;
+
   const interestedLeads = property.interestedLeads.map((lead) => ({
     id: lead.id,
     fullName: lead.fullName,
@@ -169,6 +180,7 @@ export async function getPropertyDetail(
     amenities: property.amenities,
     externalLink: property.externalLink,
     videoUrl: property.videoUrl,
+    floorPlanUrl: floorPlan?.floorPlanUrl ?? null,
     latitude: property.latitude ? Number(property.latitude) : undefined,
     longitude: property.longitude ? Number(property.longitude) : undefined,
     interestedLeads,
