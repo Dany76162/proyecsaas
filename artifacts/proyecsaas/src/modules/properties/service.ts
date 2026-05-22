@@ -31,6 +31,15 @@ type PropertyPanoramaRow = {
   initialHfov: number;
 };
 
+type PropertyImageRow = {
+  id: string;
+  url: string;
+  altText: string | null;
+  category: "PANORAMA" | "REAL" | "RENDER" | "PROGRESS";
+  sortOrder: number;
+  isPrimary: boolean;
+};
+
 export async function listOrganizationProperties(
   orgSlug: string,
 ): Promise<PropertyListItem[]> {
@@ -121,9 +130,6 @@ export async function getPropertyDetail(
       latitude: true,
       longitude: true,
       organization: true,
-      images: {
-        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
-      },
       interestedLeads: {
         include: {
           owner: true,
@@ -149,8 +155,9 @@ export async function getPropertyDetail(
     return null;
   }
 
-  const [floorPlanUrl, panoramaRows] = await Promise.all([
+  const [floorPlanUrl, imageRows, panoramaRows] = await Promise.all([
     getPropertyFloorPlanUrl(property.id),
+    listPropertyImages(property.id, property.organizationId),
     listPropertyPanoramas(property.id, property.organizationId),
   ]);
 
@@ -168,7 +175,7 @@ export async function getPropertyDetail(
     leadName: visit.lead?.fullName ?? "Lead desconocido",
   }));
 
-  const images = property.images.map((img) => ({
+  const images = imageRows.map((img) => ({
     id: img.id,
     url: img.url,
     altText: img.altText,
@@ -225,6 +232,45 @@ export async function getPropertyDetail(
     panoramas,
     organizationSlug: property.organization.slug,
   };
+}
+
+async function listPropertyImages(
+  propertyId: string,
+  organizationId: string,
+): Promise<PropertyImageRow[]> {
+  try {
+    return await prisma.$queryRaw<PropertyImageRow[]>`
+      SELECT
+        "id",
+        "url",
+        "altText",
+        "category",
+        "sortOrder",
+        "isPrimary"
+      FROM "PropertyImage"
+      WHERE "propertyId" = ${propertyId}
+        AND "organizationId" = ${organizationId}
+      ORDER BY "isPrimary" DESC, "sortOrder" ASC, "createdAt" ASC
+    `;
+  } catch (error) {
+    if (!isMissingSchemaFieldError(error)) {
+      throw error;
+    }
+
+    return prisma.$queryRaw<PropertyImageRow[]>`
+      SELECT
+        "id",
+        "url",
+        "altText",
+        'REAL' AS "category",
+        "sortOrder",
+        "isPrimary"
+      FROM "PropertyImage"
+      WHERE "propertyId" = ${propertyId}
+        AND "organizationId" = ${organizationId}
+      ORDER BY "isPrimary" DESC, "sortOrder" ASC, "createdAt" ASC
+    `;
+  }
 }
 
 async function getPropertyFloorPlanUrl(propertyId: string) {
