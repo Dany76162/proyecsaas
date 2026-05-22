@@ -24,10 +24,12 @@ type CameraCaptureModalProps = {
 };
 
 const guidedYawSteps = [0, 60, 120, 180, 240, 300];
+// Capture order per yaw stop: floor first, then front, then ceiling
+// targetBeta values match real device tilt angles measured empirically
 const guidedPitchSteps = [
-  { label: "Piso", targetBeta: 55 },
-  { label: "Frente", targetBeta: 0 },
-  { label: "Techo", targetBeta: -55 },
+  { label: "Piso", targetBeta: 70, icon: "↓" },
+  { label: "Frente", targetBeta: 0, icon: "→" },
+  { label: "Techo", targetBeta: -70, icon: "↑" },
 ];
 const guidedFrameCount = guidedYawSteps.length * guidedPitchSteps.length;
 
@@ -84,10 +86,15 @@ async function buildGuidedPanoramaFile(frames: CapturedFrame[], title: string) {
   const tileWidth = canvas.width / guidedYawSteps.length;
   const tileHeight = canvas.height / guidedPitchSteps.length;
 
+  // Iteration order: yaw outer, pitch inner → (yaw0,floor),(yaw0,front),(yaw0,ceiling),(yaw1,floor)…
+  // Canvas: columns = yaw positions left→right, rows = ceiling(top)→front(mid)→floor(bottom)
   for (let index = 0; index < frames.length; index += 1) {
     const bitmap = await blobToBitmap(frames[index].blob);
-    const x = (index % guidedYawSteps.length) * tileWidth;
-    const y = Math.floor(index / guidedYawSteps.length) * tileHeight;
+    const yawIdx = Math.floor(index / guidedPitchSteps.length);
+    const pitchIdx = index % guidedPitchSteps.length;
+    const x = yawIdx * tileWidth;
+    // pitchIdx 0=Piso→bottom row, 1=Frente→middle, 2=Techo→top row
+    const y = (guidedPitchSteps.length - 1 - pitchIdx) * tileHeight;
     context.drawImage(bitmap, x, y, tileWidth, tileHeight);
     if ("close" in bitmap && typeof bitmap.close === "function") {
       bitmap.close();
@@ -136,17 +143,21 @@ export function CameraCaptureModal({
   const hasCompletedGuidedCapture = mode === "guided360" && Boolean(capturedFile);
   const displayedGuidedCount = hasCompletedGuidedCapture ? guidedFrameCount : guidedFrames.length;
   const guidedIndex = guidedFrames.length;
-  const guidedPitchIndex = Math.floor(guidedIndex / guidedYawSteps.length);
-  const guidedYawIndex = guidedIndex % guidedYawSteps.length;
+  // yaw is the OUTER loop: complete floor/front/ceiling per yaw stop before rotating
+  const guidedYawIndex = Math.floor(guidedIndex / guidedPitchSteps.length);
+  const guidedPitchIndex = guidedIndex % guidedPitchSteps.length;
   const guidedStep = guidedPitchSteps[Math.min(guidedPitchIndex, guidedPitchSteps.length - 1)];
-  const targetYaw = guidedYawSteps[guidedYawIndex] ?? 0;
+  const targetYaw = guidedYawSteps[Math.min(guidedYawIndex, guidedYawSteps.length - 1)] ?? 0;
   const yawDelta = shortestAngleDistance(orientation.alpha, targetYaw);
   const pitchDelta = orientation.beta - (guidedStep?.targetBeta ?? 0);
   const guideYawDelta = sensorEnabled ? yawDelta : 0;
   const guidePitchDelta = sensorEnabled ? pitchDelta : 0;
-  const isAligned = Math.abs(guideYawDelta) <= 12 && Math.abs(guidePitchDelta) <= 14;
+  // Wider tolerances so floor/ceiling positions actually trigger (±20° pitch, ±15° yaw)
+  const isAligned = Math.abs(guideYawDelta) <= 15 && Math.abs(guidePitchDelta) <= 20;
   const guideOffsetX = Math.max(-38, Math.min(38, guideYawDelta)) * 1.6;
   const guideOffsetY = Math.max(-30, Math.min(30, guidePitchDelta)) * 1.6;
+  // Bubble level offset: positive pitchDelta = tilting too far, move bubble right
+  const levelBubbleOffset = Math.max(-56, Math.min(56, guidePitchDelta * 1.4));
   const captureTitle = useMemo(() => {
     if (mode === "guided360") return "escena 360 guiada";
     if (category === "PROGRESS") return "avance de obra";
@@ -160,16 +171,18 @@ export function CameraCaptureModal({
     (mode === "photo" ||
       (guidedFrames.length < guidedFrameCount && autoCaptureCountdown === null && isAligned));
   const primaryInstruction = (() => {
-    if (isAligned) return "Posicion correcta";
-    if (Math.abs(guidePitchDelta) > 14) {
-      if (guidedStep?.label === "Piso") return "Apunta hacia el piso";
-      if (guidedStep?.label === "Techo") return "Apunta hacia el techo";
-      return "Apunta al frente";
+    if (isAligned) return "¡Posición correcta!";
+    const pitchOff = Math.abs(guidePitchDelta) > 20;
+    const yawOff = Math.abs(guideYawDelta) > 15;
+    if (pitchOff && !yawOff) {
+      if (guidedStep?.label === "Piso") return guidePitchDelta < 0 ? "Inclina más hacia el piso" : "Levanta un poco";
+      if (guidedStep?.label === "Techo") return guidePitchDelta > 0 ? "Inclina más hacia el techo" : "Baja un poco";
+      return guidePitchDelta > 0 ? "Inclina menos" : "Apunta más al frente";
     }
-    if (Math.abs(guideYawDelta) > 12) {
+    if (yawOff) {
       return guideYawDelta > 0 ? "Gira a la izquierda" : "Gira a la derecha";
     }
-    return "Ajusta la camara";
+    return "Ajusta la cámara";
   })();
 
   function clearAutoCapture() {
@@ -197,11 +210,20 @@ export function CameraCaptureModal({
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
+            width: { ideal: 3840 },
+            height: { ideal: 2160 },
+            aspectRatio: { ideal: 16 / 9 },
           },
           audio: false,
         });
+        // Try to use the widest (ultrawide) lens by minimizing zoom
+        try {
+          const track = stream.getVideoTracks()[0];
+          const caps = track.getCapabilities?.() as any;
+          if (caps?.zoom?.min !== undefined) {
+            await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as any] });
+          }
+        } catch { /* wide angle is optional */ }
         if (!mounted) {
           stream.getTracks().forEach((track) => track.stop());
           return;
@@ -458,8 +480,41 @@ export function CameraCaptureModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="fixed inset-0 h-[100dvh] max-h-[100dvh] w-screen max-w-none overflow-hidden rounded-none border-0 bg-black p-0 text-white shadow-2xl sm:relative sm:max-h-[92vh] sm:max-w-md sm:rounded-[2rem] sm:border-white/10">
         <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-black">
-          <div className="flex h-14 shrink-0 items-center justify-center px-8">
-            {/* Top bar limpia – sin íconos decorativos */}
+          {/* Yaw compass strip – shows current rotation vs target */}
+          <div className="flex h-14 shrink-0 flex-col items-center justify-center gap-1 px-4">
+            {mode === "guided360" && !capturedFile && (
+              <>
+                <div className="flex items-center gap-1">
+                  {guidedYawSteps.map((step, i) => {
+                    const isCurrentYaw = i === guidedYawIndex;
+                    const isDoneYaw = i < guidedYawIndex;
+                    return (
+                      <div key={step} className={`flex flex-col items-center gap-0.5 w-10`}>
+                        <div className={`text-[9px] font-bold tabular-nums ${
+                          isCurrentYaw ? "text-white" : isDoneYaw ? "text-emerald-400" : "text-white/30"
+                        }`}>{step}°</div>
+                        <div className={`h-1.5 w-full rounded-full ${
+                          isDoneYaw ? "bg-emerald-400" : isCurrentYaw ? "bg-white" : "bg-white/20"
+                        }`} />
+                        {/* pitch dots for this yaw position */}
+                        <div className="flex gap-0.5 mt-0.5">
+                          {guidedPitchSteps.map((_, pi) => {
+                            const frameIdx = i * guidedPitchSteps.length + pi;
+                            const done = frameIdx < guidedFrames.length;
+                            const active = frameIdx === guidedFrames.length;
+                            return (
+                              <div key={pi} className={`h-1.5 w-1.5 rounded-full ${
+                                done ? "bg-emerald-400" : active ? "bg-white animate-pulse" : "bg-white/20"
+                              }`} />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="relative min-h-0 flex-1 overflow-hidden bg-black">
@@ -485,6 +540,7 @@ export function CameraCaptureModal({
 
             {mode === "guided360" && !previewUrl && !cameraError && (
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                {/* Crosshair lines */}
                 <div
                   className={`absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 ${
                     isAligned ? "bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.65)]" : "bg-rose-500 shadow-[0_0_18px_rgba(244,63,94,0.55)]"
@@ -499,13 +555,12 @@ export function CameraCaptureModal({
                 />
                 <div className="absolute inset-x-14 top-1/2 h-px -translate-y-1/2 border-t border-dashed border-white/55" />
                 <div className="absolute inset-y-16 left-1/2 w-px -translate-x-1/2 border-l border-dashed border-white/45" />
+                {/* Target reticle */}
                 <div
-                  className={`absolute left-1/2 top-1/2 h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full border ${
-                    isAligned ? "border-emerald-300 bg-emerald-400/25" : "border-rose-300 bg-rose-500/25"
+                  className={`absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${
+                    isAligned ? "border-emerald-300 bg-emerald-400/20" : "border-rose-300 bg-rose-500/20"
                   }`}
-                  style={{
-                    transform: `translate(calc(-50% + ${guideOffsetX}px), calc(-50% + ${guideOffsetY}px))`,
-                  }}
+                  style={{ transform: `translate(calc(-50% + ${guideOffsetX}px), calc(-50% + ${guideOffsetY}px))` }}
                 >
                   <span
                     className={`absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ${
@@ -513,14 +568,39 @@ export function CameraCaptureModal({
                     }`}
                   />
                 </div>
+
+                {/* Vertical pitch level bar – right side */}
+                <div className="absolute right-4 top-1/4 bottom-1/4 w-5 flex flex-col items-center">
+                  <div className="flex-1 w-1 rounded-full bg-white/20 relative overflow-hidden">
+                    {/* Bubble: centered = aligned. Moves along the bar with pitchDelta */}
+                    <div
+                      className={`absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full transition-all duration-100 ${
+                        isAligned ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" : "bg-rose-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]"
+                      }`}
+                      style={{ top: `calc(50% + ${Math.max(-40, Math.min(40, guidePitchDelta * 1.2))}% - 6px)` }}
+                    />
+                    <div className="absolute left-0 right-0 top-1/2 h-px bg-white/50" />
+                  </div>
+                  <div className="text-[8px] font-bold text-white/40 mt-1 uppercase tracking-widest">NIV</div>
+                </div>
+
+                {/* Pitch target label – left side */}
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
+                  <span className="text-2xl">{guidedStep?.icon}</span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${
+                    isAligned ? "text-emerald-300" : "text-white/60"
+                  }`}>{guidedStep?.label}</span>
+                </div>
+
+                {/* Instruction pill */}
                 <div
-                  className={`absolute bottom-12 left-1/2 max-w-[70%] -translate-x-1/2 rounded-full border px-5 py-2 text-center text-xs font-black uppercase tracking-wide ${
+                  className={`absolute bottom-10 left-1/2 max-w-[72%] -translate-x-1/2 rounded-full border px-5 py-2 text-center text-xs font-black uppercase tracking-wide ${
                     isAligned
                       ? "border-emerald-300/60 bg-emerald-500/20 text-emerald-100"
                       : "border-rose-300/60 bg-rose-500/20 text-rose-100"
                   }`}
                 >
-                  {autoCaptureCountdown !== null ? `Captura auto en ${autoCaptureCountdown}` : primaryInstruction}
+                  {autoCaptureCountdown !== null ? `📸 Capturando en ${autoCaptureCountdown}…` : primaryInstruction}
                 </div>
               </div>
             )}
@@ -531,10 +611,44 @@ export function CameraCaptureModal({
 
           <div className="shrink-0 bg-black px-6 pb-7 pt-5">
 
-            {mode === "guided360" && (
-              <div className="mb-5 flex items-center justify-between text-xs font-bold uppercase tracking-wide text-white/70">
-                <span>{guidedStep?.label ?? "Listo"} - Pos {guidedYawIndex + 1}/6</span>
-                <span>{displayedGuidedCount}/{guidedFrameCount}</span>
+            {mode === "guided360" && !capturedFile && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-white/70 mb-2">
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-base">{guidedStep?.icon}</span>
+                    <span>{guidedStep?.label ?? "Listo"}</span>
+                    <span className="text-white/30">·</span>
+                    <span>Dirección {guidedYawIndex + 1}/6 ({targetYaw}°)</span>
+                  </span>
+                  <span className={`tabular-nums ${
+                    displayedGuidedCount === guidedFrameCount ? "text-emerald-400" : "text-white/70"
+                  }`}>{displayedGuidedCount}/{guidedFrameCount}</span>
+                </div>
+                {/* 6×3 progress grid: columns=yaw directions, rows=floor/front/ceiling */}
+                <div className="flex gap-1.5 justify-center">
+                  {guidedYawSteps.map((yaw, yi) => (
+                    <div key={yaw} className="flex flex-col gap-1 items-center">
+                      {guidedPitchSteps.map((ps, pi) => {
+                        const frameIdx = yi * guidedPitchSteps.length + pi;
+                        const done = frameIdx < guidedFrames.length;
+                        const active = frameIdx === guidedFrames.length;
+                        return (
+                          <div
+                            key={pi}
+                            title={`${yaw}° – ${ps.label}`}
+                            className={`h-2 w-5 rounded-sm transition-all ${
+                              done
+                                ? "bg-emerald-400"
+                                : active
+                                ? "bg-white animate-pulse"
+                                : "bg-white/15"
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
