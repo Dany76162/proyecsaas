@@ -6,7 +6,7 @@
     "dev": "next dev --port 25195 --hostname 0.0.0.0",
     "worker:dev": "npx tsx --conditions=react-server src/server/workers/start.ts",
     "build": "next build",
-    "start": "prisma migrate resolve --rolled-back 20260521133000_add_panorama_spatial_fields || true && prisma migrate deploy && next start -H 0.0.0.0",
+    "start": "prisma migrate deploy && next start -H 0.0.0.0",
     "typecheck": "prisma generate && tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
