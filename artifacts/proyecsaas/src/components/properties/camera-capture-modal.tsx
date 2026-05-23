@@ -37,8 +37,8 @@ const guidedPitchSteps = [
   { label: "Techo", targetBeta: 138, short: "T" },
 ];
 const guidedFrameCount = guidedYawSteps.length * guidedPitchSteps.length;
-const yawTolerance = 9;
-const pitchTolerance = 10;
+const yawTolerance = 25;
+const pitchTolerance = 45;
 
 function normalizeAngle(value: number | null | undefined) {
   if (typeof value !== "number" || Number.isNaN(value)) return 0;
@@ -169,7 +169,7 @@ export function CameraCaptureModal({
   const canCapture =
     cameraReady &&
     !isPending &&
-    autoCaptureCountdown === null &&
+    (autoCaptureCountdown === null || autoCaptureCountdown <= 0) &&
     guidedFrames.length < guidedFrameCount &&
     (isAligned || !hasSensorData);
 
@@ -295,7 +295,9 @@ export function CameraCaptureModal({
 
     if (autoCaptureCountdown <= 0) {
       setAutoCaptureCountdown(null);
-      shutterRef.current?.click();
+      window.setTimeout(() => {
+        shutterRef.current?.click();
+      }, 0);
       return;
     }
 
