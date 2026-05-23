@@ -50,8 +50,6 @@ const folderByCategory: Record<UploadCategory, string> = {
   FLOOR_PLAN: "property-floor-plans",
 };
 
-const MAX_LOCAL_FALLBACK_SIZE = 10 * 1024 * 1024; // 10 MB → usar local si Cloudinary no está configurado
-
 const maxUploadSizeByCategory: Record<UploadCategory, number> = {
   PANORAMA: 512 * 1024 * 1024,
   REAL: 25 * 1024 * 1024,
@@ -90,94 +88,67 @@ export async function uploadToPropertyMedia(
 ): Promise<string> {
   const folder = folderByCategory[category];
 
-  // Intentar upload firmado a Cloudinary (soporta archivos de hasta 100 MB)
+  // 1. Obtener firma del servidor
+  let signRes: Response;
   try {
-    const signRes = await fetch("/api/cloudinary-sign", {
+    signRes = await fetch("/api/cloudinary-sign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder }),
     });
-
-    if (signRes.ok) {
-      const { signature, timestamp, apiKey, cloudName } = await signRes.json();
-
-      if (signature && apiKey && cloudName) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folder", folder);
-        formData.append("timestamp", String(timestamp));
-        formData.append("api_key", apiKey);
-        formData.append("signature", signature);
-
-        return new Promise<string>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 90));
-          };
-          xhr.onload = () => {
-            if (xhr.status === 200) {
-              const data = JSON.parse(xhr.responseText);
-              onProgress(100);
-              resolve(data.secure_url);
-            } else {
-              reject(new Error(`Cloudinary error ${xhr.status}: ${xhr.responseText}`));
-            }
-          };
-          xhr.onerror = () => reject(new Error("Error de red al subir a Cloudinary."));
-          xhr.send(formData);
-        });
-      }
-    }
-  } catch {
-    // Si Cloudinary no está disponible, caemos al servidor local
+  } catch (error: any) {
+    throw new Error(`Error de red al conectar con /api/cloudinary-sign: ${error.message || error}`);
   }
 
-  // Fallback: servidor local (solo para archivos ≤ 10 MB)
-  if (file.size > MAX_LOCAL_FALLBACK_SIZE) {
-    throw new Error(
-      `El archivo supera 10 MB. Configurá CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en Railway para subir panorámicas profesionales.`,
-    );
+  if (!signRes.ok) {
+    let errMsg = "Error al obtener la firma de Cloudinary";
+    try {
+      const errData = await signRes.json();
+      if (errData && errData.error) errMsg = errData.error;
+    } catch {}
+    throw new Error(`Cloudinary sign failed (Status ${signRes.status}): ${errMsg}`);
   }
 
+  const { signature, timestamp, apiKey, cloudName } = await signRes.json();
+
+  if (!signature || !apiKey || !cloudName) {
+    throw new Error("La API de firma no devolvió los parámetros requeridos (signature, apiKey o cloudName).");
+  }
+
+  // 2. Subir a Cloudinary con firma (soporta archivos grandes)
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("category", category);
   formData.append("folder", folder);
-  formData.append("orgSlug", orgSlug);
-  formData.append("propertyId", propertyId);
+  formData.append("timestamp", String(timestamp));
+  formData.append("api_key", apiKey);
+  formData.append("signature", signature);
 
-  onProgress(20);
-
-  const response = await fetch("/api/property-media/upload", {
-    method: "POST",
-    headers: {
-      "x-property-media-category": category,
-      "x-property-media-size": String(file.size),
-    },
-    body: formData,
-  });
-
-  onProgress(85);
-
-  const text = await response.text();
-  let data: { success?: boolean; url?: string; error?: string } = {};
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = {
-      error: response.ok
-        ? "No se pudo interpretar la respuesta de subida."
-        : "El servidor rechazo la imagen. Puede superar el limite permitido.",
+  return new Promise<string>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+    
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
     };
-  }
 
-  if (!response.ok || !data.success || !data.url) {
-    throw new Error(data.error || "No se pudo subir la imagen.");
-  }
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data.secure_url);
+        } catch {
+          reject(new Error("No se pudo interpretar la respuesta de Cloudinary."));
+        }
+      } else {
+        reject(new Error(`Cloudinary Upload Error (Status ${xhr.status}): ${xhr.responseText}`));
+      }
+    };
 
-  onProgress(100);
-  return data.url;
+    xhr.onerror = () => reject(new Error("Error de red al subir a Cloudinary."));
+    xhr.send(formData);
+  });
 }
 
 export function MediaUploadModal({
