@@ -50,6 +50,8 @@ const folderByCategory: Record<UploadCategory, string> = {
   FLOOR_PLAN: "property-floor-plans",
 };
 
+const MAX_LOCAL_FALLBACK_SIZE = 10 * 1024 * 1024; // 10 MB → usar local si Cloudinary no está configurado
+
 const maxUploadSizeByCategory: Record<UploadCategory, number> = {
   PANORAMA: 512 * 1024 * 1024,
   REAL: 25 * 1024 * 1024,
@@ -86,10 +88,62 @@ export async function uploadToPropertyMedia(
   propertyId: string,
   onProgress: (pct: number) => void,
 ): Promise<string> {
+  const folder = folderByCategory[category];
+
+  // Intentar upload firmado a Cloudinary (soporta archivos de hasta 100 MB)
+  try {
+    const signRes = await fetch("/api/cloudinary-sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder }),
+    });
+
+    if (signRes.ok) {
+      const { signature, timestamp, apiKey, cloudName } = await signRes.json();
+
+      if (signature && apiKey && cloudName) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", folder);
+        formData.append("timestamp", String(timestamp));
+        formData.append("api_key", apiKey);
+        formData.append("signature", signature);
+
+        return new Promise<string>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 90));
+          };
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              const data = JSON.parse(xhr.responseText);
+              onProgress(100);
+              resolve(data.secure_url);
+            } else {
+              reject(new Error(`Cloudinary error ${xhr.status}: ${xhr.responseText}`));
+            }
+          };
+          xhr.onerror = () => reject(new Error("Error de red al subir a Cloudinary."));
+          xhr.send(formData);
+        });
+      }
+    }
+  } catch {
+    // Si Cloudinary no está disponible, caemos al servidor local
+  }
+
+  // Fallback: servidor local (solo para archivos ≤ 10 MB)
+  if (file.size > MAX_LOCAL_FALLBACK_SIZE) {
+    throw new Error(
+      `El archivo supera 10 MB. Configurá CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en Railway para subir panorámicas profesionales.`,
+    );
+  }
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("category", category);
-  formData.append("folder", folderByCategory[category]);
+  formData.append("folder", folder);
   formData.append("orgSlug", orgSlug);
   formData.append("propertyId", propertyId);
 

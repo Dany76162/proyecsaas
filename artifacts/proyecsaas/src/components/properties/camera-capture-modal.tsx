@@ -94,8 +94,8 @@ async function buildGuidedPanoramaFile(frames: GuidedFrame[], propertyId: string
   }
 
   const canvas = document.createElement("canvas");
-  canvas.width = 4096;
-  canvas.height = 2048;
+  canvas.width = 2560;
+  canvas.height = 1280;
   const tileWidth = canvas.width / guidedYawSteps.length;
   const tileHeight = canvas.height / guidedPitchSteps.length;
 
@@ -399,7 +399,7 @@ export function CameraCaptureModal({
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.8);
     });
   };
 
