@@ -37,8 +37,8 @@ const guidedPitchSteps = [
   { label: "Techo", targetBeta: 138, short: "T" },
 ];
 const guidedFrameCount = guidedYawSteps.length * guidedPitchSteps.length;
-const yawTolerance = 25;
-const pitchTolerance = 45;
+const yawTolerance = 16;
+const pitchTolerance = 20;
 
 function normalizeAngle(value: number | null | undefined) {
   if (typeof value !== "number" || Number.isNaN(value)) return 0;
@@ -171,7 +171,7 @@ export function CameraCaptureModal({
     !isPending &&
     (autoCaptureCountdown === null || autoCaptureCountdown <= 0) &&
     guidedFrames.length < guidedFrameCount &&
-    (isAligned || !hasSensorData);
+    isAligned;
 
   const primaryInstruction = useMemo(() => {
     if (!hasSensorData) return "Manten el celular quieto";
@@ -182,11 +182,14 @@ export function CameraCaptureModal({
     if (!yawAligned) {
       return yawDelta > 0 ? "Gira a la derecha" : "Gira a la izquierda";
     }
-    return "Mantene quieto, capturando";
+    return "Posicion correcta";
   }, [currentPitch?.label, hasSensorData, pitchAligned, pitchDelta, yawAligned, yawDelta]);
 
   const guideOffsetX = hasSensorData ? clamp(yawDelta * 4.2, -120, 120) : 0;
   const guideOffsetY = hasSensorData ? clamp(-pitchDelta * 3.5, -110, 110) : 0;
+  const angleStatus = hasSensorData
+    ? `yaw ${Math.round(Math.abs(yawDelta))}/${yawTolerance} - pitch ${Math.round(Math.abs(pitchDelta))}/${pitchTolerance}`
+    : "esperando sensor";
 
   useEffect(() => {
     if (!open) return;
@@ -289,6 +292,11 @@ export function CameraCaptureModal({
 
     setAutoCaptureCountdown(2);
   }, [autoCaptureCountdown, cameraReady, guidedFrames.length, isAligned, open]);
+
+  useEffect(() => {
+    if (autoCaptureCountdown === null || isAligned) return;
+    setAutoCaptureCountdown(null);
+  }, [autoCaptureCountdown, isAligned]);
 
   useEffect(() => {
     if (autoCaptureCountdown === null) return;
@@ -395,14 +403,34 @@ export function CameraCaptureModal({
               <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 border-t border-dashed border-white/45" />
 
               <div
-                className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-rose-400/75"
+                className={[
+                  "absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2",
+                  isAligned ? "border-emerald-300/90 bg-emerald-400/10" : "border-rose-400/75 bg-rose-500/5",
+                ].join(" ")}
                 style={{ transform: `translate(calc(-50% + ${guideOffsetX}px), calc(-50% + ${guideOffsetY}px))` }}
               >
-                <span className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose-400 shadow-[0_0_0_12px_rgba(251,113,133,.25)]" />
+                <span
+                  className={[
+                    "absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full",
+                    isAligned
+                      ? "bg-emerald-300 shadow-[0_0_0_12px_rgba(52,211,153,.28),0_0_26px_rgba(52,211,153,.85)]"
+                      : "bg-rose-400 shadow-[0_0_0_12px_rgba(251,113,133,.25)]",
+                  ].join(" ")}
+                />
               </div>
 
-              <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-rose-400/80" />
-              <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-rose-400/80" />
+              <div
+                className={[
+                  "absolute left-0 top-1/2 h-px w-full -translate-y-1/2",
+                  isAligned ? "bg-emerald-300/90" : "bg-rose-400/80",
+                ].join(" ")}
+              />
+              <div
+                className={[
+                  "absolute left-1/2 top-0 h-full w-px -translate-x-1/2",
+                  isAligned ? "bg-emerald-300/90" : "bg-rose-400/80",
+                ].join(" ")}
+              />
 
               <div className="absolute left-6 right-6 top-6 flex items-center justify-between rounded-full bg-black/70 p-2 backdrop-blur">
                 <div className="rounded-full bg-white px-5 py-2 text-base font-bold text-slate-950">360 guiado</div>
@@ -411,19 +439,38 @@ export function CameraCaptureModal({
                 </div>
               </div>
 
-              <div className="absolute left-1/2 top-[58%] w-[min(74vw,340px)] -translate-x-1/2 rounded-full border border-rose-300/70 bg-rose-500/30 px-6 py-4 text-center text-lg font-black uppercase leading-tight text-white backdrop-blur">
+              <div
+                className={[
+                  "absolute left-1/2 top-[58%] w-[min(74vw,340px)] -translate-x-1/2 rounded-full border px-6 py-4 text-center text-lg font-black uppercase leading-tight text-white backdrop-blur",
+                  isAligned
+                    ? "border-emerald-300/80 bg-emerald-500/30 shadow-[0_0_28px_rgba(16,185,129,.28)]"
+                    : "border-rose-300/70 bg-rose-500/30",
+                ].join(" ")}
+              >
                 {autoCaptureCountdown !== null ? autoCaptureCountdown : primaryInstruction}
               </div>
 
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 rounded-full bg-black/65 px-3 py-2 text-sm font-bold uppercase text-white/80">
+              <div
+                className={[
+                  "absolute left-5 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 text-sm font-bold uppercase",
+                  isAligned ? "bg-emerald-400 text-slate-950" : "bg-black/65 text-white/80",
+                ].join(" ")}
+              >
                 {currentPitch?.label}
               </div>
 
               <div className="absolute right-5 top-1/2 h-40 w-2 -translate-y-1/2 rounded-full bg-white/20">
                 <span
-                  className="absolute left-1/2 h-5 w-5 -translate-x-1/2 rounded-full bg-rose-400"
+                  className={[
+                    "absolute left-1/2 h-5 w-5 -translate-x-1/2 rounded-full",
+                    isAligned ? "bg-emerald-300" : "bg-rose-400",
+                  ].join(" ")}
                   style={{ top: `${clamp(((orientation.beta ?? targetBeta) / 160) * 100, 0, 100)}%` }}
                 />
+              </div>
+
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white/70">
+                {angleStatus}
               </div>
             </div>
 
@@ -460,7 +507,7 @@ export function CameraCaptureModal({
                     key={index}
                     className={[
                       "h-1.5 flex-1 rounded-full",
-                      done ? "bg-rose-400" : current ? "bg-white" : "bg-white/20",
+                      done ? "bg-emerald-400" : current ? (isAligned ? "bg-emerald-300" : "bg-white") : "bg-white/20",
                     ].join(" ")}
                   />
                 );
