@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type Scene = { url: string; label: string }
 
@@ -14,6 +14,22 @@ type PanoramaViewerProps = {
 export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }: PanoramaViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<any>(null)
+  const [activeSceneIndex, setActiveSceneIndex] = useState(0)
+
+  useEffect(() => {
+    setActiveSceneIndex(0)
+  }, [scenes])
+
+  const handleSceneChange = (index: number) => {
+    setActiveSceneIndex(index)
+    if (viewerRef.current && typeof viewerRef.current.loadScene === 'function') {
+      try {
+        viewerRef.current.loadScene(`scene-${index}`)
+      } catch (err) {
+        console.error("Error al cambiar de escena", err)
+      }
+    }
+  }
 
   useEffect(() => {
     if (!containerRef.current || scenes.length === 0) return
@@ -65,6 +81,14 @@ export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }:
             mouseZoom: true,
             gyroscope: true,
           })
+
+          // Escuchar eventos de cambio de escena internos de Pannellum
+          viewerRef.current.on('scenechange', (sceneId: string) => {
+            const match = sceneId.match(/scene-(\d+)/)
+            if (match && match[1]) {
+              setActiveSceneIndex(parseInt(match[1], 10))
+            }
+          })
         }
       } catch (err) {
         console.error("Error al inicializar Pannellum", err)
@@ -88,6 +112,26 @@ export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }:
   if (scenes.length === 0) return null
 
   return (
-    <div ref={containerRef} className={className}></div>
+    <div className={`relative flex flex-col bg-black ${className}`}>
+      <div ref={containerRef} className="flex-1 w-full min-h-0"></div>
+      {scenes.length > 1 && (
+        <div className="bg-slate-950/90 border-t border-white/10 px-4 py-3 flex justify-center gap-2 overflow-x-auto scrollbar-none">
+          {scenes.map((scene, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleSceneChange(i)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition shrink-0 ${
+                activeSceneIndex === i
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-white/15 text-white/80 hover:bg-white/20'
+              }`}
+            >
+              {scene.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

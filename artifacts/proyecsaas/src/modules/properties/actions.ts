@@ -722,6 +722,7 @@ export async function upsertPropertyMediaAction(
           organizationId: membership.organization.id,
           url: parsed.data.url,
           label: parsed.data.title,
+          roomName: parsed.data.title,
           direction: parsed.data.direction ?? null,
           sortOrder: nextSortOrder,
         },
