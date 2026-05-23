@@ -32,13 +32,13 @@ type GuidedFrame = {
 
 const guidedYawSteps = [0, 60, 120, 180, 240, 300];
 const guidedPitchSteps = [
-  { label: "Piso", targetBeta: 22, short: "P" },
-  { label: "Frente", targetBeta: 80, short: "F" },
-  { label: "Techo", targetBeta: 138, short: "T" },
+  { label: "Piso", targetBeta: 35, short: "P" },
+  { label: "Frente", targetBeta: 90, short: "F" },
+  { label: "Techo", targetBeta: 145, short: "T" },
 ];
 const guidedFrameCount = guidedYawSteps.length * guidedPitchSteps.length;
 const yawTolerance = 16;
-const pitchTolerance = 20;
+const pitchTolerance = 25;
 
 function normalizeAngle(value: number | null | undefined) {
   if (typeof value !== "number" || Number.isNaN(value)) return 0;
@@ -59,6 +59,32 @@ function buildDefaultTitle(index: number) {
   return `360-${yawIndex + 1}-${guidedPitchSteps[pitchIndex]?.label ?? "Foto"}`;
 }
 
+function drawImageCover(
+  context: CanvasRenderingContext2D,
+  image: ImageBitmap,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const sourceRatio = image.width / image.height;
+  const targetRatio = width / height;
+  let sourceWidth = image.width;
+  let sourceHeight = image.height;
+  let sourceX = 0;
+  let sourceY = 0;
+
+  if (sourceRatio > targetRatio) {
+    sourceWidth = image.height * targetRatio;
+    sourceX = (image.width - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.width / targetRatio;
+    sourceY = (image.height - sourceHeight) / 2;
+  }
+
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
 async function buildGuidedPanoramaFile(frames: GuidedFrame[], propertyId: string) {
   const bitmaps = await Promise.all(frames.map((frame) => createImageBitmap(frame.blob)));
   const firstBitmap = bitmaps[0];
@@ -67,25 +93,26 @@ async function buildGuidedPanoramaFile(frames: GuidedFrame[], propertyId: string
     throw new Error("No hay imagenes para unir.");
   }
 
-  const tileWidth = firstBitmap.width;
-  const tileHeight = firstBitmap.height;
   const canvas = document.createElement("canvas");
-  const columns = guidedYawSteps.length;
-  const rows = guidedPitchSteps.length;
-  canvas.width = tileWidth * columns;
-  canvas.height = tileHeight * rows;
+  canvas.width = 4096;
+  canvas.height = 2048;
+  const tileWidth = canvas.width / guidedYawSteps.length;
+  const tileHeight = canvas.height / guidedPitchSteps.length;
 
   const context = canvas.getContext("2d");
   if (!context) {
     throw new Error("No se pudo preparar el lienzo 360.");
   }
 
+  context.fillStyle = "#020617";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
   bitmaps.forEach((bitmap, index) => {
     const yawIndex = Math.floor(index / guidedPitchSteps.length);
     const pitchIndex = index % guidedPitchSteps.length;
     const x = yawIndex * tileWidth;
     const y = (guidedPitchSteps.length - 1 - pitchIndex) * tileHeight;
-    context.drawImage(bitmap, x, y, tileWidth, tileHeight);
+    drawImageCover(context, bitmap, x, y, tileWidth, tileHeight);
   });
 
   bitmaps.forEach((bitmap) => bitmap.close());
@@ -151,6 +178,32 @@ export function CameraCaptureModal({
   const [guidedFrames, setGuidedFrames] = useState<GuidedFrame[]>([]);
   const [autoCaptureCountdown, setAutoCaptureCountdown] = useState<number | null>(null);
   const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
+  const [yawInverted, setYawInverted] = useState(false);
+
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  function getAudioCtx() {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return audioCtxRef.current;
+  }
+
+  function playBeep(frequency: number, duration: number, volume = 0.3) {
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = frequency;
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch { /* silencioso si no hay soporte */ }
+  }
 
   const guidedIndex = Math.min(guidedFrames.length, guidedFrameCount - 1);
   const guidedYawIndex = Math.floor(guidedIndex / guidedPitchSteps.length);
@@ -160,7 +213,8 @@ export function CameraCaptureModal({
   const targetYaw = normalizeAngle((anchorYaw ?? orientation.alpha ?? 0) + relativeTargetYaw);
   const targetBeta = currentPitch?.targetBeta ?? 80;
   const hasSensorData = orientation.alpha !== null && orientation.beta !== null;
-  const yawDelta = hasSensorData ? shortestAngleDistance(orientation.alpha ?? 0, targetYaw) : 0;
+  const rawYawDelta = hasSensorData ? shortestAngleDistance(orientation.alpha ?? 0, targetYaw) : 0;
+  const yawDelta = yawInverted ? -rawYawDelta : rawYawDelta;
   const pitchDelta = hasSensorData ? targetBeta - (orientation.beta ?? 0) : 0;
   const yawAligned = Math.abs(yawDelta) <= yawTolerance;
   const pitchAligned = Math.abs(pitchDelta) <= pitchTolerance;
@@ -190,6 +244,10 @@ export function CameraCaptureModal({
   const angleStatus = hasSensorData
     ? `yaw ${Math.round(Math.abs(yawDelta))}/${yawTolerance} - pitch ${Math.round(Math.abs(pitchDelta))}/${pitchTolerance}`
     : "esperando sensor";
+
+  useEffect(() => {
+    if (isAligned) playBeep(880, 0.15, 0.25);
+  }, [isAligned]);
 
   useEffect(() => {
     if (!open) return;
@@ -377,10 +435,14 @@ export function CameraCaptureModal({
           return;
         }
 
+        playBeep(1200, 0.08, 0.2);
+
         const nextFrames = [...guidedFrames, { blob, title: buildDefaultTitle(guidedFrames.length) }];
         setGuidedFrames(nextFrames);
 
         if (nextFrames.length >= guidedFrameCount) {
+          playBeep(660, 0.4, 0.3);
+          window.setTimeout(() => playBeep(880, 0.4, 0.3), 200);
           await savePanorama(nextFrames);
         }
       } catch (captureError) {
@@ -404,19 +466,18 @@ export function CameraCaptureModal({
 
               <div
                 className={[
-                  "absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2",
-                  isAligned ? "border-emerald-300/90 bg-emerald-400/10" : "border-rose-400/75 bg-rose-500/5",
+                  "absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full",
+                  isAligned ? "border-[3px] border-emerald-300/90 bg-emerald-400/10" : "border-2 border-rose-400/75 bg-rose-500/5",
                 ].join(" ")}
                 style={{ transform: `translate(calc(-50% + ${guideOffsetX}px), calc(-50% + ${guideOffsetY}px))` }}
               >
-                <span
-                  className={[
-                    "absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full",
-                    isAligned
-                      ? "bg-emerald-300 shadow-[0_0_0_12px_rgba(52,211,153,.28),0_0_26px_rgba(52,211,153,.85)]"
-                      : "bg-rose-400 shadow-[0_0_0_12px_rgba(251,113,133,.25)]",
-                  ].join(" ")}
-                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {isAligned ? (
+                    <span className="text-4xl font-bold text-emerald-300">✓</span>
+                  ) : (
+                    <span className="text-4xl font-bold text-rose-400">✗</span>
+                  )}
+                </div>
               </div>
 
               <div
@@ -441,13 +502,15 @@ export function CameraCaptureModal({
 
               <div
                 className={[
-                  "absolute left-1/2 top-[58%] w-[min(74vw,340px)] -translate-x-1/2 rounded-full border px-6 py-4 text-center text-lg font-black uppercase leading-tight text-white backdrop-blur",
+                  "absolute left-1/2 top-[58%] w-[min(74vw,340px)] -translate-x-1/2 rounded-full border px-6 py-4 text-center font-black uppercase leading-tight text-white backdrop-blur",
                   isAligned
                     ? "border-emerald-300/80 bg-emerald-500/30 shadow-[0_0_28px_rgba(16,185,129,.28)]"
-                    : "border-rose-300/70 bg-rose-500/30",
+                    : "border-rose-300/70 bg-rose-500/30 text-lg",
                 ].join(" ")}
               >
-                {autoCaptureCountdown !== null ? autoCaptureCountdown : primaryInstruction}
+                {autoCaptureCountdown !== null ? (
+                  <span className="text-5xl text-emerald-300">{autoCaptureCountdown}</span>
+                ) : primaryInstruction}
               </div>
 
               <div
@@ -467,6 +530,10 @@ export function CameraCaptureModal({
                   ].join(" ")}
                   style={{ top: `${clamp(((orientation.beta ?? targetBeta) / 160) * 100, 0, 100)}%` }}
                 />
+              </div>
+
+              <div className="absolute bottom-4 right-4 rounded-lg bg-black/70 px-3 py-1.5 text-xs text-white">
+                α: {Math.round(orientation.alpha ?? 0)}° β: {Math.round(orientation.beta ?? 0)}°
               </div>
 
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white/70">
@@ -522,14 +589,26 @@ export function CameraCaptureModal({
             </div>
 
             <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={handleRetake}
-                disabled={guidedFrames.length === 0 || isPending}
-                className="h-14 w-14 rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white/80 disabled:opacity-30"
-              >
-                Reset
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRetake}
+                  disabled={guidedFrames.length === 0 || isPending}
+                  className="h-14 w-14 rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white/80 disabled:opacity-30"
+                >
+                  Reset
+                </button>
+                {sensorEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => setYawInverted((v) => !v)}
+                    title="Invertir rotación"
+                    className="h-14 w-14 rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white/80"
+                  >
+                    ⟳ Dir
+                  </button>
+                )}
+              </div>
 
               <button
                 ref={shutterRef}
