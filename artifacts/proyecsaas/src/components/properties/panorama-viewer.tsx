@@ -49,6 +49,36 @@ export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }:
       link.href = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css'
       document.head.appendChild(link)
 
+      const hotspotStyle = document.createElement('style')
+      hotspotStyle.textContent = `
+        .pv-hotspot-scene {
+          width: 52px !important;
+          height: 26px !important;
+          border-radius: 50% !important;
+          background: rgba(255, 255, 255, 0.25) !important;
+          border: 2px solid rgba(255, 255, 255, 0.85) !important;
+          backdrop-filter: blur(4px) !important;
+          cursor: pointer !important;
+          transition: all 0.2s ease !important;
+          box-shadow: 0 0 0 4px rgba(255,255,255,0.12) !important;
+        }
+        .pv-hotspot-scene:hover {
+          background: rgba(255, 255, 255, 0.45) !important;
+          box-shadow: 0 0 0 8px rgba(255,255,255,0.18) !important;
+          transform: scale(1.15) !important;
+        }
+        .pv-hotspot-scene .pnlm-tooltip span {
+          background: rgba(0,0,0,0.75) !important;
+          border-radius: 8px !important;
+          padding: 4px 10px !important;
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          color: #fff !important;
+          white-space: nowrap !important;
+        }
+      `
+      document.head.appendChild(hotspotStyle)
+
       if (!containerRef.current) return
       
       try {
@@ -66,11 +96,38 @@ export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }:
         } else {
           const scenesConfig: Record<string, any> = {}
           scenes.forEach((scene, i) => {
+            const hotSpots = []
+
+            // Hotspot hacia la escena siguiente (en el piso, mirando al frente)
+            if (i < scenes.length - 1) {
+              hotSpots.push({
+                pitch: -30,
+                yaw: 0,
+                type: 'scene',
+                text: scenes[i + 1].label,
+                sceneId: `scene-${i + 1}`,
+                cssClass: 'pv-hotspot-scene',
+              })
+            }
+
+            // Hotspot hacia la escena anterior (en el piso, mirando atrás)
+            if (i > 0) {
+              hotSpots.push({
+                pitch: -30,
+                yaw: 180,
+                type: 'scene',
+                text: scenes[i - 1].label,
+                sceneId: `scene-${i - 1}`,
+                cssClass: 'pv-hotspot-scene',
+              })
+            }
+
             scenesConfig[`scene-${i}`] = {
               type: 'equirectangular',
               panorama: scene.url,
               title: scene.label,
               autoLoad: true,
+              hotSpots,
             }
           })
           // @ts-ignore
