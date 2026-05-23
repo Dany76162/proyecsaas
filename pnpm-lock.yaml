@@ -157,6 +157,9 @@ importers:
       '@replit/connectors-sdk':
         specifier: ^0.3.0
         version: 0.3.0
+      pannellum:
+        specifier: ^2.5.7
+        version: 2.5.7
     devDependencies:
       prettier:
         specifier: ^3.8.1
@@ -444,9 +447,6 @@ importers:
       openai:
         specifier: ^6.33.0
         version: 6.38.0(zod@3.25.76)
-      pannellum:
-        specifier: ^2.5.7
-        version: 2.5.7
       pg:
         specifier: ^8.20.0
         version: 8.21.0
