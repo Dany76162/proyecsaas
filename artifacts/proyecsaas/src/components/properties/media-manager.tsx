@@ -133,12 +133,7 @@ export function MediaManager({
         <div id="property-media-viewer" className="relative min-h-[520px] flex-1 bg-[#0A0A12] lg:min-h-0">
           {activePanorama && orderedPanoramas.length > 0 ? (
             <PanoramaViewer
-              key={activePanorama.id}
-              panoramas={orderedPanoramas}
-              showSceneNavigation={false}
-              immersiveControls={false}
-              floorPlanUrl={floorPlanUrl}
-              className="h-full gap-0 [&>div:first-child]:h-full [&>div:first-child]:rounded-none [&>div:first-child]:border-0 [&>div:first-child]:shadow-none"
+              scenes={orderedPanoramas.map(p => ({ url: p.url, label: p.label ?? p.roomName ?? 'Escena' }))}
             />
           ) : primaryImage ? (
             <img

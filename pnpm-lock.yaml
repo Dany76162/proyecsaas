@@ -444,6 +444,9 @@ importers:
       openai:
         specifier: ^6.33.0
         version: 6.38.0(zod@3.25.76)
+      pannellum:
+        specifier: ^2.5.7
+        version: 2.5.7
       pg:
         specifier: ^8.20.0
         version: 8.21.0
@@ -457,7 +460,7 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       sharp:
-        specifier: 0.34.5
+        specifier: ^0.34.5
         version: 0.34.5
       tailwind-merge:
         specifier: ^3.3.1
@@ -3908,6 +3911,9 @@ packages:
   p-locate@6.0.0:
     resolution: {integrity: sha512-wPrq66Llhl7/4AGC6I+cqxT07LhXvWL08LNXz1fENOw0Ap4sRZZ/gZpTTJ5jpurzzzfS2W/Ge9BY3LgLjCShcw==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
+  pannellum@2.5.7:
+    resolution: {integrity: sha512-AHMRYdLPxetwhBg4lO5EgoZ55C/e+wrJF2WaFQIQA18HSVcvLvsdXEjDL7WpD8MPIFwNnH9qoUDsUqP8cF4pgA==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -8431,6 +8437,8 @@ snapshots:
   p-locate@6.0.0:
     dependencies:
       p-limit: 4.0.0
+
+  pannellum@2.5.7: {}
 
   parent-module@1.0.1:
     dependencies:

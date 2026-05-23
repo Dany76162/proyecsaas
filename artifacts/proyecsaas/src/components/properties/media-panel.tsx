@@ -387,6 +387,12 @@ export function MediaPanel({
           <ImagePlus className="h-4 w-4" />
           Subir imagen
         </Button>
+        {activeCategory === "PANORAMA" && (
+          <Button type="button" onClick={() => setIsCameraOpen(true)} className="mt-2 w-full gap-2 bg-brand-600 hover:bg-brand-700">
+            <Camera className="h-4 w-4" />
+            Escanear con celular
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
