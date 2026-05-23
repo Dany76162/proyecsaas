@@ -460,6 +460,7 @@ export function CameraCaptureModal({
             <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay />
 
             <div className="pointer-events-none absolute inset-0">
+              <div className={`absolute inset-0 pointer-events-none border-[3px] transition-colors duration-300 ${isAligned ? 'border-emerald-300/90' : 'border-rose-400/70'}`} />
               <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,.24)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.24)_1px,transparent_1px)] bg-[size:33.333%_33.333%]" />
               <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 border-l border-dashed border-white/45" />
               <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 border-t border-dashed border-white/45" />
