@@ -48,8 +48,6 @@ const TEMPERATURE_CONFIG = {
   unclear: { label: "—",        tone: "neutral" as const, dot: "bg-slate-300" },
 };
 
-import { OnboardingFooter } from "@/components/workspace/onboarding-footer";
-
 export default async function LeadsPage({
   params,
   searchParams,
@@ -314,18 +312,6 @@ export default async function LeadsPage({
           )}
         </div>
       </SectionCard>
-
-      <div className="h-24" />
-
-      <OnboardingFooter
-        orgSlug={orgSlug}
-        stepKey="leads"
-        stepNumber={2}
-        title="Entender tu primer lead"
-        description="Mirá cómo entran los prospectos y cómo se organizan en el embudo comercial."
-        nextLabel="Continuar al paso 3"
-        nextRoute={`/${orgSlug}/conversations`}
-      />
     </>
   );
 }
