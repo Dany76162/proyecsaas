@@ -9,6 +9,8 @@ import { WhatsAppConnectionForm } from "./whatsapp-connection-form";
 import { RequestConnectionForm } from "./request-connection-form";
 import { EvolutionConnectionForm } from "./evolution-connection-form";
 import { prisma } from "@/server/db/prisma";
+import { getEvolutionInstanceDetails } from "@/server/whatsapp/evolution";
+
 
 export default async function WhatsAppIntegrationPage({
   params,
@@ -33,7 +35,31 @@ export default async function WhatsAppIntegrationPage({
   }
 
   // Find if there's an Evolution channel
-  const evolutionChannel = tenantChannels.find(ch => ch.provider === "EVOLUTION_API");
+  let evolutionChannel = tenantChannels.find(ch => ch.provider === "EVOLUTION_API");
+
+  // Self-healing: if Evolution channel is active but missing displayPhoneNumber, fetch and update it
+  if (evolutionChannel && evolutionChannel.status === "ACTIVE" && !evolutionChannel.displayPhoneNumber && evolutionChannel.instanceName) {
+    try {
+      const { status, phone } = await getEvolutionInstanceDetails(evolutionChannel.instanceName);
+      if (status === "CONNECTED" && phone) {
+        evolutionChannel = await prisma.whatsAppChannel.update({
+          where: { instanceName: evolutionChannel.instanceName },
+          data: { 
+            displayPhoneNumber: phone,
+            phoneNumberId: `evolution_${phone}`,
+          }
+        });
+        // Also update tenantChannels array so the rest of the page uses the updated channel
+        const idx = tenantChannels.findIndex(ch => ch.id === evolutionChannel!.id);
+        if (idx !== -1) {
+          tenantChannels[idx] = evolutionChannel;
+        }
+      }
+    } catch (e) {
+      console.error("[WhatsAppIntegrationPage] Self-healing displayPhoneNumber failed:", e);
+    }
+  }
+
   const metaChannels = tenantChannels.filter(ch => ch.provider === "WHATSAPP_CLOUD");
 
   return (

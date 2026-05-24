@@ -125,7 +125,11 @@ export function WhatsAppConnectionForm({
             </span>
           </div>
           <div className="mt-4 p-3 rounded-xl bg-white/50 border border-emerald-100 inline-block">
-            <p className="text-sm font-mono font-bold text-emerald-950">📱 +{activeTenantChannel.displayPhoneNumber}</p>
+            <p className={`text-sm font-mono font-bold text-emerald-950 ${!activeTenantChannel.displayPhoneNumber ? "animate-pulse" : ""}`}>
+              {activeTenantChannel.displayPhoneNumber 
+                ? `📱 +${activeTenantChannel.displayPhoneNumber}` 
+                : "📱 Sincronizando número de WhatsApp... (refresca en unos segundos)"}
+            </p>
           </div>
         </div>
       )}
@@ -177,7 +181,7 @@ export function WhatsAppConnectionForm({
       )}
 
       {/* ── CASE D: No channel active ─────────────────────────────────────────── */}
-      {!activeNumber && (
+      {!activeNumber && !hasOwnChannel && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
           <div className="mx-auto h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center text-xl mb-4">⚠️</div>
           <p className="text-sm font-bold text-rose-900">No hay un canal de WhatsApp activo</p>

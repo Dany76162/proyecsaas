@@ -180,3 +180,28 @@ export async function getEvolutionInstanceStatus(instanceName: string): Promise<
     return "ERROR";
   }
 }
+
+/**
+ * Gets detailed connection state including the connected phone number.
+ */
+export async function getEvolutionInstanceDetails(instanceName: string) {
+  try {
+    const data = await request(`/instance/connectionState/${instanceName}`);
+    const state = data?.instance?.state;
+    const status: EvolutionInstanceStatus = 
+      state === "open" ? "CONNECTED" : 
+      state === "connecting" ? "CONNECTING" : "DISCONNECTED";
+    
+    let phone: string | null = null;
+    const rawJid = data?.instance?.currentSession?.jid || data?.instance?.currentSession?.user?.id || data?.instance?.ownerJid;
+    if (rawJid && typeof rawJid === "string") {
+      const beforeAt = rawJid.split("@")[0];
+      phone = beforeAt.split(":")[0];
+    }
+    
+    return { status, phone };
+  } catch (error) {
+    return { status: "ERROR" as const, phone: null };
+  }
+}
+

@@ -38,11 +38,21 @@ export async function POST(request: NextRequest) {
     
     if (instanceName && state) {
       console.log(`[Evolution Webhook] Connection update for ${instanceName}: ${state}`);
+      
+      let phone: string | undefined = undefined;
+      const rawJid = payload.data?.currentSession?.jid || payload.data?.currentSession?.user?.id;
+      if (rawJid && typeof rawJid === "string") {
+        const beforeAt = rawJid.split("@")[0];
+        phone = beforeAt.split(":")[0];
+      }
+
       await prisma.whatsAppChannel.update({
         where: { instanceName },
         data: { 
           status: state === "open" ? "ACTIVE" : "INACTIVE",
-          isPrimary: state === "open" ? true : undefined
+          isPrimary: state === "open" ? true : undefined,
+          displayPhoneNumber: phone || undefined,
+          phoneNumberId: phone ? `evolution_${phone}` : undefined,
         }
       }).catch(() => null); // Silent if instance not in DB yet
     }

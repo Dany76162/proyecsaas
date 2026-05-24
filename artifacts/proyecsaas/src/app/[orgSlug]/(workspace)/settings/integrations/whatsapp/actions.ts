@@ -16,8 +16,10 @@ import {
   createEvolutionInstance, 
   getEvolutionQrCode, 
   getEvolutionInstanceStatus,
+  getEvolutionInstanceDetails,
   logoutEvolutionInstance 
 } from "@/server/whatsapp/evolution";
+
 
 export type WhatsAppConnectionActionState = {
   success: boolean;
@@ -339,7 +341,7 @@ export async function checkEvolutionStatusAction(orgSlug: string) {
   const instanceName = `org_${orgSlug.replace(/[^a-z0-9]/g, "")}`;
 
   try {
-    const status = await getEvolutionInstanceStatus(instanceName);
+    const { status, phone } = await getEvolutionInstanceDetails(instanceName);
     
     if (status === "CONNECTED") {
       // Update DB if connected
@@ -347,7 +349,9 @@ export async function checkEvolutionStatusAction(orgSlug: string) {
         where: { instanceName },
         data: { 
           status: "ACTIVE",
-          isPrimary: true 
+          isPrimary: true,
+          displayPhoneNumber: phone || undefined,
+          phoneNumberId: phone ? `evolution_${phone}` : undefined,
         }
       });
       
