@@ -880,7 +880,9 @@ export async function updatePanoramaSettingsAction(
       "connections" = CASE WHEN ${parsed.data.connections !== undefined} THEN ${connections} ELSE "connections" END,
       "initialYaw" = CASE WHEN ${parsed.data.initialYaw !== undefined} THEN ${parsed.data.initialYaw ?? null} ELSE "initialYaw" END,
       "initialPitch" = CASE WHEN ${parsed.data.initialPitch !== undefined} THEN ${parsed.data.initialPitch ?? null} ELSE "initialPitch" END,
-      "initialHfov" = CASE WHEN ${parsed.data.initialHfov !== undefined} THEN ${parsed.data.initialHfov ?? null} ELSE "initialHfov" END
+      "initialHfov" = CASE WHEN ${parsed.data.initialHfov !== undefined} THEN ${parsed.data.initialHfov ?? null} ELSE "initialHfov" END,
+      "hotspotPitch" = CASE WHEN ${parsed.data.hotspotPitch !== undefined} THEN ${parsed.data.hotspotPitch ?? null} ELSE "hotspotPitch" END,
+      "hotspotYaw" = CASE WHEN ${parsed.data.hotspotYaw !== undefined} THEN ${parsed.data.hotspotYaw ?? null} ELSE "hotspotYaw" END
     WHERE "id" = ${panorama.id}
   `;
 

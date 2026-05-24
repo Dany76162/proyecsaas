@@ -137,6 +137,8 @@ export const updatePanoramaSettingsSchema = z.object({
   initialYaw: z.number().min(-180).max(180).optional(),
   initialPitch: z.number().min(-90).max(90).optional(),
   initialHfov: z.number().min(30).max(120).optional(),
+  hotspotPitch: z.number().min(-90).max(90).nullable().optional(),
+  hotspotYaw: z.number().min(-180).max(180).nullable().optional(),
 });
 
 export const updatePropertyImagesBatchSchema = z.object({

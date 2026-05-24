@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Camera, Check, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
+import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +33,8 @@ type MediaPanelProps = {
   onMediaDeleted: (imageIds: string[], panoramaIds: string[]) => void;
   onFloorPlanUpdated: (url: string | null) => void;
   onSaveChanges: () => void;
+  isEditingHotspot?: boolean;
+  onStartEditHotspot?: (panoramaId: string) => void;
 };
 
 const categories: { value: MediaCategory; label: string }[] = [
@@ -91,6 +93,8 @@ export function MediaPanel({
   onMediaDeleted,
   onFloorPlanUpdated,
   onSaveChanges,
+  isEditingHotspot = false,
+  onStartEditHotspot,
 }: MediaPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
@@ -575,15 +579,35 @@ export function MediaPanel({
                       <Check className="h-3 w-3" />
                     </span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleDeletePanorama(panorama)}
-                      disabled={isPending}
-                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded bg-red-600 text-white opacity-0 shadow transition hover:bg-red-700 group-hover:opacity-100"
-                      title="Eliminar escena 360"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <>
+                      {(() => {
+                        const panIndex = panoramas.findIndex((p) => p.id === panorama.id);
+                        const hasNext = panIndex !== -1 && panIndex < panoramas.length - 1;
+                        if (!hasNext) return null;
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStartEditHotspot?.(panorama.id);
+                            }}
+                            className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded bg-brand-600 text-white opacity-0 shadow transition hover:bg-brand-700 group-hover:opacity-100"
+                            title="Posicionar hotspot"
+                          >
+                            <Compass className="h-3.5 w-3.5" />
+                          </button>
+                        );
+                      })()}
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePanorama(panorama)}
+                        disabled={isPending}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded bg-red-600 text-white opacity-0 shadow transition hover:bg-red-700 group-hover:opacity-100"
+                        title="Eliminar escena 360"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
                   )}
                 </div>
               );
@@ -599,15 +623,37 @@ export function MediaPanel({
               <MapPinned className="h-3.5 w-3.5" />
               Plano del tour
             </h3>
-            <Button
-              type="button"
-              size="sm"
-              onClick={saveSpatialSettings}
-              disabled={isSpatialPending}
-              className="h-7 px-2 text-[10px]"
-            >
-              Guardar
-            </Button>
+            <div className="flex items-center gap-1.5">
+              {(() => {
+                const activeIndex = panoramas.findIndex((p) => p.id === activePanorama.id);
+                const hasNextScene = activeIndex !== -1 && activeIndex < panoramas.length - 1;
+                if (!hasNextScene) return null;
+                return (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => onStartEditHotspot?.(activePanorama.id)}
+                    className={`h-7 px-2.5 text-[10px] gap-1 font-medium transition duration-300 ${
+                      isEditingHotspot
+                        ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_0_12px_rgba(16,185,129,0.5)]"
+                        : "bg-brand-500 text-white hover:bg-brand-600 hover:shadow-[0_0_12px_rgba(59,130,246,0.45)]"
+                    }`}
+                  >
+                    <Compass className="h-3 w-3" />
+                    {isEditingHotspot ? "Editando..." : "Hotspot"}
+                  </Button>
+                );
+              })()}
+              <Button
+                type="button"
+                size="sm"
+                onClick={saveSpatialSettings}
+                disabled={isSpatialPending}
+                className="h-7 px-2 text-[10px]"
+              >
+                Guardar
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-3">

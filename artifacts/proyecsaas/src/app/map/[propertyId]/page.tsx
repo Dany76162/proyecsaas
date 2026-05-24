@@ -30,7 +30,12 @@ export default async function PublicPropertyDetailPage({
       {property.panoramas && property.panoramas.length > 0 ? (
         <section className="relative h-[100svh] min-h-[640px] overflow-hidden bg-black">
           <PanoramaViewer
-            scenes={property.panoramas.map(p => ({ url: p.url, label: p.roomName ?? p.label ?? 'Escena' }))}
+            scenes={property.panoramas.map(p => ({
+              url: p.url,
+              label: p.roomName ?? p.label ?? 'Escena',
+              hotspotPitch: p.hotspotPitch,
+              hotspotYaw: p.hotspotYaw
+            }))}
             className="h-full"
             immersiveControls
             variant="immersive"

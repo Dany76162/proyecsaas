@@ -65,6 +65,8 @@ export type PropertyPanoramaItem = {
   initialYaw: number;
   initialPitch: number;
   initialHfov: number;
+  hotspotPitch?: number | null;
+  hotspotYaw?: number | null;
 };
 
 export type PropertyDetail = PropertyListItem & {

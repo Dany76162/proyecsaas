@@ -29,6 +29,8 @@ type PropertyPanoramaRow = {
   initialYaw: number;
   initialPitch: number;
   initialHfov: number;
+  hotspotPitch: number | null;
+  hotspotYaw: number | null;
 };
 
 type PropertyImageRow = {
@@ -199,6 +201,8 @@ export async function getPropertyDetail(
     initialYaw: pan.initialYaw,
     initialPitch: pan.initialPitch,
     initialHfov: pan.initialHfov,
+    hotspotPitch: pan.hotspotPitch,
+    hotspotYaw: pan.hotspotYaw,
   }));
 
   return {
@@ -312,7 +316,9 @@ async function listPropertyPanoramas(
         "sortOrder",
         "initialYaw",
         "initialPitch",
-        "initialHfov"
+        "initialHfov",
+        "hotspotPitch",
+        "hotspotYaw"
       FROM "PropertyPanorama"
       WHERE "propertyId" = ${propertyId}
         AND "organizationId" = ${organizationId}

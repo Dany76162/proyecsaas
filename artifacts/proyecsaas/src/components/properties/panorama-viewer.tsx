@@ -1,7 +1,12 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 
-type Scene = { url: string; label: string }
+type Scene = { 
+  url: string; 
+  label: string;
+  hotspotPitch?: number | null;
+  hotspotYaw?: number | null;
+}
 
 type PanoramaViewerProps = {
   scenes: Scene[]
@@ -9,9 +14,16 @@ type PanoramaViewerProps = {
   immersiveControls?: boolean
   variant?: string
   floorPlanUrl?: string | null
+  isEditingHotspot?: boolean
+  onCoordsSelected?: (pitch: number, yaw: number) => void
 }
 
-export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }: PanoramaViewerProps) {
+export function PanoramaViewer({ 
+  scenes, 
+  className = "h-full w-full bg-black",
+  isEditingHotspot = false,
+  onCoordsSelected
+}: PanoramaViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<any>(null)
   const [activeSceneIndex, setActiveSceneIndex] = useState(0)
@@ -39,6 +51,28 @@ export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }:
       try { viewerRef.current.destroy() } catch {}
       viewerRef.current = null
       containerRef.current.innerHTML = ''
+    }
+
+    const handleContainerClick = (e: MouseEvent) => {
+      if (isEditingHotspot && onCoordsSelected && viewerRef.current) {
+        const coords = viewerRef.current.mouseEventToCoords(e);
+        if (coords) {
+          let p: number;
+          let y: number;
+          if (Array.isArray(coords)) {
+            p = coords[0];
+            y = coords[1];
+          } else {
+            p = coords.pitch;
+            y = coords.yaw;
+          }
+          onCoordsSelected(p, y);
+        }
+      }
+    };
+
+    if (containerRef.current) {
+      containerRef.current.addEventListener('click', handleContainerClick);
     }
 
     const script = document.createElement('script')
@@ -98,11 +132,13 @@ export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }:
           scenes.forEach((scene, i) => {
             const hotSpots = []
 
-            // Hotspot hacia la escena siguiente (en el piso, mirando al frente)
+            // Hotspot hacia la escena siguiente (en el piso, usando pitch/yaw guardados o por defecto)
             if (i < scenes.length - 1) {
+              const customPitch = typeof scene.hotspotPitch === 'number' ? scene.hotspotPitch : -30;
+              const customYaw = typeof scene.hotspotYaw === 'number' ? scene.hotspotYaw : 0;
               hotSpots.push({
-                pitch: -30,
-                yaw: 0,
+                pitch: customPitch,
+                yaw: customYaw,
                 type: 'scene',
                 text: scenes[i + 1].label,
                 sceneId: `scene-${i + 1}`,
@@ -159,12 +195,15 @@ export function PanoramaViewer({ scenes, className = "h-full w-full bg-black" }:
     document.head.appendChild(script)
 
     return () => {
+      if (containerRef.current) {
+        containerRef.current.removeEventListener('click', handleContainerClick);
+      }
       if (viewerRef.current) {
         try { viewerRef.current.destroy() } catch {}
         viewerRef.current = null
       }
     }
-  }, [scenes])
+  }, [scenes, isEditingHotspot, onCoordsSelected])
 
   if (scenes.length === 0) return null
 
