@@ -59,6 +59,11 @@ export default async function AvailabilitySettingsPage({
     }),
   ]);
 
+  const displayTimezone =
+    slots.find((s) => s.isActive)?.timezone ??
+    slots[0]?.timezone ??
+    "America/Buenos_Aires";
+
   if (!organization) notFound();
 
   const slotsByDay = WEEKDAYS.map((_, dayIndex) =>
@@ -95,7 +100,7 @@ export default async function AvailabilitySettingsPage({
         </div>
         <div className="rounded-[1.75rem] border bg-white p-5 shadow-soft">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Zona horaria</p>
-          <p className="mt-2 text-lg font-bold text-slate-950 truncate">America/Buenos_Aires</p>
+          <p className="mt-2 text-lg font-bold text-slate-950 truncate">{displayTimezone}</p>
           <p className="mt-1 text-sm text-slate-500">Usada por defecto para todas las visitas.</p>
         </div>
       </section>

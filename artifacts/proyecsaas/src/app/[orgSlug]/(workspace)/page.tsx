@@ -54,6 +54,8 @@ export default async function OrganizationHomePage({
     visitSummary,
     notifications,
     setupStatus,
+    convTotal,
+    convAi,
   ] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     listOrganizationLeads(orgSlug),
@@ -63,6 +65,12 @@ export default async function OrganizationHomePage({
     getVisitSummary(prisma, orgSlug),
     listWorkspaceNotifications(orgSlug),
     getSetupChecklistStatus(orgSlug),
+    prisma.conversation.count({
+      where: { organization: { slug: orgSlug } },
+    }),
+    prisma.conversation.count({
+      where: { organization: { slug: orgSlug }, isHumanControlled: false },
+    }),
   ]);
 
   if (!organization) {
@@ -71,6 +79,15 @@ export default async function OrganizationHomePage({
 
   const openVisitsCount = visitSummary.pendingCount + visitSummary.confirmedCount;
   const onboardingIncomplete = !setupStatus.isComplete;
+
+  const conversionRate =
+    leadSummary.total > 0
+      ? `${Math.round((leadSummary.closedCount / leadSummary.total) * 100)}%`
+      : "Sin datos";
+
+  const aiPct =
+    convTotal > 0 ? Math.round((convAi / convTotal) * 100) : null;
+  const humanPct = aiPct !== null ? 100 - aiPct : null;
 
   return (
     <>
@@ -102,8 +119,8 @@ export default async function OrganizationHomePage({
         />
         <MetricCard
           label="Tasa conversión"
-          value="—"
-          hint="En integración."
+          value={conversionRate}
+          hint={leadSummary.total > 0 ? `${leadSummary.closedCount} de ${leadSummary.total} leads cerrados.` : "Aún no hay leads registrados."}
         />
       </section>
 
@@ -233,8 +250,10 @@ export default async function OrganizationHomePage({
                   Respuesta instantánea 24/7 activada para todos los canales de entrada.
                 </p>
                 <div className="mt-4 flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cobertura:</span>
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">100% Automática</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cobertura IA:</span>
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                    {aiPct !== null ? `${aiPct}%` : "Sin datos"}
+                  </span>
                 </div>
               </div>
               {/* Human Widget */}
@@ -254,12 +273,12 @@ export default async function OrganizationHomePage({
                   {notifications.length} evento{notifications.length !== 1 ? "s" : ""} que requiere{notifications.length !== 1 ? "n" : ""} validación manual del equipo.
                 </p>
                 <div className="mt-4 flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estado:</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Intervención:</span>
                   <span className={cn(
                     "text-[10px] font-bold uppercase tracking-widest",
                     notifications.length > 0 ? "text-amber-600" : "text-emerald-600"
                   )}>
-                    {notifications.length > 0 ? `${notifications.length} Pendientes` : "Todo procesado"}
+                    {humanPct !== null ? `${humanPct}% conv.` : notifications.length > 0 ? `${notifications.length} Pendientes` : "Todo procesado"}
                   </span>
                 </div>
               </div>
