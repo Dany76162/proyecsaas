@@ -187,7 +187,7 @@ export function WorkspaceSidebar({
                     href={`/${organization.slug}${item.path}`}
                     onClick={onClose}
                     className={cn(
-                      "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
+                      "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-semibold transition-all duration-150",
                       active
                         ? "bg-white/[0.08] text-white"
                         : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200",
@@ -198,7 +198,7 @@ export function WorkspaceSidebar({
                     )}
                     <Icon
                       className={cn(
-                        "h-3.5 w-3.5 shrink-0 transition-colors duration-150",
+                        "h-4.5 w-4.5 shrink-0 transition-colors duration-150",
                         active ? "text-brand-400" : "text-slate-600 group-hover:text-slate-400",
                       )}
                     />
@@ -226,7 +226,7 @@ export function WorkspaceSidebar({
                     href={`/${organization.slug}${item.path}`}
                     onClick={onClose}
                     className={cn(
-                      "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
+                      "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-semibold transition-all duration-150",
                       active
                         ? "bg-white/[0.08] text-white"
                         : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200",
@@ -237,7 +237,7 @@ export function WorkspaceSidebar({
                     )}
                     <Icon
                       className={cn(
-                        "h-3.5 w-3.5 shrink-0 transition-colors duration-150",
+                        "h-4.5 w-4.5 shrink-0 transition-colors duration-150",
                         active ? "text-brand-400" : "text-slate-600 group-hover:text-slate-400",
                       )}
                     />
@@ -263,9 +263,9 @@ export function WorkspaceSidebar({
                     href={item.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.05] hover:text-slate-200"
+                    className="group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-semibold text-slate-400 transition-all duration-150 hover:bg-white/[0.05] hover:text-slate-200"
                   >
-                    <Icon className="h-3.5 w-3.5 shrink-0 transition-colors duration-150 text-slate-600 group-hover:text-slate-400" />
+                    <Icon className="h-4.5 w-4.5 shrink-0 transition-colors duration-150 text-slate-600 group-hover:text-slate-400" />
                     {item.label}
                   </a>
                 );
@@ -277,7 +277,7 @@ export function WorkspaceSidebar({
                   href={`/${organization.slug}${item.path}`}
                   onClick={onClose}
                   className={cn(
-                    "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
+                    "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-semibold transition-all duration-150",
                     active
                       ? "bg-white/[0.08] text-white"
                       : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200",
@@ -288,7 +288,7 @@ export function WorkspaceSidebar({
                   )}
                   <Icon
                     className={cn(
-                      "h-3.5 w-3.5 shrink-0 transition-colors duration-150",
+                      "h-4.5 w-4.5 shrink-0 transition-colors duration-150",
                       active ? "text-brand-400" : "text-slate-600 group-hover:text-slate-400",
                     )}
                   />

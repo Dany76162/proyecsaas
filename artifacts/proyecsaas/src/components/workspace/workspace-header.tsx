@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import type { OrganizationWorkspace } from "@/modules/organizations/types";
 import { StatusBadge } from "@/components/workspace/status-badge";
@@ -51,7 +51,7 @@ export function WorkspaceHeader({
               href={onboardingNextHref ?? `/${organization.slug}/settings/organization`}
                 className="rounded-lg bg-brand-500 px-6 py-3 text-[15px] font-bold text-white transition-all duration-200 hover:bg-brand-600 shadow-sm shadow-brand-500/10"
             >
-              Continuar configuracion
+              Continuar configuración
             </Link>
           ) : (
             <>

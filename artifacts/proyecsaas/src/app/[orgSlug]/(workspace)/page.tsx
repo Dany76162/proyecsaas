@@ -118,7 +118,7 @@ export default async function OrganizationHomePage({
           hint="Inventario para asignar."
         />
         <MetricCard
-          label="Tasa conversión"
+          label="Tasa de conversión"
           value={conversionRate}
           hint={leadSummary.total > 0 ? `${leadSummary.closedCount} de ${leadSummary.total} leads cerrados.` : "Aún no hay leads registrados."}
         />
@@ -133,7 +133,7 @@ export default async function OrganizationHomePage({
             actions={
               <Link
                 href={`/${orgSlug}/onboarding`}
-                className="inline-flex h-8 items-center rounded-lg bg-brand-600 px-4 text-[11px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-700"
+                className="inline-flex h-9 items-center rounded-lg bg-brand-500 px-4 text-xs font-semibold text-white transition-all duration-150 hover:bg-brand-600 shadow-sm shadow-brand-500/10"
               >
                 Continuar configuración
               </Link>
