@@ -391,7 +391,7 @@ export async function processWhatsAppInboundJob(
     result.conversation.propertyId = propertyMatch.property.id;
   }
 
-  const [availability, recentMessages] = await Promise.all([
+  const [availability, recentMessages, aiAgent] = await Promise.all([
     propertyMatch.property
       ? prisma.availabilitySlot.findMany({
           where: {
@@ -433,6 +433,18 @@ export async function processWhatsAppInboundJob(
         sentAt: "desc",
       },
       take: 8,
+    }),
+    prisma.aiAgent.findUnique({
+      where: { organizationId: targetOrgId },
+      select: {
+        name: true,
+        tone: true,
+        persona: true,
+        zoneFilters: true,
+        propertyTypes: true,
+        minBudget: true,
+        maxBudget: true,
+      },
     }),
   ]);
 
@@ -491,6 +503,17 @@ export async function processWhatsAppInboundJob(
         senderName: message.senderName,
         senderPhone: message.senderPhone,
       })),
+    aiAgent: aiAgent
+      ? {
+          name: aiAgent.name,
+          tone: aiAgent.tone as "FORMAL" | "FRIENDLY" | "NEUTRAL",
+          persona: aiAgent.persona,
+          zoneFilters: aiAgent.zoneFilters,
+          propertyTypes: aiAgent.propertyTypes,
+          minBudget: aiAgent.minBudget,
+          maxBudget: aiAgent.maxBudget,
+        }
+      : null,
   });
 
   // Persist commercial signals into the Lead record (notes + conservative stage mapping)

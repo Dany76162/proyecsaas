@@ -1,4 +1,4 @@
-﻿import type { ConversationStatus, LeadStatus, MessageDirection } from "@prisma/client";
+import type { ConversationStatus, LeadStatus, MessageDirection } from "@prisma/client";
 
 export type PreparedConversationContext = {
   conversation: {
@@ -60,6 +60,15 @@ export type PreparedConversationContext = {
     senderName: string | null;
     senderPhone: string | null;
   }>;
+  aiAgent?: {
+    name: string;
+    tone: "FORMAL" | "FRIENDLY" | "NEUTRAL";
+    persona: string | null;
+    zoneFilters: string[];
+    propertyTypes: string[];
+    minBudget: number | null;
+    maxBudget: number | null;
+  } | null;
 };
 
 export type AutomationDecision = {

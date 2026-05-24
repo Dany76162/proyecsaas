@@ -469,6 +469,63 @@ export default async function WorkspaceManualUsoPage({
           </SectionCard>
         </div>
 
+        {/* Nueva sección explicativa: Personalización del Agente IA */}
+        <div className="[break-inside:avoid] [page-break-inside:avoid]">
+          <SectionCard
+            eyebrow="Personalización"
+            title="Configuración de tu Agente IA (Identidad, Tono y Enfoque)"
+            description="Adaptá el comportamiento, nombre, personalidad y filtros del Agente IA para alinearlo perfectamente con tu inmobiliaria."
+          >
+            <div className="grid gap-6 lg:grid-cols-2 print:grid-cols-1">
+              <div className="space-y-4 text-sm leading-6 text-slate-600">
+                <p>
+                  Desde la sección de <strong>Agentes IA</strong>, podés editar el agente activo para moldear su forma de hablar, las reglas específicas que debe respetar y los límites del inventario en los que debe enfocarse.
+                </p>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+                  <div>
+                    <p className="font-bold text-slate-900">👤 Nombre e Identidad</p>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      El agente usará este nombre para presentarse ante los clientes (ej. <i>"Hola, soy Lucas de InmoPalermo..."</i>). Esto genera cercanía y transparencia inmediata.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">🗣️ Tonos de Comunicación</p>
+                    <ul className="text-xs text-slate-500 mt-1 pl-4 list-disc space-y-1.5 leading-relaxed">
+                      <li><b>Amigable:</b> Uso de voseo argentino natural (<i>"¿Cómo andás?", "te cuento", "tenés"</i>). Cálido y cercano.</li>
+                      <li><b>Formal:</b> Uso de "usted" y conjugaciones formales respetuosas (<i>"¿Cómo está usted?", "le comento", "le acerco"</i>). Profesional y tradicional.</li>
+                      <li><b>Neutral:</b> Conciso, directo, neutro y sin vueltas. Al grano.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+                  <div>
+                    <p className="font-bold text-slate-950">🎯 Zonas y Presupuestos de Enfoque</p>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      Podés limitar los barrios y el rango de precios en los que opera tu agente. Si un lead consulta por una propiedad fuera de este enfoque, la IA responderá amablemente aclarando su especialidad y derivará al equipo humano si insisten.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-950">🧠 Personalidad y Reglas Personalizadas</p>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      El campo <b>Personalidad</b> te permite escribir instrucciones únicas para el agente en texto libre (ej. <i>"Hacé hincapié en que somos especialistas en pozo", "No des el número de piso exacto por seguridad", "Si preguntan por alquiler temporario, informá que el mínimo es de 3 meses"</i>).
+                    </p>
+                  </div>
+                </div>
+                <div className="print:hidden">
+                  <Link
+                    href={`/${orgSlug}/agents`}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  >
+                    Personalizar mi Agente IA
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+
         <div className="grid gap-5 xl:grid-cols-2 print:grid-cols-1">
           <div className="[break-inside:avoid] [page-break-inside:avoid]">
             <SectionCard

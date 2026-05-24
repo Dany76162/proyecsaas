@@ -1,4 +1,4 @@
-﻿import OpenAI from "openai";
+import OpenAI from "openai";
 import { z } from "zod";
 
 import type { AutomationDecision, PreparedConversationContext } from "@/modules/automations/types";
@@ -237,6 +237,33 @@ function getMissingDemandSignals(
   return missingSignals;
 }
 
+function applyToneToFallbackResponse(text: string, context: PreparedConversationContext): string {
+  const tone = context.aiAgent?.tone;
+  if (tone !== "FORMAL") {
+    return text;
+  }
+  return text
+    .replace(/\btu interes\b/gi, "su interés")
+    .replace(/\btu mensaje\b/gi, "su mensaje")
+    .replace(/\bte sirve\b/gi, "le sirve")
+    .replace(/\bTe sirve\b/gi, "Le sirve")
+    .replace(/\bte quedan\b/gi, "le quedan")
+    .replace(/\bte quedan\b/gi, "le quedan")
+    .replace(/\bEstas buscando\b/gi, "Está buscando")
+    .replace(/\bestas buscando\b/gi, "está buscando")
+    .replace(/\bte gustaria\b/gi, "le gustaría")
+    .replace(/\bcontame\b/gi, "coménteme")
+    .replace(/\bContame\b/gi, "Coménteme")
+    .replace(/\bdecime\b/gi, "indíqueme")
+    .replace(/\bDecime\b/gi, "Indíqueme")
+    .replace(/\bSi queres\b/gi, "Si desea")
+    .replace(/\bsi queres\b/gi, "si desea")
+    .replace(/\bte interesa\b/gi, "le interesa")
+    .replace(/\bte interesa\b/gi, "le interesa")
+    .replace(/\bte ayudo\b/gi, "le ayudo")
+    .replace(/\bte acerco\b/gi, "le acerco");
+}
+
 function buildClarifyingQuestion(
   preferences: AutomationDecision["extractedPreferences"],
   context: PreparedConversationContext,
@@ -244,18 +271,18 @@ function buildClarifyingQuestion(
   const missingSignals = getMissingDemandSignals(preferences, context);
 
   if (!missingSignals.length) {
-    return "Contame un poco mas sobre la propiedad que te interesa y te acerco una opcion concreta.";
+    return applyToneToFallbackResponse("Contame un poco mas sobre la propiedad que te interesa y te acerco una opcion concreta.", context);
   }
 
   if (missingSignals.length === 1) {
-    return `Para acercarte una propiedad mejor, decime ${missingSignals[0]}.`;
+    return applyToneToFallbackResponse(`Para acercarte una propiedad mejor, decime ${missingSignals[0]}.`, context);
   }
 
   if (missingSignals.length === 2) {
-    return `Para acercarte una opcion mejor, decime ${missingSignals[0]} y ${missingSignals[1]}.`;
+    return applyToneToFallbackResponse(`Para acercarte una opcion mejor, decime ${missingSignals[0]} y ${missingSignals[1]}.`, context);
   }
 
-  return `Para acercarte una propiedad mejor, decime ${missingSignals.slice(0, 2).join(", ")} y ${missingSignals[2]}.`;
+  return applyToneToFallbackResponse(`Para acercarte una propiedad mejor, decime ${missingSignals.slice(0, 2).join(", ")} y ${missingSignals[2]}.`, context);
 }
 
 function appendInternalNotes(
@@ -430,47 +457,88 @@ function getDecisionModel() {
 function buildPrompt(context: PreparedConversationContext) {
   const availabilitySummary = getAvailabilitySummary(context);
   const doubleOptionSummary = getDoubleOptionVisitSummary(context);
+  const agent = context.aiAgent;
+
+  const identityLine = agent?.name
+    ? `Tu nombre es "${agent.name}" y sos un asesor comercial inmobiliario de Argentina atendiendo por WhatsApp.`
+    : "Sos un asesor comercial inmobiliario de Argentina atendiendo por WhatsApp.";
+
+  let toneLine = "Escribi siempre en espanol de Argentina, con tono profesional, cercano y breve.";
+  if (agent?.tone === "FORMAL") {
+    toneLine = "Escribi siempre en espanol de Argentina, con tono profesional, educado, respetuoso y formal (debes usar el pronombre 'usted' y sus conjugaciones correspondientes, ej. '¿Cómo está usted?', 'le comento', 'su consulta', 'le acerco').";
+  } else if (agent?.tone === "FRIENDLY") {
+    toneLine = "Escribi siempre en espanol de Argentina, con tono amigable, calido, cercano y breve (debes usar el voseo argentino de forma natural, ej. '¿Cómo andás?', 'te cuento', 'tenés', 'te acerco').";
+  } else if (agent?.tone === "NEUTRAL") {
+    toneLine = "Escribi siempre en espanol de Argentina, con tono conciso, directo, neutral y breve.";
+  }
+
+  const personaLine = agent?.persona
+    ? `Tu personalidad e instrucciones adicionales de comportamiento que debes seguir a rajatabla:\n${agent.persona}`
+    : null;
+
+  const zoneLine = (agent?.zoneFilters && agent.zoneFilters.length > 0)
+    ? `Zonas de enfoque exclusivas: ${agent.zoneFilters.join(", ")}. Solo debes recomendar o buscar propiedades en estas zonas. Si te consultan por otras zonas, aclara con amabilidad que te especializas en estas y pregunta si les interesa alguna de ellas.`
+    : null;
+
+  const typeLine = (agent?.propertyTypes && agent.propertyTypes.length > 0)
+    ? `Tipos de propiedad en los que te especializas: ${agent.propertyTypes.join(", ")}.`
+    : null;
+
+  let budgetLine = null;
+  if (agent?.minBudget !== undefined && agent?.minBudget !== null && agent?.maxBudget !== undefined && agent?.maxBudget !== null) {
+    budgetLine = `Rango de presupuesto de las propiedades que buscas/ofreces: USD ${agent.minBudget} - USD ${agent.maxBudget}.`;
+  } else if (agent?.minBudget !== undefined && agent?.minBudget !== null) {
+    budgetLine = `Presupuesto minimo de las propiedades que buscas/ofreces: USD ${agent.minBudget}.`;
+  } else if (agent?.maxBudget !== undefined && agent?.maxBudget !== null) {
+    budgetLine = `Presupuesto maximo de las propiedades que buscas/ofreces: USD ${agent.maxBudget}.`;
+  }
+
+  const systemInstructions = [
+    identityLine,
+    toneLine,
+    "Las respuestas deben ser cortas, naturales y aptas para WhatsApp.",
+    "No inventes datos: solo podes usar el contexto provisto.",
+    personaLine,
+    zoneLine,
+    typeLine,
+    budgetLine,
+    "Comportamiento comercial esperado:",
+    "- HOT: empuja directo a coordinar visita.",
+    "- WARM: responde y ancla hacia visita.",
+    "- COLD: aporta valor y hace una pregunta de calificacion.",
+    "- UNCLEAR: aclara contexto o deriva a humano si hace falta.",
+    "Reglas comerciales:",
+    "- Si hay disponibilidad, preferi proponer dos opciones concretas.",
+    "- Si ya hay una propiedad vinculada o matcheada de forma confiable, usala como contexto principal para decidir el siguiente paso.",
+    "- Si hay propiedad matcheada + disponibilidad + senal clara de interes, orienta la respuesta a proponer visita.",
+    "- Si hay propiedad matcheada pero todavia no alcanza para visita, pedi la aclaracion minima util sin volver a cero.",
+    "- Si NO hay property match claro, no inventes una propiedad: pedi zona, presupuesto, ambientes o tipo segun falte.",
+    "- No presiones a leads frios.",
+    "- Si el lead es vago, intenta pedir zona, presupuesto o finalidad.",
+    "- Deriva a humano si aparecen negociacion, temas legales, friccion repetida o pedido explicito de hablar con una persona.",
+    "Debes devolver SOLO JSON valido con esta forma exacta:",
+    "{",
+    '  "message": string,',
+    '  "intent": string,',
+    '  "shouldScheduleVisit": boolean,',
+    '  "proposedVisitDate": string | null,',
+    '  "needsHumanHandoff": boolean,',
+    '  "confidence": number,',
+    '  "leadTemperature": "hot" | "warm" | "cold" | "unclear",',
+    '  "extractedPreferences": {',
+    '    "budget": string | null,',
+    '    "zones": string[],',
+    '    "rooms": number | null,',
+    '    "purpose": "living" | "investment" | null',
+    "  },",
+    '  "nextBestAction": string,',
+    '  "requiresFollowUp": boolean,',
+    '  "followUpReason": string | null',
+    "}",
+  ].filter(Boolean) as string[];
 
   return {
-    system: [
-      "Sos un asesor comercial inmobiliario de Argentina atendiendo por WhatsApp.",
-      "Escribi siempre en espanol de Argentina, con tono profesional, cercano y breve.",
-      "Las respuestas deben ser cortas, naturales y aptas para WhatsApp.",
-      "No inventes datos: solo podes usar el contexto provisto.",
-      "Comportamiento comercial esperado:",
-      "- HOT: empuja directo a coordinar visita.",
-      "- WARM: responde y ancla hacia visita.",
-      "- COLD: aporta valor y hace una pregunta de calificacion.",
-      "- UNCLEAR: aclara contexto o deriva a humano si hace falta.",
-      "Reglas comerciales:",
-      "- Si hay disponibilidad, preferi proponer dos opciones concretas.",
-      "- Si ya hay una propiedad vinculada o matcheada de forma confiable, usala como contexto principal para decidir el siguiente paso.",
-      "- Si hay propiedad matcheada + disponibilidad + senal clara de interes, orienta la respuesta a proponer visita.",
-      "- Si hay propiedad matcheada pero todavia no alcanza para visita, pedi la aclaracion minima util sin volver a cero.",
-      "- Si NO hay property match claro, no inventes una propiedad: pedi zona, presupuesto, ambientes o tipo segun falte.",
-      "- No presiones a leads frios.",
-      "- Si el lead es vago, intenta pedir zona, presupuesto o finalidad.",
-      "- Deriva a humano si aparecen negociacion, temas legales, friccion repetida o pedido explicito de hablar con una persona.",
-      "Debes devolver SOLO JSON valido con esta forma exacta:",
-      "{",
-      '  "message": string,',
-      '  "intent": string,',
-      '  "shouldScheduleVisit": boolean,',
-      '  "proposedVisitDate": string | null,',
-      '  "needsHumanHandoff": boolean,',
-      '  "confidence": number,',
-      '  "leadTemperature": "hot" | "warm" | "cold" | "unclear",',
-      '  "extractedPreferences": {',
-      '    "budget": string | null,',
-      '    "zones": string[],',
-      '    "rooms": number | null,',
-      '    "purpose": "living" | "investment" | null',
-      "  },",
-      '  "nextBestAction": string,',
-      '  "requiresFollowUp": boolean,',
-      '  "followUpReason": string | null',
-      "}",
-    ].join("\n"),
+    system: systemInstructions.join("\n"),
     user: JSON.stringify(
       {
         conversation: context.conversation,
@@ -579,7 +647,7 @@ function buildDeterministicFallback(
   if (visitRequested) {
     if (availabilitySummary) {
       return enrichDecisionWithContext({
-        responseText: `Gracias por tu interes en ${context.property.title}. Podemos coordinar visita. Tengo ${doubleOptionSummary ?? availabilitySummary}. Te sirve alguna?`,
+        responseText: applyToneToFallbackResponse(`Gracias por tu interes en ${context.property.title}. Podemos coordinar visita. Tengo ${doubleOptionSummary ?? availabilitySummary}. Te sirve alguna?`, context),
         qualificationDecision: "QUALIFIED",
         visitIntent: { requested: true },
         ...buildCommercialSignalDefaults(context, {
@@ -597,7 +665,7 @@ function buildDeterministicFallback(
     }
 
     return enrichDecisionWithContext({
-      responseText: `Gracias por tu interes en ${context.property.title}. Quiero ayudarte a coordinar visita. Que dia y horario te quedan mejor?`,
+      responseText: applyToneToFallbackResponse(`Gracias por tu interes en ${context.property.title}. Quiero ayudarte a coordinar visita. Que dia y horario te quedan mejor?`, context),
       qualificationDecision: "QUALIFIED",
       visitIntent: { requested: true },
       ...buildCommercialSignalDefaults(context, {
@@ -617,7 +685,7 @@ function buildDeterministicFallback(
 
   if (context.lead.status === "NEW") {
     return enrichDecisionWithContext({
-      responseText: `Gracias por tu interes en ${context.property.title}. Estas buscando para vivir o como inversion? Y en que zona te gustaria enfocarte?`,
+      responseText: applyToneToFallbackResponse(`Gracias por tu interes en ${context.property.title}. Estas buscando para vivir o como inversion? Y en que zona te gustaria enfocarte?`, context),
       qualificationDecision: null,
       visitIntent: null,
       ...buildCommercialSignalDefaults(context, {
@@ -632,7 +700,7 @@ function buildDeterministicFallback(
   }
 
   return enrichDecisionWithContext({
-    responseText: `Gracias por tu mensaje sobre ${context.property.title}. Si queres, contame presupuesto, zona ideal o si te interesa coordinar una visita.`,
+    responseText: applyToneToFallbackResponse(`Gracias por tu mensaje sobre ${context.property.title}. Si queres, contame presupuesto, zona ideal o si te interesa coordinar una visita.`, context),
     qualificationDecision: null,
     visitIntent: null,
     ...buildCommercialSignalDefaults(context, {
