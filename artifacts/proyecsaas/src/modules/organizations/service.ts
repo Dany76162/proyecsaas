@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import { PropertyStatus } from "@prisma/client";
 
@@ -203,14 +203,19 @@ export async function getSetupChecklistStatus(
   const propertiesLoaded = org._count.properties > 0;
   const agentConfigured = org.aiAgents.length > 0;
   const whatsappConnected = org.whatsappChannels.length > 0;
-  const readyToOperate =
-    profileComplete && propertiesLoaded && agentConfigured && whatsappConnected;
+
+  const panoramasCount = await prisma.propertyPanorama.count({
+    where: { property: { organization: { slug: orgSlug } } },
+  });
+  const tourReady = panoramasCount > 0;
+  const readyToOperate = tourReady;
+
   const completedCount = [
     profileComplete,
     propertiesLoaded,
     agentConfigured,
     whatsappConnected,
-    readyToOperate,
+    tourReady,
   ].filter(Boolean).length;
 
   return {

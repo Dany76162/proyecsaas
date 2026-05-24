@@ -19,62 +19,57 @@ function buildOnboardingSteps(
   orgSlug: string,
   status: {
     profileReady: boolean;
-    firstLeadReady: boolean;
-    conversationsReady: boolean;
     propertiesReady: boolean;
-    agentsReady: boolean;
+    tourReady: boolean;
+    whatsappReady: boolean;
+    agentReady: boolean;
   },
 ) {
   return [
     {
       number: 1,
-      key: "base",
-      title: "Configuración base",
-      description:
-        "Asegurá los datos de contacto y la identidad de tu inmobiliaria para que la IA tenga el contexto correcto.",
+      key: "perfil",
+      title: "Completá el perfil de tu inmobiliaria",
+      description: "Agregá el nombre, ciudad y WhatsApp de contacto. Esto es lo que el cliente ve cuando consulta por una propiedad.",
       href: `/${orgSlug}/settings/organization`,
-      cta: "Ir a configuración",
+      cta: "Completar perfil",
       serverStatus: (status.profileReady ? "completed" : "pending") as "completed" | "pending",
     },
     {
       number: 2,
-      key: "leads",
-      title: "Entender tu primer lead",
-      description:
-        "Mirá cómo entran los prospectos automáticamente y cómo se organizan en tu embudo comercial.",
-      href: `/${orgSlug}/leads`,
-      cta: "Ver prospectos",
-      serverStatus: (status.firstLeadReady ? "completed" : "pending") as "completed" | "pending",
-    },
-    {
-      number: 3,
-      key: "conversations",
-      title: "Abrir conversaciones",
-      description:
-        "Seguí en tiempo real las charlas de tus clientes con la IA e intervení cuando sea necesario.",
-      href: `/${orgSlug}/conversations`,
-      cta: "Ver chats en vivo",
-      serverStatus: (status.conversationsReady ? "completed" : "pending") as "completed" | "pending",
-    },
-    {
-      number: 4,
-      key: "properties",
-      title: "Agregar / revisar propiedades",
-      description:
-        "Tu inventario es clave. Cargá o sincronizá tus propiedades para que la IA pueda recomendarlas.",
+      key: "propiedad",
+      title: "Cargá tu primera propiedad",
+      description: "Creá una propiedad con precio, tipo y dirección. Activala como disponible y marcala como pública para que aparezca en tu catálogo.",
       href: `/${orgSlug}/properties`,
-      cta: "Gestionar catálogo",
+      cta: "Ir a propiedades",
       serverStatus: (status.propertiesReady ? "completed" : "pending") as "completed" | "pending",
     },
     {
+      number: 3,
+      key: "tour",
+      title: "Hacé tu primer tour 360° con el celular",
+      description: "Abrí una propiedad, tocá 'Escanear con celular' y seguí la guía. En 5 minutos tenés un recorrido virtual inmersivo listo para compartir.",
+      href: `/${orgSlug}/properties`,
+      cta: "Ir a propiedades",
+      serverStatus: (status.tourReady ? "completed" : "pending") as "completed" | "pending",
+    },
+    {
+      number: 4,
+      key: "whatsapp",
+      title: "Conectá tu WhatsApp",
+      description: "Vinculá tu número de WhatsApp para que el sistema reciba consultas automáticamente y el agente IA pueda responder por vos.",
+      href: `/${orgSlug}/captacion`,
+      cta: "Conectar WhatsApp",
+      serverStatus: (status.whatsappReady ? "completed" : "pending") as "completed" | "pending",
+    },
+    {
       number: 5,
-      key: "agents",
-      title: "Activar agentes / automatizaciones",
-      description:
-        "Configurá el comportamiento de tu asistente IA y habilitá el número de WhatsApp operativo.",
+      key: "agente",
+      title: "Activá tu agente IA",
+      description: "Configurá cómo se presenta el asistente, qué zonas y tipos de propiedades maneja, y activalo. A partir de ahí responde solo.",
       href: `/${orgSlug}/agents`,
-      cta: "Habilitar agentes",
-      serverStatus: (status.agentsReady ? "completed" : "pending") as "completed" | "pending",
+      cta: "Configurar agente",
+      serverStatus: (status.agentReady ? "completed" : "pending") as "completed" | "pending",
     },
   ];
 }
@@ -105,12 +100,16 @@ export default async function WorkspaceOnboardingPage({
     actorEmail: sessionUser?.email,
   });
 
+  const hasTour = await prisma.propertyPanorama.count({
+    where: { property: { organization: { slug: orgSlug } } },
+  }) > 0;
+
   const steps = buildOnboardingSteps(orgSlug, {
     profileReady: setupStatus.profileComplete,
-    firstLeadReady: leadSummary.total > 0,
-    conversationsReady: leadSummary.total > 0, // Placeholder check, also manual
     propertiesReady: setupStatus.propertiesLoaded,
-    agentsReady: setupStatus.agentConfigured && setupStatus.whatsappConnected,
+    tourReady: hasTour,
+    whatsappReady: setupStatus.whatsappConnected,
+    agentReady: setupStatus.agentConfigured,
   });
 
   return (

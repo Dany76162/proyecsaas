@@ -41,6 +41,14 @@ const systemSteps = [
   },
 ] as const;
 
+const tourSteps = [
+  { step: "1", title: "Abrí la propiedad", description: "Entrá a la ficha de la propiedad en el panel y tocá la pestaña '360° / Panorámica' en la sección de Medios." },
+  { step: "2", title: "Elegí el ambiente", description: "Tocá 'Escanear con celular' y seleccioná el ambiente que vas a capturar: Living, Cocina, Habitación, Baño, etc." },
+  { step: "3", title: "Seguí la guía visual", description: "El celular te va a indicar con bordes verdes cuándo estás en la posición correcta. Mantené el celular quieto y la foto se saca sola." },
+  { step: "4", title: "Completá los 18 puntos", description: "El sistema te guía por 6 posiciones × 3 alturas (piso, frente, techo). Tarda entre 5 y 10 minutos por ambiente." },
+  { step: "5", title: "Agregá más ambientes", description: "Al terminar un ambiente podés seguir con el siguiente. Cada ambiente queda como una escena navegable dentro del tour." },
+] as const;
+
 const leadChecklist = [
   "Revisar la conversación y entender qué pidió el cliente.",
   "Configurar tu Disponibilidad para que la IA pueda agendar visitas por vos.",
@@ -53,12 +61,18 @@ const commonErrors = [
   "No llegan mensajes: revisar integraciones de WhatsApp y estado del canal.",
   "La IA no responde: validar que el canal y el agente estén activos.",
   "No veo leads: revisar conversaciones recientes y filtros del panel.",
+  "El tour no se ve: verificar que el servicio de stitching esté activo y que la captura se haya completado correctamente (18 fotos).",
+  "La propiedad no aparece en el catálogo: verificar que el estado sea 'Disponible' y que 'Publicar esta propiedad' esté activado.",
+  "El link del tour no funciona: la propiedad debe ser pública. Cambiar visibilidad desde la ficha de la propiedad.",
 ] as const;
 
 const bestPractices = [
   "Responder rápido cuando el cliente ya está listo para avanzar.",
   "No interrumpir la automatización si la conversación todavía avanza bien sola.",
   "Revisar todos los días los leads activos y las conversaciones abiertas.",
+  "Hacé el tour 360° antes de publicar la propiedad — los clientes que ven el tour tienen el doble de chances de pedir visita.",
+  "Compartí el link del catálogo en tu bio de Instagram y en tu perfil de Zonaprop o Argenprop.",
+  "Capturá al menos 2 ambientes por propiedad (living + dormitorio principal) para que el tour sea más convincente.",
 ] as const;
 
 const captureChannels = [
@@ -183,6 +197,76 @@ export default async function WorkspaceManualUsoPage({
                   <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
                 </article>
               ))}
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="[break-inside:avoid] [page-break-inside:avoid]">
+          <SectionCard
+            eyebrow="Tour virtual"
+            title="Cómo hacer un tour 360° con tu celular"
+            description="Cualquier agente puede crear un recorrido inmersivo profesional en minutos, sin equipos especiales."
+          >
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5 print:grid-cols-1">
+              {tourSteps.map((item) => (
+                <article
+                  key={item.step}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-5 print:bg-white [break-inside:avoid] [page-break-inside:avoid]"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
+                    {item.step}
+                  </div>
+                  <h3 className="mt-4 text-base font-bold text-slate-900">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                </article>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="[break-inside:avoid] [page-break-inside:avoid]">
+          <SectionCard
+            eyebrow="Catálogo"
+            title="Compartí tu catálogo con clientes"
+            description="Tu catálogo es la cara pública de tu inmobiliaria. Cada propiedad activa aparece ahí automáticamente."
+          >
+            <div className="grid gap-6 lg:grid-cols-2 print:grid-cols-1">
+              <div className="space-y-4 text-sm leading-6 text-slate-600">
+                <p>
+                  El catálogo muestra todas tus propiedades disponibles con fotos, precio, tipo y — si tiene tour — un botón directo al recorrido 360°. El cliente puede filtrar por Venta, Alquiler o buscar solo propiedades con tour. Para compartirlo, copiá el link desde el panel de propiedades y envialo por WhatsApp, email o redes sociales.
+                </p>
+                <div className="print:hidden">
+                  <a
+                    href={`/${orgSlug}/catalog`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-slate-800"
+                  >
+                    Ver catálogo público
+                  </a>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Requisito</p>
+                  <p className="mt-1.5 text-sm text-slate-700 font-medium">
+                    Para que una propiedad aparezca en el catálogo: cambiá el estado a <strong>'Disponible'</strong> y activá <strong>'Publicar esta propiedad'</strong>.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Badge 360°</p>
+                  <p className="mt-1.5 text-sm text-slate-700 font-medium">
+                    El tour 360° aparece automáticamente con el badge verde cuando la propiedad tiene escenas capturadas.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Consultas</p>
+                  <p className="mt-1.5 text-sm text-slate-700 font-medium">
+                    Cuando un cliente toca <strong>'Consultar'</strong>, te llega directamente a tu WhatsApp con el nombre y dirección de la propiedad.
+                  </p>
+                </div>
+              </div>
             </div>
           </SectionCard>
         </div>
