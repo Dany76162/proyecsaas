@@ -6,6 +6,7 @@ import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { MediaManager } from "@/components/properties/media-manager";
+import { CatalogSharingActions } from "@/components/properties/catalog-sharing-actions";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
@@ -128,7 +129,8 @@ export default async function PropertyDetailPage({
               {[property.address, property.neighborhood, property.city].filter(Boolean).join(", ") || "Ubicación pendiente"}
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <CatalogSharingActions orgSlug={orgSlug} orgName={organization.name} />
             {property.publicVisible && (
               <Link
                 href={`/map/${property.id}`}
@@ -172,7 +174,7 @@ export default async function PropertyDetailPage({
       </section>
 
       {/* Edit form — all in one submit */}
-      <form action={updatePropertyAction} className="space-y-6">
+      <form action={async (formData) => { await updatePropertyAction(formData); }} className="space-y-6">
         <input type="hidden" name="orgSlug" value={orgSlug} />
         <input type="hidden" name="propertyId" value={property.id} />
 

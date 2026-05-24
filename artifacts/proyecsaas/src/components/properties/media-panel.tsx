@@ -145,6 +145,13 @@ export function MediaPanel({
     setIsModalOpen(true);
   }
 
+  function handleFilesSelected(files: File[]) {
+    if (files.length > 0) {
+      setSelectedFile(files[0]);
+      setIsModalOpen(true);
+    }
+  }
+
   function handleUploaded(payload: UploadedMediaPayload) {
     onMediaUploaded(payload);
     setSelectedFile(null);
@@ -338,7 +345,17 @@ export function MediaPanel({
   }
 
   return (
-    <aside className="flex h-full w-full flex-col border-l border-white/[0.08] bg-[#111118] text-white/85 lg:w-[280px] lg:shrink-0">
+    <aside
+      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-blue-400', 'bg-blue-50') }}
+      onDragLeave={(e) => { e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50') }}
+      onDrop={(e) => {
+        e.preventDefault()
+        e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50')
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+        if (files.length > 0) handleFilesSelected(files)
+      }}
+      className="flex h-full w-full flex-col border-l border-white/[0.08] bg-[#111118] text-white/85 lg:w-[280px] lg:shrink-0"
+    >
       <div className="border-b border-white/[0.08] p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-white">Medios</h2>

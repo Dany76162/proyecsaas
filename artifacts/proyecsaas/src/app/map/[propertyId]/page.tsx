@@ -9,6 +9,22 @@ import { MetricCard } from "@/components/workspace/metric-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { formatCurrency } from "@/lib/utils";
 import { getPublicPropertyDetail } from "@/modules/properties/service";
+import { prisma } from "@/server/db/prisma";
+
+export async function generateMetadata({ params }: { params: Promise<{ propertyId: string }> }) {
+  const { propertyId } = await params;
+  const prop = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: { title: true, address: true, priceCents: true, currency: true, images: { where: { isPrimary: true }, take: 1, select: { url: true } } }
+  });
+  const price = prop?.priceCents ? `${prop.currency ?? 'USD'} ${(prop.priceCents / 100).toLocaleString('es-AR')}` : '';
+  const image = prop?.images[0]?.url;
+  return {
+    title: prop ? `Tour 360° — ${prop.title}${price ? ` | ${price}` : ''}` : 'Tour virtual',
+    description: prop?.address ?? 'Recorrido virtual inmersivo de la propiedad.',
+    openGraph: { title: prop?.title, images: image ? [{ url: image }] : [] },
+  };
+}
 
 export default async function PublicPropertyDetailPage({
   params,
@@ -72,12 +88,64 @@ export default async function PublicPropertyDetailPage({
           <TourAiChat propertyId={property.id} />
         </section>
       ) : (
-        <section className="mx-auto flex min-h-[70vh] w-full max-w-6xl flex-col justify-center px-6 py-10">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur">
-            <StatusBadge label={property.status} tone="success" />
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">{property.title}</h1>
-            <p className="mt-3 text-base leading-7 text-white/65">{location || "Ubicacion pendiente"}</p>
+        <section className="relative h-[100svh] min-h-[640px] overflow-hidden bg-slate-950">
+          {/* Background image fullscreen */}
+          {property.images && property.images.length > 0 ? (
+            <>
+              <img
+                src={property.images.find(img => img.isPrimary)?.url ?? property.images[0].url}
+                alt={property.title}
+                className="absolute inset-0 h-full w-full object-cover opacity-60 filter blur-[2px] scale-105"
+              />
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+            </>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-[#0b0c14] text-8xl text-white/5 select-none">
+              🏘️
+            </div>
+          )}
+
+          {/* Fullscreen center visual for the primary image */}
+          {property.images && property.images.length > 0 && (
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div className="relative max-h-[70vh] max-w-[90vw] overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-black/25 backdrop-blur-md">
+                <img
+                  src={property.images.find(img => img.isPrimary)?.url ?? property.images[0].url}
+                  alt={property.title}
+                  className="max-h-[70vh] max-w-full object-contain"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Content Overlay */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-40 bg-gradient-to-b from-black/75 via-black/35 to-transparent px-5 pb-24 pt-5 sm:px-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="max-w-3xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge label={property.status} tone="success" />
+                  <StatusBadge label="Propiedad" tone="info" />
+                  <span className="rounded-full border border-white/15 bg-black/35 px-3 py-1 text-xs font-semibold text-white/75 backdrop-blur">
+                    {price}
+                  </span>
+                </div>
+                <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white drop-shadow-lg sm:text-5xl">
+                  {property.title}
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 drop-shadow sm:text-base">
+                  {location || "Ubicacion pendiente"}
+                </p>
+              </div>
+
+              <Link
+                href={`/${property.organizationSlug}/properties/${property.id}`}
+                className="pointer-events-auto inline-flex w-fit rounded-full border border-white/20 bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg transition hover:bg-white/90"
+              >
+                Abrir gestion interna
+              </Link>
+            </div>
           </div>
+          <TourAiChat propertyId={property.id} />
         </section>
       )}
 

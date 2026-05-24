@@ -79,7 +79,7 @@ export function TourAiChat({ propertyId }: TourAiChatProps) {
     <div className="absolute bottom-16 right-4 z-40 flex flex-col items-end pointer-events-auto">
       {/* Expanded Chat Box */}
       {isOpen && (
-        <div className="mb-3 flex h-[400px] w-[310px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0B0B14]/90 shadow-[0_12px_40px_rgba(0,0,0,0.65)] backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="mb-3 flex h-[400px] w-[min(310px,90vw)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0B0B14]/90 shadow-[0_12px_40px_rgba(0,0,0,0.65)] backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-300">
           {/* Chat Header */}
           <div className="flex items-center justify-between border-b border-white/[0.08] bg-white/[0.02] px-4 py-3">
             <div className="flex items-center gap-2">

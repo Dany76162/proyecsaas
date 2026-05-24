@@ -2,6 +2,16 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/server/db/prisma";
+
+export async function generateMetadata({ params }: { params: Promise<{ orgSlug: string }> }) {
+  const { orgSlug } = await params;
+  const org = await prisma.organization.findFirst({ where: { slug: orgSlug }, select: { name: true, description: true } });
+  return {
+    title: org ? `${org.name} — Propiedades disponibles` : 'Catálogo de propiedades',
+    description: org?.description ?? 'Explorá las propiedades disponibles.',
+    openGraph: { title: org?.name, description: org?.description ?? '' },
+  };
+}
  
 const WA_SVG = (
   <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">

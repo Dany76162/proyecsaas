@@ -1,4 +1,4 @@
-﻿import { cn, formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { ConversationListItem } from "@/modules/conversations/types";
 import { StatusBadge } from "@/components/workspace/status-badge";
 
@@ -69,6 +69,21 @@ export function ConversationRow({ conv, isSelected, onClick }: ConversationRowPr
         {requiresAction && (
           <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-amber-600 ring-1 ring-amber-100">
             Acción
+          </span>
+        )}
+        {String(conv.leadTemperature).toLowerCase() === "hot" && (
+          <span className="rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-red-600 ring-1 ring-red-100 flex items-center gap-1">
+            🔴 HOT
+          </span>
+        )}
+        {String(conv.leadTemperature).toLowerCase() === "warm" && (
+          <span className="rounded-md bg-yellow-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-yellow-700 ring-1 ring-yellow-100 flex items-center gap-1">
+            🟡 WARM
+          </span>
+        )}
+        {String(conv.leadTemperature).toLowerCase() === "cold" && (
+          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-600 ring-1 ring-slate-200 flex items-center gap-1">
+            🔵 COLD
           </span>
         )}
       </div>
