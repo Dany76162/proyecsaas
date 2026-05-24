@@ -98,6 +98,69 @@ function drawImageCover(
   context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
 }
 
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1]); // quitar prefijo data:image/jpeg;base64,
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function stitchWithService(frames: GuidedFrame[], propertyId: string): Promise<File> {
+  const STITCH_URL = process.env.NEXT_PUBLIC_STITCH_SERVICE_URL;
+
+  if (!STITCH_URL) {
+    // Fallback al stitching local (grilla simple) si no hay servicio configurado
+    return buildGuidedPanoramaFile(frames, propertyId);
+  }
+
+  const yawSteps = [0, 60, 120, 180, 240, 300];
+  const pitchSteps = [35, 90, 145];
+
+  const framePayloads = await Promise.all(
+    frames.map(async (frame, i) => {
+      const yawIdx = Math.floor(i / 3);
+      const pitchIdx = i % 3;
+      return {
+        image: await blobToBase64(frame.blob),
+        yaw: yawSteps[yawIdx] ?? 0,
+        pitch: pitchSteps[pitchIdx] ?? 90,
+      };
+    }),
+  );
+
+  const res = await fetch(`${STITCH_URL}/stitch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      frames: framePayloads,
+      output_width: 4096,
+      output_height: 2048,
+      fov_h: 65,
+      fov_v: 50,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Stitch service error ${res.status}: ${await res.text()}`);
+  }
+
+  const { image } = (await res.json()) as { image: string };
+  const binary = atob(image);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: "image/jpeg" });
+
+  return new File([blob], `${propertyId}-360.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
+
 async function buildGuidedPanoramaFile(frames: GuidedFrame[], propertyId: string) {
   const bitmaps = await Promise.all(frames.map((frame) => createImageBitmap(frame.blob)));
   const firstBitmap = bitmaps[0];
@@ -431,7 +494,7 @@ export function CameraCaptureModal({
   const savePanorama = async (frames: GuidedFrame[]) => {
     setModalStep("SAVING");
     try {
-      const file = await buildGuidedPanoramaFile(frames, propertyId);
+      const file = await stitchWithService(frames, propertyId);
       const url = await uploadToPropertyMedia(file, "PANORAMA", orgSlug, propertyId, () => {});
 
       const finalTitle = selectedAmbient === "Otro" ? (customAmbient.trim() || "Otro") : selectedAmbient;
