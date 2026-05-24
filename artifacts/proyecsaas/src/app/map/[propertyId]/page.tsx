@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PanoramaViewer } from "@/components/properties/panorama-viewer";
+import { TourAiChat } from "@/components/properties/tour-ai-chat";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { formatCurrency } from "@/lib/utils";
@@ -68,6 +69,7 @@ export default async function PublicPropertyDetailPage({
               </Link>
             </div>
           </div>
+          <TourAiChat propertyId={property.id} />
         </section>
       ) : (
         <section className="mx-auto flex min-h-[70vh] w-full max-w-6xl flex-col justify-center px-6 py-10">

@@ -1,3 +1,14 @@
+/**
+ * RAILWAY CRON JOB CONFIGURATION:
+ * -------------------------------------------------------------
+ * In Railway, navigate to:
+ * tu servicio -> Settings -> Cron Jobs
+ * 
+ * Schedule: 0 * * * * (Runs every hour)
+ * Command: curl -X POST https://www.raicespilot.com/api/platform/meta/cron -H "Authorization: Bearer $AGENTOS_CRON_SECRET"
+ * -------------------------------------------------------------
+ */
+
 import { NextResponse } from "next/server";
 import { publishScheduledDrafts } from "@/modules/agents/meta-service";
 

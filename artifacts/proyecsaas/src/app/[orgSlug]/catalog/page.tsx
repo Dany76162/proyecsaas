@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/server/db/prisma";
  
@@ -158,62 +159,60 @@ export default async function PublicCatalogPage({
                   key={prop.id}
                   className="group flex flex-col overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.03] transition-colors hover:border-white/[0.14]"
                 >
-                  {/* Image */}
-                  <div className="relative h-48 overflow-hidden bg-white/[0.04]">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={prop.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-4xl text-white/10">🏠</div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                    {hasTour && (
-                      <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold text-emerald-300 backdrop-blur-sm">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        Tour 360°
-                      </div>
-                    )}
-                    {prop.operationType && (
-                      <div className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold backdrop-blur-sm ${prop.operationType === "Venta" ? "border border-blue-500/30 bg-blue-500/20 text-blue-300" : "border border-emerald-500/25 bg-emerald-500/15 text-emerald-300"}`}>
-                        {prop.operationType}
-                      </div>
-                    )}
-                  </div>
- 
-                  {/* Body */}
-                  <div className="flex flex-1 flex-col gap-2 p-4">
-                    {prop.propertyType && (
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30">{prop.propertyType}</p>
-                    )}
-                    <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-white">{prop.title}</h3>
-                    {(prop.neighborhood || prop.city) && (
-                      <p className="flex items-center gap-1 text-xs text-white/35">
-                        📍 {[prop.neighborhood, prop.city].filter(Boolean).join(", ")}
+                  <Link href={`/${orgSlug}/catalog/${prop.id}`} className="flex flex-col flex-1">
+                    {/* Image */}
+                    <div className="relative h-48 overflow-hidden bg-white/[0.04]">
+                      {image ? (
+                        <img
+                          src={image}
+                          alt={prop.title}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-4xl text-white/10">🏠</div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      {hasTour && (
+                        <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold text-emerald-300 backdrop-blur-sm">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                          Tour 360°
+                        </div>
+                      )}
+                      {prop.operationType && (
+                        <div className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold backdrop-blur-sm ${prop.operationType === "Venta" ? "border border-blue-500/30 bg-blue-500/20 text-blue-300" : "border border-emerald-500/25 bg-emerald-500/15 text-emerald-300"}`}>
+                          {prop.operationType}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Body */}
+                    <div className="flex flex-1 flex-col gap-2 p-4">
+                      {prop.propertyType && (
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30">{prop.propertyType}</p>
+                      )}
+                      <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-white">{prop.title}</h3>
+                      {(prop.neighborhood || prop.city) && (
+                        <p className="flex items-center gap-1 text-xs text-white/35">
+                          📍 {[prop.neighborhood, prop.city].filter(Boolean).join(", ")}
+                        </p>
+                      )}
+                      {details.length > 0 && (
+                        <p className="text-xs text-white/30">{details.join(" · ")}</p>
+                      )}
+                      <p className="mt-auto pt-2 text-lg font-semibold text-white">
+                        {formatPrice(prop.priceCents, prop.currency)}
                       </p>
-                    )}
-                    {details.length > 0 && (
-                      <p className="text-xs text-white/30">{details.join(" · ")}</p>
-                    )}
-                    <p className="mt-auto pt-2 text-lg font-semibold text-white">
-                      {formatPrice(prop.priceCents, prop.currency)}
-                    </p>
-                  </div>
- 
+                    </div>
+                  </Link>
+
                   {/* Actions */}
                   <div className="flex gap-2 border-t border-white/[0.06] p-3">
-                    {whatsappBase && (
-                      <a
-                        href={`${whatsappBase}?text=${encodeURIComponent(contactMsg)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 py-2 text-xs font-semibold text-white transition hover:bg-emerald-400"
-                      >
-                        {WA_SVG} Consultar
-                      </a>
-                    )}
+                    <Link
+                      href={`/${orgSlug}/catalog/${prop.id}`}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+                    >
+                      📄 Ver Detalle
+                    </Link>
                     {hasTour && (
                       <a
                         href={`/map/${prop.id}`}
