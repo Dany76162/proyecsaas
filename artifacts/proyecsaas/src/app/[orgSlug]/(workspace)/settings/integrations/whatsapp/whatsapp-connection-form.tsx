@@ -74,7 +74,12 @@ export function WhatsAppConnectionForm({
   const hasPendingRequest = !hasOwnChannel && connectionRequests.some(r => r.status === "PENDING" || r.status === "IN_REVIEW");
 
   // Determine which number to use for QR/Link
-  const activeNumber = hasOwnChannel ? activeTenantChannel.displayPhoneNumber : platformPhone;
+  // For Evolution API channels, derive phone from phoneNumberId (format: "evolution_<phone>") as fallback
+  const activeTenantPhone = activeTenantChannel?.displayPhoneNumber ||
+    (activeTenantChannel?.phoneNumberId?.startsWith("evolution_")
+      ? activeTenantChannel.phoneNumberId.replace(/^evolution_/, "")
+      : null);
+  const activeNumber = hasOwnChannel ? activeTenantPhone : platformPhone;
   
   // Prefilled text: if platform fallback, MUST include [ref:slug]
   const routingCode = `[ref:${orgSlug}]`;
@@ -125,10 +130,14 @@ export function WhatsAppConnectionForm({
             </span>
           </div>
           <div className="mt-4 p-3 rounded-xl bg-white/50 border border-emerald-100 inline-block">
-            <p className={`text-sm font-mono font-bold text-emerald-950 ${!activeTenantChannel.displayPhoneNumber ? "animate-pulse" : ""}`}>
-              {activeTenantChannel.displayPhoneNumber 
-                ? `📱 +${activeTenantChannel.displayPhoneNumber}` 
-                : "📱 Sincronizando número de WhatsApp... (refresca en unos segundos)"}
+            <p className="text-sm font-mono font-bold text-emerald-950">
+              {(() => {
+                const phone = activeTenantChannel.displayPhoneNumber ||
+                  (activeTenantChannel.phoneNumberId?.startsWith("evolution_")
+                    ? activeTenantChannel.phoneNumberId.replace(/^evolution_/, "")
+                    : null);
+                return phone ? `📱 +${phone}` : "📱 Canal activo — número pendiente de sincronización";
+              })()}
             </p>
           </div>
         </div>
