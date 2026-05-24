@@ -6,7 +6,7 @@ import { ChevronRight, LayoutDashboard, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type OnboardingStepKey = "base" | "leads" | "conversations" | "properties" | "agents";
+export type OnboardingStepKey = "base" | "leads" | "conversations" | "properties" | "agents" | "whatsapp";
 
 interface OnboardingFooterProps {
   orgSlug: string;
