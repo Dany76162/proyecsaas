@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/workspace/status-badge";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { prisma } from "@/server/db/prisma";
 import { formatDateTime } from "@/lib/utils";
+import { getEvolutionInstanceDetails } from "@/server/whatsapp/evolution";
 
 function AutoMetric({
   label,
@@ -93,6 +94,8 @@ export default async function AutomationsPage({
         lastErrorAt: true,
         lastErrorMessage: true,
         isPrimary: true,
+        provider: true,
+        instanceName: true,
       },
     }),
     prisma.conversation.count({ where: { organizationId: orgId } }),
@@ -145,7 +148,46 @@ export default async function AutomationsPage({
     }),
   ]);
 
-  const activeChannel = whatsappChannels.find((ch) => ch.status === "ACTIVE");
+  let activeChannel = whatsappChannels.find((ch) => ch.status === "ACTIVE");
+
+  // Self-healing: if Evolution channel is active but missing displayPhoneNumber, fetch and update it
+  if (activeChannel && activeChannel.provider === "EVOLUTION_API" && !activeChannel.displayPhoneNumber && activeChannel.instanceName) {
+    try {
+      const { status, phone } = await getEvolutionInstanceDetails(activeChannel.instanceName);
+      if (status === "CONNECTED" && phone) {
+        const updated = await prisma.whatsAppChannel.update({
+          where: { instanceName: activeChannel.instanceName },
+          data: { 
+            displayPhoneNumber: phone,
+            phoneNumberId: `evolution_${phone}`,
+          },
+          select: {
+            id: true,
+            status: true,
+            displayPhoneNumber: true,
+            verifiedDisplayName: true,
+            lastInboundAt: true,
+            lastDeliveryAt: true,
+            lastErrorAt: true,
+            lastErrorMessage: true,
+            isPrimary: true,
+            provider: true,
+            instanceName: true,
+          }
+        });
+        activeChannel = updated;
+        
+        // Also update in the list
+        const idx = whatsappChannels.findIndex(ch => ch.id === updated.id);
+        if (idx !== -1) {
+          whatsappChannels[idx] = updated;
+        }
+      }
+    } catch (e) {
+      console.error("[AutomationsPage] Self-healing displayPhoneNumber failed:", e);
+    }
+  }
+
   const hasWhatsApp = whatsappChannels.length > 0;
   const whatsappActive = !!activeChannel;
   const hasSlots = activeSlots > 0;
@@ -221,7 +263,7 @@ export default async function AutomationsPage({
             {
               label: "WhatsApp conectado",
               active: whatsappActive,
-              detail: activeChannel?.displayPhoneNumber ?? "Sin número activo",
+              detail: activeChannel?.displayPhoneNumber || "Conectado correctamente",
               link: `/${orgSlug}/settings/integrations`,
             },
             {
@@ -358,10 +400,10 @@ export default async function AutomationsPage({
                     </div>
                     <div>
                       <p className="font-semibold text-slate-950">
-                        {channel.verifiedDisplayName ?? channel.displayPhoneNumber ?? "Canal sin nombre"}
+                        {channel.verifiedDisplayName ?? channel.displayPhoneNumber ?? (channel.status === "ACTIVE" ? "WhatsApp Conectado" : "Canal QR")}
                       </p>
                       <p className="text-sm text-slate-500">
-                        {channel.displayPhoneNumber ?? "Sin número registrado"}
+                        {channel.displayPhoneNumber ?? (channel.status === "ACTIVE" ? "Conectado correctamente" : "Sin número registrado")}
                       </p>
                     </div>
                   </div>
