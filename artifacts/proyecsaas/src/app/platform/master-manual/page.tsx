@@ -1,6 +1,6 @@
 "use client";
 
-import { Printer, ShieldCheck, Zap, Bot, Database, Globe, CreditCard, MessageCircle, AlertCircle, Terminal, LayoutDashboard, Flag, ShieldAlert, Share2, Calendar } from "lucide-react";
+import { Printer, ShieldCheck, Zap, Bot, Database, Globe, CreditCard, MessageCircle, AlertCircle, Terminal, LayoutDashboard, Flag, ShieldAlert, Share2, Calendar, Camera, Map, List, Layers, ScanLine, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function MasterManualPage() {
@@ -122,6 +122,103 @@ export default function MasterManualPage() {
             <li><strong>Cifrado de Secretos:</strong> Los tokens de Meta y WhatsApp se almacenan cifrados (AES-256) y nunca se exponen al cliente final.</li>
             <li><strong>Cron Security:</strong> El endpoint de publicación está protegido por <code>AGENTOS_CRON_SECRET</code>.</li>
           </ul>
+
+          {/* 6. TOUR VIRTUAL 360° */}
+          <h2>6. Tour Virtual 360°</h2>
+          <p>
+            RaicesPilot incluye un módulo de captura y visualización de tours inmersivos 360° diseñado para que los agentes inmobiliarios puedan crear experiencias profesionales directamente desde su smartphone, sin equipos especiales.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 not-prose mb-8">
+            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <Camera className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Captura Guiada</span>
+              </div>
+              <p className="text-xs text-slate-600">El agente selecciona el ambiente, y el sistema guía la toma de <strong>18 fotos</strong> en posiciones predefinidas. Las imágenes se suben automáticamente a Cloudinary y se ensamblan en un panorama interactivo.</p>
+            </div>
+            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <Layers className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Multi-Ambiente</span>
+              </div>
+              <p className="text-xs text-slate-600">Cada propiedad puede tener múltiples ambientes: Living, Cocina, Habitación, Baño, Terraza, etc. El visor permite navegar entre escenas con transiciones fluidas y hotspots de piso interactivos.</p>
+            </div>
+            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <ScanLine className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Cámara 360° y Drone</span>
+              </div>
+              <p className="text-xs text-slate-600">Las fotos tomadas con cámaras 360° profesionales (Ricoh Theta, Insta360) o con drones se pueden subir directamente al sistema. El límite de upload es de <strong>100 MB por imagen</strong>.</p>
+            </div>
+          </div>
+          <h3>Hotspots de Navegación</h3>
+          <p>
+            Los hotspots son marcadores interactivos que permiten al visitante navegar entre ambientes del tour. Su posicionamiento es completamente manual: el operador toca sobre el suelo en el visor 360° para colocar el indicador en el punto exacto deseado. Esta edición visual estilo Matterport está disponible desde el panel de administración de la propiedad.
+          </p>
+          <blockquote>
+            <strong>Flujo completo:</strong> Inventario → Propiedad → Tours 360° → Agregar ambiente → Capturar fotos (o subir desde cámara 360°) → Posicionar hotspots → Publicar.
+          </blockquote>
+
+          {/* 7. CATÁLOGO PÚBLICO */}
+          <h2>7. Catálogo Público de Propiedades</h2>
+          <p>
+            Cada organización tiene un catálogo de propiedades accesible públicamente sin requerir login, optimizado para captación de leads y campañas de marketing digital.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
+            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <Globe className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">URL del Catálogo</span>
+              </div>
+              <p className="text-xs text-slate-600">Accesible en <code>/{"{orgSlug}"}/catalog</code>. Cada inmobiliaria tiene su propio catálogo con su marca. El link se puede compartir directamente desde el panel de control de la organización.</p>
+            </div>
+            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <List className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Visibilidad de Propiedades</span>
+              </div>
+              <p className="text-xs text-slate-600">Una propiedad aparece en el catálogo <strong>solo si</strong> su estado es <code>AVAILABLE</code> y tiene <code>publicVisible = true</code>. El agente controla ambas condiciones desde el panel de inventario.</p>
+            </div>
+          </div>
+          <h3>Funcionalidades del Catálogo</h3>
+          <ul>
+            <li><strong>Badge "Tour 360°":</strong> Aparece automáticamente en la card de la propiedad si esta tiene panoramas cargados, diferenciando visualmente las propiedades con experiencia inmersiva.</li>
+            <li><strong>Filtros por URL:</strong> Los filtros de Venta / Alquiler / Con Tour operan mediante parámetros en la URL (<code>?type=sale</code>, <code>?type=rent</code>, <code>?hasTour=true</code>), lo que permite crear links directos a segmentos específicos del catálogo para campañas.</li>
+            <li><strong>Compartir desde el panel:</strong> Desde la sección de Configuración → Integraciones → WhatsApp, el operador puede copiar el link del catálogo preconfigurado con el código de seguimiento de WhatsApp.</li>
+            <li><strong>SEO optimizado:</strong> El catálogo y cada página de propiedad tienen metadatos OpenGraph generados dinámicamente para mejorar el preview en redes sociales y la indexación en buscadores.</li>
+          </ul>
+
+          {/* 8. AGENTE IA EN EL TOUR */}
+          <h2>8. Agente IA en el Tour Virtual</h2>
+          <p>
+            Cada propiedad con tour 360° publicado incluye un chat flotante con inteligencia artificial accesible en <code>/map/{"{propertyId}"}</code>. El agente responde preguntas en tiempo real sin que el visitante necesite crear una cuenta.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 not-prose mb-8">
+            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <MessageSquare className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Datos Reales de DB</span>
+              </div>
+              <p className="text-xs text-slate-600">El agente responde con información real extraída de la base de datos: precio, ambientes, superficie, barrio, estado de disponibilidad. No alucina datos — si un campo no existe, lo indica.</p>
+            </div>
+            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <Map className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Contexto de la Propiedad</span>
+              </div>
+              <p className="text-xs text-slate-600">El agente conoce la propiedad que el visitante está recorriendo: título, dirección, barrio, precio, descripción completa, y el nombre de la inmobiliaria propietaria del tour.</p>
+            </div>
+            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <Bot className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Español Argentino</span>
+              </div>
+              <p className="text-xs text-slate-600">El agente responde en español argentino con voseo natural. Opera con <strong>temperature 0.35</strong> para priorizar la precisión factual sobre la creatividad, evitando respuestas imprecisas en datos de valor.</p>
+            </div>
+          </div>
+          <blockquote>
+            <strong>Sin fricción para el visitante:</strong> El chat no requiere login, número de teléfono ni ningún dato previo. El visitante puede preguntar directamente "¿cuánto vale?", "¿cuántos ambientes tiene?" o "¿está disponible para alquilar?" y recibir la respuesta inmediatamente dentro del visor.
+          </blockquote>
 
         </article>
 

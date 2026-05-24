@@ -5,6 +5,8 @@ import { requirePlatformAdmin } from "@/server/auth/access";
 import { MessageDirection, MessageDeliveryStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { updateGlobalSetting, getGlobalSettings } from "@/app/platform/settings/actions/settings-actions";
+import { resolveActiveChannelByOrgId } from "@/server/whatsapp/channel-resolver";
+import { attemptWhatsAppOutboundDelivery } from "@/modules/automations/delivery-service";
 
 /**
  * Fetches all support conversations (those routed to the platform org).
@@ -81,10 +83,10 @@ export async function sendSupportResponse(conversationId: string, text: string) 
   });
 
   if (!conversation) throw new Error("Conversation not found");
+  if (!conversation.participantPhone) throw new Error("Conversation has no participant phone");
 
-  // In a real scenario, this would trigger an outbound WhatsApp message via a dedicated service.
-  // For now, we persist it so it shows in the UI immediately.
-  await prisma.message.create({
+  // Persist the outbound message first so it appears in the UI immediately.
+  const newMessage = await prisma.message.create({
     data: {
       organizationId: conversation.organizationId,
       conversationId,
@@ -92,9 +94,54 @@ export async function sendSupportResponse(conversationId: string, text: string) 
       body: text,
       senderName: sessionUser.fullName,
       sentAt: new Date(),
-      deliveryStatus: MessageDeliveryStatus.SENT,
+      deliveryStatus: MessageDeliveryStatus.PENDING,
     },
   });
+
+  // Attempt WhatsApp delivery via the active channel for this org.
+  const channel = await resolveActiveChannelByOrgId(prisma, conversation.organizationId);
+
+  if (channel) {
+    const deliveryResult = await attemptWhatsAppOutboundDelivery(prisma, {
+      organizationId: conversation.organizationId,
+      conversationId,
+      outboundMessageId: newMessage.id,
+      responseText: text,
+      recipientPhone: conversation.participantPhone,
+      senderKind: "human",
+      channel: {
+        provider: channel.provider,
+        phoneNumberId: channel.phoneNumberId,
+        instanceName: channel.instanceName,
+        accessToken: channel.accessToken,
+      },
+    });
+
+    await prisma.message.update({
+      where: { id: newMessage.id },
+      data: {
+        deliveryStatus:
+          deliveryResult.deliveryStatus === "delivered"
+            ? MessageDeliveryStatus.SENT
+            : deliveryResult.deliveryStatus === "skipped"
+              ? MessageDeliveryStatus.SKIPPED
+              : MessageDeliveryStatus.FAILED,
+        providerMessageId: deliveryResult.providerMessageId ?? null,
+        deliveryError: deliveryResult.deliveryStatus !== "delivered" ? deliveryResult.reason : null,
+        deliveryAttemptedAt: deliveryResult.attemptedAt ? new Date(deliveryResult.attemptedAt) : new Date(),
+      },
+    });
+  } else {
+    // No active WA channel — mark as SKIPPED so the operator knows delivery was not attempted.
+    await prisma.message.update({
+      where: { id: newMessage.id },
+      data: {
+        deliveryStatus: MessageDeliveryStatus.SKIPPED,
+        deliveryError: "no-active-channel",
+        deliveryAttemptedAt: new Date(),
+      },
+    });
+  }
 
   revalidatePath("/platform/support");
   return { success: true };
