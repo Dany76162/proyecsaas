@@ -142,9 +142,23 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
                 </li>
                 <li className="flex gap-3 text-sm text-slate-600">
                   <span className="flex-shrink-0 h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">3</span>
-                  Tocá <b>Vincular un dispositivo</b> y apunta tu cámara a este código.
+                  Tocá <b>Vincular un dispositivo</b> y apuntá tu cámara a este código.
                 </li>
               </ol>
+
+              {/* Banner de mitigación B2B sobre advertencia de San Francisco */}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 shadow-sm">
+                <div className="flex gap-3">
+                  <span className="text-xl select-none">🔒</span>
+                  <div>
+                    <h5 className="text-xs font-bold text-amber-900">Nota de seguridad importante:</h5>
+                    <p className="mt-1 text-xs leading-5 text-amber-800">
+                      Al escanear el código, WhatsApp podría advertirte que estás vinculando un dispositivo en <b>San Francisco, California</b>. Esto es <b>100% normal y seguro</b>: se debe a que nuestros servidores de procesamiento de IA de alta velocidad están alojados en la nube de Railway en EE.UU. Hacé clic en <b>"Vincular dispositivo"</b> en tu celular con absoluta confianza.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center gap-4">
                 <button
                   onClick={fetchQr}

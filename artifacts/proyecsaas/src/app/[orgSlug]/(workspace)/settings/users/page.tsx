@@ -54,6 +54,33 @@ export default async function UsersSettingsPage({
         </div>
       </section>
 
+      {/* Tarjeta explicativa sobre accesos de equipo y roles */}
+      <section className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <span>👥</span> ¿Cómo funciona el acceso para tu equipo?
+            </h3>
+            <p className="text-sm text-slate-500 leading-relaxed max-w-3xl">
+              Podés invitar a todos los asesores y empleados de tu inmobiliaria enviándoles un enlace personal de registro. Esto permite colaborar en el panel, dar seguimiento a leads e intervenir manualmente en chats de WhatsApp cuando sea necesario, sin compartir claves maestras.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { role: "Titular (Owner)", desc: "Dueño de la inmobiliaria. Acceso total a configuraciones, facturación y eliminación de datos." },
+            { role: "Administrador (Admin)", desc: "Gestión completa de propiedades, agentes de IA, invitaciones de equipo y asignación de números." },
+            { role: "Agente de ventas (Agent)", desc: "Puede ver propiedades, gestionar sus propios leads asignados y chatear con clientes." },
+            { role: "Asistente (Assistant)", desc: "Acceso de lectura y actualización básica para mantenimiento de catálogo y fichas." }
+          ].map((r) => (
+            <div key={r.role} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">{r.role}</h4>
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{r.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="grid gap-6 md:grid-cols-3">
         <MetricCard
           label="Miembros"

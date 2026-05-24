@@ -109,47 +109,50 @@ export function WhatsAppConnectionForm({
 
       {/* ── CASE A: Own active channel ────────────────────────────────────────── */}
       {hasOwnChannel && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-sm font-bold text-emerald-900">Canal propio activo</p>
+                <p className="text-sm font-bold text-emerald-900">Canal exclusivo y personalizado activo</p>
               </div>
-              <p className="mt-1 text-sm leading-6 text-emerald-800">
-                Tu inmobiliaria está usando un número de WhatsApp Business exclusivo. Los mensajes llegan directo a tu marca.
+              <p className="mt-2 text-sm leading-6 text-emerald-800 font-medium">
+                Tu inmobiliaria está operando con su propia línea exclusiva de WhatsApp Business. Todas las consultas de tus clientes y las respuestas automáticas de tu Agente IA se procesan directamente desde tu propio número, reforzando la identidad de tu marca.
               </p>
             </div>
             <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-              Personalizado
+              Marca Propia
             </span>
           </div>
           <div className="mt-4 p-3 rounded-xl bg-white/50 border border-emerald-100 inline-block">
-            <p className="text-sm font-mono font-bold text-emerald-950">+{activeTenantChannel.displayPhoneNumber}</p>
+            <p className="text-sm font-mono font-bold text-emerald-950">📱 +{activeTenantChannel.displayPhoneNumber}</p>
           </div>
         </div>
       )}
 
       {/* ── CASE B: Platform fallback ────────────────────────────────────────── */}
       {isPlatformFallback && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-blue-500" />
-                <p className="text-sm font-bold text-blue-900">Canal compartido de plataforma</p>
+                <p className="text-sm font-bold text-blue-900">Canal rápido compartido (Línea Oficial)</p>
               </div>
-              <p className="mt-1 text-sm leading-6 text-blue-800">
-                Este canal te permite recibir consultas mientras configurás tu número propio. No es un número exclusivo de tu inmobiliaria.
+              <p className="mt-2 text-sm leading-6 text-blue-800 font-medium">
+                Estás utilizando la línea oficial compartida de la plataforma (<b>+{platformPhone}</b>). Este canal es 100% gratuito y está listo para recibir consultas de inmediato sin configuraciones.
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-blue-700 bg-white/40 rounded-xl p-3 border border-blue-100/50">
+                💡 <b>¿Cómo se enrutan los mensajes?</b> Al compartir el catálogo, el sistema antepone un código único como <code>[ref:{orgSlug}]</code> al inicio del mensaje del cliente. Nuestro sistema inteligente lo lee de forma invisible para la IA y deriva el lead a tu panel de control de forma automática.
               </p>
             </div>
             <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
-              Fallback
+              Compartido
             </span>
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link href={`/${orgSlug}/settings/integrations/whatsapp`} className="text-xs font-bold text-blue-700 hover:underline">
-              Solicitar número propio →
+            <Link href={`/${orgSlug}/settings/integrations/whatsapp`} className="text-xs font-bold text-blue-800 hover:underline flex items-center gap-1">
+              🚀 Conectar mi número propio (QR o Meta) →
             </Link>
           </div>
         </div>

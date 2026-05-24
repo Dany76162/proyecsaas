@@ -422,6 +422,53 @@ export default async function WorkspaceManualUsoPage({
           </SectionCard>
         </div>
 
+        {/* Nueva sección explicativa: WhatsApp Híbrido y los 3 Niveles de Conexión */}
+        <div className="[break-inside:avoid] [page-break-inside:avoid]">
+          <SectionCard
+            eyebrow="WhatsApp Híbrido"
+            title="Los 3 Niveles de Conexión para tu Inmobiliaria"
+            description="Entendé cómo conectar WhatsApp y elegí el nivel de independencia adecuado para tu marca."
+          >
+            <div className="grid gap-6 lg:grid-cols-3 print:grid-cols-1">
+              <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-5 space-y-3">
+                <span className="text-2xl">🟢 Nivel 1</span>
+                <h4 className="text-sm font-bold text-slate-900">Canal Compartido (Cero Configuración)</h4>
+                <p className="text-xs leading-relaxed text-slate-600">
+                  Usa la línea oficial compartida de la plataforma de forma automática. Tus clientes tocan tu enlace de captación y entran directo a tu panel gracias a un código único invisible al inicio del mensaje.
+                </p>
+                <p className="text-xs font-semibold text-blue-700 bg-white/60 p-2.5 rounded-xl border border-blue-100">
+                  👍 Ideal para probar el sistema y ver la IA en funcionamiento en 10 segundos.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 space-y-3">
+                <span className="text-2xl">🔵 Nivel 2</span>
+                <h4 className="text-sm font-bold text-slate-900">Conexión Rápida QR (Tu Propio Número)</h4>
+                <p className="text-xs leading-relaxed text-slate-600">
+                  Escaneás un código QR desde la sección de integraciones y tu Agente IA comienza a responder consultas directamente desde tu número personalizado o comercial.
+                </p>
+                <div className="text-xs text-emerald-800 bg-white/70 p-3 rounded-xl border border-emerald-100/50 space-y-1">
+                  <p className="font-bold">🔒 Advertencia Geográfica:</p>
+                  <p className="leading-relaxed">
+                    Al escanear, WhatsApp podría advertirte que estás vinculando un dispositivo en <b>San Francisco, EE.UU.</b> Esto es <b>100% seguro y normal</b>: se debe a que la infraestructura de IA está alojada en la nube de Railway. Podés presionar <b>"Vincular dispositivo"</b> con total tranquilidad.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 space-y-3">
+                <span className="text-2xl">🟣 Nivel 3</span>
+                <h4 className="text-sm font-bold text-slate-900">API Oficial de Meta (Corporativo)</h4>
+                <p className="text-xs leading-relaxed text-slate-600">
+                  Conexión oficial de nivel empresarial a través de Meta Business Suite. No requiere escanear códigos QR, nunca se desconecta y elimina cualquier advertencia de geolocalización.
+                </p>
+                <p className="text-xs font-semibold text-indigo-700 bg-white/60 p-2.5 rounded-xl border border-indigo-100">
+                  👑 Ideal para inmobiliarias de gran volumen, marcas corporativas y equipos comerciales grandes.
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+
         <div className="grid gap-5 xl:grid-cols-2 print:grid-cols-1">
           <div className="[break-inside:avoid] [page-break-inside:avoid]">
             <SectionCard
