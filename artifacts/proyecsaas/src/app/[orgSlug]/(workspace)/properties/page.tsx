@@ -225,11 +225,11 @@ export default async function PropertiesPage({
       <OnboardingFooter
         orgSlug={orgSlug}
         stepKey="properties"
-        stepNumber={4}
-        title="Agregar / revisar propiedades"
-        description="Asegurá tu inventario. Podés sincronizar automáticamente o cargar a mano."
-        nextLabel="Continuar al paso 5"
-        nextRoute={`/${orgSlug}/agents`}
+        stepNumber={2}
+        title="Cargá tu inventario"
+        description="Tenés las propiedades listas. El siguiente paso es conectar tu WhatsApp para que el agente IA pueda responder consultas."
+        nextLabel="Continuar al paso 3 → Conectar WhatsApp"
+        nextRoute={`/${orgSlug}/settings/integrations/whatsapp`}
       />
     </>
   );

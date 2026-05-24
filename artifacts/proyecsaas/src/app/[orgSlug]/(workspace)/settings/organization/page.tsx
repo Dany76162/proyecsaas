@@ -129,8 +129,8 @@ export default async function OrganizationSettingsPage({
         stepNumber={1}
         title="Configuración base"
         description="Revisá los datos de tu inmobiliaria para que la IA tenga el contexto correcto."
-        nextLabel="Continuar al paso 2"
-        nextRoute={`/${orgSlug}/leads`}
+        nextLabel="Continuar al paso 2 → Propiedades"
+        nextRoute={`/${orgSlug}/properties`}
       />
     </>
   );

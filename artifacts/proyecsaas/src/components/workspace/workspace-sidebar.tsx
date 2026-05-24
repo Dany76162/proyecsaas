@@ -18,6 +18,7 @@ import {
   Radio,
   Users2,
   Settings,
+  Smartphone,
 } from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
@@ -37,7 +38,6 @@ const OPERATION_NAV = [
   { label: "Inicio",         path: "",              icon: LayoutDashboard },
   { label: "Bienvenida",     path: "/onboarding",   icon: Rocket },
   { label: "Captación",      path: "/captacion",    icon: Megaphone },
-  { label: "Manual de uso",  path: "/manual-uso",   icon: BookOpen },
   { label: "Prospectos",     path: "/leads",        icon: Users },
   { label: "Conversaciones", path: "/conversations",icon: MessageSquare },
   { label: "Visitas",        path: "/visits",       icon: Calendar },
@@ -50,9 +50,10 @@ const AUTOMATION_NAV = [
 ] as const;
 
 const MANAGEMENT_NAV = [
-  { label: "Disponibilidad", path: "/settings/availability", icon: Radio },
-  { label: "Equipo",         path: "/settings/users",        icon: Users2 },
-  { label: "Organización",   path: "/settings/organization", icon: Settings },
+  { label: "WhatsApp",       path: "/settings/integrations/whatsapp", icon: Smartphone },
+  { label: "Disponibilidad", path: "/settings/availability",          icon: Radio },
+  { label: "Equipo",         path: "/settings/users",                 icon: Users2 },
+  { label: "Organización",   path: "/settings/organization",          icon: Settings },
 ] as const;
 
 const HELP_NAV = [

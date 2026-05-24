@@ -20,9 +20,9 @@ function buildOnboardingSteps(
   status: {
     profileReady: boolean;
     propertiesReady: boolean;
-    tourReady: boolean;
     whatsappReady: boolean;
     agentReady: boolean;
+    tourReady: boolean;
   },
 ) {
   return [
@@ -30,7 +30,8 @@ function buildOnboardingSteps(
       number: 1,
       key: "perfil",
       title: "Completá el perfil de tu inmobiliaria",
-      description: "Agregá el nombre, ciudad y WhatsApp de contacto. Esto es lo que el cliente ve cuando consulta por una propiedad.",
+      description:
+        "Agregá el nombre, ciudad y WhatsApp de contacto. Esto es lo que el cliente ve cuando consulta por una propiedad.",
       href: `/${orgSlug}/settings/organization`,
       cta: "Completar perfil",
       serverStatus: (status.profileReady ? "completed" : "pending") as "completed" | "pending",
@@ -39,37 +40,41 @@ function buildOnboardingSteps(
       number: 2,
       key: "propiedad",
       title: "Cargá tu primera propiedad",
-      description: "Creá una propiedad con precio, tipo y dirección. Activala como disponible y marcala como pública para que aparezca en tu catálogo.",
+      description:
+        "Creá una propiedad con precio, tipo y dirección. Activala como disponible y marcala como pública para que aparezca en tu catálogo.",
       href: `/${orgSlug}/properties`,
       cta: "Ir a propiedades",
       serverStatus: (status.propertiesReady ? "completed" : "pending") as "completed" | "pending",
     },
     {
       number: 3,
-      key: "tour",
-      title: "Hacé tu primer tour 360° con el celular",
-      description: "Abrí una propiedad, tocá 'Escanear con celular' y seguí la guía. En 5 minutos tenés un recorrido virtual inmersivo listo para compartir.",
-      href: `/${orgSlug}/properties`,
-      cta: "Ir a propiedades",
-      serverStatus: (status.tourReady ? "completed" : "pending") as "completed" | "pending",
-    },
-    {
-      number: 4,
       key: "whatsapp",
-      title: "Conectá tu WhatsApp",
-      description: "Vinculá tu número de WhatsApp para que el sistema reciba consultas automáticamente y el agente IA pueda responder por vos.",
-      href: `/${orgSlug}/captacion`,
+      title: "Conectá tu WhatsApp Business",
+      description:
+        "Vinculá el número de WhatsApp de tu inmobiliaria. A partir de ahí el sistema recibe consultas y el agente IA puede responder por vos, las 24 horas.",
+      href: `/${orgSlug}/settings/integrations/whatsapp`,
       cta: "Conectar WhatsApp",
       serverStatus: (status.whatsappReady ? "completed" : "pending") as "completed" | "pending",
     },
     {
-      number: 5,
+      number: 4,
       key: "agente",
       title: "Activá tu agente IA",
-      description: "Configurá cómo se presenta el asistente, qué zonas y tipos de propiedades maneja, y activalo. A partir de ahí responde solo.",
+      description:
+        "Configurá cómo se presenta el asistente, qué zonas y tipos de propiedades maneja, y activalo. A partir de ahí responde solo.",
       href: `/${orgSlug}/agents`,
       cta: "Configurar agente",
       serverStatus: (status.agentReady ? "completed" : "pending") as "completed" | "pending",
+    },
+    {
+      number: 5,
+      key: "tour",
+      title: "Hacé tu primer tour 360° (opcional)",
+      description:
+        "Abrí una propiedad, tocá 'Escanear con celular' y seguí la guía. En 5 minutos tenés un recorrido virtual inmersivo listo para compartir. Este paso es opcional.",
+      href: `/${orgSlug}/properties`,
+      cta: "Ir a propiedades",
+      serverStatus: (status.tourReady ? "completed" : "pending") as "completed" | "pending",
     },
   ];
 }
@@ -107,9 +112,9 @@ export default async function WorkspaceOnboardingPage({
   const steps = buildOnboardingSteps(orgSlug, {
     profileReady: setupStatus.profileComplete,
     propertiesReady: setupStatus.propertiesLoaded,
-    tourReady: hasTour,
     whatsappReady: setupStatus.whatsappConnected,
     agentReady: setupStatus.agentConfigured,
+    tourReady: hasTour,
   });
 
   return (

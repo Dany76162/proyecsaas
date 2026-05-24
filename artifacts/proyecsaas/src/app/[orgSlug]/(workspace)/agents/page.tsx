@@ -179,10 +179,10 @@ export default async function AgentsPage({
       <OnboardingFooter
         orgSlug={orgSlug}
         stepKey="agents"
-        stepNumber={5}
-        title="Activar agentes / automatizaciones"
-        description="Configurá tus agentes IA para que atiendan las 24hs. ¡Ya estás casi listo!"
-        nextLabel="Finalizar Onboarding"
+        stepNumber={4}
+        title="Activá tu agente IA"
+        description="Configurá el agente, asignále el número de WhatsApp que conectaste y activalo. ¡Listo para atender las 24hs!"
+        nextLabel="Finalizar configuración"
         nextRoute={`/${orgSlug}/onboarding`}
       />
     </>
