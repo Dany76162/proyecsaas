@@ -26,6 +26,7 @@ export function PanoramaViewer({
 }: PanoramaViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<any>(null)
+  const hotspotStyleInjected = useRef(false)
   const [activeSceneIndex, setActiveSceneIndex] = useState(0)
 
   useEffect(() => {
@@ -111,7 +112,10 @@ export function PanoramaViewer({
           white-space: nowrap !important;
         }
       `
-      document.head.appendChild(hotspotStyle)
+      if (!hotspotStyleInjected.current) {
+        document.head.appendChild(hotspotStyle)
+        hotspotStyleInjected.current = true
+      }
 
       if (!containerRef.current) return
       

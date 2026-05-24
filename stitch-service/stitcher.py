@@ -57,7 +57,7 @@ def _build_rotation_matrix(yaw_deg: float, pitch_deg: float) -> np.ndarray:
     tilt_rad = math.radians(pitch_deg - 90.0)
 
     # Primero deshacemos el yaw, luego el tilt
-    R = _rot_y(-tilt_rad) @ _rot_z(-yaw_rad)
+    R = _rot_y(tilt_rad) @ _rot_z(-yaw_rad)
     return R
 
 
@@ -86,12 +86,13 @@ def _process_frame(
 
     cx, cy, cz = cam_pts[0], cam_pts[1], cam_pts[2]
 
-    # Sólo los puntos frente a la cámara
-    front_mask = cz > 1e-6
+    # Sólo los puntos frente a la cámara (cámara mira hacia +X en camera space)
+    front_mask = cx > 1e-6
 
     # Proyección rectilineal normalizada [-1, 1]
-    fx = np.where(front_mask, cx / (cz * tan_h), np.inf)
-    fy = np.where(front_mask, cy / (cz * tan_v), np.inf)
+    # lateral = Y/X,  vertical = -Z/X  (- por conv. imagen: row 0 = arriba)
+    fx = np.where(front_mask, cy / (cx * tan_h), np.inf)
+    fy = np.where(front_mask, -cz / (cx * tan_v), np.inf)
 
     # Dentro del frame
     in_frame = front_mask & (fx >= -1.0) & (fx <= 1.0) & (fy >= -1.0) & (fy <= 1.0)
