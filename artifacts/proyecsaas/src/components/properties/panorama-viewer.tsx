@@ -29,6 +29,8 @@ export function PanoramaViewer({
   const hotspotStyleInjected = useRef(false)
   const [activeSceneIndex, setActiveSceneIndex] = useState(0)
 
+  const safeScenes = scenes || []
+
   useEffect(() => {
     setActiveSceneIndex(0)
   }, [scenes])
@@ -45,7 +47,7 @@ export function PanoramaViewer({
   }
 
   useEffect(() => {
-    if (!containerRef.current || scenes.length === 0) return
+    if (!containerRef.current || safeScenes.length === 0) return
 
     // Limpiar instancia anterior
     if (viewerRef.current) {
@@ -120,11 +122,11 @@ export function PanoramaViewer({
       if (!containerRef.current) return
       
       try {
-        if (scenes.length === 1) {
+        if (safeScenes.length === 1) {
           // @ts-ignore
           viewerRef.current = window.pannellum.viewer(containerRef.current, {
             type: 'equirectangular',
-            panorama: scenes[0].url,
+            panorama: safeScenes[0].url,
             autoLoad: true,
             hfov: 100,
             showControls: true,
@@ -133,18 +135,18 @@ export function PanoramaViewer({
           })
         } else {
           const scenesConfig: Record<string, any> = {}
-          scenes.forEach((scene, i) => {
+          safeScenes.forEach((scene, i) => {
             const hotSpots = []
 
             // Hotspot hacia la escena siguiente (en el piso, usando pitch/yaw guardados o por defecto)
-            if (i < scenes.length - 1) {
+            if (i < safeScenes.length - 1) {
               const customPitch = typeof scene.hotspotPitch === 'number' ? scene.hotspotPitch : -30;
               const customYaw = typeof scene.hotspotYaw === 'number' ? scene.hotspotYaw : 0;
               hotSpots.push({
                 pitch: customPitch,
                 yaw: customYaw,
                 type: 'scene',
-                text: scenes[i + 1].label,
+                text: safeScenes[i + 1].label,
                 sceneId: `scene-${i + 1}`,
                 cssClass: 'pv-hotspot-scene',
               })
@@ -156,7 +158,7 @@ export function PanoramaViewer({
                 pitch: -30,
                 yaw: 180,
                 type: 'scene',
-                text: scenes[i - 1].label,
+                text: safeScenes[i - 1].label,
                 sceneId: `scene-${i - 1}`,
                 cssClass: 'pv-hotspot-scene',
               })
@@ -209,14 +211,14 @@ export function PanoramaViewer({
     }
   }, [scenes, isEditingHotspot, onCoordsSelected])
 
-  if (scenes.length === 0) return null
+  if (safeScenes.length === 0) return null
 
   return (
     <div className={`relative flex flex-col bg-black ${className}`}>
       <div ref={containerRef} className="flex-1 w-full min-h-0"></div>
-      {scenes.length > 1 && (
+      {safeScenes.length > 1 && (
         <div className="bg-slate-950/90 border-t border-white/10 px-4 py-3 flex justify-center gap-2 overflow-x-auto scrollbar-none">
-          {scenes.map((scene, i) => (
+          {safeScenes.map((scene, i) => (
             <button
               key={i}
               type="button"

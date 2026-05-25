@@ -26,13 +26,13 @@ export function MediaManager({
   floorPlanUrl: initialFloorPlanUrl,
 }: MediaManagerProps) {
   const router = useRouter();
-  const [images, setImages] = useState(initialImages);
-  const [panoramas, setPanoramas] = useState(initialPanoramas);
+  const [images, setImages] = useState(initialImages || []);
+  const [panoramas, setPanoramas] = useState(initialPanoramas || []);
   const [floorPlanUrl, setFloorPlanUrl] = useState(initialFloorPlanUrl);
   const [activeCategory, setActiveCategory] = useState<MediaCategory>(
-    initialPanoramas.length > 0 ? "PANORAMA" : "REAL",
+    (initialPanoramas || []).length > 0 ? "PANORAMA" : "REAL",
   );
-  const [activePanoramaId, setActivePanoramaId] = useState<string | null>(initialPanoramas[0]?.id ?? null);
+  const [activePanoramaId, setActivePanoramaId] = useState<string | null>((initialPanoramas || [])[0]?.id ?? null);
   const [gyroEnabled, setGyroEnabled] = useState(false);
   const [isEditingHotspot, setIsEditingHotspot] = useState(false);
   const [isSavingHotspot, setIsSavingHotspot] = useState(false);
@@ -88,14 +88,15 @@ export function MediaManager({
   const nextSceneLabel = nextPanorama ? (nextPanorama.roomName ?? nextPanorama.label ?? `Escena ${activeIndex + 2}`) : '';
 
   useEffect(() => {
-    setImages(initialImages);
+    setImages(initialImages || []);
   }, [initialImages]);
 
   useEffect(() => {
-    setPanoramas(initialPanoramas);
+    const safePanoramas = initialPanoramas || [];
+    setPanoramas(safePanoramas);
     setActivePanoramaId((current) => {
-      if (current && initialPanoramas.some((panorama) => panorama.id === current)) return current;
-      return initialPanoramas[0]?.id ?? null;
+      if (current && safePanoramas.some((panorama) => panorama.id === current)) return current;
+      return safePanoramas[0]?.id ?? null;
     });
   }, [initialPanoramas]);
 
