@@ -384,6 +384,38 @@ Devuelve un JSON con una lista:
     return { success: true, candidates: enrichedCandidates };
   } catch (err: any) {
     console.error("Error in analyzeProspectsAction:", err);
+    
+    // Check for OpenAI quota / balance errors
+    const isQuotaError = 
+      err.status === 429 || 
+      err.code === "insufficient_quota" || 
+      (err.message && (
+        err.message.toLowerCase().includes("quota") || 
+        err.message.toLowerCase().includes("limit") || 
+        err.message.toLowerCase().includes("credit") || 
+        err.message.toLowerCase().includes("429")
+      ));
+
+    if (isQuotaError) {
+      try {
+        await prisma.agentLog.create({
+          data: {
+            scope: "PLATFORM",
+            level: "ERROR",
+            message: "OpenAI Quota Error (429): Insufficient balance/credits in account.",
+            metadata: { error: err.message }
+          }
+        });
+      } catch (logErr) {
+        console.error("Failed to write quota error log:", logErr);
+      }
+
+      return {
+        success: false,
+        error: "Se ha agotado el saldo o la cuota de tu cuenta de OpenAI. Por favor, recargá saldo en tu panel de facturación de OpenAI (platform.openai.com) para poder continuar usando el Buscador Inteligente."
+      };
+    }
+
     return {
       success: false,
       error: err.message || "Ocurrió un error inesperado al analizar los prospectos con IA."
