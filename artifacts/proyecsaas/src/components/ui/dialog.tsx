@@ -1,25 +1,29 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Dialog = ({ 
   children, 
   open, 
-  onOpenChange 
+  onOpenChange,
+  className,
+  contentClassName,
 }: { 
   children: React.ReactNode; 
   open: boolean; 
   onOpenChange: (open: boolean) => void;
+  className?: string;
+  contentClassName?: string;
 }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 print:hidden">
+    <div className={cn("fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 print:hidden", className)}>
       <div 
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative w-full max-w-lg z-50">
+      <div className={cn("relative w-full max-w-lg z-50", contentClassName)}>
         {children}
       </div>
     </div>

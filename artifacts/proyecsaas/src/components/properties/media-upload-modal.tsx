@@ -151,6 +151,75 @@ export async function uploadToPropertyMedia(
   });
 }
 
+async function compressImageIfNeeded(file: File, category: UploadCategory): Promise<File> {
+  const maxSize = 8 * 1024 * 1024; // 8MB
+  if (file.size <= maxSize || !file.type.startsWith("image/")) {
+    return file;
+  }
+
+  return new Promise<File>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        const maxDimension = category === "PANORAMA" ? 4096 : 2048;
+
+        if (category === "PANORAMA") {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file); // fallback
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const compressedFile = new File([blob], file.name, {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          "image/jpeg",
+          0.85,
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function MediaUploadModal({
   open,
   orgSlug,
@@ -206,7 +275,8 @@ export function MediaUploadModal({
 
     startTransition(async () => {
       try {
-        const url = await uploadToPropertyMedia(file, category, orgSlug, propertyId, setProgress);
+        const fileToUpload = await compressImageIfNeeded(file, category);
+        const url = await uploadToPropertyMedia(fileToUpload, category, orgSlug, propertyId, setProgress);
         const payload: UploadedMediaPayload = {
           url,
           category,

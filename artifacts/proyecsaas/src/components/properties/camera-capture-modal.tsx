@@ -372,8 +372,6 @@ export function CameraCaptureModal({
           audio: false,
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
           },
         });
 
@@ -477,17 +475,36 @@ export function CameraCaptureModal({
     const video = videoRef.current;
     if (!video || !cameraReady) return null;
 
+    const videoWidth = video.videoWidth || 1280;
+    const videoHeight = video.videoHeight || 720;
+
+    let targetWidth = videoWidth;
+    let targetHeight = videoHeight;
+    const maxDimension = 960;
+
+    if (videoWidth > videoHeight) {
+      if (videoWidth > maxDimension) {
+        targetWidth = maxDimension;
+        targetHeight = Math.round((videoHeight * maxDimension) / videoWidth);
+      }
+    } else {
+      if (videoHeight > maxDimension) {
+        targetHeight = maxDimension;
+        targetWidth = Math.round((videoWidth * maxDimension) / videoHeight);
+      }
+    }
+
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
 
     const context = canvas.getContext("2d");
     if (!context) return null;
 
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    context.drawImage(video, 0, 0, targetWidth, targetHeight);
 
     return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.8);
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.75);
     });
   };
 
@@ -551,7 +568,12 @@ export function CameraCaptureModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      className="p-0 sm:p-0"
+      contentClassName="max-w-none w-screen h-[100dvh]"
+    >
       <DialogContent className="h-[100dvh] w-screen max-w-none overflow-hidden border-none bg-black p-0 text-white sm:h-[100dvh] sm:max-w-none sm:rounded-none">
         <div className="relative flex h-full flex-col bg-black">
           {modalStep === "SELECT_AMBIENT" && (
