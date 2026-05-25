@@ -1,6 +1,7 @@
 import "server-only";
 
 import OpenAI from "openai";
+import { getOpenAIClient as getSharedOpenAIClient } from "@/lib/ai/openai";
 import { prisma } from "@/server/db/prisma";
 import {
   AgentLogLevel,
@@ -798,14 +799,7 @@ export async function getAvailableChannels(orgId: string) {
 }
 
 export function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY no encontrado en el runtime");
-  }
-  return new OpenAI({
-    apiKey,
-    baseURL: process.env.OPENAI_BASE_URL || undefined,
-  });
+  return getSharedOpenAIClient();
 }
 
 export function formatOpenAIPrompt({

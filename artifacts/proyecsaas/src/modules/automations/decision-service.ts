@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import { getOpenAIClient as getSharedOpenAIClient } from "@/lib/ai/openai";
 
 import type { AutomationDecision, PreparedConversationContext } from "@/modules/automations/types";
 
@@ -439,14 +440,7 @@ function getOpenAiClient() {
     return openAiClient;
   }
 
-  const apiKey = process.env["AI_INTEGRATIONS_OPENAI_API_KEY"] ?? process.env.OPENAI_API_KEY ?? "placeholder";
-  const baseURL = process.env["AI_INTEGRATIONS_OPENAI_BASE_URL"] ?? process.env.OPENAI_BASE_URL ?? undefined;
-
-  openAiClient = new OpenAI({
-    apiKey,
-    baseURL,
-  });
-
+  openAiClient = getSharedOpenAIClient();
   return openAiClient;
 }
 

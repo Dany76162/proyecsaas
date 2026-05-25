@@ -314,15 +314,26 @@ export async function markDraftSentAction(draftId: string) {
 // ─── Analysis & Extraction ──────────────────────────────────────────────────
 
 export async function analyzeProspectsAction(rawText: string) {
-  await requirePlatformAdmin();
-  
-  if (!rawText || rawText.length < 10) {
-    throw new Error("El texto es demasiado corto para analizar.");
-  }
+  try {
+    await requirePlatformAdmin();
+    
+    if (!rawText || rawText.length < 10) {
+      throw new Error("El texto es demasiado corto para analizar.");
+    }
 
-  const openai = getOpenAIClient();
-  
-  const prompt = `Analiza el siguiente texto y extrae una lista de empresas candidatas para prospección comercial en el rubro inmobiliario.
+    // Validate API Key before calling OpenAI to provide a gorgeous user friendly Spanish error message
+    const rawKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    const isKeyDummy = !rawKey || rawKey.trim() === "" || rawKey.trim() === "dummy" || rawKey.trim() === "placeholder" || rawKey.trim() === "sk-...";
+    if (isKeyDummy) {
+      return {
+        success: false,
+        error: "La clave de OpenAI (OPENAI_API_KEY) no está configurada o es inválida en Railway. Por favor, copiá tu clave API real (sk-proj-...) desde tu panel de OpenAI y configurala en las variables de entorno de tu servicio en Railway."
+      };
+    }
+
+    const openai = getOpenAIClient();
+    
+    const prompt = `Analiza el siguiente texto y extrae una lista de empresas candidatas para prospección comercial en el rubro inmobiliario.
 Texto:
 "${rawText}"
 
@@ -347,30 +358,37 @@ Devuelve un JSON con una lista:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
-    model: OPENAI_MODEL,
-    messages: [
-      { role: "system", content: "Eres un experto en extracción de datos y lead generation para el sector inmobiliario." },
-      { role: "user", content: prompt }
-    ],
-    response_format: { type: "json_object" }
-  });
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        { role: "system", content: "Eres un experto en extracción de datos y lead generation para el sector inmobiliario." },
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" }
+    });
 
-  const content = JSON.parse(response.choices[0].message.content || '{"candidates": []}');
-  const candidates = content.candidates || [];
+    const content = JSON.parse(response.choices[0].message.content || '{"candidates": []}');
+    const candidates = content.candidates || [];
 
-  // Check for duplicates/existing clients in the database for each candidate
-  const enrichedCandidates = await Promise.all(candidates.map(async (c: any) => {
-    const duplicates = await detectPotentialDuplicates(c.email, c.website, c.companyName);
+    // Check for duplicates/existing clients in the database for each candidate
+    const enrichedCandidates = await Promise.all(candidates.map(async (c: any) => {
+      const duplicates = await detectPotentialDuplicates(c.email, c.website, c.companyName);
+      return {
+        ...c,
+        isDuplicate: duplicates.length > 0,
+        existingId: duplicates[0]?.id || null,
+        status: duplicates[0]?.status || null
+      };
+    }));
+
+    return { success: true, candidates: enrichedCandidates };
+  } catch (err: any) {
+    console.error("Error in analyzeProspectsAction:", err);
     return {
-      ...c,
-      isDuplicate: duplicates.length > 0,
-      existingId: duplicates[0]?.id || null,
-      status: duplicates[0]?.status || null
+      success: false,
+      error: err.message || "Ocurrió un error inesperado al analizar los prospectos con IA."
     };
-  }));
-
-  return { success: true, candidates: enrichedCandidates };
+  }
 }
 
 // ─── Bulk Import ───────────────────────────────────────────────────────────
@@ -435,33 +453,41 @@ export async function performWebSearchAction(params: {
   country?: string;
   region?: string;
 }) {
-  await requirePlatformAdmin();
-  
-  const { topic, city, country, region } = params;
-  if (!topic) throw new Error("El rubro/tema es obligatorio");
+  try {
+    await requirePlatformAdmin();
+    
+    const { topic, city, country, region } = params;
+    if (!topic) throw new Error("El rubro/tema es obligatorio");
 
-  // Construct a powerful search query
-  let query = `${topic}`;
-  if (city) query += ` en ${city}`;
-  if (region) query += `, ${region}`;
-  if (country) query += `, ${country}`;
-  
-  // Specific terms to find contact info
-  query += ' "email" "contacto" "web"';
+    // Construct a powerful search query
+    let query = `${topic}`;
+    if (city) query += ` en ${city}`;
+    if (region) query += `, ${region}`;
+    if (country) query += `, ${country}`;
+    
+    // Specific terms to find contact info
+    query += ' "email" "contacto" "web"';
 
-  console.log(`[ProspectingSearch] Searching for: ${query}`);
+    console.log(`[ProspectingSearch] Searching for: ${query}`);
 
-  const searchResults = await searchWebViaSerper(query);
-  
-  // Convert results to a single text block for LLM analysis
-  const resultsText = searchResults.organic?.map((r: any) => 
-    `TITLE: ${r.title}\nLINK: ${r.link}\nSNIPPET: ${r.snippet}\n---`
-  ).join("\n") || "";
+    const searchResults = await searchWebViaSerper(query);
+    
+    // Convert results to a single text block for LLM analysis
+    const resultsText = searchResults.organic?.map((r: any) => 
+      `TITLE: ${r.title}\nLINK: ${r.link}\nSNIPPET: ${r.snippet}\n---`
+    ).join("\n") || "";
 
-  if (!resultsText) {
-    return { success: true, candidates: [], message: "No se encontraron resultados relevantes." };
+    if (!resultsText) {
+      return { success: true, candidates: [], message: "No se encontraron resultados relevantes." };
+    }
+
+    // Use the existing analysis logic but with the search results
+    return await analyzeProspectsAction(`RESULTADOS DE BÚSQUEDA WEB PARA: ${query}\n\n${resultsText}`);
+  } catch (err: any) {
+    console.error("Error in performWebSearchAction:", err);
+    return {
+      success: false,
+      error: err.message || "Ocurrió un error al realizar la búsqueda web automatizada."
+    };
   }
-
-  // Use the existing analysis logic but with the search results
-  return analyzeProspectsAction(`RESULTADOS DE BÚSQUEDA WEB PARA: ${query}\n\n${resultsText}`);
 }

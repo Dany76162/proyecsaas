@@ -67,8 +67,10 @@ export function ProspectingSearchForm({ serperConfigured }: { serperConfigured: 
     setError(null);
     try {
       const res = await analyzeProspectsAction(rawText);
-      if (res.success) {
+      if (res.success && res.candidates) {
         setCandidates(res.candidates.map((c, i) => ({ ...c, selected: true, tempId: i })));
+      } else {
+        setError((res as any).error || "Error al analizar el texto.");
       }
     } catch (err: any) {
       setError(err.message || "Error al analizar el texto.");
@@ -88,8 +90,10 @@ export function ProspectingSearchForm({ serperConfigured }: { serperConfigured: 
         city: searchCity,
         country: countryName
       });
-      if (res.success) {
+      if (res.success && res.candidates) {
         setCandidates(res.candidates.map((c, i) => ({ ...c, selected: true, tempId: i })));
+      } else {
+        setError((res as any).error || "Error en la búsqueda automática.");
       }
     } catch (err: any) {
       setError(err.message || "Error en la búsqueda automática. Verificá tu SERPER_API_KEY.");
