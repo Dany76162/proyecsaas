@@ -50,8 +50,8 @@ const guidedPitchSteps = [
   { label: "Techo", targetBeta: 145, short: "T" },
 ];
 const guidedFrameCount = guidedYawSteps.length * guidedPitchSteps.length;
-const yawTolerance = 16;
-const pitchTolerance = 25;
+const yawTolerance = 10;
+const pitchTolerance = 10;
 
 function normalizeAngle(value: number | null | undefined) {
   if (typeof value !== "number" || Number.isNaN(value)) return 0;
@@ -254,7 +254,7 @@ export function CameraCaptureModal({
   const [guidedFrames, setGuidedFrames] = useState<GuidedFrame[]>([]);
   const [autoCaptureCountdown, setAutoCaptureCountdown] = useState<number | null>(null);
   const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
-  const [yawInverted, setYawInverted] = useState(false);
+  const [yawInverted, setYawInverted] = useState(true);
   const [modalStep, setModalStep] = useState<ModalStep>("SELECT_AMBIENT");
   const [selectedAmbient, setSelectedAmbient] = useState<string>("Living");
   const [customAmbient, setCustomAmbient] = useState<string>("");
