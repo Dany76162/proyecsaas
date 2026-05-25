@@ -12,6 +12,7 @@ import {
 } from "@/modules/properties/actions";
 import type { PropertyImageItem, PropertyPanoramaItem } from "@/modules/properties/types";
 import { CameraCaptureModal } from "./camera-capture-modal";
+import { ContinuousScannerModal } from "./continuous-scanner-modal";
 import {
   MediaUploadModal,
   type MediaCategory,
@@ -874,13 +875,23 @@ export function MediaPanel({
         onOpenChange={setIsModalOpen}
         onUploaded={handleUploaded}
       />
-      <CameraCaptureModal
-        open={isCameraOpen}
-        orgSlug={orgSlug}
-        propertyId={propertyId}
-        onOpenChange={setIsCameraOpen}
-        onCaptured={handleUploaded}
-      />
+      {typeof window !== "undefined" && typeof (window as any).ImageCapture !== "undefined" ? (
+        <ContinuousScannerModal
+          open={isCameraOpen}
+          orgSlug={orgSlug}
+          propertyId={propertyId}
+          onOpenChange={setIsCameraOpen}
+          onCaptured={handleUploaded}
+        />
+      ) : (
+        <CameraCaptureModal
+          open={isCameraOpen}
+          orgSlug={orgSlug}
+          propertyId={propertyId}
+          onOpenChange={setIsCameraOpen}
+          onCaptured={handleUploaded}
+        />
+      )}
     </aside>
   );
 }

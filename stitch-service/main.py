@@ -72,10 +72,10 @@ async def health():
 
 @app.post("/stitch", response_model=StitchResponse)
 async def stitch(req: StitchRequest):
-    if len(req.frames) != 18:
+    if len(req.frames) < 12 or len(req.frames) > 72:
         return JSONResponse(
             status_code=400,
-            content={"error": f"Se requieren exactamente 18 frames, recibidos: {len(req.frames)}"},
+            content={"error": f"Se requieren entre 12 y 72 frames para el escaneo continuo, recibidos: {len(req.frames)}"},
         )
 
     try:
