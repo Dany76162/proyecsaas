@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Users, ArrowLeft } from "lucide-react";
 
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
@@ -134,7 +135,33 @@ export default async function LeadDetailPage({
   ]);
 
   if (!organization || !lead) {
-    notFound();
+    return (
+      <div className="mx-auto max-w-lg text-center py-20 px-6 space-y-8 bg-white border border-slate-200/60 rounded-3xl shadow-soft">
+        <div className="relative mx-auto w-24 h-24 bg-slate-50 border border-slate-100 rounded-[2rem] flex items-center justify-center group transition-transform hover:scale-105 duration-500">
+          <Users className="h-10 w-10 text-slate-400" />
+          <div className="absolute -top-1 -right-1 bg-slate-900 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
+            404
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Prospecto no encontrado</h2>
+          <p className="text-slate-500 max-w-sm mx-auto text-[15px] leading-relaxed font-medium">
+            El prospecto que estás intentando ver no existe en este espacio de trabajo o ha sido archivado.
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <Link
+            href={`/${orgSlug}/leads`}
+            className="inline-flex items-center gap-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition h-12 px-6 shadow-md"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver a Prospectos
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const nextVisit = [...lead.visits]
