@@ -28,11 +28,49 @@ export function PanoramaViewer({
   const viewerRef = useRef<any>(null)
   const hotspotStyleInjected = useRef(false)
   const [activeSceneIndex, setActiveSceneIndex] = useState(0)
+  const [sceneTypes, setSceneTypes] = useState<Record<number, 'equirectangular' | 'cylindrical'>>({})
 
   const safeScenes = scenes || []
 
   useEffect(() => {
     setActiveSceneIndex(0)
+  }, [scenes])
+
+  // Detectar la relación de aspecto de cada escena para elegir la proyección óptima
+  useEffect(() => {
+    if (safeScenes.length === 0) return
+
+    let cancelled = false
+    const detectTypes = async () => {
+      const types: Record<number, 'equirectangular' | 'cylindrical'> = {}
+      await Promise.all(
+        safeScenes.map((scene, i) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image()
+            img.onload = () => {
+              if (cancelled) return resolve()
+              const aspect = img.width / img.height
+              // Panorámicas móviles clásicas tienen aspect > 2.2. Equirectangulares son estrictamente 2:1 (aspect 2.0).
+              types[i] = aspect > 2.2 ? 'cylindrical' : 'equirectangular'
+              resolve()
+            }
+            img.onerror = () => {
+              types[i] = 'equirectangular'
+              resolve()
+            }
+            img.src = scene.url
+          })
+        })
+      )
+      if (!cancelled) {
+        setSceneTypes(types)
+      }
+    }
+
+    detectTypes()
+    return () => {
+      cancelled = true
+    }
   }, [scenes])
 
   const handleSceneChange = (index: number) => {
@@ -47,7 +85,8 @@ export function PanoramaViewer({
   }
 
   useEffect(() => {
-    if (!containerRef.current || safeScenes.length === 0) return
+    const isTypesLoaded = safeScenes.length === 0 || Object.keys(sceneTypes).length === safeScenes.length
+    if (!containerRef.current || safeScenes.length === 0 || !isTypesLoaded) return
 
     // Limpiar instancia anterior
     if (viewerRef.current) {
@@ -125,7 +164,7 @@ export function PanoramaViewer({
         if (safeScenes.length === 1) {
           // @ts-ignore
           viewerRef.current = window.pannellum.viewer(containerRef.current, {
-            type: 'equirectangular',
+            type: sceneTypes[0] || 'equirectangular',
             panorama: safeScenes[0].url,
             autoLoad: true,
             hfov: 100,
@@ -165,7 +204,7 @@ export function PanoramaViewer({
             }
 
             scenesConfig[`scene-${i}`] = {
-              type: 'equirectangular',
+              type: sceneTypes[i] || 'equirectangular',
               panorama: scene.url,
               title: scene.label,
               autoLoad: true,
@@ -209,7 +248,7 @@ export function PanoramaViewer({
         viewerRef.current = null
       }
     }
-  }, [scenes, isEditingHotspot, onCoordsSelected])
+  }, [scenes, sceneTypes, isEditingHotspot, onCoordsSelected])
 
   if (safeScenes.length === 0) return null
 

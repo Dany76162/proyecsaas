@@ -139,8 +139,20 @@ def stitch_panorama(
     Recibe 18 frames con ángulos conocidos y devuelve una imagen equirectangular
     en bytes JPEG lista para Pannellum.
     """
-    tan_h = math.tan(math.radians(fov_h / 2.0))
-    tan_v = math.tan(math.radians(fov_v / 2.0))
+    # ── 0. Decodificar la primera imagen para ajustar FOV según orientación ──
+    actual_fov_h = fov_h
+    actual_fov_v = fov_v
+    
+    first_img = _decode_image(frames[0]["image"]) if frames else None
+    if first_img is not None:
+        img_h, img_w = first_img.shape[:2]
+        if img_w < img_h:
+            # Modo retrato (portrait): el campo de visión horizontal y vertical se intercambian
+            actual_fov_h = fov_v
+            actual_fov_v = fov_h
+
+    tan_h = math.tan(math.radians(actual_fov_h / 2.0))
+    tan_v = math.tan(math.radians(actual_fov_v / 2.0))
 
     # ── 1. Construir los vectores esféricos del canvas de salida ──────────────
     # Cada píxel (x, y) del equirectangular corresponde a un vector 3D en world space.
@@ -163,8 +175,12 @@ def stitch_panorama(
     # ── 2. Decodificar imágenes y preparar matrices de rotación ───────────────
     images = []
     rotations = []
-    for frame in frames:
-        img_arr = _decode_image(frame["image"])
+    for idx, frame in enumerate(frames):
+        # La primera imagen ya la decodificamos, podemos reutilizarla
+        if idx == 0 and first_img is not None:
+            img_arr = first_img
+        else:
+            img_arr = _decode_image(frame["image"])
         images.append(img_arr)
         R = _build_rotation_matrix(frame["yaw"], frame["pitch"])
         rotations.append(R)
