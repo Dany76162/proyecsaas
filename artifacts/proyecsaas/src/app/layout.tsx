@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 
 import "@/app/globals.css";
@@ -9,8 +9,11 @@ export const metadata: Metadata = {
   title: "RaicesPilot | Infraestructura Operativa Inmobiliaria",
   description: "Infraestructura operativa para inmobiliarias que centraliza leads, propiedades, conversaciones y seguimiento comercial.",
   manifest: '/manifest.json',
-  themeColor: '#07070E',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' }
+};
+
+export const viewport: Viewport = {
+  themeColor: '#07070E',
 };
 
 export default function RootLayout({
