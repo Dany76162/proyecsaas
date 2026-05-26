@@ -220,6 +220,59 @@ export default function MasterManualPage() {
             <strong>Sin fricción para el visitante:</strong> El chat no requiere login, número de teléfono ni ningún dato previo. El visitante puede preguntar directamente "¿cuánto vale?", "¿cuántos ambientes tiene?" o "¿está disponible para alquilar?" y recibir la respuesta inmediatamente dentro del visor.
           </blockquote>
 
+          {/* 9. GOBERNANZA COMERCIAL */}
+          <h2>9. Gobernanza Comercial y Reglas de Suscripción (Manual vs Automático)</h2>
+          <p>
+            El motor de facturación y gobernanza de RaicesPilot opera bajo reglas comerciales estrictas para resguardar la reputación pública y asegurar el acceso controlado de los clientes:
+          </p>
+          
+          <h3>Matriz de Estados de Suscripción y Accesos</h3>
+          <div className="overflow-x-auto not-prose mb-8">
+            <table className="w-full border-collapse border border-slate-200 text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-4 py-3 text-left font-bold text-slate-700">Estado (SubscriptionStatus)</th>
+                  <th className="px-4 py-3 text-center font-bold text-slate-700">¿Acceso al Panel?</th>
+                  <th className="px-4 py-3 text-center font-bold text-slate-700">¿Landing Pública?</th>
+                  <th className="px-4 py-3 text-left font-bold text-slate-700">Descripción de Comportamiento</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                <tr>
+                  <td className="px-4 py-3 font-semibold text-slate-900">ACTIVE</td>
+                  <td className="px-4 py-3 text-center text-emerald-600 font-bold">SÍ</td>
+                  <td className="px-4 py-3 text-center text-emerald-600 font-bold">SÍ</td>
+                  <td className="px-4 py-3 text-slate-600">Pago online exitoso o activación del Superadmin. Acceso completo desbloqueado.</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-semibold text-slate-900">TRIALING</td>
+                  <td className="px-4 py-3 text-center text-emerald-600 font-bold">SÍ</td>
+                  <td className="px-4 py-3 text-center text-rose-600 font-bold">NO</td>
+                  <td className="px-4 py-3 text-slate-600">Periodo inicial de pruebas gratuito (14 días). Oculto de la landing para evitar "clientes basura".</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-semibold text-slate-900">PAST_DUE</td>
+                  <td className="px-4 py-3 text-center text-amber-600 font-bold">SÍ (Alerta)</td>
+                  <td className="px-4 py-3 text-center text-rose-600 font-bold">NO</td>
+                  <td className="px-4 py-3 text-slate-600">Período de gracia tras fallar el cobro automático. Avisos de cobranza por IA activos.</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-semibold text-slate-900">SUSPENDED</td>
+                  <td className="px-4 py-3 text-center text-rose-600 font-bold">NO</td>
+                  <td className="px-4 py-3 text-center text-rose-600 font-bold">NO</td>
+                  <td className="px-4 py-3 text-slate-600">Acceso revocado por morosidad o acción manual. Bots de WhatsApp pausados.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Directrices de Actuación para la IA CEO</h3>
+          <ul>
+            <li><strong>Prioridad de Anulación Manual:</strong> Si el Superadmin fuerza una actualización manual (ej: método <code>TRANSFER</code>, <code>CASH</code> o <code>COURTESY</code>), el sistema y la IA deben respetar la decisión con prioridad absoluta sobre webhooks estándar.</li>
+            <li><strong>Exclusión Rigurosa del Carrusel:</strong> Para mantener la excelencia estética de RaicesPilot en producción, bajo ninguna circunstancia se listarán inmobiliarias en modo <code>TRIALING</code> o demostraciones inactivas en la Landing Pública.</li>
+            <li><strong>Gestión Asistida de Cobranzas:</strong> En caso de mora (<code>PAST_DUE</code>), la IA utilizará la acción <code>suggestBillingMessageAction</code> para proponer o enviar mensajes con su link único de Mercado Pago.</li>
+          </ul>
+
         </article>
 
         <div className="mt-24 border-t-2 border-slate-100 pt-10 text-center">

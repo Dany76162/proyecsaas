@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import {
@@ -32,6 +32,7 @@ const sections = [
   { id: "guias-paso-a-paso", label: "Guias paso a paso" },
   { id: "modulos-superadmin", label: "Funciones del panel" },
   { id: "troubleshooting", label: "Troubleshooting" },
+  { id: "control-comercial", label: "Control Comercial" },
 ] as const;
 
 const operationalDependencies = [
@@ -987,6 +988,54 @@ export default async function PlatformManualOperativoPage() {
                     </ul>
                   </article>
                 ))}
+              </div>
+            </section>
+
+            <section id="control-comercial" className="space-y-5 scroll-mt-24">
+              <SectionHeader
+                eyebrow="Control Comercial"
+                title="Reglas de Facturación y Suscripción (Manual vs Automático)"
+                description="El sistema opera bajo un flujo híbrido: permite cobros automatizados por pasarelas (Stripe/Mercado Pago) o la administración manual por parte del Superadmin para excepciones comerciales y transferencias offline."
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-800 flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    Flujo Manual (Superadmin Controls)
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Ubicado en el modal <strong>Comercial</strong> de cada cliente en Clientes. Tiene jerarquía sobre cualquier automatización:
+                  </p>
+                  <ul className="mt-3 space-y-2 text-xs text-slate-600 list-disc pl-4">
+                    <li><strong>Activar 30d:</strong> Establece el estado comercial en <code>ACTIVE</code> y el modo de cobro en <code>TRANSFER</code> por 30 días, habilitando de inmediato el acceso al workspace.</li>
+                    <li><strong>Prueba 14d:</strong> Asigna el estado en <code>TRIALING</code> con modo <code>MANUAL</code> por 14 días. Excelente para pruebas y onboarding técnico, sin aparecer en el carrusel de producción.</li>
+                    <li><strong>Suspender:</strong> Pone la cuenta en <code>SUSPENDED</code>, bloqueando el acceso al panel e interrumpiendo de inmediato los bots de WhatsApp.</li>
+                    <li><strong>Monto / Plan:</strong> Campo de texto libre para definir el abono (ej: <code>$45.000</code>). Se refleja de inmediato en el dashboard y la lista de clientes.</li>
+                  </ul>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-800 flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+                    Flujo Automático (Pasarelas & Webhooks)
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Procesado a través de webhooks de cobros online seguros:
+                  </p>
+                  <ul className="mt-3 space-y-2 text-xs text-slate-600 list-disc pl-4">
+                    <li><strong>Cobros exitosos:</strong> El webhook detecta el cobro y cambia automáticamente la suscripción a <code>ACTIVE</code>, extendiendo el vencimiento 30 días con modo <code>ONLINE</code>.</li>
+                    <li><strong>Alertas de Mora:</strong> Si un cobro falla, la cuenta pasa automáticamente a <code>PAST_DUE</code>.</li>
+                    <li><strong>Agente de Cobranzas IA:</strong> Analiza facturas pendientes y genera borradores de cobranza personalizados para enviar vía WhatsApp basándose en los días de mora.</li>
+                  </ul>
+                </article>
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Regla Crítica del Carrusel Público</p>
+                <p className="mt-2 text-sm text-amber-900 leading-relaxed font-medium">
+                  Para asegurar la calidad y estética de la marca en producción, en el carrusel comercial de la Landing Pública <strong>solo figurarán inmobiliarias con estado ACTIVE</strong> y abono real configurado que hayan pasado satisfactoriamente el onboarding. Cuentas en modo prueba (<code>TRIALING</code>) o demostraciones inactivas están estrictamente excluidas de la vista pública.
+                </p>
               </div>
             </section>
 
