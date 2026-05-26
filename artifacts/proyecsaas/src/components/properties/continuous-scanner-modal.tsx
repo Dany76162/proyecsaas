@@ -483,14 +483,12 @@ export function ContinuousScannerModal({
       ctx.shadowBlur = 0; // resetear sombra
 
       // 3. LÍNEA DE BARRIDO CONTINUO (Sube y baja verticalmente)
-      sweepY += 4.5 * sweepDirection;
-      if (sweepY >= h) {
-        sweepY = h;
-        sweepDirection = -1;
-      } else if (sweepY <= 0) {
-        sweepY = 0;
-        sweepDirection = 1;
-      }
+      const elapsed = Date.now() / 1000;
+      const sweepPeriod = 2; // ciclo completo de 2 segundos
+      const cycle = (elapsed % sweepPeriod) / sweepPeriod;
+      const sweepY = cycle < 0.5 
+        ? h * (cycle * 2) 
+        : h * (1 - (cycle - 0.5) * 2);
 
       const sweepGradient = ctx.createLinearGradient(0, sweepY - 15, 0, sweepY + 15);
       sweepGradient.addColorStop(0, "rgba(6, 182, 212, 0)");
@@ -503,7 +501,7 @@ export function ContinuousScannerModal({
       animFrameId = requestAnimationFrame(draw);
     };
 
-    draw();
+    animFrameId = requestAnimationFrame(draw);
 
     return () => {
       window.removeEventListener("resize", resizeCanvas);
@@ -530,17 +528,25 @@ export function ContinuousScannerModal({
   };
 
   const handleFinish = async () => {
-    if (scannedFrames.length === 0) return;
+    const frames = scannedFrames;
+    console.log('handleFinish called, frames:', frames.length);
+    console.log('propertyId:', propertyId);
+    console.log('STITCH_URL:', process.env.NEXT_PUBLIC_STITCH_SERVICE_URL);
+
+    if (frames.length === 0) return;
 
     setModalStep("PROCESSING");
     setError(null);
     try {
-      console.log(`Starting stitching process with ${scannedFrames.length} frames.`);
-      const file = await stitchWithService(scannedFrames, propertyId);
-      console.log(`Stitched successfully. Size: ${file.size} bytes. Starting Cloudinary upload.`);
-      
-      const url = await uploadToPropertyMedia(file, "PANORAMA", orgSlug, propertyId, () => {});
-      console.log(`Cloudinary upload success: ${url}`);
+      console.log('Calling stitchWithService...');
+      const file = await stitchWithService(frames, propertyId);
+      console.log('Stitch result:', file.name, file.size);
+
+      console.log('Starting Cloudinary upload...');
+      const url = await uploadToPropertyMedia(file, "PANORAMA", orgSlug, propertyId, (pct) => {
+        console.log('upload pct:', pct);
+      });
+      console.log('Upload URL:', url);
 
       const finalTitle = selectedAmbient === "Otro" ? (customAmbient.trim() || "Otro") : selectedAmbient;
 
@@ -559,8 +565,8 @@ export function ContinuousScannerModal({
       onCaptured?.(payload);
       setModalStep("ANOTHER_PROMPT");
     } catch (saveError: any) {
-      console.error("Critical error in handleFinish:", saveError);
-      setError(saveError.message ?? "Ocurrió un error inesperado al unir o guardar las imágenes 360.");
+      console.error('handleFinish ERROR:', saveError);
+      setError(String(saveError.message ?? saveError));
       setModalStep("SCANNING");
     }
   };
