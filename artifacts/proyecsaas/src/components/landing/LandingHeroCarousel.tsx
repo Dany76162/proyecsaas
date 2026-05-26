@@ -77,7 +77,7 @@ export function LandingHeroCarousel() {
                 alt={SLIDES[currentIndex].alt}
                 fill
                 priority
-                className="object-cover"
+                className="object-cover object-right"
                 sizes="100vw"
               />
               
