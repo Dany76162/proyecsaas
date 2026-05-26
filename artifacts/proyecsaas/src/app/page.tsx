@@ -374,28 +374,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* FINAL CTA */}
-        <section className="mx-auto px-6 py-20 lg:py-24">
-          <div className="mx-auto max-w-4xl overflow-hidden rounded-[2.5rem] bg-slate-900 px-6 py-16 sm:px-12 text-center shadow-2xl relative">
-            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)`, backgroundSize: '32px 32px' }} />
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-6 relative z-10">
-              Modernizá la operación comercial de tu inmobiliaria.
-            </h2>
-            <p className="text-slate-400 mb-10 max-w-2xl mx-auto relative z-10 text-lg">
-              Dejá atrás el caos de los mensajes perdidos y el seguimiento manual. Sumate a las agencias que ya operan a otro nivel.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 relative z-10">
-              <Button size="lg" className="w-full sm:w-auto bg-brand-500 hover:bg-brand-400 text-white border-0" asChild>
-                <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-                  Solicitar demo
-                </a>
-              </Button>
-              <Button variant="outline" size="lg" className="w-full sm:w-auto border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white" asChild>
-                <Link href="/login">Acceder al sistema</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="border-t border-slate-200 bg-white py-8 text-center text-sm text-slate-500">
