@@ -108,3 +108,74 @@ Para garantizar la estabilidad del sistema, se deben seguir estrictamente estos 
 
 ## 6. Soporte y Mantenimiento
 El sistema mantiene logs de auditoría inmutables para cada acción administrativa. En caso de error crítico, el **Readiness Center** marcará en rojo las piezas de infraestructura fallidas.
+
+---
+
+## 7. Control Comercial y Suscripciones (Manual vs Automático)
+
+El sistema de facturación y suscripciones de RaicesPilot opera bajo un modelo híbrido que permite tanto la automatización total de cobros online como la intervención manual directa del Superadmin para excepciones comerciales y transferencias bancarias.
+
+### 7.1. Flujo Manual (Control Comercial - Modal en Superadmin)
+Ubicado en el panel Superadmin en la pestaña de **Clientes** (`/platform/organizations`), al hacer clic en **Comercial** se abre el modal de **Control Comercial**. Este control manual tiene prioridad sobre las restricciones por defecto y actualiza directamente la base de datos.
+
+#### Presets de Acción Rápida:
+1. **Activar 30d**: 
+   - **Estado final**: `ACTIVE`
+   - **Modo de cobro**: `TRANSFER` (Transferencia)
+   - **Vencimiento (`currentPeriodEnd`)**: Fecha actual + 30 días.
+   - **Impacto**: Activa inmediatamente la inmobiliaria (`isActive: true` en base de datos) y registra el método para el control del dashboard.
+2. **Trial 14d**: 
+   - **Estado final**: `TRIALING`
+   - **Modo de cobro**: `MANUAL`
+   - **Vencimiento (`currentPeriodEnd`)**: Fecha actual + 14 días.
+   - **Impacto**: Habilita la inmobiliaria para pruebas técnicas sin requerir datos de facturación ni aparecer en el carrusel comercial de producción.
+3. **Suspender**: 
+   - **Estado final**: `SUSPENDED`
+   - **Impacto**: Revoca inmediatamente el acceso al panel del tenant. Se detienen los bots de chat de WhatsApp asociados a esta organización y se bloquea el uso de AgentOS.
+
+#### Campos de Configuración Manual:
+* **Plan**: Selección del nivel de servicio asignado (`Plan Enterprise`, `Plan Starter`, etc.).
+* **Estado**: `TRIALING` (Trial), `ACTIVE` (Activa), `PAST_DUE` (Pago pendiente), `CANCELLED` (Cancelada), `SUSPENDED` (Suspendida).
+* **Modo de cobro**: 
+  - `ONLINE` (Stripe/Mercado Pago automatizado).
+  - `CASH` (Efectivo manual).
+  - `TRANSFER` (Transferencia bancaria).
+  - `COURTESY` (Cortesía sin cargo).
+  - `MANUAL` (Control manual genérico).
+* **Vence el**: Fecha exacta de finalización del período de cobro.
+* **Notas internas**: Espacio de auditoría para registrar justificaciones (ej. *"Abonó por transferencia, confirmado el 15/04"*).
+
+---
+
+### 7.2. Flujo Automático (Pasarelas de Pago y Webhooks)
+El sistema sincroniza automáticamente los estados comerciales a través de webhooks de **Mercado Pago** y **Stripe**:
+
+```mermaid
+sequenceDiagram
+    participant Cliente as Inmobiliaria
+    participant MP as Mercado Pago / Stripe
+    participant Webhook as Webhook API (/api/billing/webhook)
+    participant DB as Base de Datos (Prisma)
+    participant UI as Landing & Plataforma
+
+    Cliente->>MP: Realiza pago online
+    MP->>Webhook: Notificación de pago exitoso
+    Webhook->>DB: setOrganizationCommercialStateAction (ACTIVE + 30 días)
+    DB->>UI: Habilita el carrusel de producción
+```
+
+1. **Cobro Exitoso**: El webhook de pago detecta la transacción, actualiza el estado de la suscripción a `ACTIVE`, asigna el método `ONLINE` y extiende la fecha `currentPeriodEnd` de forma automática.
+2. **Falla de Cobro**: Si el cobro es rechazado o la tarjeta expira, la suscripción pasa automáticamente al estado `PAST_DUE`. 
+3. **Acciones de Cobranza (Asistidas por IA)**: En el panel de administración, el **Agente de Cobranzas IA** analiza las facturas pendientes y genera automáticamente propuestas de mensajes personalizados basados en el nivel de retraso para enviar vía WhatsApp.
+
+---
+
+### 7.3. Reglas Críticas del Ecosistema (Para Daniel y el IA CEO)
+
+> [!WARNING]
+> **Filtro del Carrusel en la Landing Pública:**
+> Para asegurar la calidad de la marca RaicesPilot, en el carrusel público **SOLO** se muestran inmobiliarias con estado `status: "ACTIVE"` y plan comercial real que hayan pagado la suscripción y completado su proceso de Onboarding. Esto previene que clientes de prueba, cuentas de trial inactivas (`TRIALING`) o demostraciones incompletas ocupen espacio visible en la landing principal.
+
+* **Prioridad de Reglas**: Un cambio manual del Superadmin pisa cualquier estado automático previo y bloquea temporalmente la degradación automática si se especifica un método de cobro manual (como `COURTESY` o `TRANSFER`).
+* **Seguridad de Acceso**: Si una organización tiene `status: SUSPENDED` o `isActive: false`, el middleware de autenticación bloquea toda petición hacia `/[orgSlug]` redirigiendo al flujo de reactivación comercial.
+

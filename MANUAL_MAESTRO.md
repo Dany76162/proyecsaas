@@ -46,4 +46,30 @@ El **Budget Guard** previene desbordamientos de costos y comportamientos erráti
 - **Futuro**: Integraciones con Portales (Zonaprop/Argenprop) vía Agentes de Carga.
 
 ---
+
+## 9. Gobernanza Comercial y Reglas de Suscripción (Manual vs Automático)
+
+El motor comercial opera bajo las siguientes directrices y reglas estrictas de negocio para garantizar la coherencia de datos, prevenir el acceso a usuarios morosos y salvaguardar la reputación pública de la plataforma:
+
+### 9.1. El Ecosistema de Suscripciones
+Cada `Organization` posee una relación uno-a-uno opcional con `Subscription`. El estado de esta suscripción define si las funcionalidades del Tenant y de **AgentOS** están desbloqueadas.
+
+#### Matriz de Estados de Suscripción y Accesos:
+
+| Estado (`SubscriptionStatus`) | ¿Tiene Acceso al Panel? | ¿Se muestra en Landing Pública? | Descripción y Comportamiento |
+| :--- | :---: | :---: | :--- |
+| **`ACTIVE`** (Activa) | **SÍ** | **SÍ** | Cuenta con pago registrado (automático o manual). Acceso completo. |
+| **`TRIALING`** (Trial) | **SÍ** | **NO** | Periodo de onboarding o demostración activa. Excluido del carrusel de producción. |
+| **`PAST_DUE`** (Falta Pago) | **SÍ** (Con Alerta) | **NO** | Período de gracia. Notificaciones de cobranza activas. |
+| **`SUSPENDED`** (Suspendida) | **NO** | **NO** | Acceso bloqueado. Bots de WhatsApp pausados. |
+| **`CANCELLED`** (Cancelada) | **NO** | **NO** | Cuenta dada de baja definitiva. |
+
+### 9.2. Reglas del Agente IA CEO
+El Agente IA CEO debe seguir estrictamente estas prioridades operativas al interactuar con clientes o procesar consultas administrativas:
+1. **Prioridad del Control Manual**: Cualquier actualización manual ejecutada por el Superadmin (ej. método `TRANSFER`, `CASH` o `COURTESY`) tiene jerarquía absoluta sobre los webhooks. La IA no debe intentar anular o revertir estados manuales a menos que se registre un nuevo pago online válido posterior.
+2. **Exclusión de Pruebas**: Para proteger la estética y seriedad de la plataforma en producción, en el carrusel de la Landing Pública **solo figurarán inmobiliarias con estado `ACTIVE`** que hayan completado su proceso de Onboarding. Cuentas en estado `TRIALING` o demostraciones incompletas nunca deben listarse públicamente.
+3. **Automatización Asistida**: En caso de retraso en los pagos (`PAST_DUE`), la IA propondrá o enviará mensajes utilizando la acción `suggestBillingMessageAction`, adaptando el tono según los días de mora y facilitando el link de pago seguro de Mercado Pago (`mpPaymentUrl`).
+
+---
 **Propiedad de Inmuebles Digitales — 2026**
+
