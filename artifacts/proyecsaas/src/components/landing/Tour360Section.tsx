@@ -6,29 +6,30 @@ import { Compass, Smartphone, Sparkles, Volume2, Maximize, CheckCircle2 } from "
 
 export function Tour360Section() {
   return (
-    <section id="tour-360" className="relative overflow-hidden bg-white py-24 text-slate-800 border-b border-slate-100">
-      {/* Background Decorative Gradients - Softened for light theme */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-3xl opacity-60 pointer-events-none -translate-y-1/3 translate-x-1/3" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl opacity-50 pointer-events-none translate-y-1/3 -translate-x-1/3" />
+    <section id="tour-360" className="relative overflow-hidden bg-white dark:bg-slate-950 py-24 text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-900 transition-colors duration-300">
+      
+      {/* Background Decorative Gradients - Softened for light theme, highlighted in dark */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl opacity-60 pointer-events-none -translate-y-1/3 translate-x-1/3" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl opacity-50 pointer-events-none translate-y-1/3 -translate-x-1/3" />
 
       <div className="mx-auto max-w-7xl px-6 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
           
           {/* TEXTO INFORMATIVO (IZQUIERDA) */}
           <div className="flex-1 space-y-8 text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-200 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-700">
-              <Sparkles className="h-3.5 w-3.5 animate-pulse text-brand-600" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-700 dark:text-brand-450">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse text-brand-600 dark:text-brand-400" />
               Exclusivo de RaícesPilot
             </div>
             
             <div className="space-y-4">
-              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-tight">
+              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl lg:text-5xl leading-tight">
                 Tours Virtuales 360° <br />
-                <span className="text-brand-600">
+                <span className="text-brand-600 dark:text-brand-400">
                   Solo con tu celular.
                 </span>
               </h2>
-              <p className="text-lg leading-relaxed text-slate-600">
+              <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-350">
                 Olvidate de comprar cámaras 360° costosas o de lidiar con trípodes y configuraciones complejas. Con nuestro nuevo **Escáner Continuo por Giroscopio**, cualquiera de tus agentes puede crear un tour virtual inmersivo de calidad profesional en menos de 2 minutos usando únicamente su teléfono móvil.
               </p>
             </div>
@@ -37,46 +38,46 @@ export function Tour360Section() {
               {[
                 {
                   icon: Smartphone,
-                  color: "text-brand-600",
-                  bg: "bg-brand-50",
+                  color: "text-brand-600 dark:text-brand-400",
+                  bg: "bg-brand-50 dark:bg-brand-500/10",
                   title: "Escaneo Continuo Guiado",
                   desc: "Presioná 'Escanear' y girá lentamente. El giroscopio del celular detecta la rotación y captura los frames de manera inteligente en tiempo real."
                 },
                 {
                   icon: Volume2,
-                  color: "text-cyan-600",
-                  bg: "bg-cyan-50",
+                  color: "text-cyan-600 dark:text-cyan-400",
+                  bg: "bg-cyan-50 dark:bg-cyan-500/10",
                   title: "Voz Guía Asistida (Web Speech API)",
                   desc: "La app te habla al oído mientras te moves. Te avisa si girás muy rápido, cuándo apuntar al techo o al piso, y cuándo se completa el escaneo."
                 },
                 {
                   icon: Compass,
-                  color: "text-indigo-600",
-                  bg: "bg-indigo-50",
+                  color: "text-indigo-600 dark:text-indigo-400",
+                  bg: "bg-indigo-50 dark:bg-indigo-500/10",
                   title: "Detección Inteligente de Zonas",
                   desc: "El sistema mapea las orientaciones esféricas en tiempo real dividiendo el progreso en Frente, Techo y Piso para lograr una cobertura inmersiva total."
                 },
                 {
                   icon: Maximize,
-                  color: "text-emerald-600",
-                  bg: "bg-emerald-50",
+                  color: "text-emerald-600 dark:text-emerald-450",
+                  bg: "bg-emerald-50 dark:bg-emerald-500/10",
                   title: "Costura (Stitching) en la Nube",
                   desc: "Nuestro microservicio inteligente une los frames tomados en segundos, resolviendo las costuras automáticamente para entregar una escena 360° perfecta."
                 }
               ].map((item, index) => (
-                <div key={index} className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all duration-300">
+                <div key={index} className="flex gap-4 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all duration-300">
                   <div className={`h-10 w-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>
                     <item.icon className={`h-5 w-5 ${item.color}`} />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 mb-1">{item.title}</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">{item.title}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center gap-3 text-sm font-semibold text-brand-600">
+            <div className="flex items-center gap-3 text-sm font-semibold text-brand-600 dark:text-brand-400">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               <span>Disponible desde cualquier navegador móvil. Sin descargar aplicaciones.</span>
             </div>
@@ -89,7 +90,7 @@ export function Tour360Section() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="relative w-full max-w-[340px] aspect-[9/18.5] rounded-[3rem] border-[8px] border-slate-800 bg-slate-950 p-3 shadow-2xl ring-1 ring-white/10 overflow-hidden"
+              className="relative w-full max-w-[340px] aspect-[9/18.5] rounded-[3rem] border-[8px] border-slate-800 dark:border-slate-900 bg-slate-950 p-3 shadow-2xl ring-1 ring-white/10 dark:ring-white/5 overflow-hidden"
             >
               {/* Celular Front feed mock */}
               <div className="absolute inset-0 z-0 bg-slate-900">
