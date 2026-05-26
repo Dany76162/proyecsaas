@@ -53,6 +53,7 @@ function Navbar() {
         <nav className="hidden items-center gap-8 md:flex">
           <a href="#producto" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Producto</a>
           <a href="#como-funciona" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Cómo funciona</a>
+          <a href="#tour-360" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Tour 360º</a>
           <a href="#beneficios" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition">Beneficios</a>
         </nav>
 
