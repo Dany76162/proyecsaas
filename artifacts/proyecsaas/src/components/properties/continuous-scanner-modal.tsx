@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Camera, Compass, Loader2, VideoOff, RefreshCw } from "lucide-react";
+import { Compass, Loader2, VideoOff, RefreshCw, Camera } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { upsertPropertyMediaAction } from "@/modules/properties/actions";
 import {
@@ -30,6 +30,8 @@ type ScannedFrame = {
 };
 
 type ModalStep = "SELECT_AMBIENT" | "SCANNING" | "PROCESSING" | "ANOTHER_PROMPT";
+
+type Zone = "ceiling" | "front" | "floor";
 
 const ambientOptions = [
   "Living",
@@ -61,6 +63,25 @@ function angleDiff(a: number, b: number): number {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function getZone(pitch: number): Zone {
+  // beta < 45° -> ceiling (mirando arriba)
+  // beta > 135° -> floor (mirando abajo)
+  // 45-135° -> front (frente)
+  if (pitch < 45) return "ceiling";
+  if (pitch > 135) return "floor";
+  return "front";
+}
+
+function speak(text: string) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "es-AR";
+  utterance.rate = 0.95;
+  utterance.pitch = 1.1;
+  window.speechSynthesis.speak(utterance);
 }
 
 async function requestOrientationAccess() {
@@ -167,6 +188,13 @@ export function ContinuousScannerModal({
   const [customAmbient, setCustomAmbient] = useState<string>("");
   const [showGuide, setShowGuide] = useState(true);
 
+  // Cobertura por zona esférica inteligente
+  const [zoneCoverage, setZoneCoverage] = useState({
+    ceiling: new Set<number>(),
+    front: new Set<number>(),
+    floor: new Set<number>(),
+  });
+
   // Estados del HUD Premium animado
   const [flashOpacity, setFlashOpacity] = useState(0);
   const [lastCoveredSector, setLastCoveredSector] = useState<string | null>(null);
@@ -177,6 +205,7 @@ export function ContinuousScannerModal({
   const lastCapturePitchRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number>(Date.now());
   const prevAlphaRef = useRef<number>(0);
+  const speakTimeoutRef = useRef<number | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -202,6 +231,16 @@ export function ContinuousScannerModal({
       osc.stop(ctx.currentTime + durationMs / 1000);
     } catch { /* ignorado si no hay soporte */ }
   }
+
+  const lastSpokenRef = useRef<Record<string, number>>({});
+  const speakThrottled = (text: string, throttleMs = 2500) => {
+    const now = Date.now();
+    const lastSpoken = lastSpokenRef.current[text] || 0;
+    if (now - lastSpoken > throttleMs) {
+      lastSpokenRef.current[text] = now;
+      speak(text);
+    }
+  };
 
   // Ocultar botones de soporte de fondo
   useEffect(() => {
@@ -233,12 +272,19 @@ export function ContinuousScannerModal({
       setShowGuide(true);
       setFlashOpacity(0);
       setLastCoveredSector(null);
+      setZoneCoverage({
+        ceiling: new Set(),
+        front: new Set(),
+        floor: new Set(),
+      });
     }
   }, [open]);
 
   // Ocultar guía automáticamente después de 4 segundos
   useEffect(() => {
     if (modalStep === "SCANNING") {
+      setShowGuide(true);
+      speak("Girá lentamente para escanear el ambiente");
       const timer = setTimeout(() => setShowGuide(false), 4500);
       return () => clearTimeout(timer);
     }
@@ -349,9 +395,49 @@ export function ContinuousScannerModal({
       const dt = (now - lastTimestampRef.current) / 1000;
       if (dt > 0.05) {
         const speed = Math.abs(angleDiff(alpha, prevAlphaRef.current)) / dt;
-        setIsTooFast(speed > MAX_SPEED);
+        const tooFastState = speed > MAX_SPEED;
+        setIsTooFast(tooFastState);
         lastTimestampRef.current = now;
         prevAlphaRef.current = alpha;
+
+        if (tooFastState) {
+          speakThrottled("Girá más despacio", 3000);
+        }
+
+        // Registrar frame y calcular zona
+        const registerFrameAndZone = (blob: Blob) => {
+          const sector = Math.floor(((alpha + 360) % 360) / 30); // 0-11
+          const zone = getZone(beta);
+          
+          setZoneCoverage((prev) => {
+            const nextSet = new Set(prev[zone]);
+            const prevSize = nextSet.size;
+            nextSet.add(sector);
+            
+            // Si el sector es nuevo, avisar con voz
+            if (nextSet.size > prevSize) {
+              speakThrottled("Área escaneada", 1500);
+            }
+
+            // Avisos de transiciones
+            const frontSize = zone === "front" ? nextSet.size : prev.front.size;
+            const ceilingSize = zone === "ceiling" ? nextSet.size : prev.ceiling.size;
+            
+            const prevFrontSize = prev.front.size;
+            const prevCeilingSize = prev.ceiling.size;
+
+            if (zone === "front" && frontSize === 10 && prevFrontSize === 9) {
+              speak("Perfecto. Ahora apuntá hacia el techo");
+            } else if (zone === "ceiling" && frontSize >= 10 && ceilingSize === 4 && prevCeilingSize === 3) {
+              speak("Bien. Ahora apuntá hacia el piso");
+            }
+
+            return {
+              ...prev,
+              [zone]: nextSet,
+            };
+          });
+        };
 
         // Comprobar si hay suficiente diferencia de rotación para extraer frame
         if (lastCaptureYawRef.current === null || lastCapturePitchRef.current === null) {
@@ -364,17 +450,16 @@ export function ContinuousScannerModal({
             scannedFramesRef.current = next;
             setScannedFrames(next);
             playBeep(880, 50, 0.15);
-            // Activar flash y banner de éxito
             setFlashOpacity(0.35);
             setTimeout(() => setFlashOpacity(0), 150);
             setLastCoveredSector("Sector Inicial");
+            registerFrameAndZone(blob);
           }
         } else {
           const yawDiff = Math.abs(angleDiff(alpha, lastCaptureYawRef.current));
           const pitchDiff = Math.abs(beta - lastCapturePitchRef.current);
 
-          if ((yawDiff >= YAW_THRESHOLD || pitchDiff >= PITCH_THRESHOLD) && speed <= MAX_SPEED) {
-            // Límite de seguridad
+          if ((yawDiff >= YAW_THRESHOLD || pitchDiff >= PITCH_THRESHOLD) && !tooFastState) {
             if (scannedFramesRef.current.length >= MAX_ALLOWED_FRAMES) {
               return;
             }
@@ -387,13 +472,12 @@ export function ContinuousScannerModal({
               scannedFramesRef.current = next;
               setScannedFrames(next);
               playBeep(880, 50, 0.15);
-              
-              // Activar flash y banner de éxito
               setFlashOpacity(0.35);
               setTimeout(() => setFlashOpacity(0), 150);
               
               const currentSector = Math.floor(alpha / 30) + 1;
               setLastCoveredSector(`Sector ${currentSector}`);
+              registerFrameAndZone(blob);
             }
           }
         }
@@ -413,8 +497,6 @@ export function ContinuousScannerModal({
     if (!ctx) return;
 
     let animFrameId: number;
-    let sweepY = 0;
-    let sweepDirection = 1;
 
     const resizeCanvas = () => {
       canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
@@ -428,13 +510,10 @@ export function ContinuousScannerModal({
       const w = canvas.width;
       const h = canvas.height;
 
-      // 1. SECTORES CUBIERTOS (Overlay semitransparente de color)
-      // Dividimos la pantalla horizontal en 12 sectores de 30° para teñir verde/azul
-      const currentYaw = orientation.alpha ?? 0;
+      // 1. SECTORES CUBIERTOS
       const sectorsCount = 12;
       const sectorWidth = w / sectorsCount;
 
-      // Crear array de sectores ya cubiertos
       const coveredSectors = new Array(sectorsCount).fill(false);
       scannedFramesRef.current.forEach((frame) => {
         const sectorIdx = Math.floor(((frame.yaw + 360) % 360) / (360 / sectorsCount));
@@ -444,14 +523,14 @@ export function ContinuousScannerModal({
       for (let i = 0; i < sectorsCount; i++) {
         const xStart = i * sectorWidth;
         if (coveredSectors[i]) {
-          ctx.fillStyle = "rgba(16, 185, 129, 0.05)"; // verde esmeralda muy sutil para cubiertos
+          ctx.fillStyle = "rgba(16, 185, 129, 0.05)";
         } else {
-          ctx.fillStyle = "rgba(6, 182, 212, 0.04)"; // cian traslúcido para pendientes
+          ctx.fillStyle = "rgba(6, 182, 212, 0.04)";
         }
         ctx.fillRect(xStart, 0, sectorWidth, h);
       }
 
-      // 2. GRILLA DE PUNTOS FACE-ID PREMIUM (12 columnas x 8 filas)
+      // 2. GRILLA DE PUNTOS FACE-ID PREMIUM
       const cols = 12;
       const rows = 8;
       const colStep = w / (cols + 1);
@@ -459,7 +538,6 @@ export function ContinuousScannerModal({
 
       for (let c = 1; c <= cols; c++) {
         const x = c * colStep;
-        // Identificar el sector en grados correspondientes a esta columna del canvas
         const colAngle = (c / cols) * 360;
         const colSectorIdx = Math.floor(colAngle / (360 / sectorsCount));
         const isCovered = coveredSectors[colSectorIdx];
@@ -470,21 +548,21 @@ export function ContinuousScannerModal({
           ctx.arc(x, y, 3, 0, 2 * Math.PI);
           
           if (isCovered) {
-            ctx.fillStyle = "rgba(34, 197, 94, 0.85)"; // Verde brillante
+            ctx.fillStyle = "rgba(34, 197, 94, 0.85)";
             ctx.shadowColor = "rgba(34, 197, 94, 0.7)";
             ctx.shadowBlur = 8;
           } else {
-            ctx.fillStyle = "rgba(255, 255, 255, 0.16)"; // Blanco apagado
+            ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
             ctx.shadowBlur = 0;
           }
           ctx.fill();
         }
       }
-      ctx.shadowBlur = 0; // resetear sombra
+      ctx.shadowBlur = 0;
 
       // 3. LÍNEA DE BARRIDO CONTINUO (Sube y baja verticalmente)
       const elapsed = Date.now() / 1000;
-      const sweepPeriod = 2; // ciclo completo de 2 segundos
+      const sweepPeriod = 2;
       const cycle = (elapsed % sweepPeriod) / sweepPeriod;
       const sweepY = cycle < 0.5 
         ? h * (cycle * 2) 
@@ -492,7 +570,7 @@ export function ContinuousScannerModal({
 
       const sweepGradient = ctx.createLinearGradient(0, sweepY - 15, 0, sweepY + 15);
       sweepGradient.addColorStop(0, "rgba(6, 182, 212, 0)");
-      sweepGradient.addColorStop(0.5, "rgba(6, 182, 212, 0.75)"); // Cian luminoso
+      sweepGradient.addColorStop(0.5, "rgba(6, 182, 212, 0.75)");
       sweepGradient.addColorStop(1, "rgba(6, 182, 212, 0)");
 
       ctx.fillStyle = sweepGradient;
@@ -509,19 +587,38 @@ export function ContinuousScannerModal({
     };
   }, [modalStep, cameraReady, orientation.alpha]);
 
-  // Calcular la cobertura horizontal en base a 12 sectores de 30 grados
-  const coveragePercent = (() => {
-    if (scannedFrames.length === 0) return 0;
-    const sectors = new Array(12).fill(false);
-    scannedFrames.forEach((f) => {
-      const sector = Math.floor(((f.yaw + 360) % 360) / 30);
-      sectors[sector] = true;
-    });
-    const covered = sectors.filter(Boolean).length;
-    return Math.round((covered / 12) * 100);
-  })();
+  // Auto-finalización inteligente
+  const isComplete =
+    zoneCoverage.front.size >= 10 &&
+    zoneCoverage.ceiling.size >= 4 &&
+    zoneCoverage.floor.size >= 4;
 
-  const canFinish = scannedFrames.length >= MIN_REQUIRED_FRAMES && coveragePercent >= 80;
+  useEffect(() => {
+    if (isComplete && modalStep === "SCANNING") {
+      speak("Escaneo completo. Finalizando.");
+      const timer = setTimeout(() => {
+        handleFinish();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, modalStep]);
+
+  // Guía progresiva
+  const guidance =
+    zoneCoverage.front.size < 10
+      ? "Girá lentamente para cubrir el ambiente"
+      : zoneCoverage.ceiling.size < 4
+        ? "✓ Frente completo — Apuntá hacia el techo"
+        : zoneCoverage.floor.size < 4
+          ? "✓ Techo completo — Apuntá hacia el piso"
+          : "✓ Escaneo completo — Finalizando...";
+
+  const canFinish = scannedFrames.length >= MIN_REQUIRED_FRAMES;
+
+  // Porcentajes de cobertura por zonas
+  const frontPct = Math.round((zoneCoverage.front.size / 12) * 100);
+  const ceilingPct = Math.round((Math.min(zoneCoverage.ceiling.size, 6) / 6) * 100);
+  const floorPct = Math.round((Math.min(zoneCoverage.floor.size, 6) / 6) * 100);
 
   const close = () => {
     onOpenChange(false);
@@ -529,24 +626,24 @@ export function ContinuousScannerModal({
 
   const handleFinish = async () => {
     const frames = scannedFrames;
-    console.log('handleFinish called, frames:', frames.length);
-    console.log('propertyId:', propertyId);
-    console.log('STITCH_URL:', process.env.NEXT_PUBLIC_STITCH_SERVICE_URL);
+    console.log("handleFinish called, frames:", frames.length);
+    console.log("propertyId:", propertyId);
+    console.log("STITCH_URL:", process.env.NEXT_PUBLIC_STITCH_SERVICE_URL);
 
     if (frames.length === 0) return;
 
     setModalStep("PROCESSING");
     setError(null);
     try {
-      console.log('Calling stitchWithService...');
+      console.log("Calling stitchWithService...");
       const file = await stitchWithService(frames, propertyId);
-      console.log('Stitch result:', file.name, file.size);
+      console.log("Stitch result:", file.name, file.size);
 
-      console.log('Starting Cloudinary upload...');
+      console.log("Starting Cloudinary upload...");
       const url = await uploadToPropertyMedia(file, "PANORAMA", orgSlug, propertyId, (pct) => {
-        console.log('upload pct:', pct);
+        console.log("upload pct:", pct);
       });
-      console.log('Upload URL:', url);
+      console.log("Upload URL:", url);
 
       const finalTitle = selectedAmbient === "Otro" ? (customAmbient.trim() || "Otro") : selectedAmbient;
 
@@ -565,7 +662,7 @@ export function ContinuousScannerModal({
       onCaptured?.(payload);
       setModalStep("ANOTHER_PROMPT");
     } catch (saveError: any) {
-      console.error('handleFinish ERROR:', saveError);
+      console.error("handleFinish ERROR:", saveError);
       setError(String(saveError.message ?? saveError));
       setModalStep("SCANNING");
     }
@@ -753,7 +850,7 @@ export function ContinuousScannerModal({
                     {showGuide && (
                       <div className="animate-fade-out duration-1000 max-w-[280px] bg-black/80 border border-white/10 rounded-2xl p-4 text-center backdrop-blur">
                         <p className="text-sm font-bold leading-relaxed text-cyan-400">
-                          Girá lentamente 360° sobre tu propio eje de forma fluida.
+                          {guidance}
                         </p>
                       </div>
                     )}
@@ -766,7 +863,7 @@ export function ContinuousScannerModal({
                       scannedFrames.length > 0 && !showGuide && (
                         <div className="text-xs font-semibold tracking-wider text-cyan-400/95 uppercase bg-black/55 px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur">
                           <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-                          Escaneando activamente
+                          {guidance}
                         </div>
                       )
                     )}
@@ -781,34 +878,24 @@ export function ContinuousScannerModal({
                   {/* Fila Inferior: Indicador de progreso e inclinación */}
                   <div className="flex justify-between items-end w-full">
                     
-                    {/* Anillo de progreso de 360 grados */}
-                    <div className="relative h-20 w-20 flex items-center justify-center rounded-full bg-black/60 p-2 border border-white/10 backdrop-blur">
-                      <svg className="absolute inset-0 h-full w-full -rotate-90">
-                        <circle
-                          cx="40"
-                          cy="40"
-                          r="32"
-                          className="stroke-white/10 fill-none"
-                          strokeWidth="5"
-                        />
-                        <circle
-                          cx="40"
-                          cy="40"
-                          r="32"
-                          className="stroke-emerald-400 fill-none transition-all duration-300"
-                          strokeWidth="5"
-                          strokeDasharray={2 * Math.PI * 32}
-                          strokeDashoffset={2 * Math.PI * 32 * (1 - coveragePercent / 100)}
-                        />
-                      </svg>
-                      <div className="flex flex-col items-center justify-center z-10">
-                        <span className="text-xs font-bold text-white">{coveragePercent}%</span>
-                        <span className="text-[8px] uppercase tracking-wider text-white/50">Giro</span>
+                    {/* Barras de Progreso esférico por Zonas */}
+                    <div className="flex flex-col gap-1.5 bg-black/60 rounded-2xl p-3 border border-white/10 backdrop-blur text-xs font-bold text-white/90 max-w-[160px]">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[10px] tracking-wide text-emerald-400">🔵 FRENTE:</span>
+                        <span>{zoneCoverage.front.size}/12 ({frontPct}%)</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[10px] tracking-wide text-cyan-300">🟡 TECHO:</span>
+                        <span>{Math.min(zoneCoverage.ceiling.size, 6)}/6 ({ceilingPct}%)</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[10px] tracking-wide text-amber-500">🟢 PISO:</span>
+                        <span>{Math.min(zoneCoverage.floor.size, 6)}/6 ({floorPct}%)</span>
                       </div>
                     </div>
 
                     {/* Barra vertical de inclinación (Piso / Frente / Techo) */}
-                    <div className="flex flex-col items-center justify-center bg-black/60 rounded-xl p-3 border border-white/10 backdrop-blur h-36 w-12 text-white">
+                    <div className="flex flex-col items-center justify-center bg-black/60 rounded-xl p-3 border border-white/10 backdrop-blur h-36 w-12 text-white font-bold">
                       <div className="relative flex-1 w-2 bg-white/20 rounded-full flex items-center justify-center">
                         <span className="absolute top-0 text-[8px] text-white/55 font-bold uppercase">T</span>
                         <span className="text-[8px] text-white/55 font-bold uppercase">•</span>
@@ -862,6 +949,11 @@ export function ContinuousScannerModal({
                       lastCaptureYawRef.current = null;
                       lastCapturePitchRef.current = null;
                       setOrientation({ alpha: null, beta: null });
+                      setZoneCoverage({
+                        ceiling: new Set(),
+                        front: new Set(),
+                        floor: new Set(),
+                      });
                     }}
                     disabled={scannedFrames.length === 0 || isPending}
                     className="px-6 py-3 rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white/80 disabled:opacity-30 cursor-pointer"
