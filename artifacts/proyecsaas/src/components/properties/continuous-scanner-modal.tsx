@@ -46,6 +46,7 @@ const YAW_THRESHOLD = 15;     // capturar cada 15° de rotación horizontal
 const PITCH_THRESHOLD = 20;   // capturar cada 20° de inclinación vertical
 const MAX_SPEED = 45;         // grados/segundo máximo antes de advertir
 const MIN_REQUIRED_FRAMES = 24;
+const MAX_ALLOWED_FRAMES = 120; // Aceptamos hasta 120 frames ahora
 
 function normalizeAngle(value: number | null | undefined) {
   if (typeof value !== "number" || Number.isNaN(value)) return 0;
@@ -124,7 +125,9 @@ async function stitchWithService(frames: ScannedFrame[], propertyId: string): Pr
   });
 
   if (!res.ok) {
-    throw new Error(`Error del servicio de costura ${res.status}: ${await res.text()}`);
+    const errorText = await res.text();
+    console.error(`Stitch error details: ${errorText}`);
+    throw new Error(`Error del servicio de costura ${res.status}: ${errorText}`);
   }
 
   const { image } = (await res.json()) as { image: string };
@@ -149,6 +152,7 @@ export function ContinuousScannerModal({
   onCaptured,
 }: ContinuousScannerModalProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -162,6 +166,10 @@ export function ContinuousScannerModal({
   const [selectedAmbient, setSelectedAmbient] = useState<string>("Living");
   const [customAmbient, setCustomAmbient] = useState<string>("");
   const [showGuide, setShowGuide] = useState(true);
+
+  // Estados del HUD Premium animado
+  const [flashOpacity, setFlashOpacity] = useState(0);
+  const [lastCoveredSector, setLastCoveredSector] = useState<string | null>(null);
 
   // Referencias para la lógica de captura
   const scannedFramesRef = useRef<ScannedFrame[]>([]);
@@ -223,16 +231,26 @@ export function ContinuousScannerModal({
       setOrientation({ alpha: null, beta: null });
       setError(null);
       setShowGuide(true);
+      setFlashOpacity(0);
+      setLastCoveredSector(null);
     }
   }, [open]);
 
   // Ocultar guía automáticamente después de 4 segundos
   useEffect(() => {
     if (modalStep === "SCANNING") {
-      const timer = setTimeout(() => setShowGuide(false), 4000);
+      const timer = setTimeout(() => setShowGuide(false), 4500);
       return () => clearTimeout(timer);
     }
   }, [modalStep]);
+
+  // Desaparecer alerta de sector cubierto después de 1 segundo
+  useEffect(() => {
+    if (lastCoveredSector) {
+      const timer = setTimeout(() => setLastCoveredSector(null), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastCoveredSector]);
 
   // Inicializar Cámara
   useEffect(() => {
@@ -346,12 +364,21 @@ export function ContinuousScannerModal({
             scannedFramesRef.current = next;
             setScannedFrames(next);
             playBeep(880, 50, 0.15);
+            // Activar flash y banner de éxito
+            setFlashOpacity(0.35);
+            setTimeout(() => setFlashOpacity(0), 150);
+            setLastCoveredSector("Sector Inicial");
           }
         } else {
           const yawDiff = Math.abs(angleDiff(alpha, lastCaptureYawRef.current));
           const pitchDiff = Math.abs(beta - lastCapturePitchRef.current);
 
           if ((yawDiff >= YAW_THRESHOLD || pitchDiff >= PITCH_THRESHOLD) && speed <= MAX_SPEED) {
+            // Límite de seguridad
+            if (scannedFramesRef.current.length >= MAX_ALLOWED_FRAMES) {
+              return;
+            }
+
             lastCaptureYawRef.current = alpha;
             lastCapturePitchRef.current = beta;
             const blob = await captureFrame();
@@ -360,6 +387,13 @@ export function ContinuousScannerModal({
               scannedFramesRef.current = next;
               setScannedFrames(next);
               playBeep(880, 50, 0.15);
+              
+              // Activar flash y banner de éxito
+              setFlashOpacity(0.35);
+              setTimeout(() => setFlashOpacity(0), 150);
+              
+              const currentSector = Math.floor(alpha / 30) + 1;
+              setLastCoveredSector(`Sector ${currentSector}`);
             }
           }
         }
@@ -369,6 +403,113 @@ export function ContinuousScannerModal({
     window.addEventListener("deviceorientation", handleOrientation, true);
     return () => window.removeEventListener("deviceorientation", handleOrientation, true);
   }, [open, sensorEnabled, cameraReady, modalStep]);
+
+  // Dibujar el overlay canvas interactivo con los elementos premium
+  useEffect(() => {
+    if (modalStep !== "SCANNING" || !cameraReady) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animFrameId: number;
+    let sweepY = 0;
+    let sweepDirection = 1;
+
+    const resizeCanvas = () => {
+      canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
+      canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // 1. SECTORES CUBIERTOS (Overlay semitransparente de color)
+      // Dividimos la pantalla horizontal en 12 sectores de 30° para teñir verde/azul
+      const currentYaw = orientation.alpha ?? 0;
+      const sectorsCount = 12;
+      const sectorWidth = w / sectorsCount;
+
+      // Crear array de sectores ya cubiertos
+      const coveredSectors = new Array(sectorsCount).fill(false);
+      scannedFramesRef.current.forEach((frame) => {
+        const sectorIdx = Math.floor(((frame.yaw + 360) % 360) / (360 / sectorsCount));
+        coveredSectors[sectorIdx] = true;
+      });
+
+      for (let i = 0; i < sectorsCount; i++) {
+        const xStart = i * sectorWidth;
+        if (coveredSectors[i]) {
+          ctx.fillStyle = "rgba(16, 185, 129, 0.05)"; // verde esmeralda muy sutil para cubiertos
+        } else {
+          ctx.fillStyle = "rgba(6, 182, 212, 0.04)"; // cian traslúcido para pendientes
+        }
+        ctx.fillRect(xStart, 0, sectorWidth, h);
+      }
+
+      // 2. GRILLA DE PUNTOS FACE-ID PREMIUM (12 columnas x 8 filas)
+      const cols = 12;
+      const rows = 8;
+      const colStep = w / (cols + 1);
+      const rowStep = h / (rows + 1);
+
+      for (let c = 1; c <= cols; c++) {
+        const x = c * colStep;
+        // Identificar el sector en grados correspondientes a esta columna del canvas
+        const colAngle = (c / cols) * 360;
+        const colSectorIdx = Math.floor(colAngle / (360 / sectorsCount));
+        const isCovered = coveredSectors[colSectorIdx];
+
+        for (let r = 1; r <= rows; r++) {
+          const y = r * rowStep;
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, 2 * Math.PI);
+          
+          if (isCovered) {
+            ctx.fillStyle = "rgba(34, 197, 94, 0.85)"; // Verde brillante
+            ctx.shadowColor = "rgba(34, 197, 94, 0.7)";
+            ctx.shadowBlur = 8;
+          } else {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.16)"; // Blanco apagado
+            ctx.shadowBlur = 0;
+          }
+          ctx.fill();
+        }
+      }
+      ctx.shadowBlur = 0; // resetear sombra
+
+      // 3. LÍNEA DE BARRIDO CONTINUO (Sube y baja verticalmente)
+      sweepY += 4.5 * sweepDirection;
+      if (sweepY >= h) {
+        sweepY = h;
+        sweepDirection = -1;
+      } else if (sweepY <= 0) {
+        sweepY = 0;
+        sweepDirection = 1;
+      }
+
+      const sweepGradient = ctx.createLinearGradient(0, sweepY - 15, 0, sweepY + 15);
+      sweepGradient.addColorStop(0, "rgba(6, 182, 212, 0)");
+      sweepGradient.addColorStop(0.5, "rgba(6, 182, 212, 0.75)"); // Cian luminoso
+      sweepGradient.addColorStop(1, "rgba(6, 182, 212, 0)");
+
+      ctx.fillStyle = sweepGradient;
+      ctx.fillRect(0, sweepY - 15, w, 30);
+
+      animFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      cancelAnimationFrame(animFrameId);
+    };
+  }, [modalStep, cameraReady, orientation.alpha]);
 
   // Calcular la cobertura horizontal en base a 12 sectores de 30 grados
   const coveragePercent = (() => {
@@ -392,10 +533,14 @@ export function ContinuousScannerModal({
     if (scannedFrames.length === 0) return;
 
     setModalStep("PROCESSING");
+    setError(null);
     try {
-      setError(null);
+      console.log(`Starting stitching process with ${scannedFrames.length} frames.`);
       const file = await stitchWithService(scannedFrames, propertyId);
+      console.log(`Stitched successfully. Size: ${file.size} bytes. Starting Cloudinary upload.`);
+      
       const url = await uploadToPropertyMedia(file, "PANORAMA", orgSlug, propertyId, () => {});
+      console.log(`Cloudinary upload success: ${url}`);
 
       const finalTitle = selectedAmbient === "Otro" ? (customAmbient.trim() || "Otro") : selectedAmbient;
 
@@ -408,14 +553,14 @@ export function ContinuousScannerModal({
 
       const result = await upsertPropertyMediaAction(orgSlug, propertyId, payload);
       if (!result?.success) {
-        throw new Error(result?.message ?? "Error al guardar el tour virtual.");
+        throw new Error(result?.message ?? "Error al guardar los metadatos del tour virtual en la base de datos.");
       }
 
       onCaptured?.(payload);
       setModalStep("ANOTHER_PROMPT");
     } catch (saveError: any) {
-      console.error(saveError);
-      setError(saveError.message ?? "Ocurrió un error al unir las imágenes 360.");
+      console.error("Critical error in handleFinish:", saveError);
+      setError(saveError.message ?? "Ocurrió un error inesperado al unir o guardar las imágenes 360.");
       setModalStep("SCANNING");
     }
   };
@@ -508,10 +653,15 @@ export function ContinuousScannerModal({
                   <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-2 tracking-tight">Procesando Escaneo 360°</h3>
-              <p className="text-sm text-white/60 max-w-xs leading-relaxed">
-                Uniendo dinámicamente las {scannedFrames.length} capturas continuas por puntos de interés y subiendo la escena...
-              </p>
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-white">Procesando Escaneo 360°</h3>
+              <div className="mt-2 space-y-2">
+                <p className="text-sm font-semibold text-emerald-400">
+                  Procesando y uniendo {scannedFrames.length} fotos...
+                </p>
+                <p className="text-xs text-white/55 max-w-xs leading-relaxed mx-auto">
+                  Esto puede tardar entre 15 y 30 segundos debido al procesamiento matemático de las costuras en el servidor.
+                </p>
+              </div>
             </div>
           )}
 
@@ -560,12 +710,27 @@ export function ContinuousScannerModal({
           {/* STEP 4: ACTIVE SCANNING */}
           {modalStep === "SCANNING" && (
             <>
-              <div className={`relative min-h-0 flex-1 overflow-hidden transition-all duration-300 border-[6px] ${isTooFast ? "border-rose-600" : "border-emerald-500/70"}`}>
+              <div className="relative min-h-0 flex-1 overflow-hidden">
                 
                 <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay />
 
-                {/* OVERLAY GUIADO */}
-                <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-6">
+                {/* OVERLAY INTERACTIVO CANVAS (EFECTO PREMIUM FACE-ID) */}
+                <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-10 w-full h-full" />
+
+                {/* FLASH DE CAPTURA RÁPIDO */}
+                <div
+                  className="absolute inset-0 pointer-events-none z-20 transition-opacity duration-75"
+                  style={{
+                    backgroundColor: "rgba(34, 197, 94, 0.4)",
+                    opacity: flashOpacity,
+                  }}
+                />
+
+                {/* BORDERS DE VELOCIDAD DINÁMICOS */}
+                <div className={`absolute inset-0 pointer-events-none z-15 border-[6px] transition-colors duration-300 ${isTooFast ? "border-rose-600/80" : "border-emerald-500/20"}`} />
+
+                {/* OVERLAY GUIADO DE TEXTO Y HUD */}
+                <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-6 z-25">
                   
                   {/* Fila Superior: Info y Cobertura */}
                   <div className="flex items-center justify-between rounded-full bg-black/60 px-4 py-2 backdrop-blur">
@@ -573,23 +738,36 @@ export function ContinuousScannerModal({
                       Escanear: {selectedAmbient === "Otro" ? (customAmbient.trim() || "Otro") : selectedAmbient}
                     </span>
                     <span className="font-bold text-white/80 text-sm">
-                      {scannedFrames.length} capturas
+                      {scannedFrames.length} capturas (Límite: 120)
                     </span>
                   </div>
 
                   {/* Centro: Guía inicial animada o velocidad */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     {showGuide && (
-                      <div className="animate-fade-out duration-1000 max-w-[280px] bg-black/70 border border-white/10 rounded-2xl p-4 text-center backdrop-blur">
-                        <p className="text-sm font-bold leading-relaxed">
+                      <div className="animate-fade-out duration-1000 max-w-[280px] bg-black/80 border border-white/10 rounded-2xl p-4 text-center backdrop-blur">
+                        <p className="text-sm font-bold leading-relaxed text-cyan-400">
                           Girá lentamente 360° sobre tu propio eje de forma fluida.
                         </p>
                       </div>
                     )}
 
-                    {isTooFast && (
+                    {isTooFast ? (
                       <div className="bg-rose-600/90 text-white font-extrabold uppercase px-6 py-3 rounded-full text-base tracking-wider animate-pulse shadow-lg">
                         Girá más despacio
+                      </div>
+                    ) : (
+                      scannedFrames.length > 0 && !showGuide && (
+                        <div className="text-xs font-semibold tracking-wider text-cyan-400/95 uppercase bg-black/55 px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur">
+                          <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
+                          Escaneando activamente
+                        </div>
+                      )
+                    )}
+
+                    {lastCoveredSector && (
+                      <div className="mt-4 bg-emerald-500/90 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all duration-300 animate-bounce">
+                        ✓ {lastCoveredSector} cubierto
                       </div>
                     )}
                   </div>
@@ -624,7 +802,7 @@ export function ContinuousScannerModal({
                     </div>
 
                     {/* Barra vertical de inclinación (Piso / Frente / Techo) */}
-                    <div className="flex flex-col items-center justify-center bg-black/60 rounded-xl p-3 border border-white/10 backdrop-blur h-36 w-12">
+                    <div className="flex flex-col items-center justify-center bg-black/60 rounded-xl p-3 border border-white/10 backdrop-blur h-36 w-12 text-white">
                       <div className="relative flex-1 w-2 bg-white/20 rounded-full flex items-center justify-center">
                         <span className="absolute top-0 text-[8px] text-white/55 font-bold uppercase">T</span>
                         <span className="text-[8px] text-white/55 font-bold uppercase">•</span>
@@ -652,7 +830,7 @@ export function ContinuousScannerModal({
                   <div className="absolute inset-0 grid place-items-center bg-black px-8 text-center">
                     <div className="max-w-sm">
                       <VideoOff className="mx-auto mb-4 h-10 w-10 text-white/70" />
-                      <p className="text-lg font-semibold">{error}</p>
+                      <p className="text-lg font-semibold text-rose-300">{error}</p>
                       <button
                         type="button"
                         onClick={close}
