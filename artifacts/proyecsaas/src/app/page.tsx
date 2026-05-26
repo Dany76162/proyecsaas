@@ -97,11 +97,14 @@ export default async function HomePage() {
               <Zap className="h-3.5 w-3.5" />
               Infraestructura Comercial
             </span>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              La plataforma operativa para inmobiliarias modernas.
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl leading-tight">
+              Tu inmobiliaria en{" "}
+              <span className="bg-gradient-to-r from-brand-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
+                Piloto Automático.
+              </span>
             </h1>
-            <p className="mt-6 text-lg leading-relaxed text-slate-600 max-w-2xl mx-auto">
-              Centralizá leads, conversaciones, propiedades y seguimiento comercial en un sistema diseñado para trabajar mejor todos los días.
+            <p className="mt-6 text-lg leading-relaxed text-slate-600 max-w-3xl mx-auto font-medium">
+              La única plataforma operativa que atiende a tus leads por WhatsApp las <strong>24 horas, los 7 días de la semana</strong>. La IA califica el interés de cada prospecto, les recomienda propiedades de tu catálogo en tiempo real y les agenda visitas directamente en tu calendario. Todo de forma 100% autónoma.
             </p>
             
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
