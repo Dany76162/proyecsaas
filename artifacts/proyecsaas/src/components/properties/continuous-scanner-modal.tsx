@@ -625,7 +625,7 @@ export function ContinuousScannerModal({
   };
 
   const handleFinish = async () => {
-    const frames = scannedFrames;
+    const frames = scannedFramesRef.current;
     console.log("handleFinish called, frames:", frames.length);
     console.log("propertyId:", propertyId);
     console.log("STITCH_URL:", process.env.NEXT_PUBLIC_STITCH_SERVICE_URL);
