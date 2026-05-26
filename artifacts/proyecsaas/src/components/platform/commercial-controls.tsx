@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,7 @@ import { setOrganizationCommercialStateAction } from "@/modules/platform/billing
 import type { PlatformPlanOption } from "@/modules/platform/types";
 
 const STATUS_OPTIONS = [
-  { value: "TRIALING", label: "Trial" },
+  { value: "TRIALING", label: "Periodo de Prueba" },
   { value: "ACTIVE", label: "Activa" },
   { value: "PAST_DUE", label: "Pago pendiente" },
   { value: "CANCELLED", label: "Cancelada" },
@@ -39,6 +39,7 @@ export function CommercialControls({
   orgName,
   planOptions,
   currentPlanId,
+  currentPlanLabel,
   currentStatus,
   currentBillingMode,
   currentPeriodEnd,
@@ -48,6 +49,7 @@ export function CommercialControls({
   orgName: string;
   planOptions: PlatformPlanOption[];
   currentPlanId: string | null;
+  currentPlanLabel: string | null;
   currentStatus: string;
   currentBillingMode: string | null;
   currentPeriodEnd: string | null;
@@ -60,7 +62,7 @@ export function CommercialControls({
   const [success, setSuccess] = useState("");
 
   const defaultPlanId = useMemo(
-    () => currentPlanId ?? planOptions[0]?.id ?? "",
+    () => currentPlanId ?? planOptions[0]?.id ?? "starter",
     [currentPlanId, planOptions],
   );
 
@@ -68,6 +70,7 @@ export function CommercialControls({
     currentStatus === "LEGACY" ? "ACTIVE" : currentStatus === "EXPIRED" ? "PAST_DUE" : currentStatus;
 
   const [planId, setPlanId] = useState(defaultPlanId);
+  const [planLabel, setPlanLabel] = useState(currentPlanLabel ?? "");
   const [subscriptionStatus, setSubscriptionStatus] = useState(defaultStatus);
   const [billingMode, setBillingMode] = useState(currentBillingMode ?? "MANUAL");
   const [periodEnd, setPeriodEnd] = useState(
@@ -77,6 +80,7 @@ export function CommercialControls({
 
   const resetState = () => {
     setPlanId(defaultPlanId);
+    setPlanLabel(currentPlanLabel ?? "");
     setSubscriptionStatus(defaultStatus);
     setBillingMode(currentBillingMode ?? "MANUAL");
     setPeriodEnd(formatDateInput(currentPeriodEnd) || addDays(new Date(), 30));
@@ -105,6 +109,7 @@ export function CommercialControls({
       const result = await setOrganizationCommercialStateAction({
         organizationId,
         planId,
+        planLabel: planLabel || undefined,
         subscriptionStatus,
         billingMode,
         currentPeriodEnd: periodEnd,
@@ -168,7 +173,7 @@ export function CommercialControls({
                 onClick={() => applyQuickPreset("TRIALING", "MANUAL", 14)}
                 className="rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-brand-700 transition hover:bg-brand-100"
               >
-                Trial 14d
+                Prueba 14d
               </button>
               <button
                 type="button"
@@ -182,18 +187,14 @@ export function CommercialControls({
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Plan</label>
-                  <select
-                    value={planId}
-                    onChange={(e) => setPlanId(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-                  >
-                    {planOptions.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Monto / Plan</label>
+                  <input
+                    type="text"
+                    value={planLabel}
+                    onChange={(e) => setPlanLabel(e.target.value)}
+                    placeholder="Ej: $45.000 o Plan Starter"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-semibold outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  />
                 </div>
 
                 <div>
@@ -271,7 +272,7 @@ export function CommercialControls({
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending || !planId || !periodEnd}
+                  disabled={isPending || !periodEnd}
                   className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 shadow-sm shadow-brand-500/20 disabled:opacity-50"
                 >
                   {isPending ? "Guardando..." : "Guardar estado comercial"}

@@ -41,6 +41,7 @@ const updateCommercialStateSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Ingresá una fecha de vencimiento válida."),
   internalBillingNotes: z.string().trim().max(1000).optional(),
+  planLabel: z.string().trim().max(200).optional().nullable(),
 });
 
 function parseEndOfDayUTC(input: string) {
@@ -387,6 +388,7 @@ export async function setOrganizationCommercialStateAction(input: unknown): Prom
     billingMode,
     currentPeriodEnd: currentPeriodEndInput,
     internalBillingNotes,
+    planLabel,
   } = parsed.data;
 
   const org = await prisma.organization.findUnique({
@@ -407,13 +409,31 @@ export async function setOrganizationCommercialStateAction(input: unknown): Prom
     return { success: false, message: "Organización no encontrada." };
   }
 
-  const plan = await prisma.plan.findFirst({
+  let plan = await prisma.plan.findFirst({
     where: { id: planId, isActive: true },
     select: { id: true, name: true },
   });
 
   if (!plan) {
-    return { success: false, message: "El plan seleccionado no está disponible." };
+    plan = await prisma.plan.findFirst({
+      where: { isActive: true },
+      select: { id: true, name: true },
+    });
+  }
+
+  if (!plan) {
+    // Si no hay planes en la BD, creamos uno al vuelo para no fallar constraints
+    plan = await prisma.plan.create({
+      data: {
+        id: "starter",
+        name: "Starter",
+        description: "Plan Starter por defecto",
+        sortOrder: 1,
+        isActive: true,
+        canUseAiAgents: true,
+      },
+      select: { id: true, name: true },
+    });
   }
 
   const currentPeriodEnd = parseEndOfDayUTC(currentPeriodEndInput);
@@ -458,7 +478,7 @@ export async function setOrganizationCommercialStateAction(input: unknown): Prom
       await tx.organization.update({
         where: { id: org.id },
         data: {
-          planLabel: plan.name,
+          planLabel: planLabel || plan.name,
           ...(subscriptionStatus === SubscriptionStatus.ACTIVE ||
           subscriptionStatus === SubscriptionStatus.TRIALING
             ? { isActive: true }

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
@@ -288,7 +288,7 @@ export function OrgTable({
                         {org.commercialStatusLabel}
                       </Badge>
                       <span className="text-xs font-semibold text-slate-700">
-                        {org.planId ? `Plan ${org.planId}` : "Sin plan asignado"}
+                        {org.planLabel || (org.planId ? `Plan ${org.planId}` : "Sin plan / abono asignado")}
                       </span>
                       <span className="text-[11px] text-slate-500">
                         {org.billingModeLabel ?? "Sin modo"} - {formatCommercialDate(org.currentPeriodEnd)}
@@ -320,6 +320,7 @@ export function OrgTable({
                             orgName={org.name}
                             planOptions={plans}
                             currentPlanId={org.planId}
+                            currentPlanLabel={org.planLabel}
                             currentStatus={org.commercialStatus}
                             currentBillingMode={org.billingMode}
                             currentPeriodEnd={org.currentPeriodEnd}
