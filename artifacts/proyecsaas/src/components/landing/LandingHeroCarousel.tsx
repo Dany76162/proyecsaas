@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
@@ -22,13 +22,20 @@ const SLIDES = [
   },
   {
     id: 3,
+    title: "Tours Virtuales 360° profesionales solo con tu celular.",
+    description: "Creá escenas inmersivas interactivas sin necesidad de cámaras costosas, directo desde la web.",
+    image: "/landing/slide3.png",
+    alt: "Tour virtual 360 interactivo creado con el celular",
+  },
+  {
+    id: 4,
     title: "Mientras el sistema automatiza, tu equipo avanza.",
     description: "Centralizá leads, conversaciones y seguimiento comercial sin frenar la operación.",
     image: "/landing/ai_map_strategy.png",
     alt: "Inmobiliaria trabajando con el sistema y mapas de calor",
   },
   {
-    id: 4,
+    id: 5,
     title: "Menos desorden operativo, más visitas concretadas.",
     description: "Automatizá el seguimiento y enfocá al equipo en lo que realmente cierra ventas.",
     image: "/landing/slide4.png",
