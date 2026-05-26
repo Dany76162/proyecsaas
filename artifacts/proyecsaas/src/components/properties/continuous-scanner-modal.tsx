@@ -116,6 +116,20 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
+function subsampleFrames(frames: ScannedFrame[], maxFrames = 30): ScannedFrame[] {
+  if (frames.length <= maxFrames) return frames;
+  const step = (frames.length - 1) / (maxFrames - 1);
+  const result: ScannedFrame[] = [];
+  for (let i = 0; i < maxFrames; i++) {
+    const index = Math.round(i * step);
+    const frame = frames[index];
+    if (frame) {
+      result.push(frame);
+    }
+  }
+  return result;
+}
+
 async function stitchWithService(frames: ScannedFrame[], propertyId: string): Promise<File> {
   const STITCH_URL = process.env.NEXT_PUBLIC_STITCH_SERVICE_URL;
 
@@ -133,17 +147,31 @@ async function stitchWithService(frames: ScannedFrame[], propertyId: string): Pr
     }),
   );
 
-  const res = await fetch(`${STITCH_URL}/stitch`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      frames: framePayloads,
-      output_width: 4096,
-      output_height: 2048,
-      fov_h: 65,
-      fov_v: 50,
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos timeout
+
+  let res: Response;
+  try {
+    res = await fetch(`${STITCH_URL}/stitch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        frames: framePayloads,
+        output_width: 4096,
+        output_height: 2048,
+        fov_h: 65,
+        fov_v: 50,
+      }),
+      signal: controller.signal,
+    });
+  } catch (fetchErr: any) {
+    if (fetchErr.name === "AbortError") {
+      throw new Error("El servicio de costura tardó demasiado en responder (Timeout de 60 segundos).");
+    }
+    throw fetchErr;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     const errorText = await res.text();
@@ -206,6 +234,7 @@ export function ContinuousScannerModal({
   const lastTimestampRef = useRef<number>(Date.now());
   const prevAlphaRef = useRef<number>(0);
   const speakTimeoutRef = useRef<number | null>(null);
+  const hasAttemptedFinishRef = useRef(false);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -277,6 +306,7 @@ export function ContinuousScannerModal({
         front: new Set(),
         floor: new Set(),
       });
+      hasAttemptedFinishRef.current = false;
     }
   }, [open]);
 
@@ -594,7 +624,8 @@ export function ContinuousScannerModal({
     zoneCoverage.floor.size >= 4;
 
   useEffect(() => {
-    if (isComplete && modalStep === "SCANNING") {
+    if (isComplete && modalStep === "SCANNING" && !hasAttemptedFinishRef.current) {
+      hasAttemptedFinishRef.current = true;
       speak("Escaneo completo. Finalizando.");
       const timer = setTimeout(() => {
         handleFinish();
@@ -625,8 +656,12 @@ export function ContinuousScannerModal({
   };
 
   const handleFinish = async () => {
-    const frames = scannedFramesRef.current;
-    console.log("handleFinish called, frames:", frames.length);
+    let frames = scannedFramesRef.current;
+    console.log("handleFinish called, total frames:", frames.length);
+
+    // Subsamplear frames si excedemos el límite óptimo para procesamiento del backend
+    frames = subsampleFrames(frames, 30);
+    console.log("Subsampled frames count for stitching:", frames.length);
     console.log("propertyId:", propertyId);
     console.log("STITCH_URL:", process.env.NEXT_PUBLIC_STITCH_SERVICE_URL);
 
@@ -954,6 +989,7 @@ export function ContinuousScannerModal({
                         front: new Set(),
                         floor: new Set(),
                       });
+                      hasAttemptedFinishRef.current = false;
                     }}
                     disabled={scannedFrames.length === 0 || isPending}
                     className="px-6 py-3 rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white/80 disabled:opacity-30 cursor-pointer"
