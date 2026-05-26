@@ -37,10 +37,21 @@ export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientM
     setCurrentDateStr(formatted.charAt(0).toUpperCase() + formatted.slice(1));
   }, []);
 
+  const cleanName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
   const uniqueDynamic = dynamicClients.filter(
-    (dc) => !DEFAULT_CLIENTS.some((bc) => bc.main.toLowerCase() === dc.main.toLowerCase())
+    (dc) => !DEFAULT_CLIENTS.some(
+      (bc) => cleanName(bc.main).includes(cleanName(dc.main)) || cleanName(dc.main).includes(cleanName(bc.main))
+    )
   );
-  const clientsList = [...uniqueDynamic, ...DEFAULT_CLIENTS];
+
+  const filteredDefaults = DEFAULT_CLIENTS.filter(
+    (bc) => !dynamicClients.some(
+      (dc) => cleanName(bc.main).includes(cleanName(dc.main)) || cleanName(dc.main).includes(cleanName(bc.main))
+    )
+  );
+
+  const clientsList = [...uniqueDynamic, ...filteredDefaults];
   const marqueeItems = [...clientsList, ...clientsList, ...clientsList, ...clientsList];
 
   return (

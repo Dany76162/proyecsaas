@@ -87,17 +87,24 @@ export default async function HomePage() {
   }
 
   // Consulta dinámica en base de datos real (Prisma) para el contador y carrusel inteligente
+  // Filtrado estrictamente para clientes reales que pagaron su suscripción (estado ACTIVE)
   const [totalClients, dbOrgs] = await Promise.all([
     prisma.organization.count({
       where: {
         isActive: true,
         deletedAt: null,
+        subscription: {
+          status: "ACTIVE",
+        },
       },
     }),
     prisma.organization.findMany({
       where: {
         isActive: true,
         deletedAt: null,
+        subscription: {
+          status: "ACTIVE",
+        },
       },
       select: {
         name: true,
