@@ -6,29 +6,29 @@ import { Compass, Smartphone, Sparkles, Volume2, Maximize, CheckCircle2 } from "
 
 export function Tour360Section() {
   return (
-    <section id="tour-360" className="relative overflow-hidden bg-slate-900 py-24 text-slate-100 border-b border-slate-800">
-      {/* Background Decorative Gradients */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-3xl opacity-40 pointer-events-none -translate-y-1/3 translate-x-1/3" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-3xl opacity-30 pointer-events-none translate-y-1/3 -translate-x-1/3" />
+    <section id="tour-360" className="relative overflow-hidden bg-white py-24 text-slate-800 border-b border-slate-100">
+      {/* Background Decorative Gradients - Softened for light theme */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-3xl opacity-60 pointer-events-none -translate-y-1/3 translate-x-1/3" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl opacity-50 pointer-events-none translate-y-1/3 -translate-x-1/3" />
 
       <div className="mx-auto max-w-7xl px-6 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
           
           {/* TEXTO INFORMATIVO (IZQUIERDA) */}
           <div className="flex-1 space-y-8 text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-brand-500/10 border border-brand-500/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-400">
-              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-200 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-700">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse text-brand-600" />
               Exclusivo de RaícesPilot
             </div>
             
             <div className="space-y-4">
-              <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl leading-tight">
+              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-tight">
                 Tours Virtuales 360° <br />
-                <span className="bg-gradient-to-r from-brand-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                <span className="text-brand-600">
                   Solo con tu celular.
                 </span>
               </h2>
-              <p className="text-lg leading-relaxed text-slate-300">
+              <p className="text-lg leading-relaxed text-slate-600">
                 Olvidate de comprar cámaras 360° costosas o de lidiar con trípodes y configuraciones complejas. Con nuestro nuevo **Escáner Continuo por Giroscopio**, cualquiera de tus agentes puede crear un tour virtual inmersivo de calidad profesional en menos de 2 minutos usando únicamente su teléfono móvil.
               </p>
             </div>
@@ -37,47 +37,47 @@ export function Tour360Section() {
               {[
                 {
                   icon: Smartphone,
-                  color: "text-brand-400",
-                  bg: "bg-brand-500/10",
+                  color: "text-brand-600",
+                  bg: "bg-brand-50",
                   title: "Escaneo Continuo Guiado",
                   desc: "Presioná 'Escanear' y girá lentamente. El giroscopio del celular detecta la rotación y captura los frames de manera inteligente en tiempo real."
                 },
                 {
                   icon: Volume2,
-                  color: "text-cyan-400",
-                  bg: "bg-cyan-500/10",
+                  color: "text-cyan-600",
+                  bg: "bg-cyan-50",
                   title: "Voz Guía Asistida (Web Speech API)",
                   desc: "La app te habla al oído mientras te moves. Te avisa si girás muy rápido, cuándo apuntar al techo o al piso, y cuándo se completa el escaneo."
                 },
                 {
                   icon: Compass,
-                  color: "text-indigo-400",
-                  bg: "bg-indigo-500/10",
+                  color: "text-indigo-600",
+                  bg: "bg-indigo-50",
                   title: "Detección Inteligente de Zonas",
                   desc: "El sistema mapea las orientaciones esféricas en tiempo real dividiendo el progreso en Frente, Techo y Piso para lograr una cobertura inmersiva total."
                 },
                 {
                   icon: Maximize,
-                  color: "text-emerald-400",
-                  bg: "bg-emerald-500/10",
+                  color: "text-emerald-600",
+                  bg: "bg-emerald-50",
                   title: "Costura (Stitching) en la Nube",
                   desc: "Nuestro microservicio inteligente une los frames tomados en segundos, resolviendo las costuras automáticamente para entregar una escena 360° perfecta."
                 }
               ].map((item, index) => (
-                <div key={index} className="flex gap-4 p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all">
+                <div key={index} className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all duration-300">
                   <div className={`h-10 w-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>
                     <item.icon className={`h-5 w-5 ${item.color}`} />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white mb-1">{item.title}</h3>
-                    <p className="text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+                    <h3 className="text-base font-bold text-slate-900 mb-1">{item.title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center gap-3 text-sm font-semibold text-brand-400">
-              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <div className="flex items-center gap-3 text-sm font-semibold text-brand-600">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               <span>Disponible desde cualquier navegador móvil. Sin descargar aplicaciones.</span>
             </div>
           </div>

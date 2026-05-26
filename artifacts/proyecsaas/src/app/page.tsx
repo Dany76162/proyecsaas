@@ -30,6 +30,7 @@ import { LandingHeroCarousel } from "@/components/landing/LandingHeroCarousel";
 import { MobilitySection } from "@/components/landing/MobilitySection";
 import { Tour360Section } from "@/components/landing/Tour360Section";
 import Image from "next/image";
+import { prisma } from "@/server/db/prisma";
 
 const DEMO_WHATSAPP_URL =
   "https://wa.me/5491161630205?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20RaicesPilot%20para%20mi%20inmobiliaria.";
@@ -82,6 +83,35 @@ export default async function HomePage() {
     redirect(await resolveSignedInHomePath(sessionUser));
   }
 
+  // Consulta dinámica en base de datos real (Prisma) para el contador y carrusel inteligente
+  const [totalClients, dbOrgs] = await Promise.all([
+    prisma.organization.count({
+      where: {
+        isActive: true,
+        deletedAt: null,
+      },
+    }),
+    prisma.organization.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+      },
+      select: {
+        name: true,
+        city: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 20, // Tomar los últimos 20 para mantener el carrusel ágil
+    }),
+  ]);
+
+  const dynamicClients = dbOrgs.map((org) => ({
+    main: org.name,
+    sub: org.city || "Inmobiliaria",
+  }));
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-brand-100 selection:text-brand-900 text-slate-900">
       <Navbar />
@@ -121,7 +151,7 @@ export default async function HomePage() {
 
         </section>
 
-        <ClientMarquee />
+        <ClientMarquee totalClients={totalClients} dynamicClients={dynamicClients} />
 
         {/* BENEFICIOS PRINCIPALES */}
         <section id="beneficios" className="mx-auto max-w-7xl px-6 py-16">
