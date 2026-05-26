@@ -44,7 +44,7 @@ function Navbar() {
           <img 
             src="/brand/logo_transparent_icon.png" 
             alt="RaícesPilot Logo" 
-            className="h-10 sm:h-16 w-auto object-contain brightness-0 dark:brightness-100 dark:invert" 
+            className="h-10 sm:h-16 w-auto object-contain brightness-0 dark:invert" 
           />
           <span className="text-base sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white -ml-1">
             <span className="text-brand-600 dark:text-brand-400">RAÍCES</span><span className="font-light">Pilot</span>
@@ -379,15 +379,15 @@ export default async function HomePage() {
 
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-8 text-center text-sm text-slate-500">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-8 text-center text-sm text-slate-500 dark:text-slate-400 transition-colors duration-300">
         <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-0 font-bold text-slate-900">
+          <div className="flex items-center gap-0 font-bold text-slate-900 dark:text-white">
             <img 
               src="/brand/logo_transparent_icon.png" 
               alt="Logo" 
-              className="h-10 md:h-12 w-auto object-contain brightness-0" 
+              className="h-10 md:h-12 w-auto object-contain brightness-0 dark:invert" 
             />
-            <span className="text-brand-600 -ml-0.5">RAÍCES</span>Pilot
+            <span className="text-brand-600 dark:text-brand-400 -ml-0.5">RAÍCES</span>Pilot
           </div>
           <p>© {new Date().getFullYear()} RaicesPilot. Plataforma Operativa Inmobiliaria.</p>
         </div>

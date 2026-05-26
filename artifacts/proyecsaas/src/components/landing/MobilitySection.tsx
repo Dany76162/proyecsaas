@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { motion } from "framer-motion";
@@ -7,8 +7,10 @@ import { Globe, Smartphone, Laptop, Compass, LayoutGrid, CheckCircle2, Home, Use
 
 export function MobilitySection() {
   return (
-    <section className="bg-slate-50 py-24 border-b border-slate-100 relative overflow-hidden">
-      <div className="absolute top-0 left-0 -translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-brand-100/30 rounded-full blur-3xl opacity-50 pointer-events-none" />
+    <section className="bg-slate-50 dark:bg-slate-950 py-24 border-b border-slate-100 dark:border-slate-900 relative overflow-hidden transition-colors duration-300">
+      
+      {/* Background decoration in dark mode */}
+      <div className="absolute top-0 left-0 -translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-brand-100/30 dark:bg-brand-500/5 rounded-full blur-3xl opacity-50 pointer-events-none" />
       
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
@@ -23,8 +25,8 @@ export function MobilitySection() {
               className="relative mx-auto w-full max-w-2xl"
             >
               {/* Laptop Mockup (Dashboard Real Style) */}
-              <div className="relative aspect-[16/10] w-full rounded-2xl bg-slate-900 p-2 shadow-2xl ring-1 ring-slate-800">
-                <div className="h-full w-full overflow-hidden rounded-xl bg-white flex shadow-inner">
+              <div className="relative aspect-[16/10] w-full rounded-2xl bg-slate-900 dark:bg-slate-900/60 p-2 shadow-2xl ring-1 ring-slate-800 dark:ring-slate-800/80">
+                <div className="h-full w-full overflow-hidden rounded-xl bg-white dark:bg-slate-900 flex shadow-inner">
                   
                   {/* Sidebar (Navy - Exacto al real) */}
                   <div className="w-[22%] bg-[#0f172a] h-full flex flex-col shrink-0 text-[7px] text-slate-400">
@@ -81,13 +83,13 @@ export function MobilitySection() {
                   </div>
 
                   {/* Main Panel (Exacto al real) */}
-                  <div className="flex-1 bg-slate-50 h-full flex flex-col overflow-hidden">
+                  <div className="flex-1 bg-slate-50 dark:bg-slate-950 h-full flex flex-col overflow-hidden">
                     {/* Top Header */}
-                    <div className="h-8 border-b border-slate-200 bg-white flex items-center px-4 justify-between shrink-0">
-                      <div className="text-[6px] font-bold text-brand-600 uppercase tracking-widest">Panel de Inmobiliaria</div>
+                    <div className="h-8 border-b border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900 flex items-center px-4 justify-between shrink-0">
+                      <div className="text-[6px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest">Panel de Inmobiliaria</div>
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-12 bg-slate-100 rounded" />
-                        <div className="h-4 w-4 rounded-full bg-slate-200" />
+                        <div className="h-2 w-12 bg-slate-100 dark:bg-slate-800 rounded" />
+                        <div className="h-4 w-4 rounded-full bg-slate-200 dark:bg-slate-700" />
                       </div>
                     </div>
 
@@ -109,12 +111,12 @@ export function MobilitySection() {
                               <span>80%</span>
                             </div>
                             <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                               <motion.div 
-                                 initial={{ width: 0 }}
-                                 whileInView={{ width: "80%" }}
-                                 transition={{ duration: 1.5, delay: 0.5 }}
-                                 className="h-full bg-emerald-500" 
-                               />
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  whileInView={{ width: "80%" }}
+                                  transition={{ duration: 1.5, delay: 0.5 }}
+                                  className="h-full bg-emerald-500" 
+                                />
                             </div>
                           </div>
                         </div>
@@ -125,12 +127,12 @@ export function MobilitySection() {
                       {/* Steps Area */}
                       <div className="space-y-2">
                         <div className="text-[6px] font-bold text-slate-400 uppercase tracking-widest">Paso 1 - Siguiente Paso</div>
-                        <div className="bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 flex items-center justify-between shadow-sm">
                            <div className="flex items-center gap-3">
                              <div className="h-7 w-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px] font-bold">1</div>
                              <div className="space-y-1">
-                               <div className="h-2 w-24 bg-slate-900 rounded" />
-                               <div className="h-1.5 w-48 bg-slate-100 rounded" />
+                               <div className="h-2 w-24 bg-slate-900 dark:bg-slate-100 rounded" />
+                               <div className="h-1.5 w-48 bg-slate-100 dark:bg-slate-800 rounded" />
                              </div>
                            </div>
                            <div className="h-5 w-16 bg-brand-600 rounded flex items-center justify-center text-[6px] text-white font-bold">A configuración</div>
@@ -140,15 +142,15 @@ export function MobilitySection() {
                       {/* Step Completed Example */}
                       <div className="space-y-2 opacity-60">
                         <div className="text-[6px] font-bold text-slate-400 uppercase tracking-widest">Paso 2</div>
-                        <div className="bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 flex items-center justify-between shadow-sm">
                            <div className="flex items-center gap-3">
-                             <div className="h-7 w-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[8px] font-bold">OK</div>
+                             <div className="h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[8px] font-bold">OK</div>
                              <div className="space-y-1">
-                               <div className="h-2 w-32 bg-slate-900 rounded" />
-                               <div className="h-1.5 w-56 bg-slate-100 rounded" />
+                               <div className="h-2 w-32 bg-slate-900 dark:bg-slate-100 rounded" />
+                               <div className="h-1.5 w-56 bg-slate-100 dark:bg-slate-800 rounded" />
                              </div>
                            </div>
-                           <div className="h-5 w-16 border border-slate-200 rounded flex items-center justify-center text-[6px] text-slate-500 font-bold">Ver como funciona</div>
+                           <div className="h-5 w-16 border border-slate-200 dark:border-slate-800 rounded flex items-center justify-center text-[6px] text-slate-500 dark:text-slate-400 font-bold">Ver como funciona</div>
                         </div>
                       </div>
                     </div>
@@ -156,13 +158,13 @@ export function MobilitySection() {
                 </div>
               </div>
 
-              {/* Mobile Mockup (AI Chat) - Superpuesto con diseño más prolijo */}
+              {/* Mobile Mockup (AI Chat) */}
               <motion.div 
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-6 -right-4 w-40 sm:w-48 aspect-[1/2] rounded-[2.5rem] bg-slate-900 p-1.5 shadow-2xl border-4 border-white ring-1 ring-slate-200 z-20"
+                className="absolute -bottom-6 -right-4 w-40 sm:w-48 aspect-[1/2] rounded-[2.5rem] bg-slate-900 p-1.5 shadow-2xl border-4 border-white dark:border-slate-800 ring-1 ring-slate-200 dark:ring-slate-800/80 z-20"
               >
-                <div className="h-full w-full overflow-hidden rounded-[2.1rem] bg-white flex flex-col">
+                <div className="h-full w-full overflow-hidden rounded-[2.1rem] bg-white dark:bg-slate-900 flex flex-col">
                    {/* Chat Header (WhatsApp Style) */}
                    <div className="h-12 bg-[#075e54] text-white flex items-center px-4 gap-2 shrink-0">
                       <div className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center overflow-hidden p-1 border border-white/20">
@@ -191,7 +193,7 @@ export function MobilitySection() {
                          <p className="text-[7.5px] leading-snug text-slate-800">
                            ¡Hola! Te ayudo con eso. Tengo 3 opciones disponibles en Palermo que podrían interesarte. ¿Buscás alquiler o compra?
                          </p>
-                         <div className="text-[4px] text-slate-400 text-right mt-1">14:02 <span className="text-blue-500">âœ“âœ“</span></div>
+                         <div className="text-[4px] text-slate-400 text-right mt-1">14:02 <span className="text-blue-500">✓✓</span></div>
                       </div>
                       {/* IA Status Indicator */}
                       <div className="flex justify-center">
@@ -210,42 +212,42 @@ export function MobilitySection() {
 
           {/* TEXTO - DERECHA */}
           <div className="flex-1 space-y-8 text-left order-1 lg:order-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-700">
-              <Globe className="h-3.5 w-3.5" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-700 dark:text-brand-400">
+              <Globe className="h-3.5 w-3.5 animate-pulse text-brand-600 dark:text-brand-400" />
               Ubicuidad total
             </div>
             
             <div className="space-y-4">
-              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-tight">
+              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl lg:text-5xl leading-tight">
                 Controlá tu empresa desde cualquier lugar
               </h2>
-              <p className="text-lg leading-relaxed text-slate-600 max-w-2xl">
+              <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-350 max-w-2xl">
                 RaicesPilot funciona desde la web, sin instalaciones ni descargas pesadas. Desde tu computadora o celular podés verificar leads, conversaciones y seguimiento comercial sin estar físicamente en la oficina.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-              <div className="flex items-center gap-4 p-5 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-                  <Smartphone className="h-5 w-5 text-brand-600" />
+              <div className="flex items-center gap-4 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm dark:shadow-2xl/10 hover:shadow-md dark:hover:border-brand-500/30 transition-all duration-300">
+                <div className="h-10 w-10 rounded-xl bg-brand-50 dark:bg-brand-500/15 flex items-center justify-center shrink-0">
+                  <Smartphone className="h-5 w-5 text-brand-600 dark:text-brand-400" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-slate-900">Operación Móvil</div>
-                  <div className="text-xs text-slate-500">Monitoreá la actividad 24/7.</div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white">Operación Móvil</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Monitoreá la actividad 24/7.</div>
                 </div>
               </div>
-              <div className="flex items-center gap-4 p-5 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                  <Laptop className="h-5 w-5 text-slate-600" />
+              <div className="flex items-center gap-4 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm dark:shadow-2xl/10 hover:shadow-md dark:hover:border-brand-500/30 transition-all duration-300">
+                <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                  <Laptop className="h-5 w-5 text-slate-600 dark:text-slate-300" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-slate-900">Acceso Web Directo</div>
-                  <div className="text-xs text-slate-500">Sin depender de una sola PC.</div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white">Acceso Web Directo</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Sin depender de una sola PC.</div>
                 </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 text-sm font-medium text-slate-400">
+            <div className="flex items-center gap-3 text-sm font-medium text-slate-400 dark:text-slate-500">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               <span>Sin instalar nada. Todo desde la web. Siempre disponible.</span>
             </div>
