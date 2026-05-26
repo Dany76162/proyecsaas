@@ -28,6 +28,7 @@ import { AccessRequestForm } from "./solicitar-acceso/access-request-form";
 import { ClientMarquee } from "@/components/landing/client-marquee";
 import { LandingHeroCarousel } from "@/components/landing/LandingHeroCarousel";
 import { MobilitySection } from "@/components/landing/MobilitySection";
+import { Tour360Section } from "@/components/landing/Tour360Section";
 import Image from "next/image";
 
 const DEMO_WHATSAPP_URL =
@@ -217,6 +218,9 @@ export default async function HomePage() {
 
         {/* MOBILITY & WEB ACCESS SECTION */}
         <MobilitySection />
+
+        {/* 360 VIRTUAL TOURS MOBILE FEATURE */}
+        <Tour360Section />
 
         {/* PRODUCT PREVIEW / INFRASTRUCTURE (Dark Section) */}
 
