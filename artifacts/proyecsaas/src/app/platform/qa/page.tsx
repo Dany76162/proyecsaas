@@ -833,9 +833,9 @@ export default function QAOperativoPage() {
                 onClick={async () => {
                   await runSimAction("Simular Lead A", simulateFirstLeadAction);
                 }}
-                className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
               >
-                Simular Lead A (Incremento +1)
+                Simular Lead A
               </Button>
 
               <Button
@@ -853,9 +853,9 @@ export default function QAOperativoPage() {
                 onClick={async () => {
                   await runSimAction("Simular Lead B", simulateSecondLeadAction);
                 }}
-                className="bg-sky-655 hover:bg-sky-700 text-white font-bold text-xs"
+                className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs"
               >
-                Simular Lead B (Nuevo, Incremento +1)
+                Simular Lead B
               </Button>
 
               <Button
@@ -875,7 +875,7 @@ export default function QAOperativoPage() {
                 onClick={async () => {
                   await runSimAction("Simular Lead C y auto-pausar", simulateThirdLeadAction);
                 }}
-                className="bg-red-600 hover:bg-red-750 text-white font-bold text-xs"
+                className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
               >
                 Simular Lead C (Traspasar límite y pausar)
               </Button>
