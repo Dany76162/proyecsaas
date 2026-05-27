@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import { prisma } from "@/server/db/prisma";
 import { BILLING_MODE_LABELS, resolveEffectiveCommercialState } from "@/server/billing/commercial-access";
@@ -67,6 +67,8 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
             status: true,
             currentPeriodEnd: true,
             planId: true,
+            billingMode: true,
+            internalBillingNotes: true,
           },
         },
         _count: {
@@ -158,10 +160,10 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
       commercialStatusLabel: commercialState.summary,
       commercialAccess: commercialState.allowed ? "allowed" : "blocked",
       commercialSource: commercialState.source,
-      billingMode: null,
-      billingModeLabel: null,
+      billingMode: org.subscription?.billingMode ?? null,
+      billingModeLabel: org.subscription?.billingMode ? BILLING_MODE_LABELS[org.subscription.billingMode] : null,
       currentPeriodEnd: org.subscription?.currentPeriodEnd?.toISOString() ?? null,
-      internalBillingNotes: null,
+      internalBillingNotes: org.subscription?.internalBillingNotes ?? null,
       planId: org.subscription?.planId ?? null,
       ownerEmail: org.memberships[0]?.user.email ?? null,
       onboardingStatus:
