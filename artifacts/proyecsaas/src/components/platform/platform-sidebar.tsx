@@ -21,6 +21,7 @@ import {
   Zap,
   Calendar,
   Link2,
+  Briefcase,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ const PLATFORM_NAV = [
   { name: "Manual Vivo", href: "/platform/manual-operativo", icon: BookOpen },
   { name: "Manual Maestro", href: "/platform/master-manual", icon: BookOpen },
   { name: "Comercial", href: "/platform/billing", icon: CreditCard },
+  { name: "Modelo de Negocio", href: "/platform/business-model", icon: Briefcase },
   { name: "Configuración", href: "/platform/settings", icon: Settings },
 ];
 
