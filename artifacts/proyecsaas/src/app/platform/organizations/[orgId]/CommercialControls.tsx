@@ -127,7 +127,7 @@ export default function CommercialControls({
       )}
 
       {/* Rápido Acceso a Operaciones */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Registrar Pago */}
         <Card className="bg-white border border-slate-200/60 p-5 flex flex-col justify-between shadow-sm rounded-2xl">
           <div>

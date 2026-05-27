@@ -118,7 +118,7 @@ export default async function OrgAuditPage({
   }
 
   return (
-    <div className="space-y-8 pb-20 w-full max-w-[1600px] mx-auto px-6 lg:px-8">
+    <div className="space-y-6 pb-20 w-full px-6 lg:px-8">
       
       {/* Header & Back */}
       <div className="flex flex-col gap-4">
@@ -205,10 +205,10 @@ export default async function OrgAuditPage({
       )}
 
       {/* Grid Comercial & Control Vitalicio */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         
         {/* Ficha Comercial (SaaS-to-Own) */}
-        <Card className="bg-white border border-slate-200/60 p-6 flex flex-col justify-between lg:col-span-8 shadow-sm rounded-2xl">
+        <Card className="bg-white border border-slate-200/60 p-6 flex flex-col justify-between xl:col-span-8 shadow-sm rounded-2xl">
           <div>
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
@@ -276,7 +276,7 @@ export default async function OrgAuditPage({
         </Card>
 
         {/* Consola de Consumo de IA (AgentOS) */}
-        <Card className="bg-white border border-slate-200/60 p-6 flex flex-col justify-between lg:col-span-4 shadow-sm rounded-2xl">
+        <Card className="bg-white border border-slate-200/60 p-6 flex flex-col justify-between xl:col-span-4 shadow-sm rounded-2xl">
           <div>
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
