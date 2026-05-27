@@ -18,9 +18,7 @@ import {
   Target,
   Zap,
   Globe,
-  TrendingDown,
-  BarChart3,
-  HelpCircle
+  BarChart3
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -40,24 +38,24 @@ RaicesPilot vende una licencia base en 12 pagos. Después del mes 12, el cliente
 Métricas clave:
 - Precio fundador: $65.000 + impuestos
 - Duración: 12 meses
-- Cupo fundador: 100 inmobiliarias
+- Cupo fundador: primeras 100 inmobiliarias (beneficio comercial de lanzamiento limitado)
 - Conversaciones incluidas: 300/mes
 - Agente incluido: 1
 - Lifetime: desde mes 13
 
 ## 2. Plan Fundador
-Límites y capacidades:
+Límites y capacidades (aplica exclusivamente a las primeras 100 inmobiliarias):
 - 300 propiedades activas
 - 50 tours 360 activos
 - 10 GB storage
 - 5 usuarios
 - 1 agente IA
-- 300 conversaciones simples
+- 300 conversaciones simples mensuales
 
 ## 3. Planes & Add-ons
-Planes:
-- Plan Fundador: $65.000 + impuestos
-- Plan Base futuro: $85.000 + impuestos
+Planes (disponibles para contratación posterior al cupo fundador):
+- Plan Fundador: $65.000 + impuestos (primeras 100)
+- Plan Base futuro: $85.000 + impuestos (después del cupo)
 - Plan Pro: $120.000 + impuestos
 - Enterprise: Cotización personalizada
 
@@ -89,7 +87,7 @@ Nunca queda gratis de por vida:
 - 2026 — Argentina / Lanzamiento Fundador:
   * Meta mínima viable: 50 inmobiliarias
   * Meta objetivo: 200 inmobiliarias
-  * Meta agresiva: 500 inmobiliarias
+  * Meta agresiva (crecimiento anual): 500 inmobiliarias
   * Foco: validación, fundadores, demos, onboarding, casos de éxito, embudo comercial.
   * Responsable operativo: CEO IA + Área de Marketing
 - 2027 — Argentina fuerte + primeras pruebas LATAM:
@@ -259,7 +257,8 @@ Alertas:
                </Card>
                <Card className="bg-white border border-slate-200/60 p-5 shadow-sm hover:shadow-soft transition-all">
                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Cupo Fundador</p>
-                 <p className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2"><Users className="w-5 h-5 text-brand-600"/> 100 inmob.</p>
+                 <p className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2"><Users className="w-5 h-5 text-brand-600"/> Primeras 100</p>
+                 <p className="text-[10px] text-slate-400 mt-1">Beneficio de lanzamiento limitado</p>
                </Card>
                <Card className="bg-white border border-slate-200/60 p-5 shadow-sm hover:shadow-soft transition-all">
                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Conversaciones Incluidas</p>
@@ -285,7 +284,7 @@ Alertas:
                     </div>
                     <div>
                       <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">Ficha: Plan Fundador</h2>
-                      <p className="text-sm text-slate-500">Estructura base para los primeros 100 clientes.</p>
+                      <p className="text-sm text-slate-505">Aplica exclusivamente a las primeras 100 inmobiliarias contratadas como beneficio de lanzamiento limitado (Cupo Fundador).</p>
                     </div>
                  </div>
 
@@ -340,12 +339,12 @@ Alertas:
                     <TableRow className="hover:bg-slate-50/30">
                       <TableCell className="font-extrabold text-slate-900 px-5">Plan Fundador</TableCell>
                       <TableCell className="text-emerald-600 font-extrabold px-5">$65.000 <span className="text-slate-400 text-xs font-normal">+ imp</span></TableCell>
-                      <TableCell className="px-5"><Badge variant="success">Actual</Badge></TableCell>
+                      <TableCell className="px-5"><Badge variant="success">Actual (Primeras 100)</Badge></TableCell>
                     </TableRow>
                     <TableRow className="hover:bg-slate-50/30">
                       <TableCell className="font-extrabold text-slate-700 px-5">Plan Base futuro</TableCell>
                       <TableCell className="text-slate-900 font-bold px-5">$85.000 <span className="text-slate-400 text-xs font-normal">+ imp</span></TableCell>
-                      <TableCell className="px-5"><Badge variant="neutral">Futuro</Badge></TableCell>
+                      <TableCell className="px-5"><Badge variant="neutral">Futuro (Post-Cupo)</Badge></TableCell>
                     </TableRow>
                     <TableRow className="hover:bg-slate-50/30">
                       <TableCell className="font-extrabold text-slate-700 px-5">Plan Pro</TableCell>
@@ -520,8 +519,8 @@ Alertas:
                       <p className="text-base font-extrabold text-emerald-700">500 inmobiliarias</p>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Validación integral del modelo, captación de fundadores, demostraciones asistidas, optimización del onboarding y generación de casos de éxito sólidos.</p>
-                  <p className="text-xs text-slate-500"><strong>Responsable:</strong> CEO IA + Área de Marketing</p>
+                  <p className="text-xs text-slate-655 mb-1"><strong>Foco operativo:</strong> Validación integral del modelo, captación de fundadores, demostraciones asistidas, optimización del onboarding y generación de casos de éxito sólidos.</p>
+                  <p className="text-xs text-slate-500"><strong>Responsable operativo:</strong> CEO IA + Área de Marketing</p>
                 </div>
 
                 {/* 2027 */}
@@ -535,7 +534,7 @@ Alertas:
                     <p className="text-[9px] text-slate-450 font-bold uppercase">Meta Acumulada</p>
                     <p className="text-base font-extrabold text-slate-800">1.500 inmobiliarias</p>
                   </div>
-                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Dominar las principales ciudades argentinas y lanzar los primeros tests pilotos en Uruguay, Paraguay y Chile con marcas seleccionadas.</p>
+                  <p className="text-xs text-slate-655 mb-1"><strong>Foco operativo:</strong> Dominar las principales ciudades argentinas y lanzar los primeros tests pilotos en Uruguay, Paraguay y Chile con marcas seleccionadas.</p>
                   <p className="text-xs text-slate-500"><strong>Responsable:</strong> CEO IA + Marketing + Ventas + Onboarding (Meta: posicionamiento de marca líder).</p>
                 </div>
 
@@ -550,7 +549,7 @@ Alertas:
                     <p className="text-[9px] text-slate-450 font-bold uppercase">Meta Acumulada</p>
                     <p className="text-base font-extrabold text-slate-800">3.500 inmobiliarias</p>
                   </div>
-                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Abrir formalmente operaciones comerciales en Uruguay, Paraguay, Chile, Bolivia y Perú. Adaptar esquemas tributarios, precios en moneda local, soporte regional y partners locales.</p>
+                  <p className="text-xs text-slate-655 mb-1"><strong>Foco operativo:</strong> Abrir formalmente operaciones comerciales en Uruguay, Paraguay, Chile, Bolivia y Perú. Adaptar esquemas tributarios, precios en moneda local, soporte regional y partners locales.</p>
                 </div>
 
                 {/* 2029 */}
@@ -564,7 +563,7 @@ Alertas:
                     <p className="text-[9px] text-slate-450 font-bold uppercase">Meta Acumulada</p>
                     <p className="text-base font-extrabold text-slate-800">6.500 inmobiliarias</p>
                   </div>
-                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Consolidar operaciones en el Cono Sur e ingresar con fuerza en Colombia y México. Creación de equipos de atención regionales y módulos premium dedicados.</p>
+                  <p className="text-xs text-slate-655 mb-1"><strong>Foco operativo:</strong> Consolidar operaciones en el Cono Sur e ingresar con fuerza en Colombia y México. Creación de equipos de atención regionales y módulos premium dedicados.</p>
                 </div>
 
                 {/* 2030 */}
@@ -574,11 +573,11 @@ Alertas:
                     <span className="font-extrabold text-slate-900 text-sm sm:text-base">2030 — RaicesPilot LATAM</span>
                     <Badge variant="success" className="text-[10px] font-bold self-start sm:self-auto">Líder Regional IA</Badge>
                   </div>
-                  <div className="bg-emerald-50/30 border border-emerald-100 p-3 rounded-lg mb-3 w-max min-w-[200px]">
-                    <p className="text-[9px] text-emerald-600 font-bold uppercase">Meta Corporativa LATAM</p>
+                  <div className="bg-emerald-50/30 border border-emerald-200 p-3 rounded-lg mb-3 w-max min-w-[200px]">
+                    <p className="text-[9px] text-emerald-600 font-bold uppercase">Meta LATAM Corporativa</p>
                     <p className="text-lg font-black text-emerald-700">10.000 inmobiliarias / usuarios</p>
                   </div>
-                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Posicionamiento absoluto multi-país. Acuerdos enterprise, franquicias internacionales y automatización total del ecosistema inmobiliario con IA líder.</p>
+                  <p className="text-xs text-slate-655 mb-1"><strong>Foco operativo:</strong> Presencia regional LATAM absoluta multi-país. Acuerdos enterprise, partnerships, franquicias inmobiliarias y automatización de ecosistema con IA líder.</p>
                 </div>
               </div>
             </Card>
@@ -610,7 +609,7 @@ Alertas:
                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                       {kpi.title}
                     </p>
-                    <p className="text-xs text-slate-500">{kpi.desc}</p>
+                    <p className="text-xs text-slate-505">{kpi.desc}</p>
                   </div>
                 ))}
               </div>
@@ -737,7 +736,7 @@ Alertas:
                     <MessageSquare className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm font-bold text-slate-800">Cliente cerca de 300 convers.</p>
-                      <p className="text-xs text-slate-500">Disparar email de upsell automático.</p>
+                      <p className="text-xs text-slate-505">Disparar email de upsell automático.</p>
                     </div>
                   </li>
                   <li className="flex gap-3 items-start p-3 bg-slate-50 border-l-2 border-indigo-500 rounded-r-lg border border-y-slate-100 border-r-slate-100">
