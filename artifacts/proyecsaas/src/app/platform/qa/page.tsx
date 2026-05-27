@@ -279,11 +279,11 @@ export default function QAOperativoPage() {
   };
 
   const handlePrecargarValidacion = () => {
-    setCommitHash("3254e84");
+    setCommitHash("");
     setGeneralNotes(INITIAL_NOTES_PRELOAD);
     setFinalDecision("Con observaciones");
     setSections(INITIAL_PRELOAD_SECTIONS);
-    saveState(INITIAL_PRELOAD_SECTIONS, "3254e84", INITIAL_NOTES_PRELOAD, "Con observaciones");
+    saveState(INITIAL_PRELOAD_SECTIONS, "", INITIAL_NOTES_PRELOAD, "Con observaciones");
   };
 
   const toggleSection = (id: string) => {
@@ -295,7 +295,7 @@ export default function QAOperativoPage() {
     
     let markdown = `# REPORTE DE QA OPERATIVO - RaicesPilot\n\n`;
     markdown += `**Fecha de Emisión:** ${dateStr} (Hora Argentina)\n`;
-    markdown += `**Commit Validado:** \`${commitHash || "No especificado"}\`\n`;
+    markdown += `**Commit Validado:** \`${commitHash.trim() || "no especificado"}\`\n`;
     markdown += `**Ambiente de Ejecución:** Producción (Railway)\n`;
     markdown += `**Organización Sandbox Autorizada:** RaicesPilot QA Test (\`raicespilot-qa-test\`)\n`;
     markdown += `**Resultado / Decisión Final:** **${finalDecision.toUpperCase()}**\n\n`;
@@ -442,7 +442,7 @@ export default function QAOperativoPage() {
                 type="text"
                 value={commitHash}
                 onChange={(e) => handleCommitChange(e.target.value)}
-                placeholder="Ej: 3254e84"
+                placeholder="Ej: b7ca4ce"
                 className="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 placeholder-slate-400 font-mono"
               />
             </div>
