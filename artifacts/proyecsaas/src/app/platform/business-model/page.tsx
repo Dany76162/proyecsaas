@@ -16,7 +16,11 @@ import {
   Star,
   Banknote,
   Target,
-  Zap
+  Zap,
+  Globe,
+  TrendingDown,
+  BarChart3,
+  HelpCircle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -81,12 +85,46 @@ Nunca queda gratis de por vida:
 
 *Nota: No prometer todo gratis de por vida.*
 
-## 5. Proyecciones 2026–2030
-- 2026: 50 clientes, validación
-- 2027: 200 clientes, escala inicial
-- 2028: 450 clientes, expansión
-- 2029: 750 clientes, consolidación nacional
-- 2030: 1.000 clientes, escala corporativa
+## 5. Expansión 2026–2030: Argentina → LATAM
+- 2026 — Argentina / Lanzamiento Fundador:
+  * Meta mínima viable: 50 inmobiliarias
+  * Meta objetivo: 200 inmobiliarias
+  * Meta agresiva: 500 inmobiliarias
+  * Foco: validación, fundadores, demos, onboarding, casos de éxito, embudo comercial.
+  * Responsable operativo: CEO IA + Área de Marketing
+- 2027 — Argentina fuerte + primeras pruebas LATAM:
+  * Meta acumulada: 1.500 inmobiliarias
+  * Foco: dominar principales ciudades argentinas, Uruguay, Paraguay y Chile.
+  * Responsable: CEO IA + Marketing + Ventas + Onboarding
+  * Objetivo: marca reconocida del sector inmobiliario digital.
+- 2028 — Expansión regional:
+  * Meta acumulada: 3.500 inmobiliarias
+  * Foco: abrir Uruguay, Paraguay, Chile, Bolivia y Perú.
+  * Objetivo: precios locales, soporte, onboarding y partners locales.
+- 2029 — Consolidación LATAM:
+  * Meta acumulada: 6.500 inmobiliarias
+  * Foco: Argentina, Chile, Uruguay, Paraguay, Bolivia, Perú, Colombia y México.
+  * Objetivo: equipo regional, soporte escalable, automatización avanzada y módulos premium.
+- 2030 — RaicesPilot LATAM:
+  * Meta acumulada: 10.000 inmobiliarias/usuarios
+  * Foco: presencia regional LATAM, multi-país, partnerships, enterprise y franquicias.
+  * Objetivo: líder de plataforma inmobiliaria IA de LATAM.
+
+KPIs regionales:
+- Inmobiliarias activas pagando
+- Inmobiliarias lifetime con consumo activo
+- Nuevos clientes por país
+- Demos agendadas por país
+- Tasa de cierre por país
+- CAC por país
+- MRR por país
+- Consumo IA por país
+- Churn antes de 12 meses
+- Clientes que pasan a Lifetime
+- Add-ons vendidos
+- Agentes IA adicionales activos
+- Packs de conversaciones vendidos
+- Tickets de soporte por país
 
 ## 6. Reglas AgentOS
 - Nunca absorber consumo variable ilimitado.
@@ -97,6 +135,8 @@ Nunca queda gratis de por vida:
 - No prometer todo gratis de por vida.
 - Detectar clientes de alto consumo.
 - Sugerir upsells automáticamente.
+- [Estratégica 2030] AgentOS debe operar con visión LATAM 2030. Su objetivo es impulsar a RaicesPilot hacia 10.000 inmobiliarias activas o lifetime para 2030, coordinando marketing, ventas, onboarding, soporte, alertas financieras, upsells, expansión por país y control de rentabilidad por cliente.
+- [Validación de Expansión] Antes de abrir un nuevo país, AgentOS debe validar: moneda, impuestos, medios de pago, costos de WhatsApp/Meta, lenguaje comercial local, soporte horario, precios locales y competencia inmobiliaria digital.
 
 ## 7. Riesgos & Alertas
 Riesgos:
@@ -175,7 +215,7 @@ Alertas:
               { value: "fundador", label: "Plan Fundador" },
               { value: "planes", label: "Planes & Add-ons" },
               { value: "licencia", label: "Licencia de por Vida" },
-              { value: "proyecciones", label: "Proyecciones 2026–2030" },
+              { value: "proyecciones", label: "Expansión 2026–2030" },
               { value: "agentos", label: "Reglas AgentOS" },
               { value: "riesgos", label: "Riesgos & Alertas" }
             ].map(tab => (
@@ -447,50 +487,134 @@ Alertas:
             </Card>
           </TabsContent>
 
-          {/* TAB: Proyecciones */}
+          {/* TAB: Expansión 2026-2030 */}
           <TabsContent value="proyecciones" className="mt-0 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-               <Card className="bg-white border border-slate-200/60 p-5 flex flex-col justify-between min-h-[150px] shadow-sm hover:shadow-soft transition-all">
-                 <div>
-                   <Badge variant="outline" className="mb-2 text-[10px] border-slate-200 bg-slate-50 text-slate-600 font-bold">2026</Badge>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Validación</p>
-                   <p className="text-2xl font-black text-slate-900 mb-2">50 <span className="text-xs font-normal text-slate-450">clientes</span></p>
-                 </div>
-                 <p className="text-xs text-slate-500">Captación inicial y early adopters.</p>
-               </Card>
-               <Card className="bg-white border border-slate-200/60 p-5 flex flex-col justify-between min-h-[150px] shadow-sm hover:shadow-soft transition-all">
-                 <div>
-                   <Badge variant="outline" className="mb-2 text-[10px] border-slate-250 bg-slate-50 text-slate-600 font-bold">2027</Badge>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Escala inicial</p>
-                   <p className="text-2xl font-black text-brand-600 mb-2">200 <span className="text-xs font-normal text-slate-450">clientes</span></p>
-                 </div>
-                 <p className="text-xs text-slate-500">Estabilización AgentOS.</p>
-               </Card>
-               <Card className="bg-white border border-slate-200/60 p-5 flex flex-col justify-between min-h-[150px] shadow-sm hover:shadow-soft transition-all">
-                 <div>
-                   <Badge variant="outline" className="mb-2 text-[10px] border-slate-250 bg-slate-50 text-slate-600 font-bold">2028</Badge>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Expansión</p>
-                   <p className="text-2xl font-black text-indigo-650 mb-2">450 <span className="text-xs font-normal text-slate-450">clientes</span></p>
-                 </div>
-                 <p className="text-xs text-slate-500">Lanzamiento masivo add-ons.</p>
-               </Card>
-               <Card className="bg-white border border-slate-200/60 p-5 flex flex-col justify-between min-h-[150px] shadow-sm hover:shadow-soft transition-all">
-                 <div>
-                   <Badge variant="outline" className="mb-2 text-[10px] border-slate-250 bg-slate-50 text-slate-600 font-bold">2029</Badge>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Nacional</p>
-                   <p className="text-2xl font-black text-indigo-700 mb-2">750 <span className="text-xs font-normal text-slate-450">clientes</span></p>
-                 </div>
-                 <p className="text-xs text-slate-500">Consolidación mercado local.</p>
-               </Card>
-               <Card className="bg-emerald-50/20 border border-emerald-200 p-5 flex flex-col justify-between min-h-[150px] shadow-sm hover:shadow-soft transition-all">
-                 <div>
-                   <Badge variant="success" className="mb-2 text-[10px] font-bold px-2">2030</Badge>
-                   <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mb-1">Corporativa</p>
-                   <p className="text-2xl font-black text-slate-900 mb-2">1.000 <span className="text-xs font-normal text-slate-550">clientes</span></p>
-                 </div>
-                 <p className="text-xs text-emerald-800">Escala masiva y regional.</p>
-               </Card>
-            </div>
+            <Card className="bg-white border border-slate-200/60 p-6 sm:p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100">
+                <Globe className="w-8 h-8 text-brand-600" />
+                <div>
+                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">Expansión 2026–2030: Argentina → LATAM</h2>
+                  <p className="text-sm text-slate-500">Plan estratégico de crecimiento corporativo y presencia regional multi-país.</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {/* 2026 */}
+                <div className="relative pl-6 border-l-2 border-slate-200 pb-2">
+                  <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-slate-300 border-2 border-white"></div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <span className="font-extrabold text-slate-900 text-sm sm:text-base">2026 — Argentina / Lanzamiento Fundador</span>
+                    <Badge variant="brand" className="text-[10px] font-bold self-start sm:self-auto">Fase 1: Validación</Badge>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-3 mb-3">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <p className="text-[9px] text-slate-450 font-bold uppercase">Mínima Viable</p>
+                      <p className="text-base font-extrabold text-slate-800">50 inmobiliarias</p>
+                    </div>
+                    <div className="bg-brand-50/20 p-3 rounded-lg border border-brand-100/30">
+                      <p className="text-[9px] text-brand-600 font-bold uppercase">Meta Objetivo</p>
+                      <p className="text-base font-extrabold text-brand-700">200 inmobiliarias</p>
+                    </div>
+                    <div className="bg-emerald-50/30 p-3 rounded-lg border border-emerald-100/30">
+                      <p className="text-[9px] text-emerald-600 font-bold uppercase">Meta Agresiva</p>
+                      <p className="text-base font-extrabold text-emerald-700">500 inmobiliarias</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Validación integral del modelo, captación de fundadores, demostraciones asistidas, optimización del onboarding y generación de casos de éxito sólidos.</p>
+                  <p className="text-xs text-slate-500"><strong>Responsable:</strong> CEO IA + Área de Marketing</p>
+                </div>
+
+                {/* 2027 */}
+                <div className="relative pl-6 border-l-2 border-brand-300 pb-2">
+                  <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-brand-500 border-2 border-white"></div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <span className="font-extrabold text-slate-900 text-sm sm:text-base">2027 — Argentina fuerte + primeras pruebas LATAM</span>
+                    <Badge variant="brand" className="text-[10px] font-bold self-start sm:self-auto">Fase 2: Escala Inicial</Badge>
+                  </div>
+                  <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-100 mb-3 w-max min-w-[200px]">
+                    <p className="text-[9px] text-slate-450 font-bold uppercase">Meta Acumulada</p>
+                    <p className="text-base font-extrabold text-slate-800">1.500 inmobiliarias</p>
+                  </div>
+                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Dominar las principales ciudades argentinas y lanzar los primeros tests pilotos en Uruguay, Paraguay y Chile con marcas seleccionadas.</p>
+                  <p className="text-xs text-slate-500"><strong>Responsable:</strong> CEO IA + Marketing + Ventas + Onboarding (Meta: posicionamiento de marca líder).</p>
+                </div>
+
+                {/* 2028 */}
+                <div className="relative pl-6 border-l-2 border-indigo-300 pb-2">
+                  <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-indigo-500 border-2 border-white"></div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <span className="font-extrabold text-slate-900 text-sm sm:text-base">2028 — Expansión regional</span>
+                    <Badge variant="brand" className="text-[10px] font-bold self-start sm:self-auto">Fase 3: Internacionalización</Badge>
+                  </div>
+                  <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-100 mb-3 w-max min-w-[200px]">
+                    <p className="text-[9px] text-slate-450 font-bold uppercase">Meta Acumulada</p>
+                    <p className="text-base font-extrabold text-slate-800">3.500 inmobiliarias</p>
+                  </div>
+                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Abrir formalmente operaciones comerciales en Uruguay, Paraguay, Chile, Bolivia y Perú. Adaptar esquemas tributarios, precios en moneda local, soporte regional y partners locales.</p>
+                </div>
+
+                {/* 2029 */}
+                <div className="relative pl-6 border-l-2 border-violet-300 pb-2">
+                  <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-violet-500 border-2 border-white"></div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <span className="font-extrabold text-slate-900 text-sm sm:text-base">2029 — Consolidación LATAM</span>
+                    <Badge variant="brand" className="text-[10px] font-bold self-start sm:self-auto">Fase 4: Expansión Masiva</Badge>
+                  </div>
+                  <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-100 mb-3 w-max min-w-[200px]">
+                    <p className="text-[9px] text-slate-450 font-bold uppercase">Meta Acumulada</p>
+                    <p className="text-base font-extrabold text-slate-800">6.500 inmobiliarias</p>
+                  </div>
+                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Consolidar operaciones en el Cono Sur e ingresar con fuerza en Colombia y México. Creación de equipos de atención regionales y módulos premium dedicados.</p>
+                </div>
+
+                {/* 2030 */}
+                <div className="relative pl-6 border-l-2 border-emerald-400 pb-2">
+                  <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white"></div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <span className="font-extrabold text-slate-900 text-sm sm:text-base">2030 — RaicesPilot LATAM</span>
+                    <Badge variant="success" className="text-[10px] font-bold self-start sm:self-auto">Líder Regional IA</Badge>
+                  </div>
+                  <div className="bg-emerald-50/30 border border-emerald-100 p-3 rounded-lg mb-3 w-max min-w-[200px]">
+                    <p className="text-[9px] text-emerald-600 font-bold uppercase">Meta Corporativa LATAM</p>
+                    <p className="text-lg font-black text-emerald-700">10.000 inmobiliarias / usuarios</p>
+                  </div>
+                  <p className="text-xs text-slate-650 mb-1"><strong>Foco operativo:</strong> Posicionamiento absoluto multi-país. Acuerdos enterprise, franquicias internacionales y automatización total del ecosistema inmobiliario con IA líder.</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* KPIs Regionales */}
+            <Card className="bg-white border border-slate-200/60 p-6 sm:p-8 shadow-sm">
+              <h3 className="text-base font-extrabold text-slate-900 mb-6 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-indigo-600" /> KPIs Regionales Clave
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { title: "Inmobiliarias activas pagando", desc: "Suscripciones activas mensuales recurrentes." },
+                  { title: "Inmobiliarias lifetime con consumo", desc: "Cuentas vitalicias con consumo activo de AgentOS." },
+                  { title: "Nuevos clientes por país", desc: "Tasa de adquisición mensual discriminada por país." },
+                  { title: "Demos agendadas por país", desc: "Métrica de tracción del pipeline comercial." },
+                  { title: "Tasa de cierre por país", desc: "Efectividad del equipo de ventas regional." },
+                  { title: "CAC por país", desc: "Costo de Adquisición de Cliente adaptado a cada mercado." },
+                  { title: "MRR por país", desc: "Ingresos recurrentes mensuales localizados." },
+                  { title: "Consumo IA por país", desc: "Volumen de créditos o saldo consumido en AgentOS." },
+                  { title: "Churn antes de 12 meses", desc: "Inmobiliarias que cancelan antes del hito vitalicio." },
+                  { title: "Clientes que pasan a Lifetime", desc: "Tasa de conversión de Plan 12 pagos a Vitalicia." },
+                  { title: "Add-ons vendidos", desc: "Módulos y upgrades facturados mensualmente." },
+                  { title: "Agentes IA adicionales activos", desc: "Número total de agentes contratados como add-on." },
+                  { title: "Packs de conversaciones vendidos", desc: "Recargas de saldo o volumen de mensajes." },
+                  { title: "Tickets de soporte por país", desc: "Volumen e indicador de salud operativa local." }
+                ].map((kpi, index) => (
+                  <div key={index} className="bg-slate-50 p-4 rounded-xl border border-slate-200/50 hover:bg-slate-100/50 transition-colors">
+                    <p className="text-xs font-extrabold text-slate-800 mb-1 flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                      {kpi.title}
+                    </p>
+                    <p className="text-xs text-slate-500">{kpi.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
           </TabsContent>
 
           {/* TAB: Reglas */}
@@ -529,8 +653,16 @@ Alertas:
                    <h4 className="font-extrabold text-slate-900 text-sm mb-1">6. Transparencia</h4>
                    <p className="text-xs text-slate-650 leading-relaxed">No prometer "todo gratis de por vida". Aclarar qué es base y qué es variable.</p>
                  </div>
+                 <div className="bg-indigo-50/50 p-5 rounded-xl border border-indigo-200 md:col-span-2">
+                   <h4 className="font-extrabold text-indigo-850 text-sm mb-1 flex items-center gap-1.5"><Globe className="w-4 h-4"/> 7. [Estratégica 2030] Visión LATAM 2030</h4>
+                   <p className="text-xs text-indigo-900 leading-relaxed">AgentOS debe operar con visión LATAM 2030. Su objetivo es impulsar a RaicesPilot hacia 10.000 inmobiliarias activas o lifetime para 2030, coordinando marketing, ventas, onboarding, soporte, alertas financieras, upsells, expansión por país y control de rentabilidad por cliente.</p>
+                 </div>
+                 <div className="bg-indigo-50/50 p-5 rounded-xl border border-indigo-200 md:col-span-2">
+                   <h4 className="font-extrabold text-indigo-850 text-sm mb-1 flex items-center gap-1.5"><Globe className="w-4 h-4"/> 8. [Validación de Expansión] Apertura de Países</h4>
+                   <p className="text-xs text-indigo-900 leading-relaxed">Antes de abrir un nuevo país, AgentOS debe validar de manera estricta: moneda local, marco de impuestos, medios de pago integrables, costos reales de WhatsApp/Meta oficiales, lenguaje comercial y dialecto local, franja de soporte horario, precios locales recomendados y competencia inmobiliaria digital.</p>
+                 </div>
                  <div className="bg-brand-50/50 p-5 rounded-xl border border-brand-200 md:col-span-2">
-                   <h4 className="font-extrabold text-brand-850 text-sm mb-1">7. Upselling Proactivo</h4>
+                   <h4 className="font-extrabold text-brand-850 text-sm mb-1">9. Upselling Proactivo</h4>
                    <p className="text-xs text-brand-900 leading-relaxed">Detectar clientes de alto consumo y sugerir upsells o recargas automáticamente.</p>
                  </div>
                </div>
