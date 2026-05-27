@@ -16,11 +16,18 @@ import {
   Check,
   FileText,
   Play,
-  CheckSquare
+  CheckSquare,
+  RefreshCw,
+  ShieldCheck,
+  Activity,
+  Database,
+  UserCheck,
+  Eye
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { initializeProductionSandboxAction } from "./actions";
 
 // Dynamic types for localStorage state persistence
 type StatusType = "PENDIENTE" | "PASS" | "FAIL" | "WARNING";
@@ -226,7 +233,13 @@ export default function QAOperativoPage() {
     alertas: true
   });
 
-  // Load from localStorage on mount
+  // Diagnostic states
+  const [loadingDiag, setLoadingDiag] = useState(true);
+  const [diagData, setDiagData] = useState<any>(null);
+  const [initializing, setInitializing] = useState(false);
+  const [initResult, setInitResult] = useState<any>(null);
+
+  // Load from localStorage on mount & run active server diagnostic
   useEffect(() => {
     try {
       const storedCommit = localStorage.getItem("qa_commit");
@@ -236,7 +249,6 @@ export default function QAOperativoPage() {
 
       if (storedCommit) setCommitHash(storedCommit);
       
-      // If nothing is stored in localStorage yet, we default to "Con observaciones" and the requested notes
       if (storedNotes !== null) {
         setGeneralNotes(storedNotes);
       } else {
@@ -252,13 +264,59 @@ export default function QAOperativoPage() {
       if (storedSections) {
         setSections(JSON.parse(storedSections));
       } else {
-        // First-time load without saved items uses the standard INITIAL_SECTIONS
         setSections(INITIAL_SECTIONS);
       }
     } catch (e) {
       console.error("Error al cargar estado de QA de localStorage", e);
     }
+
+    runDiagnostic();
   }, []);
+
+  const runDiagnostic = async () => {
+    setLoadingDiag(true);
+    try {
+      const res = await fetch("/api/platform/diagnose");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setDiagData(data);
+        }
+      }
+    } catch (error) {
+      console.error("Error running diagnostic:", error);
+    } finally {
+      setLoadingDiag(false);
+    }
+  };
+
+  const handleInitializeSandbox = async () => {
+    if (!confirm("¿Confirmas la inicialización controlada del Sandbox en producción? Esto creará únicamente los recursos que hagan falta sin alterar ningún dato comercial real.")) {
+      return;
+    }
+
+    setInitializing(true);
+    setInitResult(null);
+    try {
+      const res = await initializeProductionSandboxAction();
+      setInitResult(res);
+      if (res.success) {
+        // Automatically refresh diagnostic to update UI status
+        await runDiagnostic();
+        alert("¡Inicialización de Sandbox completada con éxito!");
+      } else {
+        alert("Error de inicialización: " + res.message);
+      }
+    } catch (error: any) {
+      console.error("Error initializing sandbox:", error);
+      setInitResult({
+        success: false,
+        message: error.message || String(error)
+      });
+    } finally {
+      setInitializing(false);
+    }
+  };
 
   // Save changes helper
   const saveState = (updatedSections: ChecklistSection[], commit: string, notes: string, decision: string) => {
@@ -475,9 +533,9 @@ export default function QAOperativoPage() {
         </div>
       </div>
 
-      {/* Meta e Info de Organización Sandbox */}
+      {/* Meta e Info de Organización Sandbox + Diagnóstico */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Ficha de Organización Sandbox */}
+        {/* Ficha de Organización Sandbox (Estática / Guía) */}
         <Card className="bg-slate-900 border border-slate-800 p-6 text-white shadow-md relative overflow-hidden flex flex-col justify-between">
           <div className="absolute top-0 right-0 w-48 h-48 bg-brand-500/10 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10"></div>
           <div className="relative z-10 space-y-4">
@@ -507,10 +565,101 @@ export default function QAOperativoPage() {
           </div>
         </Card>
 
+        {/* Ficha Real-time de Diagnóstico y Autoconexión */}
+        <Card className="bg-white border border-slate-200/60 p-6 shadow-sm flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-brand-600 animate-pulse" />
+                Diagnóstico Server-Side
+              </h3>
+              <Button 
+                onClick={runDiagnostic} 
+                disabled={loadingDiag}
+                variant="outline" 
+                size="sm" 
+                className="h-7 w-7 p-0"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loadingDiag ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+
+            {loadingDiag ? (
+              <div className="py-6 flex flex-col items-center justify-center gap-2 text-slate-400">
+                <RefreshCw className="w-6 h-6 animate-spin text-brand-500" />
+                <span className="text-xs font-semibold">Consultando base de datos de producción...</span>
+              </div>
+            ) : diagData ? (
+              <div className="space-y-3 text-xs">
+                {/* User Session Info */}
+                <div className="flex items-center gap-2 text-slate-655">
+                  <UserCheck className="w-4.5 h-4.5 text-indigo-600 shrink-0" />
+                  <div>
+                    <p className="font-bold text-slate-800 leading-none">{diagData.diagnostic?.session?.fullName}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{diagData.diagnostic?.session?.email}</p>
+                  </div>
+                </div>
+
+                {/* Status Badges */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center gap-1.5">
+                    <Database className={`w-4 h-4 shrink-0 ${diagData.sandboxStatus?.existsInDB ? "text-emerald-600" : "text-red-500"}`} />
+                    <span className="font-medium">Sandbox: {diagData.sandboxStatus?.existsInDB ? "Existe" : "Falta"}</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center gap-1.5">
+                    <ShieldCheck className={`w-4 h-4 shrink-0 ${diagData.sandboxStatus?.hasMembershipWithOwner ? "text-emerald-600" : "text-red-500"}`} />
+                    <span className="font-medium">Owner: {diagData.sandboxStatus?.hasMembershipWithOwner ? "Vinculado" : "Falta"}</span>
+                  </div>
+                </div>
+
+                <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center gap-1.5">
+                  <Eye className={`w-4 h-4 shrink-0 ${diagData.listQueryResult?.sandboxAppearsInQuery ? "text-emerald-600" : "text-red-500"}`} />
+                  <span className="font-medium">Visible en UI Listado: {diagData.listQueryResult?.sandboxAppearsInQuery ? "SÍ" : "NO"}</span>
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="font-bold text-slate-655">Estado General:</span>
+                  <Badge 
+                    variant={diagData.generalState === "OK" ? "success" : "danger"} 
+                    className="font-extrabold uppercase tracking-widest text-[9px]"
+                  >
+                    {diagData.generalState}
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-red-500">Error al cargar diagnóstico. Intenta refrescar.</p>
+            )}
+          </div>
+
+          {/* Secure POST initialization button */}
+          {diagData && diagData.generalState !== "OK" && (
+            <div className="pt-4 border-t border-slate-100 mt-4">
+              <Button
+                onClick={handleInitializeSandbox}
+                disabled={initializing}
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs py-2 h-auto shadow-md"
+              >
+                {initializing ? (
+                  <>
+                    <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    Inicializando...
+                  </>
+                ) : (
+                  "Inicializar Sandbox de Producción (POST)"
+                )}
+              </Button>
+              <p className="text-[10px] text-center text-slate-400 mt-1.5 leading-tight font-semibold">
+                Herramienta de Superadmin. Creará los registros requeridos de forma idempotente.
+              </p>
+            </div>
+          )}
+        </Card>
+
         {/* Datos Operativos / Commit / Notas */}
-        <Card className="lg:col-span-2 bg-white border border-slate-200/60 p-6 shadow-sm space-y-4">
+        <Card className="bg-white border border-slate-200/60 p-6 shadow-sm space-y-4">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">Información del Ciclo</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-655 uppercase mb-1">Commit Validado (Hash)</label>
               <input
@@ -518,7 +667,7 @@ export default function QAOperativoPage() {
                 value={commitHash}
                 onChange={(e) => handleCommitChange(e.target.value)}
                 placeholder="Ej: b7ca4ce"
-                className="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 placeholder-slate-400 font-mono"
+                className="w-full text-sm px-3.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 placeholder-slate-400 font-mono"
               />
             </div>
             <div>
@@ -526,7 +675,7 @@ export default function QAOperativoPage() {
               <select
                 value={finalDecision}
                 onChange={(e) => handleDecisionChange(e.target.value)}
-                className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 font-bold"
+                className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 font-bold"
               >
                 <option value="Pendiente">⚪ Pendiente</option>
                 <option value="Aprobado">🟢 Aprobado</option>
@@ -538,11 +687,11 @@ export default function QAOperativoPage() {
           <div>
             <label className="block text-xs font-bold text-slate-655 uppercase mb-1">Notas Generales de la Prueba</label>
             <textarea
-              rows={3}
+              rows={2}
               value={generalNotes}
               onChange={(e) => handleNotesChange(e.target.value)}
-              placeholder="Describa el comportamiento general o notas importantes observadas durante el testeo manual..."
-              className="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 placeholder-slate-400"
+              placeholder="Describa el comportamiento general..."
+              className="w-full text-sm px-3.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 placeholder-slate-400 text-xs"
             />
           </div>
         </Card>
