@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function MasterManualPage() {
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-32">
+    <div className="w-full max-w-none px-6 lg:px-8 space-y-8 pb-32 print:max-w-none print:px-0 print:mx-0">
       {/* Header — Oculto en impresión */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6 print:hidden">
         <div>
@@ -37,7 +37,7 @@ export default function MasterManualPage() {
           <p className="text-sm font-bold uppercase tracking-[0.3em] text-slate-500 mt-2">Especificación Técnica y Operativa v3.1</p>
         </div>
 
-        <article className="prose prose-slate max-w-none prose-headings:tracking-tight prose-h2:border-b prose-h2:pb-3 prose-h2:mt-16 prose-h2:text-3xl prose-h2:font-black prose-h3:text-xl prose-h3:font-bold prose-strong:text-slate-900 prose-blockquote:border-brand-500 prose-blockquote:bg-slate-50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg">
+        <article className="prose prose-slate max-w-none prose-p:max-w-4xl prose-li:max-w-4xl prose-blockquote:max-w-4xl prose-headings:tracking-tight prose-h2:border-b prose-h2:pb-3 prose-h2:mt-16 prose-h2:text-3xl prose-h2:font-black prose-h3:text-xl prose-h3:font-bold prose-strong:text-slate-900 prose-blockquote:border-brand-500 prose-blockquote:bg-slate-50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg">
           
           <div className="bg-slate-900 text-white p-8 rounded-2xl mb-12 print:bg-slate-50 print:text-slate-900 print:border">
             <h2 className="text-white border-none pb-0 mt-0 print:text-slate-900">0. Estado de la Plataforma v3.1</h2>
@@ -48,15 +48,15 @@ export default function MasterManualPage() {
 
           {/* 1. ESTRUCTURA DE PANELES */}
           <h2>1. Estructura de Paneles y Roles</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 not-prose mb-8">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <Globe className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Admin Inmobiliario (Tenant)</span>
               </div>
               <p className="text-sm text-slate-600">Gestión de leads, inventario y agentes locales de WhatsApp. Optimizado para la operación comercial diaria de la inmobiliaria.</p>
             </div>
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <ShieldCheck className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Superadmin (AgentOS)</span>
@@ -78,22 +78,22 @@ export default function MasterManualPage() {
           {/* 3. GOBERNANZA Y SEGURIDAD */}
           <h2>3. Gobernanza y Seguridad en Producción</h2>
           <p>Para mitigar riesgos operativos, la v3.1 introduce el <strong>Budget Guard</strong>:</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 not-prose mb-8">
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 not-prose mb-8">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <ShieldAlert className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Budget Guard</span>
               </div>
               <p className="text-xs text-slate-600">Límites estrictos de ejecuciones y autonomía para evitar costos imprevistos de API.</p>
             </div>
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Readiness Center</span>
               </div>
               <p className="text-xs text-slate-600">Checklist técnico que valida variables de entorno y estado de servicios antes de operar.</p>
             </div>
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <Flag className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Feature Flags</span>
@@ -128,22 +128,22 @@ export default function MasterManualPage() {
           <p>
             RaicesPilot incluye un módulo de captura y visualización de tours inmersivos 360° diseñado para que los agentes inmobiliarios puedan crear experiencias profesionales directamente desde su smartphone, sin equipos especiales.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 not-prose mb-8">
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 not-prose mb-8">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <Camera className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Captura Guiada</span>
               </div>
               <p className="text-xs text-slate-600">El agente selecciona el ambiente, y el sistema guía la toma de <strong>18 fotos</strong> en posiciones predefinidas. Las imágenes se suben automáticamente a Cloudinary y se ensamblan en un panorama interactivo.</p>
             </div>
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <Layers className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Multi-Ambiente</span>
               </div>
               <p className="text-xs text-slate-600">Cada propiedad puede tener múltiples ambientes: Living, Cocina, Habitación, Baño, Terraza, etc. El visor permite navegar entre escenas con transiciones fluidas y hotspots de piso interactivos.</p>
             </div>
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <ScanLine className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Cámara 360° y Drone</span>
@@ -164,15 +164,15 @@ export default function MasterManualPage() {
           <p>
             Cada organización tiene un catálogo de propiedades accesible públicamente sin requerir login, optimizado para captación de leads y campañas de marketing digital.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 not-prose mb-8">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <Globe className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">URL del Catálogo</span>
               </div>
               <p className="text-xs text-slate-600">Accesible en <code>/{"{orgSlug}"}/catalog</code>. Cada inmobiliaria tiene su propio catálogo con su marca. El link se puede compartir directamente desde el panel de control de la organización.</p>
             </div>
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <List className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Visibilidad de Propiedades</span>
@@ -193,22 +193,22 @@ export default function MasterManualPage() {
           <p>
             Cada propiedad con tour 360° publicado incluye un chat flotante con inteligencia artificial accesible en <code>/map/{"{propertyId}"}</code>. El agente responde preguntas en tiempo real sin que el visitante necesite crear una cuenta.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 not-prose mb-8">
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 not-prose mb-8">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <MessageSquare className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Datos Reales de DB</span>
               </div>
               <p className="text-xs text-slate-600">El agente responde con información real extraída de la base de datos: precio, ambientes, superficie, barrio, estado de disponibilidad. No alucina datos — si un campo no existe, lo indica.</p>
             </div>
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <Map className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Contexto de la Propiedad</span>
               </div>
               <p className="text-xs text-slate-600">El agente conoce la propiedad que el visitante está recorriendo: título, dirección, barrio, precio, descripción completa, y el nombre de la inmobiliaria propietaria del tour.</p>
             </div>
-            <div className="border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+            <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">
                 <Bot className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Español Argentino</span>

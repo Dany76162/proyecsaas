@@ -586,23 +586,23 @@ export default async function PlatformManualOperativoPage() {
   ] as const;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 print:max-w-none print:space-y-6">
+    <div className="w-full max-w-none px-6 lg:px-8 space-y-8 print:max-w-none print:px-0 print:mx-0 print:space-y-6">
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm print:rounded-none print:border-slate-300 print:shadow-none">
         <div className="border-b border-slate-100 bg-gradient-to-r from-slate-950 via-slate-900 to-violet-950 px-6 py-8 text-white sm:px-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl space-y-4">
+            <div className="max-w-none w-full space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-violet-100">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Fuente oficial de operacion superadmin
               </div>
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Manual Operativo</h1>
-                <p className="max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
+                <p className="max-w-3xl text-sm leading-6 text-slate-200 sm:text-base">
                   Guia viva del entorno superadmin para mantener la plataforma funcionando al 100%,
                   acelerar onboarding tecnico y reducir errores de operacion.
                 </p>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-300">
                     Para quien
@@ -624,7 +624,7 @@ export default async function PlatformManualOperativoPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 lg:items-end">
+            <div className="flex flex-col gap-3 lg:items-end shrink-0">
               <PrintManualButton />
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 print:hidden">
                 Centraliza checklist, playbooks y troubleshooting del entorno superadmin.
@@ -648,7 +648,7 @@ export default async function PlatformManualOperativoPage() {
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
               {statusCards.map((item) => {
                 const ui = getStatusUi(item.status);
 
@@ -754,7 +754,7 @@ export default async function PlatformManualOperativoPage() {
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {observabilityCards.map((item) => {
                 const ui = getOperationalStatusUi(item.status);
 
@@ -792,8 +792,8 @@ export default async function PlatformManualOperativoPage() {
           </div>
         </div>
 
-        <div className="grid gap-8 px-6 py-8 sm:px-8 lg:grid-cols-[240px_minmax(0,1fr)] print:block print:px-6 print:py-6">
-          <aside className="space-y-3 print:hidden">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 px-6 py-8 sm:px-8 print:block print:px-6 print:py-6">
+          <aside className="space-y-3 print:hidden xl:col-span-3 2xl:col-span-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                 Navegacion interna
@@ -822,7 +822,7 @@ export default async function PlatformManualOperativoPage() {
             </div>
           </aside>
 
-          <div className="space-y-8 print:space-y-6">
+          <div className="space-y-8 print:space-y-6 xl:col-span-9 2xl:col-span-10">
             <section id="vision-operativa" className="space-y-5 scroll-mt-24">
               <SectionHeader
                 eyebrow="Vision operativa"
@@ -830,7 +830,7 @@ export default async function PlatformManualOperativoPage() {
                 description="El superadmin sostiene la salud del entorno, el alta de cuentas, las integraciones externas, el estado comercial y la continuidad operativa. Cuando una dependencia critica cae, el impacto se propaga a conversaciones, onboarding, cobros y soporte."
               />
 
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {operationalDependencies.map((dependency) => (
                   <article
                     key={dependency.title}
@@ -857,7 +857,7 @@ export default async function PlatformManualOperativoPage() {
                 description="Lista de verificacion operativa para dejar el entorno alineado y sin puntos ciegos antes de trabajar sobre clientes reales."
               />
 
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {checklistGroups.map((group) => (
                   <article
                     key={group.title}
@@ -899,7 +899,7 @@ export default async function PlatformManualOperativoPage() {
                       <h3 className="text-base font-bold text-slate-900">{playbook.title}</h3>
                       <p className="mt-1 text-sm leading-6 text-slate-600">{playbook.summary}</p>
                     </div>
-                    <div className="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                    <div className="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
                       <ol className="space-y-3">
                         {playbook.steps.map((step, index) => (
                           <li key={step} className="flex items-start gap-3">
@@ -929,7 +929,7 @@ export default async function PlatformManualOperativoPage() {
                 description="Mapa rapido del panel para intervenir con criterio y entender donde mirar segun el problema."
               />
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {modules.map((module) => {
                   const Icon = module.icon;
 
@@ -968,7 +968,7 @@ export default async function PlatformManualOperativoPage() {
                 description="Lista corta y operativa para cortar tiempo de diagnostico sin abrir diez frentes a la vez."
               />
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {troubleshooting.map((item) => (
                   <article
                     key={item.title}
@@ -998,7 +998,7 @@ export default async function PlatformManualOperativoPage() {
                 description="El sistema opera bajo un flujo híbrido: permite cobros automatizados por pasarelas (Stripe/Mercado Pago) o la administración manual por parte del Superadmin para excepciones comerciales y transferencias offline."
               />
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2">
                 <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-800 flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
