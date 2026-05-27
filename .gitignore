@@ -60,3 +60,8 @@ artifacts/proyecsaas/public/uploads/
 artifacts/proyecsaas/scratch/
 flyctl.exe
 flyctl.zip
+
+# Seeding & Scratch
+artifacts/proyecsaas/prisma/seed-subscriptions.js
+artifacts/proyecsaas/scripts/seed-subscriptions.ts
+scratch/
