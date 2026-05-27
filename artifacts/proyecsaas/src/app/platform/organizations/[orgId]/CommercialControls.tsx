@@ -76,6 +76,16 @@ export default function CommercialControls({
   };
 
   const handleToggleAiStatus = (newStatus: "ACTIVE" | "PAUSED" | "DISABLED") => {
+    if (
+      newStatus === "ACTIVE" &&
+      initialData.aiMonthlyConversationsUsed >= initialData.aiMonthlyConversationLimit
+    ) {
+      const confirmReactivation = window.confirm(
+        "Este cliente ya superó el límite mensual. Si reactivás la IA sin aumentar el límite o cargar saldo, puede volver a pausarse automáticamente.\n\n¿Deseas continuar?"
+      );
+      if (!confirmReactivation) return;
+    }
+
     setErrorMsg(null);
     startTransition(async () => {
       try {

@@ -65,26 +65,34 @@ export default async function OrgAuditPage({
     });
   }
 
-  if (subscription.aiStatus === "PAUSED" || subscription.aiStatus === "DISABLED") {
-    alerts.push({
-      type: "warning",
-      message: `Agente IA Pausado (${subscription.aiStatus})`,
-      reason: "El bot no responderá conversaciones. El CRM y el catálogo siguen totalmente activos."
-    });
-  }
-
-  if (subscription.aiMonthlyConversationsUsed >= subscription.aiMonthlyConversationLimit) {
+  if (subscription.aiStatus === "PAUSED" && subscription.aiMonthlyConversationsUsed >= subscription.aiMonthlyConversationLimit) {
     alerts.push({
       type: "critical",
-      message: "Límite de conversaciones superado",
-      reason: `Consumo actual (${subscription.aiMonthlyConversationsUsed}) superó el límite de ${subscription.aiMonthlyConversationLimit} mensual.`
+      message: "IA pausada automáticamente por límite de cuota",
+      reason: `La IA fue pausada de forma aislada tras consumir la totalidad del límite mensual (${subscription.aiMonthlyConversationsUsed}/${subscription.aiMonthlyConversationLimit}).`
     });
-  } else if (subscription.aiMonthlyConversationsUsed >= subscription.aiMonthlyConversationLimit * 0.85) {
-    alerts.push({
-      type: "warning",
-      message: "Cerca del límite de conversaciones",
-      reason: `Ha consumido el ${Math.round(conversationUsagePct)}% de sus conversaciones mensuales. Sugerir recarga.`
-    });
+  } else {
+    if (subscription.aiStatus === "PAUSED" || subscription.aiStatus === "DISABLED") {
+      alerts.push({
+        type: "warning",
+        message: `Agente IA Pausado (${subscription.aiStatus})`,
+        reason: "El bot no responderá conversaciones. El CRM y el catálogo siguen totalmente activos."
+      });
+    }
+
+    if (subscription.aiMonthlyConversationsUsed >= subscription.aiMonthlyConversationLimit) {
+      alerts.push({
+        type: "critical",
+        message: "Límite de conversaciones superado",
+        reason: `Consumo actual (${subscription.aiMonthlyConversationsUsed}) superó el límite de ${subscription.aiMonthlyConversationLimit} mensual.`
+      });
+    } else if (subscription.aiMonthlyConversationsUsed >= subscription.aiMonthlyConversationLimit * 0.85) {
+      alerts.push({
+        type: "warning",
+        message: "Cerca del límite de conversaciones",
+        reason: `Ha consumido el ${Math.round(conversationUsagePct)}% de sus conversaciones mensuales. Sugerir recarga.`
+      });
+    }
   }
 
   if (isLifetimeEligible) {
@@ -313,6 +321,10 @@ export default async function OrgAuditPage({
                 <li className="flex items-center gap-2 text-slate-300">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
                   Límite mensual del plan: **{subscription.aiMonthlyConversationLimit} conversaciones**
+                </li>
+                <li className="flex items-center gap-2 text-slate-300">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+                  Próximo reset de cuota: **{subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" }) : "Sin fecha definida"}**
                 </li>
                 <li className="flex items-center gap-2 text-slate-300">
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>

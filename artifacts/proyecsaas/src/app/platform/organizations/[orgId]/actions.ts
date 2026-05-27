@@ -20,6 +20,7 @@ export type OrgAuditData = {
     aiMonthlyConversationLimit: number;
     aiMonthlyConversationsUsed: number;
     lifetimeGrantedAt: Date | null;
+    currentPeriodEnd: Date | null;
   };
   whatsapp: {
     status: string;
@@ -147,6 +148,7 @@ export async function getOrgAiAudit(orgId: string): Promise<OrgAuditData> {
       aiMonthlyConversationLimit: sub?.aiMonthlyConversationLimit ?? 300,
       aiMonthlyConversationsUsed: sub?.aiMonthlyConversationsUsed ?? 0,
       lifetimeGrantedAt: sub?.lifetimeGrantedAt || null,
+      currentPeriodEnd: sub?.currentPeriodEnd || null,
     },
     whatsapp: {
       status: wa?.status || "INACTIVE",

@@ -298,11 +298,62 @@ export async function processWhatsAppInboundJob(
     });
   }
 
-  // 2.3 — Check subscription and AI status (SaaS-to-Own isolation)
-  const subscription = await prisma.subscription.findUnique({
+  // 2.3 — Check subscription, execute Lazy Reset and validate AI status (SaaS-to-Own isolation)
+  let subscription = await prisma.subscription.findUnique({
     where: { organizationId: targetOrgId },
-    select: { status: true, aiStatus: true },
+    select: { 
+      status: true, 
+      aiStatus: true,
+      currentPeriodStart: true,
+      currentPeriodEnd: true,
+      aiMonthlyConversationLimit: true,
+      aiMonthlyConversationsUsed: true,
+    },
   });
+
+  if (subscription) {
+    const now = new Date();
+    if (now >= subscription.currentPeriodEnd) {
+      // Executing Lazy Reset of the commercial cycle
+      const nextStart = subscription.currentPeriodEnd;
+      const nextEnd = new Date(nextStart);
+      nextEnd.setMonth(nextEnd.getMonth() + 1);
+
+      // Reactivate only if previously paused due to limit exhaustion
+      const isLimitExceeded = subscription.aiMonthlyConversationsUsed >= subscription.aiMonthlyConversationLimit;
+      const nextAiStatus = (subscription.aiStatus === "PAUSED" && isLimitExceeded) ? "ACTIVE" : subscription.aiStatus;
+
+      subscription = await prisma.subscription.update({
+        where: { organizationId: targetOrgId },
+        data: {
+          aiMonthlyConversationsUsed: 0,
+          aiStatus: nextAiStatus,
+          currentPeriodStart: nextStart,
+          currentPeriodEnd: nextEnd,
+        },
+        select: {
+          status: true,
+          aiStatus: true,
+          currentPeriodStart: true,
+          currentPeriodEnd: true,
+          aiMonthlyConversationLimit: true,
+          aiMonthlyConversationsUsed: true,
+        },
+      });
+
+      console.log(
+        JSON.stringify({
+          scope: "commercial-audit",
+          event: "ai-usage-reset",
+          organizationId: targetOrgId,
+          previousUsed: subscription.aiMonthlyConversationsUsed,
+          limit: subscription.aiMonthlyConversationLimit,
+          aiStatus: nextAiStatus,
+          timestamp: new Date().toISOString(),
+        })
+      );
+    }
+  }
 
   if (subscription?.status === "SUSPENDED") {
     return { status: "ignored" as const, reason: "subscription-suspended" };
@@ -310,6 +361,32 @@ export async function processWhatsAppInboundJob(
 
   if (subscription?.aiStatus === "PAUSED" || subscription?.aiStatus === "DISABLED") {
     return { status: "ignored" as const, reason: "ai-paused" };
+  }
+
+  // Pre-check limits: if already exceeded, pause immediately and ignore message
+  if (
+    subscription &&
+    subscription.aiMonthlyConversationsUsed >= subscription.aiMonthlyConversationLimit
+  ) {
+    // Auto-pause AI status
+    await prisma.subscription.update({
+      where: { organizationId: targetOrgId },
+      data: { aiStatus: "PAUSED" },
+    });
+
+    console.log(
+      JSON.stringify({
+        scope: "commercial-audit",
+        event: "ai-auto-paused",
+        organizationId: targetOrgId,
+        used: subscription.aiMonthlyConversationsUsed,
+        limit: subscription.aiMonthlyConversationLimit,
+        reason: "monthly-limit-reached",
+        timestamp: new Date().toISOString(),
+      })
+    );
+
+    return { status: "ignored" as const, reason: "quota-limit-exceeded" };
   }
 
   // 2.5 — Early return if an agent has taken manual control of this conversation
@@ -600,16 +677,83 @@ export async function processWhatsAppInboundJob(
     });
 
     if (!persistence) {
-      persistence = await prisma.message.create({
-        data: {
-          id: deterministicOutboundId,
-          organizationId: targetOrgId,
-          conversationId: result.conversation.id,
-          direction: MessageDirection.OUTBOUND,
-          body: decision.responseText,
-          sentAt: new Date(),
-          deliveryStatus: MessageDeliveryStatus.PENDING,
-        },
+      persistence = await prisma.$transaction(async (tx) => {
+        const msg = await tx.message.create({
+          data: {
+            id: deterministicOutboundId,
+            organizationId: targetOrgId,
+            conversationId: result.conversation.id,
+            direction: MessageDirection.OUTBOUND,
+            body: decision.responseText!,
+            sentAt: new Date(),
+            deliveryStatus: MessageDeliveryStatus.PENDING,
+          },
+        });
+
+        // Query existing AI responses in this conversation during the current active cycle
+        const outboundCount = await tx.message.count({
+          where: {
+            conversationId: result.conversation.id,
+            id: {
+              startsWith: "rep_",
+              not: deterministicOutboundId, // exclude current message
+            },
+            sentAt: {
+              gte: subscription!.currentPeriodStart,
+            },
+          },
+        });
+
+        if (outboundCount === 0) {
+          // Increment the monthly used conversations atomically
+          const updatedSub = await tx.subscription.update({
+            where: { organizationId: targetOrgId },
+            data: {
+              aiMonthlyConversationsUsed: {
+                increment: 1,
+              },
+            },
+            select: {
+              aiMonthlyConversationsUsed: true,
+              aiMonthlyConversationLimit: true,
+            },
+          });
+
+          console.log(
+            JSON.stringify({
+              scope: "commercial-audit",
+              event: "ai-conversation-counted",
+              organizationId: targetOrgId,
+              conversationId: result.conversation.id,
+              messageId: deterministicOutboundId,
+              used: updatedSub.aiMonthlyConversationsUsed,
+              limit: updatedSub.aiMonthlyConversationLimit,
+              timestamp: new Date().toISOString(),
+            })
+          );
+
+          // If the limit has been reached, auto-pause AI immediately
+          if (updatedSub.aiMonthlyConversationsUsed >= updatedSub.aiMonthlyConversationLimit) {
+            await tx.subscription.update({
+              where: { organizationId: targetOrgId },
+              data: { aiStatus: "PAUSED" },
+            });
+
+            console.log(
+              JSON.stringify({
+                scope: "commercial-audit",
+                event: "ai-auto-paused",
+                organizationId: targetOrgId,
+                used: updatedSub.aiMonthlyConversationsUsed,
+                limit: updatedSub.aiMonthlyConversationLimit,
+                reason: "monthly-limit-reached",
+                timestamp: new Date().toISOString(),
+              })
+            );
+          }
+        }
+
+        return msg;
       });
     }
 
