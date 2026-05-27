@@ -2,6 +2,7 @@
 
 import { prisma } from "@/server/db/prisma";
 import { requirePlatformAdmin } from "@/server/auth/access";
+import { revalidatePath } from "next/cache";
 
 export type OrgAuditData = {
   org: {
@@ -11,8 +12,14 @@ export type OrgAuditData = {
     planLabel: string | null;
   };
   subscription: {
-    status: string | null;
+    status: string;
     daysLeft: number | null;
+    planCode: string | null;
+    paidCycles: number;
+    aiStatus: string;
+    aiMonthlyConversationLimit: number;
+    aiMonthlyConversationsUsed: number;
+    lifetimeGrantedAt: Date | null;
   };
   whatsapp: {
     status: string;
@@ -78,8 +85,6 @@ export async function getOrgAiAudit(orgId: string): Promise<OrgAuditData> {
   let unansweredCount = 0;
   const mappedHandoffs = handoffs.map(c => {
     const lastMsg = c.messages[0];
-    // If conversation is OPEN and isHumanControlled, and we haven't closed it yet.
-    // Also we consider it heavily "unanswered" if the last message was INBOUND.
     const isUnanswered = c.status === "OPEN" && lastMsg?.direction === "INBOUND";
     if (isUnanswered) unansweredCount++;
 
@@ -98,7 +103,7 @@ export async function getOrgAiAudit(orgId: string): Promise<OrgAuditData> {
   const sub = orgInfo.subscription;
   
   let daysLeft = null;
-  if (sub?.currentPeriodEnd) {
+  if (sub?.currentPeriodEnd && sub.status !== "CANCELLED" && !sub.lifetimeGrantedAt) {
     daysLeft = Math.ceil((sub.currentPeriodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   }
 
@@ -136,6 +141,12 @@ export async function getOrgAiAudit(orgId: string): Promise<OrgAuditData> {
     subscription: {
       status: sub?.status || "NO_SUBSCRIPTION",
       daysLeft,
+      planCode: sub?.planCode || null,
+      paidCycles: sub?.paidCycles || 0,
+      aiStatus: sub?.aiStatus || "ACTIVE",
+      aiMonthlyConversationLimit: sub?.aiMonthlyConversationLimit ?? 300,
+      aiMonthlyConversationsUsed: sub?.aiMonthlyConversationsUsed ?? 0,
+      lifetimeGrantedAt: sub?.lifetimeGrantedAt || null,
     },
     whatsapp: {
       status: wa?.status || "INACTIVE",
@@ -153,4 +164,172 @@ export async function getOrgAiAudit(orgId: string): Promise<OrgAuditData> {
     suggestedAction: action,
     suggestedActionReason: reason,
   };
+}
+
+// 💵 Action: Registrar Pago Recibido
+export async function registerPaymentAction(orgId: string) {
+  await requirePlatformAdmin();
+
+  const sub = await prisma.subscription.findUnique({
+    where: { organizationId: orgId }
+  });
+
+  if (!sub) throw new Error("Suscripción no encontrada");
+
+  const newCycles = Math.min(sub.paidCycles + 1, 12);
+
+  await prisma.subscription.update({
+    where: { organizationId: orgId },
+    data: {
+      paidCycles: newCycles,
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Extiende vigencia por 30 días
+      status: "ACTIVE" // Asegura CRM activo al pagar
+    }
+  });
+
+  console.log(JSON.stringify({
+    scope: "audit",
+    event: "register-payment",
+    orgId,
+    previousCycles: sub.paidCycles,
+    newCycles,
+    operator: "Superadmin",
+    timestamp: new Date().toISOString()
+  }));
+
+  revalidatePath(`/platform/organizations/${orgId}`);
+}
+
+// 🏆 Action: Otorgar Licencia Lifetime
+export async function grantLifetimeAction(orgId: string) {
+  await requirePlatformAdmin();
+
+  const sub = await prisma.subscription.findUnique({
+    where: { organizationId: orgId }
+  });
+
+  if (!sub) throw new Error("Suscripción no encontrada");
+
+  await prisma.subscription.update({
+    where: { organizationId: orgId },
+    data: {
+      lifetimeGrantedAt: new Date(),
+      status: "ACTIVE" // CRM queda activo de por vida
+    }
+  });
+
+  console.log(JSON.stringify({
+    scope: "audit",
+    event: "grant-lifetime",
+    orgId,
+    operator: "Superadmin",
+    timestamp: new Date().toISOString()
+  }));
+
+  revalidatePath(`/platform/organizations/${orgId}`);
+}
+
+// 🤖 Action: Alternar Estado IA (Pausar / Reactivar / Deshabilitar)
+export async function toggleAiStatusAction(orgId: string, status: "ACTIVE" | "PAUSED" | "DISABLED") {
+  await requirePlatformAdmin();
+
+  if (!["ACTIVE", "PAUSED", "DISABLED"].includes(status)) {
+    throw new Error("Estado de IA no válido");
+  }
+
+  await prisma.subscription.update({
+    where: { organizationId: orgId },
+    data: { aiStatus: status }
+  });
+
+  console.log(JSON.stringify({
+    scope: "audit",
+    event: "toggle-ai-status",
+    orgId,
+    status,
+    operator: "Superadmin",
+    timestamp: new Date().toISOString()
+  }));
+
+  revalidatePath(`/platform/organizations/${orgId}`);
+}
+
+// ⚙️ Action: Actualizar Configuración Comercial Completa (Con Validaciones Estrictas)
+export async function updateCommercialConfigAction(
+  orgId: string,
+  data: {
+    planCode: string | null;
+    monthlyLimit: number;
+    conversationsUsed?: number;
+    paidCycles?: number;
+    status?: "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELLED" | "EXPIRED" | "SUSPENDED";
+    planLabel?: string;
+  }
+) {
+  await requirePlatformAdmin();
+
+  // 1. Validación de Plan
+  if (data.planCode !== null && !["FOUNDER", "BASE", "PRO", "ENTERPRISE", "CUSTOM"].includes(data.planCode)) {
+    throw new Error("Plan asignado no válido. Debe ser FOUNDER, BASE, PRO, ENTERPRISE, CUSTOM o null.");
+  }
+
+  // 2. Validación de Límites No Negativos
+  if (data.monthlyLimit < 0) {
+    throw new Error("El límite mensual de conversaciones no puede ser menor a 0.");
+  }
+  if (data.conversationsUsed !== undefined && data.conversationsUsed < 0) {
+    throw new Error("Las conversaciones usadas no pueden ser menores a 0.");
+  }
+
+  // 3. Validación de Ciclos de Pago
+  if (data.paidCycles !== undefined && (data.paidCycles < 0 || data.paidCycles > 12)) {
+    throw new Error("Los ciclos pagados deben estar en el rango de 0 a 12.");
+  }
+
+  // 4. Validación de Estado CRM
+  if (data.status !== undefined && !["TRIALING", "ACTIVE", "PAST_DUE", "CANCELLED", "EXPIRED", "SUSPENDED"].includes(data.status)) {
+    throw new Error("Estado comercial de CRM no válido.");
+  }
+
+  const updateSubData: any = {
+    planCode: data.planCode,
+    aiMonthlyConversationLimit: data.monthlyLimit,
+  };
+
+  if (data.conversationsUsed !== undefined) {
+    updateSubData.aiMonthlyConversationsUsed = data.conversationsUsed;
+  }
+  if (data.paidCycles !== undefined) {
+    updateSubData.paidCycles = data.paidCycles;
+  }
+  if (data.status !== undefined) {
+    updateSubData.status = data.status;
+  }
+
+  // Ejecutamos transaccionalmente para actualizar tanto la Subscription como el planLabel de la Organization
+  await prisma.$transaction(async (tx) => {
+    await tx.subscription.update({
+      where: { organizationId: orgId },
+      data: updateSubData
+    });
+
+    if (data.planLabel !== undefined) {
+      await tx.organization.update({
+        where: { id: orgId },
+        data: { planLabel: data.planLabel }
+      });
+    }
+  });
+
+  console.log(JSON.stringify({
+    scope: "audit",
+    event: "update-commercial-config",
+    orgId,
+    updateData: { ...updateSubData, planLabel: data.planLabel },
+    operator: "Superadmin",
+    timestamp: new Date().toISOString()
+  }));
+
+  revalidatePath(`/platform/organizations/${orgId}`);
 }

@@ -605,6 +605,14 @@ model Subscription {
   // Stored as plain String (no FK constraint) to avoid touching OrgBillingRecord in this phase.
   activatedByRecordId String?
 
+  // SaaS-to-Own and AI controls for Stage 1.5
+  planCode                   String?            // e.g. "FOUNDER", "BASE", "PRO", "ENTERPRISE", "CUSTOM"
+  paidCycles                 Int                @default(0)
+  aiStatus                   String             @default("ACTIVE") // ACTIVE, PAUSED, DISABLED
+  aiMonthlyConversationLimit Int                @default(300)
+  aiMonthlyConversationsUsed Int                @default(0)
+  lifetimeGrantedAt          DateTime?
+
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   plan         Plan         @relation(fields: [planId], references: [id], onDelete: Restrict)
 

@@ -298,7 +298,21 @@ export async function processWhatsAppInboundJob(
     });
   }
 
-  // 2.5 â€” Early return if an agent has taken manual control of this conversation
+  // 2.3 — Check subscription and AI status (SaaS-to-Own isolation)
+  const subscription = await prisma.subscription.findUnique({
+    where: { organizationId: targetOrgId },
+    select: { status: true, aiStatus: true },
+  });
+
+  if (subscription?.status === "SUSPENDED") {
+    return { status: "ignored" as const, reason: "subscription-suspended" };
+  }
+
+  if (subscription?.aiStatus === "PAUSED" || subscription?.aiStatus === "DISABLED") {
+    return { status: "ignored" as const, reason: "ai-paused" };
+  }
+
+  // 2.5 — Early return if an agent has taken manual control of this conversation
   if (result.conversation.isHumanControlled) {
     return { status: "ignored" as const, reason: "human-controlled" };
   }
