@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { OrgPlatformSummary, PlatformPlanOption } from "@/modules/platform/types";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { OnboardingControls } from "@/components/platform/onboarding-controls";
 import { CommercialControls } from "@/components/platform/commercial-controls";
 import { TrashOrganizationButton } from "@/components/platform/TrashOrganizationButton";
 import { DeleteOrganizationButton } from "@/components/platform/DeleteOrganizationButton";
+
 
 const HEALTH_FILTERS = [
   { value: "all", label: "Todos" },
@@ -326,6 +328,12 @@ export function OrgTable({
                             currentPeriodEnd={org.currentPeriodEnd}
                             internalBillingNotes={org.internalBillingNotes}
                           />
+                          <Link
+                            href={`/platform/organizations/${org.id}`}
+                            className="inline-flex w-full items-center justify-center gap-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50 transition shadow-sm h-8"
+                          >
+                            Detalle Ficha
+                          </Link>
                         </>
                       ) : null}
 
