@@ -27,7 +27,15 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { initializeProductionSandboxAction } from "./actions";
+import { 
+  initializeProductionSandboxAction,
+  resetSandboxAiAction,
+  simulateFirstLeadAction,
+  simulateRepeatedMessageAction,
+  simulateSecondLeadAction,
+  forceSandboxLimitAction,
+  simulateThirdLeadAction
+} from "./actions";
 
 // Dynamic types for localStorage state persistence
 type StatusType = "PENDIENTE" | "PASS" | "FAIL" | "WARNING";
@@ -287,6 +295,33 @@ export default function QAOperativoPage() {
       console.error("Error running diagnostic:", error);
     } finally {
       setLoadingDiag(false);
+    }
+  };
+
+  const [executingSim, setExecutingSim] = useState(false);
+  const [simLog, setSimLog] = useState<string[]>([]);
+
+  const runSimAction = async (actionName: string, actionFn: () => Promise<any>) => {
+    setExecutingSim(true);
+    setSimLog((prev) => [...prev, `[${new Date().toLocaleTimeString()}] Iniciando: ${actionName}...`]);
+    try {
+      const res = await actionFn();
+      if (res.success) {
+        setSimLog((prev) => [...prev, `[ÉXITO] ${res.message}`]);
+        if (res.data) {
+          setSimLog((prev) => [
+            ...prev,
+            `[DATOS] Consumo: ${res.data.newUsed}/${res.data.newLimit} | Estado IA: ${res.data.newAiStatus}`
+          ]);
+        }
+        await runDiagnostic();
+      } else {
+        setSimLog((prev) => [...prev, `[FALLO] ${res.message}`]);
+      }
+    } catch (err: any) {
+      setSimLog((prev) => [...prev, `[EXCEPCIÓN] ${err.message || String(err)}`]);
+    } finally {
+      setExecutingSim(false);
     }
   };
 
@@ -696,6 +731,162 @@ export default function QAOperativoPage() {
           </div>
         </Card>
       </div>
+
+      {/* Simulador de Consumo IA Sandbox (Etapa D) */}
+      <Card className="bg-white border border-slate-200/60 p-6 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-md font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Activity className="w-5 h-5 text-violet-650 shrink-0" />
+              Simulador de Consumo IA Sandbox (Etapa D)
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Pruebas aisladas e inocuas sobre el tenant <code className="bg-slate-100 text-slate-700 px-1 py-0.5 rounded font-mono font-bold">raicespilot-qa-test</code> para validar el contador y la auto-pausa de IA.
+            </p>
+          </div>
+          {diagData?.sandboxStatus?.existsInDB && (
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-xs font-bold text-slate-550">Estado IA Sandbox:</span>
+              <Badge
+                variant={diagData.sandboxStatus.subscription?.aiStatus === "ACTIVE" ? "success" : "danger"}
+                className="font-extrabold uppercase text-[10px]"
+              >
+                {diagData.sandboxStatus.subscription?.aiStatus || "INACTIVO"}
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {diagData?.sandboxStatus?.existsInDB ? (
+          <div className="space-y-6">
+            {/* Live Progress Bar */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+              <div className="flex justify-between items-center text-xs font-bold text-slate-750">
+                <span className="flex items-center gap-1.5 text-indigo-650">
+                  <Database className="w-4 h-4 shrink-0" />
+                  Consumo Acumulado: {diagData.sandboxStatus.subscription?.aiMonthlyConversationsUsed ?? 0} / {diagData.sandboxStatus.subscription?.aiMonthlyConversationLimit ?? 300}
+                </span>
+                <span className="text-slate-400">
+                  {Math.min(
+                    Math.round(
+                      ((diagData.sandboxStatus.subscription?.aiMonthlyConversationsUsed ?? 0) /
+                        (diagData.sandboxStatus.subscription?.aiMonthlyConversationLimit ?? 300)) *
+                        100
+                    ),
+                    100
+                  )}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 rounded-full ${
+                    diagData.sandboxStatus.subscription?.aiStatus === "PAUSED"
+                      ? "bg-red-500"
+                      : (diagData.sandboxStatus.subscription?.aiMonthlyConversationsUsed ?? 0) >=
+                        (diagData.sandboxStatus.subscription?.aiMonthlyConversationLimit ?? 300) * 0.85
+                      ? "bg-amber-500"
+                      : "bg-violet-600"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      ((diagData.sandboxStatus.subscription?.aiMonthlyConversationsUsed ?? 0) /
+                        (diagData.sandboxStatus.subscription?.aiMonthlyConversationLimit ?? 300)) *
+                        100,
+                      100
+                    )}%`,
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Simulated Execution Log Console */}
+            {simLog.length > 0 && (
+              <div className="bg-slate-900 text-slate-200 p-4 rounded-xl border border-slate-800 font-mono text-xs space-y-1 max-h-40 overflow-y-auto">
+                <div className="text-[10px] font-bold text-slate-500 border-b border-slate-800 pb-1 mb-1.5 uppercase flex justify-between">
+                  <span>Terminal de Simulación</span>
+                  <button onClick={() => setSimLog([])} className="hover:text-white transition">limpiar</button>
+                </div>
+                {simLog.map((log, index) => (
+                  <p key={index} className="leading-relaxed">
+                    <span className="text-violet-400">&gt;</span> {log}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Interactive Grid of Buttons */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Button
+                disabled={executingSim}
+                onClick={async () => {
+                  if (confirm("¿Restaurar sandbox de IA a 0/300 ACTIVE? Se eliminarán los leads simulados QA.")) {
+                    await runSimAction("Restaurar sandbox", resetSandboxAiAction);
+                  }
+                }}
+                className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs"
+              >
+                Restaurar sandbox IA a 0/300 ACTIVE
+              </Button>
+
+              <Button
+                disabled={executingSim || diagData.sandboxStatus.subscription?.aiStatus === "PAUSED"}
+                onClick={async () => {
+                  await runSimAction("Simular Lead A", simulateFirstLeadAction);
+                }}
+                className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs"
+              >
+                Simular Lead A (Incremento +1)
+              </Button>
+
+              <Button
+                disabled={executingSim || diagData.sandboxStatus.subscription?.aiStatus === "PAUSED"}
+                onClick={async () => {
+                  await runSimAction("Simular mensaje repetido Lead A", simulateRepeatedMessageAction);
+                }}
+                className="bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs"
+              >
+                Simular mensaje repetido Lead A (Mantener)
+              </Button>
+
+              <Button
+                disabled={executingSim || diagData.sandboxStatus.subscription?.aiStatus === "PAUSED"}
+                onClick={async () => {
+                  await runSimAction("Simular Lead B", simulateSecondLeadAction);
+                }}
+                className="bg-sky-655 hover:bg-sky-700 text-white font-bold text-xs"
+              >
+                Simular Lead B (Nuevo, Incremento +1)
+              </Button>
+
+              <Button
+                disabled={executingSim}
+                onClick={async () => {
+                  if (confirm("¿Forzar límite de consumo a 2 conversaciones para test rápido de auto-pausa?")) {
+                    await runSimAction("Forzar límite a 2", () => forceSandboxLimitAction(2));
+                  }
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs"
+              >
+                Forzar límite a 2 conversaciones
+              </Button>
+
+              <Button
+                disabled={executingSim}
+                onClick={async () => {
+                  await runSimAction("Simular Lead C y auto-pausar", simulateThirdLeadAction);
+                }}
+                className="bg-red-600 hover:bg-red-750 text-white font-bold text-xs"
+              >
+                Simular Lead C (Traspasar límite y pausar)
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs font-semibold leading-relaxed">
+            Debes inicializar el Sandbox de Producción en el botón de Diagnóstico Server-Side más arriba para habilitar el simulador de consumo IA de forma segura.
+          </div>
+        )}
+      </Card>
 
       {/* Checklist Sections */}
       <div className="space-y-4">
