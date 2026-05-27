@@ -8,7 +8,7 @@ import { setOrganizationCommercialStateAction } from "@/modules/platform/billing
 import type { PlatformPlanOption } from "@/modules/platform/types";
 
 const STATUS_OPTIONS = [
-  { value: "TRIALING", label: "Periodo de Prueba" },
+  { value: "TRIALING", label: "Trial" },
   { value: "ACTIVE", label: "Activa" },
   { value: "PAST_DUE", label: "Pago pendiente" },
   { value: "CANCELLED", label: "Cancelada" },
@@ -187,12 +187,12 @@ export function CommercialControls({
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Monto / Plan</label>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Monto</label>
                   <input
                     type="text"
                     value={planLabel}
                     onChange={(e) => setPlanLabel(e.target.value)}
-                    placeholder="Ej: $45.000 o Plan Starter"
+                    placeholder="Ej: $65.000 / mes"
                     className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-semibold outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                   />
                 </div>

@@ -66,7 +66,7 @@ export default async function OrgAuditPage({
               </h1>
               <p className="mt-1 text-sm text-slate-400 flex items-center gap-2">
                 Slug: <span className="text-slate-300 font-mono bg-white/5 px-2 rounded-md">{org.slug}</span> • 
-                Plan: <span className="text-violet-300">{org.planLabel || "Desconocido"}</span> •
+                Monto: <span className="text-violet-300">{org.planLabel || "—"}</span> •
                 Suscripción: <span className={cn(
                   "font-medium",
                   subscription.status === "TRIALING" ? "text-amber-400" :

@@ -288,7 +288,7 @@ export function OrgTable({
                         {org.commercialStatusLabel}
                       </Badge>
                       <span className="text-xs font-semibold text-slate-700">
-                        {org.planLabel || (org.planId ? `Plan ${org.planId}` : "Sin plan / abono asignado")}
+                        {org.planLabel || "Sin monto asignado"}
                       </span>
                       <span className="text-[11px] text-slate-500">
                         {org.billingModeLabel ?? "Sin modo"} - {formatCommercialDate(org.currentPeriodEnd)}
