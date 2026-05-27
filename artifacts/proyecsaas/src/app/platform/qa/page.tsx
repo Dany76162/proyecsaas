@@ -14,7 +14,8 @@ import {
   ChevronUp,
   Search,
   Check,
-  FileText
+  FileText,
+  Play
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -93,6 +94,65 @@ const INITIAL_SECTIONS: ChecklistSection[] = [
   }
 ];
 
+const INITIAL_PRELOAD_SECTIONS: ChecklistSection[] = [
+  {
+    id: "modelo",
+    title: "A) Modelo de Negocio",
+    items: [
+      { id: "m1", label: "La ruta /platform/business-model carga correctamente en el navegador y es accesible.", status: "PASS", observation: "La ruta /platform/business-model carga correctamente en producción y es accesible desde el Superadmin." },
+      { id: "m2", label: "Sección 'Cupo Fundador' muestra correctamente la etiqueta: 'Primeras 100' y descripción de lanzamiento limitado.", status: "PASS", observation: "La sección Cupo Fundador muestra correctamente “Primeras 100” y se entiende como beneficio limitado de lanzamiento." },
+      { id: "m3", label: "Sección 'Expansión 2026-2030' muestra la meta 2026 agresiva de 500 inmobiliarias.", status: "PASS", observation: "La sección Expansión 2026–2030 muestra la meta agresiva 2026 de 500 inmobiliarias." },
+      { id: "m4", label: "Sección 'Expansión 2026-2030' muestra la meta corporativa LATAM 2030 de 10.000 inmobiliarias/usuarios.", status: "PASS", observation: "La sección Expansión 2026–2030 muestra la visión LATAM 2030 de 10.000 inmobiliarias/usuarios." },
+      { id: "m5", label: "El botón 'Exportar Markdown' del Modelo de Negocio descarga un archivo .md con los valores vigentes correctos.", status: "PASS", observation: "El botón Exportar Markdown del Modelo de Negocio descarga correctamente el archivo .md con los valores vigentes." }
+    ]
+  },
+  {
+    id: "org",
+    title: "B) Organización QA",
+    items: [
+      { id: "o1", label: "Existe la organización sandbox 'RaicesPilot QA Test' y se valida a través de su slug: 'raicespilot-qa-test'.", status: "WARNING", observation: "Pendiente confirmar existencia real de la organización sandbox raicespilot-qa-test en Clientes/Organizaciones." },
+      { id: "o2", label: "La organización posee configurado el plan 'FOUNDER' (o equivalente a la oferta de lanzamiento).", status: "WARNING", observation: "Pendiente configurar o verificar plan FOUNDER en la organización QA." },
+      { id: "o3", label: "Monto del ciclo de suscripción configurado en $65.000 + impuestos.", status: "WARNING", observation: "Pendiente verificar monto $65.000 + impuestos en la organización QA." },
+      { id: "o4", label: "El estado de la Inteligencia Artificial (aiStatus) de la organización sandbox figura como 'ACTIVE'.", status: "WARNING", observation: "Pendiente verificar que aiStatus figure como ACTIVE en la organización QA." },
+      { id: "o5", label: "El límite mensual de conversaciones y el indicador de consumo acumulado son visibles en la interfaz de control.", status: "WARNING", observation: "Pendiente verificar límite mensual y contador de conversaciones en la ficha comercial." },
+      { id: "o6", label: "El indicador de fecha del próximo reset mensual de consumo es visible en pantalla.", status: "WARNING", observation: "Pendiente verificar fecha del próximo reset mensual." }
+    ]
+  },
+  {
+    id: "comercial",
+    title: "C) Control Comercial",
+    items: [
+      { id: "c1", label: "Registrar un pago suma un ciclo de pago a los acumulados (ej. incrementa 1/12).", status: "PENDIENTE", observation: "Pendiente probar registro de pago sobre organización QA." },
+      { id: "c2", label: "El sistema bloquea registros de pagos adicionales una vez alcanzado el límite total de 12/12 ciclos.", status: "PENDIENTE", observation: "Pendiente validar bloqueo al superar 12/12 pagos." },
+      { id: "c3", label: "La condición de 'Lifetime' (Licencia de por vida) se activa/concede de manera correspondiente una vez completados los 12 ciclos.", status: "PENDIENTE", observation: "Pendiente validar aparición/activación de Lifetime." },
+      { id: "c4", label: "Conceder la condición de Lifetime a la organización mantiene el CRM base activo y accesible.", status: "PENDIENTE", observation: "Pendiente confirmar que Lifetime mantiene CRM base activo." }
+    ]
+  },
+  {
+    id: "consumo",
+    title: "D) Consumo e IA",
+    items: [
+      { id: "i1", label: "El primer lead captado/mensaje generado por IA suma exactamente 1 conversación en el contador mensual.", status: "PENDIENTE", observation: "Pendiente enviar primer mensaje/lead de prueba y confirmar incremento del contador." },
+      { id: "i2", label: "Mensajes consecutivos o adicionales dentro del mismo hilo del lead en el ciclo actual no duplican/suman al contador.", status: "PENDIENTE", observation: "Pendiente validar que el mismo lead no duplique consumo." },
+      { id: "i3", label: "Un lead completamente nuevo o diferente suma una conversación adicional al contador mensual.", status: "PENDIENTE", observation: "Pendiente validar que un lead nuevo suma una conversación adicional." },
+      { id: "i4", label: "Al alcanzar el límite mensual de conversaciones configurado, el estado de la IA de la organización pasa automáticamente a 'PAUSED'.", status: "PENDIENTE", observation: "Pendiente validar pausa automática al alcanzar límite mensual." },
+      { id: "i5", label: "Con la IA en estado PAUSED/limite superado, el CRM, el catálogo de propiedades, el panel y los tours 360 siguen completamente activos y accesibles.", status: "PENDIENTE", observation: "Pendiente confirmar CRM/catálogo/tours activos con IA pausada." }
+    ]
+  },
+  {
+    id: "alertas",
+    title: "E) Alertas y Logs",
+    items: [
+      { id: "a1", label: "Se activa la alerta visual y notificación cuando el consumo mensual está cerca del límite establecido.", status: "PENDIENTE", observation: "Pendiente simular consumo cercano al límite." },
+      { id: "a2", label: "Se activa la alerta visual en el panel cuando el consumo mensual ha alcanzado el límite exacto.", status: "PENDIENTE", observation: "Pendiente simular consumo igual al límite mensual." },
+      { id: "a3", label: "Se renderiza de forma clara la alerta informando que la Inteligencia Artificial se encuentra pausada temporalmente.", status: "PENDIENTE", observation: "Pendiente confirmar alerta visual de IA pausada." },
+      { id: "a4", label: "Los logs estructurados JSON son correctamente generados y visibles en Railway o consola de desarrollo sin errores de runtime.", status: "PENDIENTE", observation: "Pendiente revisar logs JSON en Railway." }
+    ]
+  }
+];
+
+const INITIAL_NOTES_PRELOAD = "La sección Modelo de Negocio fue validada correctamente en producción. Queda pendiente confirmar o crear la organización sandbox `raicespilot-qa-test` para validar el flujo comercial, conteo real de conversaciones IA, pausa automática por límite, CRM activo con IA pausada y logs estructurados.";
+
 export default function QAOperativoPage() {
   const [commitHash, setCommitHash] = useState("");
   const [generalNotes, setGeneralNotes] = useState("");
@@ -115,10 +175,25 @@ export default function QAOperativoPage() {
       const storedSections = localStorage.getItem("qa_sections");
 
       if (storedCommit) setCommitHash(storedCommit);
-      if (storedNotes) setGeneralNotes(storedNotes);
-      if (storedDecision) setFinalDecision(storedDecision);
+      
+      // If nothing is stored in localStorage yet, we default to "Con observaciones" and the requested notes
+      if (storedNotes !== null) {
+        setGeneralNotes(storedNotes);
+      } else {
+        setGeneralNotes(INITIAL_NOTES_PRELOAD);
+      }
+
+      if (storedDecision !== null) {
+        setFinalDecision(storedDecision);
+      } else {
+        setFinalDecision("Con observaciones");
+      }
+
       if (storedSections) {
         setSections(JSON.parse(storedSections));
+      } else {
+        // First-time load without saved items uses the standard INITIAL_SECTIONS
+        setSections(INITIAL_SECTIONS);
       }
     } catch (e) {
       console.error("Error al cargar estado de QA de localStorage", e);
@@ -201,6 +276,14 @@ export default function QAOperativoPage() {
       setFinalDecision("Pendiente");
       setSections(INITIAL_SECTIONS);
     }
+  };
+
+  const handlePrecargarValidacion = () => {
+    setCommitHash("3254e84");
+    setGeneralNotes(INITIAL_NOTES_PRELOAD);
+    setFinalDecision("Con observaciones");
+    setSections(INITIAL_PRELOAD_SECTIONS);
+    saveState(INITIAL_PRELOAD_SECTIONS, "3254e84", INITIAL_NOTES_PRELOAD, "Con observaciones");
   };
 
   const toggleSection = (id: string) => {
@@ -287,25 +370,32 @@ export default function QAOperativoPage() {
             <ClipboardCheck className="h-6 w-6 text-brand-600" />
             Consola QA Operativo
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-505 mt-1">
             Asistencia en validaciones manuales de despliegue, persistencia en almacenamiento local y reportes estructurados.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center flex-wrap gap-2.5">
+          <Button
+            onClick={handlePrecargarValidacion}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm"
+          >
+            <Play className="mr-2 h-4 w-4" />
+            Precargar validación inicial
+          </Button>
           <Button
             onClick={handleClearChecklist}
             variant="outline"
             className="border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-bold"
           >
             <Trash2 className="mr-2 h-4 w-4 text-slate-500" />
-            Limpiar checklist local
+            Limpiar local
           </Button>
           <Button
             onClick={handleExportMarkdown}
             className="bg-brand-600 hover:bg-brand-700 text-white font-bold shadow-sm"
           >
             <Download className="mr-2 h-4 w-4" />
-            Exportar Reporte Markdown
+            Crear reporte inicial (MD)
           </Button>
         </div>
       </div>
@@ -347,17 +437,17 @@ export default function QAOperativoPage() {
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">Información del Ciclo</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-650 uppercase mb-1">Commit Validado (Hash)</label>
+              <label className="block text-xs font-bold text-slate-655 uppercase mb-1">Commit Validado (Hash)</label>
               <input
                 type="text"
                 value={commitHash}
                 onChange={(e) => handleCommitChange(e.target.value)}
-                placeholder="Ej: 177a49f"
+                placeholder="Ej: 3254e84"
                 className="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 placeholder-slate-400 font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-650 uppercase mb-1">Resultado / Decisión Final del QA</label>
+              <label className="block text-xs font-bold text-slate-655 uppercase mb-1">Resultado / Decisión Final del QA</label>
               <select
                 value={finalDecision}
                 onChange={(e) => handleDecisionChange(e.target.value)}
@@ -373,7 +463,7 @@ export default function QAOperativoPage() {
           <div>
             <label className="block text-xs font-bold text-slate-655 uppercase mb-1">Notas Generales de la Prueba</label>
             <textarea
-              rows={2}
+              rows={3}
               value={generalNotes}
               onChange={(e) => handleNotesChange(e.target.value)}
               placeholder="Describa el comportamiento general o notas importantes observadas durante el testeo manual..."
