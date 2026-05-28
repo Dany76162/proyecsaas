@@ -30,7 +30,7 @@ export default async function AgentAutomationsPage() {
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-brand-600">
             <Zap className="h-5 w-5 fill-current" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Controlled Automation</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Automatización Controlada</span>
           </div>
           <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">Automatizaciones <span className="text-brand-600">IA</span></h1>
           <p className="text-sm font-medium text-slate-500">

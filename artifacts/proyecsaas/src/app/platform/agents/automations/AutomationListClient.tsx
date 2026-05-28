@@ -181,14 +181,6 @@ export default function AutomationListClient({ initialAutomations }: { initialAu
                   <p className="text-xs font-bold text-slate-600 tracking-tight">{auto._count.tasks}</p>
                 </div>
               </div>
-              
-              <Link
-                href={`/platform/agents/automations/${auto.id}`}
-                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 transition hover:text-brand-600"
-              >
-                Ver detalles
-                <ChevronRight className="h-4 w-4" />
-              </Link>
             </div>
           </div>
         );
