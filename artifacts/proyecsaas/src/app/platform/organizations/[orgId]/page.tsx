@@ -137,7 +137,14 @@ export default async function OrgAuditPage({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <Badge variant="brand">{subscription.planCode || "PLAN NO ASIGNADO"}</Badge>
+                <Badge variant="brand">{
+                  subscription.planCode === "FOUNDER" ? "PLAN FUNDADOR" :
+                  subscription.planCode === "BASE" ? "PLAN BASE" :
+                  subscription.planCode === "PRO" ? "PLAN PRO" :
+                  subscription.planCode === "ENTERPRISE" ? "PLAN ENTERPRISE" :
+                  subscription.planCode === "CUSTOM" ? "PLAN CUSTOMIZADO" :
+                  subscription.planCode || "PLAN NO ASIGNADO"
+                }</Badge>
                 {subscription.lifetimeGrantedAt ? (
                   <Badge variant="success" className="bg-emerald-50 text-emerald-700 border-emerald-200">LIFETIME ACTIVO</Badge>
                 ) : (
@@ -149,7 +156,15 @@ export default async function OrgAuditPage({
                   subscription.status === "PAST_DUE" ? "bg-rose-50 text-rose-700 border-rose-200 animate-pulse" :
                   "bg-slate-100 text-slate-700"
                 )}>
-                  CRM: {subscription.status}
+                  CRM: {
+                    subscription.status === "ACTIVE" ? "Activo" :
+                    subscription.status === "TRIALING" ? "Prueba" :
+                    subscription.status === "PAST_DUE" ? "Mora/Impago" :
+                    subscription.status === "SUSPENDED" ? "Suspendido" :
+                    subscription.status === "CANCELLED" ? "Cancelado" :
+                    subscription.status === "EXPIRED" ? "Vencido" :
+                    subscription.status
+                  }
                 </Badge>
               </div>
               <h1 className="text-3xl font-black tracking-tight text-slate-900 flex items-center gap-3">
@@ -238,7 +253,7 @@ export default async function OrgAuditPage({
                     "w-2 h-2 rounded-full",
                     subscription.aiStatus === "ACTIVE" ? "bg-emerald-500 animate-pulse" : "bg-rose-500 animate-pulse"
                   )}></span>
-                  {subscription.aiStatus}
+                  {subscription.aiStatus === "ACTIVE" ? "Activo" : subscription.aiStatus === "PAUSED" ? "Pausado" : "Desactivado"}
                 </p>
               </div>
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
@@ -284,7 +299,7 @@ export default async function OrgAuditPage({
                 Métricas de AgentOS
               </h3>
               <Badge variant={subscription.aiStatus === "ACTIVE" ? "success" : "danger"}>
-                IA: {subscription.aiStatus}
+                IA: {subscription.aiStatus === "ACTIVE" ? "Activo" : subscription.aiStatus === "PAUSED" ? "Pausado" : "Desactivado"}
               </Badge>
             </div>
 
@@ -295,7 +310,7 @@ export default async function OrgAuditPage({
                   <span className="text-slate-550">Conversaciones simples/mes:</span>
                   <span className={cn(
                     conversationUsagePct >= 100 ? "text-rose-600 font-bold" :
-                    conversationUsagePct >= 85 ? "text-amber-600 font-bold" : "text-violet-650 font-bold"
+                    conversationUsagePct >= 85 ? "text-amber-600 font-bold" : "text-violet-655 font-bold"
                   )}>
                     {subscription.aiMonthlyConversationsUsed} / {subscription.aiMonthlyConversationLimit}
                   </span>
@@ -303,7 +318,7 @@ export default async function OrgAuditPage({
                 <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden border border-slate-200">
                   <div 
                     className={cn(
-                      "h-full rounded-full transition-all duration-500",
+                       "h-full rounded-full transition-all duration-500",
                       conversationUsagePct >= 100 ? "bg-rose-500" :
                       conversationUsagePct >= 85 ? "bg-amber-500" : "bg-violet-500"
                     )}
@@ -386,7 +401,12 @@ export default async function OrgAuditPage({
               {isWaActive ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <XCircle className="w-5 h-5 text-rose-500" />}
             </div>
             <p className="text-2xl font-black text-slate-900 mb-1">
-              {whatsapp.status}
+              {
+                whatsapp.status === "ACTIVE" ? "Activo" :
+                whatsapp.status === "INACTIVE" ? "Inactivo" :
+                whatsapp.status === "DISCONNECTED" ? "Desconectado" :
+                whatsapp.status === "ERROR" ? "Error" : whatsapp.status
+              }
             </p>
             <p className="text-xs text-slate-500 mb-4 font-semibold">
               Último mensaje: {whatsapp.lastInbound ? formatDistanceToNow(whatsapp.lastInbound, { locale: es, addSuffix: true }) : "Nunca"}
@@ -413,7 +433,12 @@ export default async function OrgAuditPage({
               {subscription.aiStatus === "ACTIVE" ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <XCircle className="w-5 h-5 text-rose-500 animate-pulse" />}
             </div>
             <p className="text-2xl font-black text-slate-900 mb-1">
-              {aiAgent.status}
+              {
+                aiAgent.status === "ACTIVE" ? "Activo" :
+                aiAgent.status === "INACTIVE" ? "Inactivo" :
+                aiAgent.status === "PAUSED" ? "Pausado" :
+                aiAgent.status === "DISABLED" ? "Desactivado" : aiAgent.status
+              }
             </p>
             <p className="text-xs text-slate-500 mb-4 font-semibold">
               {aiAgent.name ? `Agente: ${aiAgent.name}` : "Aún no configurado"}

@@ -47,6 +47,34 @@ function formatCommercialDate(isoDate: string | null) {
   });
 }
 
+function translatePlanLabel(label: string | null) {
+  if (!label) return "Sin plan asignado";
+  if (label.toLowerCase() === "starter") return "Plan Starter";
+  return label;
+}
+
+function translateBillingMode(mode: string | null) {
+  if (!mode || mode.toLowerCase() === "sin modo" || mode.toLowerCase() === "sin modalidad") return "Sin modalidad";
+  if (mode.toLowerCase() === "manual") return "Gestión manual";
+  if (mode.toLowerCase() === "online") return "Online";
+  if (mode.toLowerCase() === "cash" || mode.toLowerCase() === "efectivo") return "Efectivo";
+  if (mode.toLowerCase() === "transfer" || mode.toLowerCase() === "transferencia") return "Transferencia";
+  if (mode.toLowerCase() === "courtesy" || mode.toLowerCase() === "cortesía") return "Cortesía";
+  return mode;
+}
+
+function translateCommercialStatus(label: string | null) {
+  if (!label) return "";
+  const upper = label.toUpperCase();
+  if (upper === "ACTIVE") return "Activo";
+  if (upper === "TRIALING") return "Prueba";
+  if (upper === "PAST_DUE") return "Pago pendiente";
+  if (upper === "CANCELLED") return "Cancelada";
+  if (upper === "EXPIRED") return "Vencida";
+  if (upper === "SUSPENDED") return "Suspendida";
+  return label;
+}
+
 function getLifecycleLabel(org: OrgPlatformSummary) {
   if (org.isTrashed) return "En papelera";
   if (org.isActive) return "Activa";
@@ -287,13 +315,13 @@ export function OrgTable({
                       <Badge
                         variant={org.commercialAccess === "allowed" ? "success" : "danger"}
                       >
-                        {org.commercialStatusLabel}
+                        {translateCommercialStatus(org.commercialStatusLabel)}
                       </Badge>
                       <span className="text-xs font-semibold text-slate-700">
-                        {org.planLabel || "Sin monto asignado"}
+                        {translatePlanLabel(org.planLabel)}
                       </span>
                       <span className="text-[11px] text-slate-500">
-                        {org.billingModeLabel ?? "Sin modo"} - {formatCommercialDate(org.currentPeriodEnd)}
+                        {translateBillingMode(org.billingModeLabel)} - {formatCommercialDate(org.currentPeriodEnd)}
                       </span>
                       {org.internalBillingNotes ? (
                         <span className="line-clamp-2 text-[11px] text-slate-400">
@@ -305,18 +333,20 @@ export function OrgTable({
 
                   <TableCell className="px-5 py-4 align-top">
                     <div className="flex flex-col items-end gap-1.5">
-                      {!org.isTrashed ? (
+                      <OnboardingControls
+                        orgSlug={org.slug}
+                        orgName={org.name}
+                        ownerEmail={org.ownerEmail}
+                        hasUsers={org.memberCount > 0}
+                        isActive={org.isActive}
+                        maxAiAgents={org.maxAiAgents}
+                        aiAgentCount={org.aiAgentCount}
+                        agentQuotaNote={org.agentQuotaNote}
+                        isTrashed={org.isTrashed}
+                        isPlatformOrg={platformOrgId === org.id}
+                      />
+                      {!org.isTrashed && (
                         <>
-                          <OnboardingControls
-                            orgSlug={org.slug}
-                            orgName={org.name}
-                            ownerEmail={org.ownerEmail}
-                            hasUsers={org.memberCount > 0}
-                            isActive={org.isActive}
-                            maxAiAgents={org.maxAiAgents}
-                            aiAgentCount={org.aiAgentCount}
-                            agentQuotaNote={org.agentQuotaNote}
-                          />
                           <CommercialControls
                             organizationId={org.id}
                             orgName={org.name}
@@ -335,21 +365,7 @@ export function OrgTable({
                             Detalle Ficha
                           </Link>
                         </>
-                      ) : null}
-
-                      <TrashOrganizationButton
-                        orgSlug={org.slug}
-                        orgName={org.name}
-                        isTrashed={org.isTrashed}
-                        isPlatformOrg={platformOrgId === org.id}
-                      />
-
-                      <DeleteOrganizationButton
-                        orgSlug={org.slug}
-                        orgName={org.name}
-                        isTrashed={org.isTrashed}
-                        isPlatformOrg={platformOrgId === org.id}
-                      />
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

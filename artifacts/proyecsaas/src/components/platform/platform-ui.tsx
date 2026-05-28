@@ -20,7 +20,7 @@ export function HealthBadge({ status }: { status: OrgHealthStatus }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-      OK
+      Saludable
     </span>
   );
 }
@@ -37,11 +37,19 @@ export function WhatsAppStatus({ channel }: { channel: OrgPlatformSummary["whats
     ERROR: "text-red-600",
   };
 
+  const statusLabels: Record<string, string> = {
+    ACTIVE: "Activo",
+    INACTIVE: "Inactivo",
+    DISCONNECTED: "Desconectado",
+    ERROR: "Error",
+  };
+
   const color = statusColors[channel.status] ?? "text-slate-500";
+  const label = statusLabels[channel.status] ?? channel.status;
 
   return (
     <div>
-      <span className={`text-sm font-bold ${color}`}>{channel.status}</span>
+      <span className={`text-sm font-bold ${color}`}>{label}</span>
       {channel.displayPhoneNumber && (
         <p className="text-sm text-slate-600 font-medium">{channel.displayPhoneNumber}</p>
       )}

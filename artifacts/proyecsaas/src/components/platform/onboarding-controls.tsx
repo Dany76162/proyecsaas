@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState, useTransition, useEffect, useRef } from "react";
@@ -11,8 +11,11 @@ import {
   reactivateOrganizationAction,
   setOrgAgentQuotaAction,
   resetUserPasswordAction,
+  moveOrganizationToTrashAction,
+  restoreOrganizationFromTrashAction,
+  deleteOrganizationPermanentlyAction,
 } from "@/modules/platform/actions";
-import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle, PowerOff, Bot, Power, Key } from "lucide-react";
+import { MoreVertical, Copy, UserX, UserPlus, X, AlertTriangle, PowerOff, Bot, Power, Key, ArchiveX, ArchiveRestore, Trash2, ChevronDown } from "lucide-react";
 
 type MenuCoords = { top: number; right: number };
 
@@ -25,6 +28,8 @@ export function OnboardingControls({
   maxAiAgents,
   aiAgentCount,
   agentQuotaNote,
+  isTrashed,
+  isPlatformOrg,
 }: {
   orgSlug: string;
   orgName: string;
@@ -34,11 +39,13 @@ export function OnboardingControls({
   maxAiAgents: number | null;
   aiAgentCount: number;
   agentQuotaNote?: string | null;
+  isTrashed: boolean;
+  isPlatformOrg: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Dropdown state (mobile / tablet only)
+  // Dropdown state (all screens)
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState<MenuCoords | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -59,6 +66,7 @@ export function OnboardingControls({
   const [inviteName, setInviteName] = useState("");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState("");
+  const [inviteCopied, setInviteCopied] = useState(false);
 
   // Reactivate modal
   const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
@@ -78,6 +86,16 @@ export function OnboardingControls({
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetUrl, setResetUrl] = useState<string | null>(null);
   const [resetError, setResetError] = useState("");
+  const [resetCopied, setResetCopied] = useState(false);
+
+  // Trash & Delete states
+  const [trashModalOpen, setTrashModalOpen] = useState(false);
+  const [trashConfirmSlug, setTrashConfirmSlug] = useState("");
+  const [trashError, setTrashError] = useState("");
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmSlug, setDeleteConfirmSlug] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   // Click-outside: close dropdown when clicking neither trigger nor dropdown
   useEffect(() => {
@@ -176,8 +194,59 @@ export function OnboardingControls({
   const copyInvite = () => {
     if (inviteUrl) {
       navigator.clipboard.writeText(inviteUrl);
-      alert("Enlace copiado al portapapeles.");
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2500);
     }
+  };
+
+  const copyReset = () => {
+    if (resetUrl) {
+      navigator.clipboard.writeText(resetUrl);
+      setResetCopied(true);
+      setTimeout(() => setResetCopied(false), 2500);
+    }
+  };
+
+  const handleTrashToggle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (trashConfirmSlug !== orgSlug) {
+      setTrashError("El slug no coincide. Debes escribir el slug exacto.");
+      return;
+    }
+    startTransition(async () => {
+      setTrashError("");
+      const result = isTrashed
+        ? await restoreOrganizationFromTrashAction(orgSlug)
+        : await moveOrganizationToTrashAction(orgSlug);
+
+      if (result.success) {
+        setTrashModalOpen(false);
+        setTrashConfirmSlug("");
+        router.refresh();
+      } else {
+        setTrashError(result.message ?? "No se pudo completar la acción.");
+      }
+    });
+  };
+
+  const handleDeletePermanent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (deleteConfirmSlug !== orgSlug) {
+      setDeleteError("El slug no coincide. Debes escribir el slug exacto.");
+      return;
+    }
+    startTransition(async () => {
+      setDeleteError("");
+      const result = await deleteOrganizationPermanentlyAction(orgSlug);
+
+      if (result.success) {
+        setDeleteModalOpen(false);
+        setDeleteConfirmSlug("");
+        router.refresh();
+      } else {
+        setDeleteError(result.message ?? "No se pudo eliminar la organización.");
+      }
+    });
   };
 
   const handleQuota = async (e: React.FormEvent) => {
@@ -223,7 +292,7 @@ export function OnboardingControls({
               right: menuCoords.right,
               zIndex: 9999,
             }}
-            className="w-56 origin-top-right rounded-xl border border-slate-200/60 bg-white shadow-enterprise"
+            className="w-56 origin-top-right rounded-xl border border-slate-200/60 bg-white shadow-enterprise py-1"
           >
             {/* Onboarding actions */}
             <div className="py-1">
@@ -233,7 +302,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setCleanModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-semibold text-red-600 hover:bg-red-50"
+                  className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50"
                 >
                   <UserX className="h-4 w-4" />
                   <span>Limpiar accesos</span>
@@ -244,10 +313,10 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setInviteModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-semibold text-emerald-700 hover:bg-emerald-50"
+                  className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-semibold text-emerald-700 hover:bg-emerald-50"
                 >
                   <UserPlus className="h-4 w-4" />
-                  <span>Crear 1Âº Acceso</span>
+                  <span>Crear 1º Acceso</span>
                 </button>
               )}
 
@@ -259,7 +328,7 @@ export function OnboardingControls({
                     setResetError("");
                     setResetModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-semibold text-brand-700 hover:bg-brand-50"
+                  className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-semibold text-brand-700 hover:bg-brand-50"
                 >
                   <Key className="h-4 w-4" />
                   <span>Reiniciar Clave</span>
@@ -275,7 +344,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setDeactivateModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-bold text-red-700 hover:bg-red-50 transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-bold text-red-700 hover:bg-red-50 transition-colors"
                 >
                   <PowerOff className="h-4 w-4 shrink-0" />
                   <span>Suspender</span>
@@ -286,7 +355,7 @@ export function OnboardingControls({
                     setMenuOpen(false);
                     setReactivateModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
                 >
                   <Power className="h-4 w-4 shrink-0" />
                   <span>Reactivar</span>
@@ -304,7 +373,7 @@ export function OnboardingControls({
                   setQuotaSuccess("");
                   setQuotaModalOpen(true);
                 }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-[15px] font-semibold text-slate-700 hover:bg-slate-50"
+                className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Bot className="h-4 w-4 text-brand-600" />
                 <span>Agentes IA ({aiAgentCount}/{maxAiAgents})</span>
@@ -318,11 +387,61 @@ export function OnboardingControls({
                   setMenuOpen(false);
                   setSupportModalOpen(true);
                 }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
               >
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>Soporte técnico</span>
               </button>
+            </div>
+
+            {/* Papelera / Eliminar Acciones */}
+            <div className="border-t border-slate-100 py-1">
+              {isTrashed ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setTrashConfirmSlug("");
+                      setTrashError("");
+                      setTrashModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                  >
+                    <ArchiveRestore className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <span>Restaurar cliente</span>
+                  </button>
+
+                  {!isPlatformOrg && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setDeleteConfirmSlug("");
+                        setDeleteError("");
+                        setDeleteModalOpen(true);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-black text-red-650 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4 shrink-0 text-red-600" />
+                      <span>Eliminar físico</span>
+                    </button>
+                  )}
+                </>
+              ) : (
+                !isPlatformOrg && (
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setTrashConfirmSlug("");
+                      setTrashError("");
+                      setTrashModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-2 text-[13px] font-bold text-amber-700 hover:bg-amber-50 transition-colors"
+                  >
+                    <ArchiveX className="h-4 w-4 shrink-0 text-amber-600" />
+                    <span>Mover a papelera</span>
+                  </button>
+                )
+              )}
             </div>
           </div>,
           document.body,
@@ -331,99 +450,16 @@ export function OnboardingControls({
 
   return (
     <div className="inline-block">
-      {/* â”€â”€ DESKTOP: acciones inline visibles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      {/* hidden on mobile/tablet, shown as stacked action links on lg+ */}
-      <div className="hidden lg:flex flex-col items-end gap-0.5">
-        {/* Acción principal de onboarding */}
-        {hasUsers ? (
-          <button
-            type="button"
-            onClick={() => setCleanModalOpen(true)}
-            className="rounded-lg px-3 py-1.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
-          >
-            Limpiar accesos
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setInviteModalOpen(true)}
-            className="rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50 transition-colors whitespace-nowrap"
-          >
-            Crear 1Âº Acceso
-          </button>
-        )}
-
-        {/* Reiniciar Clave â€” solo si hay usuario */}
-        {hasUsers && ownerEmail && (
-          <button
-            type="button"
-            onClick={() => {
-              setResetUrl(null);
-              setResetError("");
-              setResetModalOpen(true);
-            }}
-            className="rounded-lg px-3 py-1.5 text-sm font-bold text-brand-600 hover:bg-brand-50 transition-colors whitespace-nowrap"
-          >
-            Reiniciar Clave
-          </button>
-        )}
-
-        {/* Suspender / Reactivar */}
-        {isActive ? (
-          <button
-            type="button"
-            onClick={() => setDeactivateModalOpen(true)}
-            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
-          >
-            <PowerOff className="h-3 w-3" />
-            Suspender
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setReactivateModalOpen(true)}
-            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap border border-emerald-200"
-          >
-            <Power className="h-3 w-3" />
-            Reactivar
-          </button>
-        )}
-
-        {/* Agentes IA â€” secundaria */}
-        <button
-          type="button"
-          onClick={() => {
-            setQuotaValue(maxAiAgents ?? 1);
-            setQuotaNote("");
-            setQuotaError("");
-            setQuotaSuccess("");
-            setQuotaModalOpen(true);
-          }}
-          className="rounded-lg px-3 py-1.5 text-sm font-bold text-brand-700 hover:bg-brand-50 transition-colors whitespace-nowrap"
-        >
-          <Bot className="inline h-3.5 w-3.5 mr-1" />
-          Agentes ({aiAgentCount}/{maxAiAgents})
-        </button>
-
-        {/* Soporte técnico â€” terciaria, apenas visible */}
-        <button
-          type="button"
-          onClick={() => setSupportModalOpen(true)}
-          className="rounded-lg px-3 py-1.5 text-sm font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap"
-        >
-          Soporte
-        </button>
-      </div>
-
-      {/* â”€â”€ MOBILE / TABLET: menú â‹® â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <div className="flex lg:hidden">
+      {/* TRIGGER BUTTON FOR THE DROPDOWN ON ALL SCREENS */}
+      <div className="flex items-center">
         <button
           ref={triggerRef}
           type="button"
           onClick={handleToggle}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition"
+          className="inline-flex w-full items-center justify-center gap-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50 transition shadow-sm h-8 whitespace-nowrap"
         >
-          <MoreVertical className="h-4 w-4" />
+          <span>Más acciones</span>
+          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
         </button>
       </div>
 
@@ -812,7 +848,7 @@ export function OnboardingControls({
         </div>
       )}
 
-      {/* â”€â”€ RESET PASSWORD MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── RESET PASSWORD MODAL ────────────────────────────────────────── */}
       {resetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl">
@@ -863,15 +899,15 @@ export function OnboardingControls({
                     {resetUrl}
                   </p>
                   <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(resetUrl);
-                      alert("Enlace copiado.");
-                    }}
+                    onClick={copyReset}
                     className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-200 text-brand-800 hover:bg-brand-300 transition"
                   >
                     <Copy className="h-4 w-4" />
                   </button>
                 </div>
+                {resetCopied && (
+                  <p className="mt-1 text-xs font-semibold text-emerald-700">¡Enlace copiado al portapapeles!</p>
+                )}
                 <p className="mt-3 text-[11px] text-slate-500">
                   Copiá este link y enviaselo al cliente por WhatsApp. 
                   Tiene validez por 48 horas.
@@ -886,6 +922,140 @@ export function OnboardingControls({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── TRASH MODAL ────────────────────────────────────────────────── */}
+      {trashModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isTrashed ? "bg-emerald-100" : "bg-amber-100"}`}>
+                <AlertTriangle className={`h-5 w-5 ${isTrashed ? "text-emerald-600" : "text-amber-600"}`} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-slate-900">
+                  {isTrashed ? "Restaurar cliente" : "Mover a papelera"}
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-slate-655 font-medium">
+                  {isTrashed
+                    ? `La inmobiliaria "${orgName}" volverá a estar disponible en el panel y recuperará su acceso operativo.`
+                    : `La inmobiliaria "${orgName}" saldrá de operación normal y podrá restaurarse más adelante desde la papelera.`}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500 font-semibold">
+                  Para confirmar, escribí el slug exacto: <span className="font-bold text-slate-800">{orgSlug}</span>
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleTrashToggle} className="mt-4 space-y-3">
+              <input
+                required
+                type="text"
+                value={trashConfirmSlug}
+                onChange={(e) => setTrashConfirmSlug(e.target.value)}
+                placeholder={orgSlug}
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+              />
+
+              {trashError && (
+                <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {trashError}
+                </p>
+              )}
+
+              <div className="mt-6 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTrashModalOpen(false);
+                    setTrashConfirmSlug("");
+                    setTrashError("");
+                  }}
+                  disabled={isPending}
+                  className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-705 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending || trashConfirmSlug !== orgSlug}
+                  className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-bold text-white transition disabled:opacity-50 ${
+                    isTrashed ? "bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-500/25" : "bg-amber-600 hover:bg-amber-700 shadow-sm shadow-amber-500/25"
+                  }`}
+                >
+                  {isPending ? "Procesando..." : isTrashed ? "Restaurar cliente" : "Mover a papelera"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE MODAL ────────────────────────────────────────────────── */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-red-200 bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-105 border border-red-200">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Eliminar definitivamente
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-slate-655 font-medium">
+                  Vas a borrar por completo la inmobiliaria <span className="font-bold text-slate-900">"{orgName}"</span> y todos sus datos asociados. Esta acción es definitiva y no se puede deshacer.
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500 font-semibold">
+                  Para confirmar, escribí el slug exacto: <span className="font-bold text-slate-800">{orgSlug}</span>
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleDeletePermanent} className="mt-4 space-y-3">
+              <input
+                required
+                type="text"
+                value={deleteConfirmSlug}
+                onChange={(e) => setDeleteConfirmSlug(e.target.value)}
+                placeholder={orgSlug}
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
+              />
+
+              <div className="rounded-xl border border-red-100 bg-red-50/50 p-3.5 text-[11px] leading-4 text-red-700 font-semibold">
+                ⚠️ Se eliminarán permanentemente membresías, leads, propiedades, conversaciones, historial de mensajes, configuraciones IA y el canal de WhatsApp.
+              </div>
+
+              {deleteError && (
+                <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {deleteError}
+                </p>
+              )}
+
+              <div className="mt-6 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteModalOpen(false);
+                    setDeleteConfirmSlug("");
+                    setDeleteError("");
+                  }}
+                  disabled={isPending}
+                  className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-705 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending || deleteConfirmSlug !== orgSlug}
+                  className="flex-1 rounded-xl bg-red-650 hover:bg-red-700 py-2.5 text-xs font-black text-white transition disabled:opacity-50 shadow-sm shadow-red-500/25 animate-pulse"
+                >
+                  {isPending ? "Eliminando..." : "Eliminar físico"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
