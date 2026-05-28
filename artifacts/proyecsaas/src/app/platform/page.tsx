@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { AlertTriangle, UserPlus, Activity, Database, ArrowRight } from "lucide-react";
@@ -23,11 +23,22 @@ function logPlatformDataError(source: string, reason: unknown) {
   console.error(`[platform] ${source} failed while rendering /platform`, reason);
 }
 
+function formatSecondsToHuman(seconds: number | null): string {
+  if (seconds === null) return "Sin señal de vida registrada";
+  if (seconds < 60) return `hace ${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `hace ${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours} ${hours === 1 ? "hora" : "horas"}`;
+  const days = Math.floor(hours / 24);
+  return `hace ${days} ${days === 1 ? "día" : "días"}`;
+}
+
 export default async function PlatformPage() {
   const [orgsResult, workerStatusResult, impactMetricsResult] = await Promise.allSettled([
     listOrganizationsForPlatform(),
     getWorkerHeartbeatStatus(),
-    getImpactMetrics("30d"),
+    getImpactMetrics("7d"),
   ]);
 
   if (orgsResult.status === "rejected") {
@@ -51,6 +62,9 @@ export default async function PlatformPage() {
     impactMetricsResult.status === "fulfilled" ? impactMetricsResult.value : emptyImpactMetrics;
 
   const activeOrgs = orgs.filter((org) => !org.isTrashed);
+  const activeBillingCount = activeOrgs.filter(
+    (o) => o.isActive && o.commercialAccess === "allowed",
+  ).length;
 
   const criticalCount = activeOrgs.filter((o) => o.health === "critical").length;
   const warningCount = activeOrgs.filter((o) => o.health === "warning").length;
@@ -84,22 +98,20 @@ export default async function PlatformPage() {
               workerStatus.status === "ok" ? "bg-emerald-500" : workerStatus.status === "stale" ? "bg-amber-500" : "bg-red-500"
             )}
           />
-          {workerStatus.status === "ok" ? "Worker operativo" : workerStatus.status === "stale" ? "Worker lento" : "Worker caído"}
+          {workerStatus.status === "ok" ? "Servicio automático activo" : workerStatus.status === "stale" ? "Servicio automático demorado" : "Servicio automático detenido"}
         </Badge>
         <span className="text-[11px] font-medium text-slate-400">
-          {workerStatus.secondsAgo !== null
-            ? `Último heartbeat hace ${workerStatus.secondsAgo}s`
-            : "Sin señal de vida registrada"}
+          {formatSecondsToHuman(workerStatus.secondsAgo)}
         </span>
       </div>
 
-      {/* KPIs â€” más grandes, más presencia */}
+      {/* KPIs — más grandes, más presencia */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Cuentas Activas"
-          value={activeOrgs.length}
+          value={activeBillingCount}
           icon={Database}
-          description="total"
+          description="comercial real"
         />
         <MetricCard
           title="Mantenimiento"
@@ -144,7 +156,7 @@ export default async function PlatformPage() {
                 <div className="flex shrink-0 flex-col items-end gap-2">
                   <HealthBadge status={org.health} />
                   <Link
-                    href="/platform/organizations"
+                    href={`/platform/organizations?search=${org.slug}`}
                     className="text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-brand-600 transition"
                   >
                     Ver detalle
@@ -183,7 +195,7 @@ export default async function PlatformPage() {
                 </div>
                 <div className="shrink-0">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href="/platform/organizations">Gestionar</Link>
+                    <Link href={`/platform/organizations?search=${org.slug}`}>Gestionar</Link>
                   </Button>
                 </div>
               </div>

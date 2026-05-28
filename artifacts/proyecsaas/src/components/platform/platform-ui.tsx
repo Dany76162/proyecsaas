@@ -1,4 +1,4 @@
-﻿import type { OrgHealthStatus, OrgPlatformSummary } from "@/modules/platform/types";
+import type { OrgHealthStatus, OrgPlatformSummary } from "@/modules/platform/types";
 
 export function HealthBadge({ status }: { status: OrgHealthStatus }) {
   if (status === "critical") {
@@ -53,7 +53,7 @@ export function WhatsAppStatus({ channel }: { channel: OrgPlatformSummary["whats
 }
 
 export function formatRelativeTime(isoString: string): string {
-  if (!isoString) return "â€”";
+  if (!isoString) return "—";
   const diff = Date.now() - new Date(isoString).getTime();
   const minutes = Math.floor(diff / 60_000);
   if (minutes < 60) return `hace ${minutes} min`;

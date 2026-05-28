@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition } from "react";
 import { UserPlus, CalendarCheck, MessageCircle, Bot, Loader2 } from "lucide-react";
@@ -48,8 +48,9 @@ function AgentBadge({ status }: { status: "ACTIVE" | "PAUSED" | "DRAFT" | null }
 }
 
 export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
-  const [period, setPeriod] = useState<ImpactPeriod>("30d");
+  const [period, setPeriod] = useState<ImpactPeriod>("7d");
   const [data, setData] = useState<ImpactMetrics>(initial);
+  const [showAll, setShowAll] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const handlePeriod = (p: ImpactPeriod) => {
@@ -60,6 +61,8 @@ export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
       setData(result);
     });
   };
+
+  const displayedOrgs = showAll ? data.byOrg : data.byOrg.slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -138,7 +141,7 @@ export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.byOrg.map((row) => (
+            {displayedOrgs.map((row) => (
               <TableRow key={row.orgId}>
                 <TableCell className="px-6 py-4 font-bold text-slate-800">{row.orgName}</TableCell>
                 <TableCell className="px-4 py-4 text-center">
@@ -174,7 +177,7 @@ export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
                   </div>
                 </TableCell>
                 <TableCell className="px-4 py-4 text-xs text-slate-500 font-mono">
-                  {row.whatsappPhone ?? "â€”"}
+                  {row.whatsappPhone ?? "No configurado"}
                 </TableCell>
               </TableRow>
             ))}
@@ -187,6 +190,18 @@ export default function ImpactSection({ initial }: { initial: ImpactMetrics }) {
             )}
           </TableBody>
         </Table>
+        {data.byOrg.length > 10 && (
+          <div className="border-t bg-slate-50/50 px-6 py-3 text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAll(!showAll)}
+              className="text-xs font-bold text-slate-600 hover:text-brand-600"
+            >
+              {showAll ? "Mostrar menos" : `Ver todas las inmobiliarias (${data.byOrg.length})`}
+            </Button>
+          </div>
+        )}
       </Card>
     </div>
   );
