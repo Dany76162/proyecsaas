@@ -26,7 +26,7 @@ export default async function PlatformAgentsLogsPage({
   const filters = [
     { label: "Todos", value: "ALL" },
     { label: "Info", value: AgentLogLevel.INFO },
-    { label: "Warning", value: AgentLogLevel.WARN },
+    { label: "Advertencias", value: AgentLogLevel.WARN },
     { label: "Error", value: AgentLogLevel.ERROR },
   ];
 
@@ -79,7 +79,7 @@ export default async function PlatformAgentsLogsPage({
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className={cn("text-[10px] font-black uppercase tracking-wider", config.className.split(' ')[0])}>
-                        {log.level}
+                        {config.label}
                       </span>
                       <span className="text-[10px] font-bold text-slate-300">•</span>
                       <span className="text-[10px] font-bold text-slate-400">
