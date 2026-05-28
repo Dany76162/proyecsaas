@@ -34,9 +34,9 @@ export default async function PlatformAgentsPage() {
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-brand-600">
              <Terminal className="h-5 w-5" />
-             <span className="text-[10px] font-black uppercase tracking-[0.2em]">System Overview</span>
+             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Vista General del Sistema</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">AgentOS 3.1 <span className="text-brand-600">GOVERNANCE</span></h1>
+          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">AgentOS 3.1 <span className="text-brand-600">GOBERNANZA</span></h1>
           <p className="text-sm font-medium text-slate-500">
             Gobernanza operativa, control de límites y seguridad para administración de plataforma.
           </p>
@@ -208,7 +208,7 @@ export default async function PlatformAgentsPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/20 text-brand-400">
                <Zap className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-black text-white uppercase tracking-tight">Automation</h3>
+            <h3 className="text-xl font-black text-white uppercase tracking-tight">Automatizaciones</h3>
             <p className="text-xs leading-relaxed text-slate-400 font-medium">
                Motor de tareas recurrentes y flujos programados.
             </p>
@@ -259,7 +259,7 @@ export default async function PlatformAgentsPage() {
          <section className="rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm">
             <div className="mb-8 flex items-center justify-between">
                <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600">Efficiency Insights</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600">Indicadores de Eficiencia</p>
                   <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Métricas Operativas</h3>
                </div>
                <div className="rounded-full bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -272,14 +272,14 @@ export default async function PlatformAgentsPage() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tasa de Aprobación</p>
                   <div className="flex items-end gap-2">
                      <p className="text-3xl font-black text-slate-900">{summary.approvalRate.toFixed(1)}%</p>
-                     <span className="mb-1 text-[10px] font-bold text-emerald-600">Avg Quality</span>
+                     <span className="mb-1 text-[10px] font-bold text-emerald-600">Calidad Promedio</span>
                   </div>
                </div>
                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 space-y-2">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tiempo de Revisión</p>
                   <div className="flex items-end gap-2">
                      <p className="text-3xl font-black text-slate-900">{summary.avgApprovalTimeMinutes ? `${summary.avgApprovalTimeMinutes}m` : 'N/A'}</p>
-                     <span className="mb-1 text-[10px] font-bold text-blue-600">Decision Speed</span>
+                     <span className="mb-1 text-[10px] font-bold text-blue-600">Velocidad de Decisión</span>
                   </div>
                </div>
             </div>
@@ -288,7 +288,7 @@ export default async function PlatformAgentsPage() {
          <section className="rounded-[2.5rem] border border-slate-200 bg-white p-10 shadow-sm">
             <div className="mb-8 flex items-center justify-between">
                <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600">Audit Trail</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600">Bitácora de Auditoría</p>
                   <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Eventos Recientes</h3>
                </div>
                <Link href="/platform/agents/logs" className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:underline">

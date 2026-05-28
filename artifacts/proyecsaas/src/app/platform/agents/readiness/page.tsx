@@ -50,7 +50,7 @@ export default async function ProductionReadinessPage() {
             <Rocket className="h-8 w-8" />
           </div>
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-950">Readiness Center</h1>
+            <h1 className="text-3xl font-black tracking-tight text-slate-950">Centro de Readiness</h1>
             <p className="text-slate-500">Checklist crítico pre-deploy para garantizar la estabilidad en producción.</p>
           </div>
         </div>
@@ -58,7 +58,7 @@ export default async function ProductionReadinessPage() {
         <div className="flex items-center gap-2 px-6 py-3 bg-slate-950 text-white rounded-2xl shadow-lg border border-slate-800">
            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estado General:</span>
            <span className={cn("text-lg font-black", totalReadiness === 100 ? "text-emerald-400" : "text-amber-400")}>
-             {totalReadiness}% READY
+             {totalReadiness}% LISTO
            </span>
         </div>
       </div>

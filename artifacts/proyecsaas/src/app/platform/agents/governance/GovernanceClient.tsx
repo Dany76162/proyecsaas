@@ -58,7 +58,7 @@ export default function GovernanceClient({ initialOverview }: { initialOverview:
           { label: "Agentes Auditados", value: overview.length, icon: ShieldCheck, color: "text-blue-600" },
           { label: "Alertas Activas", value: overview.filter(a => a.isNearLimit).length, icon: AlertTriangle, color: "text-amber-500" },
           { label: "Bloqueados/Pausados", value: overview.filter(a => a.isBlocked).length, icon: ShieldAlert, color: "text-red-500" },
-          { label: "Nivel de Autonomía", value: "H-i-T-L", icon: Activity, color: "text-emerald-500" },
+          { label: "Nivel de Autonomía", value: "Aprobación Humana", icon: Activity, color: "text-emerald-500" },
         ].map((stat, i) => (
           <AppCard key={i} className="border-slate-200">
             <div className="p-4 flex items-center gap-4">
@@ -185,7 +185,7 @@ export default function GovernanceClient({ initialOverview }: { initialOverview:
               <ShieldCheck className="h-10 w-10 text-brand-400" />
             </div>
             <div>
-              <h3 className="text-xl font-black tracking-tight mb-2">Filosofía de Gobernanza: Human-in-the-Loop</h3>
+              <h3 className="text-xl font-black tracking-tight mb-2">Filosofía de Gobernanza: Aprobación Humana (HITL)</h3>
               <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">
                 AgentOS no es una "caja negra". Cada acción está regulada por políticas de presupuesto y autonomía. 
                 Los límites diarios evitan bucles infinitos y consumos inesperados de API, mientras que el nivel de 

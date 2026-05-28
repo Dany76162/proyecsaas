@@ -7,7 +7,7 @@ import LogExportButton from "./LogExportButton";
 
 const LEVEL_CONFIG: Record<AgentLogLevel, { label: string; className: string; icon: any }> = {
   INFO: { label: "Info", className: "text-blue-600 bg-blue-50 border-blue-100", icon: Info },
-  WARN: { label: "Warning", className: "text-amber-600 bg-amber-50 border-amber-100", icon: AlertTriangle },
+  WARN: { label: "Advertencia", className: "text-amber-600 bg-amber-50 border-amber-100", icon: AlertTriangle },
   ERROR: { label: "Error", className: "text-red-600 bg-red-50 border-red-100", icon: AlertCircle },
 };
 
@@ -35,7 +35,7 @@ export default async function PlatformAgentsLogsPage({
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-slate-400">
            <Terminal className="h-5 w-5" />
-           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Audit Trail</span>
+           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Bitácora de Auditoría</span>
         </div>
         <h1 className="text-3xl font-black tracking-tight text-slate-950 uppercase">Logs Operativos</h1>
         <p className="text-sm font-medium text-slate-500">Historial técnico de ejecuciones, decisiones y eventos de AgentOS.</p>
