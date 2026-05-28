@@ -50,37 +50,56 @@ type MetaStatus = {
 export default function MetaIntegrationClient({ initialStatus }: { initialStatus: any }) {
   const [status, setStatus] = useState<MetaStatus>(initialStatus);
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfirmDisconnect, setShowConfirmDisconnect] = useState(false);
+  const [alertError, setAlertError] = useState<string | null>(null);
+  const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
 
   const handleConnect = async () => {
     setIsLoading(true);
+    setAlertError(null);
+    setAlertSuccess(null);
     try {
       const { url } = await getMetaAuthUrlAction();
       window.location.href = url;
     } catch (err: any) {
-      alert(err.message);
+      setAlertError(err.message || "Error al intentar conectar con Meta.");
       setIsLoading(false);
     }
   };
 
   const handleSync = async () => {
     setIsLoading(true);
+    setAlertError(null);
+    setAlertSuccess(null);
     try {
       await syncMetaPagesAction();
-      window.location.reload(); // Simple way to refresh status
+      setAlertSuccess("Sincronización completada con éxito.");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err: any) {
-      alert(err.message);
+      setAlertError(err.message || "Error al sincronizar las páginas.");
       setIsLoading(false);
     }
   };
 
   const handleDisconnect = async () => {
-    if (!confirm("¿Estás seguro de desconectar Meta? Se eliminarán los tokens de acceso.")) return;
+    setShowConfirmDisconnect(true);
+  };
+
+  const confirmDisconnectAction = async () => {
     setIsLoading(true);
+    setShowConfirmDisconnect(false);
+    setAlertError(null);
+    setAlertSuccess(null);
     try {
       await disconnectMetaAction();
-      window.location.reload();
+      setAlertSuccess("Integración de Meta desconectada y credenciales eliminadas con éxito.");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err: any) {
-      alert(err.message);
+      setAlertError(err.message || "Error al intentar desconectar Meta.");
       setIsLoading(false);
     }
   };
@@ -96,6 +115,81 @@ export default function MetaIntegrationClient({ initialStatus }: { initialStatus
           <p className="text-slate-500">Conecta Facebook e Instagram para visualizar tus canales en AgentOS.</p>
         </div>
       </div>
+
+      {alertError && (
+        <AppCard className="bg-red-50 border-red-200 text-red-800 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold">Error de operación</h3>
+                <p className="text-xs text-red-700 mt-1">{alertError}</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setAlertError(null)}
+              className="text-red-800 hover:bg-red-100/50"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </AppCard>
+      )}
+
+      {alertSuccess && (
+        <AppCard className="bg-emerald-50 border-emerald-200 text-emerald-800 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold">Operación exitosa</h3>
+                <p className="text-xs text-emerald-750 mt-1">{alertSuccess}</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setAlertSuccess(null)}
+              className="text-emerald-800 hover:bg-emerald-100/50"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </AppCard>
+      )}
+
+      {showConfirmDisconnect && (
+        <AppCard className="bg-slate-900 border-slate-800 text-white animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="p-6">
+            <h3 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-red-500" />
+              ¿Seguro que querés desconectar Meta?
+            </h3>
+            <p className="text-sm text-slate-400 mt-2">
+              Se eliminarán de forma permanente todos los tokens de acceso vinculados. Esta acción suspenderá la visualización de tus páginas de Facebook y cuentas de Instagram en AgentOS.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmDisconnect(false)}
+                disabled={isLoading}
+                className="border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white font-bold px-5 h-10 rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={confirmDisconnectAction}
+                disabled={isLoading}
+                className="bg-red-600 hover:bg-red-750 text-white font-bold px-5 h-10 rounded-xl"
+              >
+                Sí, desconectar
+              </Button>
+            </div>
+          </div>
+        </AppCard>
+      )}
 
       {!status.configComplete && (
         <AppCard className="bg-amber-50 border-amber-200">
@@ -266,9 +360,9 @@ export default function MetaIntegrationClient({ initialStatus }: { initialStatus
               <ul className="mt-6 space-y-3">
                 {[
                   "Tokens cifrados con AES-256-GCM",
-                  "Human-in-the-loop obligatorio",
+                  "Supervisión humana obligatoria",
                   "Exclusivo para Superadmin",
-                  "Registro total en Audit Logs"
+                  "Registro total de auditoría"
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-xs text-slate-300">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -321,7 +415,7 @@ export default function MetaIntegrationClient({ initialStatus }: { initialStatus
                 <div className="flex gap-4 opacity-50">
                   <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center font-black text-slate-400 shrink-0">4.0</div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-800">Full Automation</h4>
+                    <h4 className="text-sm font-bold text-slate-800">Automatización completa</h4>
                     <p className="text-xs text-slate-500 mt-1">Programación directa y métricas de rendimiento en tiempo real.</p>
                   </div>
                 </div>
