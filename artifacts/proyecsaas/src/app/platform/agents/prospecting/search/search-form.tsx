@@ -426,7 +426,7 @@ export function ProspectingSearchForm({ serperConfigured }: { serperConfigured: 
         <aside className="space-y-6 sticky top-8">
            <Card className="p-8 rounded-[2.5rem] border-slate-200 bg-white shadow-soft overflow-hidden relative">
               <div className="absolute top-0 right-0 p-4">
-                 <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">ACTIVE AGENT</Badge>
+                 <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">AGENTE ACTIVO</Badge>
               </div>
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-8 flex items-center gap-2">
                  <Sparkles className="h-4 w-4 text-brand-500" /> Cobertura LATAM

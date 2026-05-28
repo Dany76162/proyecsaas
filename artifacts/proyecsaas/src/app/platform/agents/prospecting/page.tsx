@@ -24,7 +24,7 @@ export default async function ProspectingPage() {
     <div className="flex flex-col gap-8 p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">AgentOS Prospecting Center</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Centro de Prospección AgentOS</h1>
           <p className="text-slate-500 mt-1 font-medium">Gestión de prospección comercial B2B para RaicesPilot.</p>
         </div>
         <div className="flex items-center gap-3">
