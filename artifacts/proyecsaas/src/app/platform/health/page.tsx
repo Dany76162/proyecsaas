@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import { CheckCircle2, XCircle, AlertTriangle, Clock, ShieldCheck } from "lucide-react";
 import { prisma } from "@/server/db/prisma";
@@ -41,7 +41,7 @@ const WORKER_UI = {
 export default async function PlatformHealthPage() {
   const now = new Date();
 
-  const [worker, activeOrgCount, pendingInvites, expiredInvites, pendingBilling, paidBilling, auditLogs] =
+  const [worker, activeOrgCount, pendingInvites, expiredInvites, pendingBilling, paidBilling, auditLogs, waContactSetting] =
     await Promise.all([
       getWorkerHeartbeatStatus(),
       prisma.organization.count({ where: { isActive: true } }),
@@ -53,32 +53,36 @@ export default async function PlatformHealthPage() {
         orderBy: { createdAt: "desc" },
         take: 30,
       }).catch(() => []),
+      prisma.globalSetting.findUnique({
+        where: { key: "PLATFORM_WHATSAPP_NUMBER" },
+        select: { value: true },
+      }).catch(() => null),
     ]);
 
   const mpConfigured = !!process.env.MERCADO_PAGO_ACCESS_TOKEN;
   const openAiConfigured = !!(process.env["AI_INTEGRATIONS_OPENAI_API_KEY"] ?? process.env.OPENAI_API_KEY);
   const encryptionConfigured = !!process.env.WHATSAPP_TOKEN_ENCRYPTION_KEY;
-  const waContact = process.env.PLATFORM_WHATSAPP_CONTACT ?? null;
+  const waContact = waContactSetting?.value?.trim() || process.env.WHATSAPP_PLATFORM_PHONE_DISPLAY?.trim() || null;
 
   type AlertLevel = "error" | "warning";
   const alerts: { level: AlertLevel; message: string }[] = [];
 
   if (worker.status === "down")
-    alerts.push({ level: "error", message: "Worker caído: no se recibió heartbeat en más de 5 minutos." });
+    alerts.push({ level: "error", message: "Worker de automatizaciones caído: no se recibió heartbeat en más de 5 minutos." });
   else if (worker.status === "stale")
     alerts.push({ level: "warning", message: "Worker lento: último heartbeat hace más de 2 minutos." });
 
   if (activeOrgCount === 0)
-    alerts.push({ level: "error", message: "No hay organizaciones activas en la plataforma." });
+    alerts.push({ level: "error", message: "No hay inmobiliarias activas en la plataforma." });
 
   if (!encryptionConfigured)
-    alerts.push({ level: "warning", message: "Cifrado de tokens WhatsApp no configurado â€” WHATSAPP_TOKEN_ENCRYPTION_KEY ausente." });
+    alerts.push({ level: "warning", message: "Cifrado de tokens WhatsApp no configurado — Clave de cifrado ausente." });
 
   if (!mpConfigured)
-    alerts.push({ level: "warning", message: "Mercado Pago no configurado â€” MERCADO_PAGO_ACCESS_TOKEN ausente." });
+    alerts.push({ level: "warning", message: "Mercado Pago no configurado — Token de acceso ausente." });
 
   if (!openAiConfigured)
-    alerts.push({ level: "warning", message: "Motor IA no configurado â€” AI_INTEGRATIONS_OPENAI_API_KEY ausente." });
+    alerts.push({ level: "warning", message: "Motor IA no configurado — API Key de OpenAI ausente." });
 
   if (pendingBilling > 0)
     alerts.push({ level: "warning", message: `${pendingBilling} cobro${pendingBilling !== 1 ? "s" : ""} pendiente${pendingBilling !== 1 ? "s" : ""} de confirmación.` });
@@ -86,37 +90,42 @@ export default async function PlatformHealthPage() {
   const workerUi = WORKER_UI[worker.status];
 
   const AUDIT_LABELS: Record<string, { label: string; color: string }> = {
-    "billing.record_created":  { label: "Cobro creado",           color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
-    "billing.paid":            { label: "Pago confirmado",        color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
-    "billing.cancelled":       { label: "Cobro cancelado",        color: "text-slate-500 bg-slate-50 border-slate-200" },
-    "billing.status_changed":  { label: "Estado cobro cambiado",  color: "text-amber-700 bg-amber-50 border-amber-200" },
-    "billing.mp_link_generated":{ label: "Link MP generado",      color: "text-violet-600 bg-violet-50 border-violet-200" },
-    "org.reactivated":         { label: "Org reactivada",         color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
-    "org.suspended":           { label: "Org suspendida",         color: "text-red-600 bg-red-50 border-red-200" },
-    "settings.updated":        { label: "Configuración editada",  color: "text-blue-600 bg-blue-50 border-blue-200" },
-    "admin.access_granted":    { label: "Admin delegado",         color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
-    "admin.access_revoked":    { label: "Acceso revocado",        color: "text-red-600 bg-red-50 border-red-200" },
+    "billing.record_created":       { label: "Cobro creado",           color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+    "billing.paid":                 { label: "Pago confirmado",        color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+    "billing.cancelled":            { label: "Cobro cancelado",        color: "text-slate-500 bg-slate-50 border-slate-200" },
+    "billing.status_changed":       { label: "Estado cobro cambiado",  color: "text-amber-700 bg-amber-50 border-amber-200" },
+    "billing.mp_link_generated":    { label: "Link MP generado",      color: "text-violet-600 bg-violet-50 border-violet-200" },
+    "org.reactivated":              { label: "Org reactivada",         color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+    "org.suspended":                { label: "Org suspendida",         color: "text-red-600 bg-red-50 border-red-200" },
+    "settings.updated":             { label: "Configuración editada",  color: "text-blue-600 bg-blue-50 border-blue-200" },
+    "admin.access_granted":         { label: "Admin delegado",         color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+    "admin.access_revoked":         { label: "Acceso revocado",        color: "text-red-600 bg-red-50 border-red-200" },
+    "activation.onboarding_view":   { label: "Onboarding iniciado",    color: "text-amber-600 bg-amber-50 border-amber-200" },
+    "activation.first_lead_created":{ label: "Primer lead creado",     color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+    "qa-sandbox-ai-reset":          { label: "Sandbox IA reiniciada",  color: "text-slate-500 bg-slate-50 border-slate-200" },
+    "qa-sandbox-ai-sim-lead-0":     { label: "Simulación Lead QA",     color: "text-slate-500 bg-slate-50 border-slate-200" },
+    "qa-sandbox-ai-sim-repeated-message": { label: "Simulación Repetida QA", color: "text-slate-500 bg-slate-50 border-slate-200" },
   };
-
+ 
   const integrations = [
     {
       label: "Mercado Pago",
-      detail: mpConfigured ? "MERCADO_PAGO_ACCESS_TOKEN configurado" : "MERCADO_PAGO_ACCESS_TOKEN ausente",
+      detail: mpConfigured ? "Integración de Mercado Pago activa" : "Falta configurar credenciales de Mercado Pago",
       ok: mpConfigured,
     },
     {
-      label: "OpenAI (motor IA)",
-      detail: openAiConfigured ? "Replit AI proxy activo" : "AI_INTEGRATIONS_OPENAI_API_KEY ausente",
+      label: "OpenAI (Motor IA)",
+      detail: openAiConfigured ? "Motor de OpenAI API activo" : "Falta configurar clave de OpenAI API",
       ok: openAiConfigured,
     },
     {
       label: "Cifrado de tokens WhatsApp",
-      detail: encryptionConfigured ? "WHATSAPP_TOKEN_ENCRYPTION_KEY configurado" : "WHATSAPP_TOKEN_ENCRYPTION_KEY ausente",
+      detail: encryptionConfigured ? "Clave de cifrado de WhatsApp activa" : "Falta clave de cifrado de WhatsApp",
       ok: encryptionConfigured,
     },
     {
       label: "Contacto WhatsApp de plataforma",
-      detail: waContact ? `+54 ${waContact}` : "PLATFORM_WHATSAPP_CONTACT ausente",
+      detail: waContact ? `+${waContact}` : "Falta configurar número central de WhatsApp",
       ok: !!waContact,
     },
   ];
@@ -159,7 +168,7 @@ export default async function PlatformHealthPage() {
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Invites pendientes</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Invitaciones pendientes</p>
           <p className={`mt-2 text-3xl font-extrabold ${pendingInvites > 0 ? "text-amber-600" : "text-slate-900"}`}>
             {pendingInvites}
           </p>
@@ -179,7 +188,7 @@ export default async function PlatformHealthPage() {
       {/* Worker */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b bg-slate-50 px-6 py-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Worker BullMQ</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Worker de automatizaciones</h3>
         </div>
         <div className="flex items-center justify-between gap-4 px-6 py-5">
           <div className="flex items-center gap-3">
@@ -198,7 +207,7 @@ export default async function PlatformHealthPage() {
               )}
             </div>
           </div>
-          <p className="text-right text-xs text-slate-400">ok &lt; 2 min Â· stale &lt; 5 min Â· down â‰¥ 5 min</p>
+          <p className="text-right text-xs text-slate-400">Frecuencia: OK &lt; 2 min • Lento &lt; 5 min • Caído ≥ 5 min</p>
         </div>
       </div>
 
@@ -268,9 +277,9 @@ export default async function PlatformHealthPage() {
       {/* Expired invites footnote */}
       {expiredInvites > 0 && (
         <p className="text-center text-xs text-slate-400">
-          {expiredInvites} invitación{expiredInvites !== 1 ? "es" : ""} expirada{expiredInvites !== 1 ? "s" : ""} sin activar â€”{" "}
+          {expiredInvites} invitación{expiredInvites !== 1 ? "es" : ""} expirada{expiredInvites !== 1 ? "s" : ""} sin activar —{" "}
           <a href="/platform/onboarding" className="font-semibold text-slate-600 underline underline-offset-2">
-            revisalas en Onboarding
+            revisalas en Historial de Altas
           </a>
           .
         </p>
