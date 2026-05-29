@@ -21,7 +21,9 @@ import {
   AlertTriangle,
   Clock,
   Settings2,
-  Brain
+  Brain,
+  CreditCard,
+  Link
 } from "lucide-react";
 import type { OrgBillingRecord, Organization } from "@prisma/client";
 import { BillingStatus } from "@prisma/client";
@@ -91,10 +93,12 @@ export function BillingTable({
   records,
   activeOrgs,
   plans,
+  mpConfigured,
 }: {
   records: RecordWithOrg[];
   activeOrgs: ActiveOrg[];
   plans: PlatformPlanOption[];
+  mpConfigured: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -128,6 +132,17 @@ export function BillingTable({
     navigator.clipboard.writeText(url).then(() => {
       setCopiedId(id);
       setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 2000);
+    });
+  };
+
+  const handleGenerateLink = (recordId: string) => {
+    startTransition(async () => {
+      const res = await generateMPPaymentLinkAction(recordId);
+      if (res.success) {
+        router.refresh();
+      } else {
+        alert(res.message);
+      }
     });
   };
 
@@ -245,7 +260,7 @@ export function BillingTable({
               <Plus className="mr-2 h-4 w-4" />
               Nuevo
             </Button>
-            <Button variant="outline" size="sm" onClick={exportCSV} className="h-9 w-9 p-0">
+            <Button variant="outline" size="sm" onClick={exportCSV} className="h-9 w-9 p-0" title="Exportar CSV">
               <Download className="h-4 w-4" />
             </Button>
           </div>
@@ -257,51 +272,58 @@ export function BillingTable({
               <TrendingUp className="h-5 w-5 text-brand-600" />
               <h3 className="text-lg font-bold">Balance Operativo</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Desglose Mensual</h4>
-                <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => {
-                    const d = new Date(); d.setMonth(d.getMonth() - i);
-                    const monthName = d.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
-                    const monthRecords = records.filter(r => new Date(r.createdAt).getMonth() === d.getMonth());
-                    const paid = monthRecords.filter(r => r.status === "PAID").reduce((s, r) => s + r.amountCents, 0);
-                    const total = monthRecords.reduce((s, r) => s + r.amountCents, 0);
-                    return (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-xl border bg-slate-50/50">
-                        <div>
-                          <p className="text-sm font-bold capitalize text-slate-700">{monthName}</p>
-                          <p className="text-xs text-slate-400">{monthRecords.length} cobros</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-black text-slate-900">{formatARS(paid)}</p>
-                          <p className="text-[10px] text-slate-400">de {formatARS(total)}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            
+            {records.length === 0 ? (
+              <div className="text-center py-16 px-4 border border-dashed rounded-2xl bg-slate-50 text-slate-400 font-medium">
+                No hay datos suficientes para calcular balances operativos.
               </div>
-              <div className="bg-slate-900 rounded-2xl p-6 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp size={80} /></div>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Proyección Anual</p>
-                <h2 className="text-4xl font-black mt-2 text-brand-400">
-                  {formatARS(records.reduce((s, r) => s + r.amountCents, 0))}
-                </h2>
-                <div className="mt-8 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase">Cobrado real</p>
-                    <p className="text-xl font-bold">{formatARS(records.filter(r => r.status === "PAID").reduce((s, r) => s + r.amountCents, 0))}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase">Cobrabilidad</p>
-                    <p className="text-xl font-bold">
-                      {Math.round((records.filter(r => r.status === "PAID").length / records.length) * 100) || 0}%
-                    </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Desglose Mensual</h4>
+                  <div className="space-y-3">
+                    {[...Array(3)].map((_, i) => {
+                      const d = new Date(); d.setMonth(d.getMonth() - i);
+                      const monthName = d.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+                      const monthRecords = records.filter(r => new Date(r.createdAt).getMonth() === d.getMonth());
+                      const paid = monthRecords.filter(r => r.status === "PAID").reduce((s, r) => s + r.amountCents, 0);
+                      const total = monthRecords.reduce((s, r) => s + r.amountCents, 0);
+                      return (
+                        <div key={i} className="flex items-center justify-between p-3 rounded-xl border bg-slate-50/50">
+                          <div>
+                            <p className="text-sm font-bold capitalize text-slate-700">{monthName}</p>
+                            <p className="text-xs text-slate-400">{monthRecords.length} cobros</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-black text-slate-900">{formatARS(paid)}</p>
+                            <p className="text-[10px] text-slate-400">de {formatARS(total)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
+                <div className="bg-slate-900 rounded-2xl p-6 text-white relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp size={80} /></div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Proyección Anual</p>
+                  <h2 className="text-4xl font-black mt-2 text-brand-400">
+                    {formatARS(records.reduce((s, r) => s + r.amountCents, 0))}
+                  </h2>
+                  <div className="mt-8 grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase">Cobrado real</p>
+                      <p className="text-xl font-bold">{formatARS(records.filter(r => r.status === "PAID").reduce((s, r) => s + r.amountCents, 0))}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase">Cobrabilidad</p>
+                      <p className="text-xl font-bold">
+                        {Math.round((records.filter(r => r.status === "PAID").length / records.length) * 100) || 0}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </Card>
         </TabsContent>
 
@@ -320,8 +342,12 @@ export function BillingTable({
               <TableBody>
                 {filteredRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center text-slate-400 font-medium">
-                      No hay registros activos para mostrar.
+                    <TableCell colSpan={5} className="h-40 text-center text-slate-400 font-medium">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <AlertTriangle className="h-6 w-6 text-slate-300" />
+                        <p>No hay cobros activos registrados todavía.</p>
+                        <p className="text-xs text-slate-400 font-normal">Creá un nuevo cobro haciendo clic en el botón "Nuevo".</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : filteredRecords.map((r: RecordWithOrg) => {
@@ -352,6 +378,44 @@ export function BillingTable({
                       </TableCell>
                       <TableCell className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                          
+                          {/* Mercado Pago Link Actions */}
+                          {r.status !== "PAID" && r.status !== "CANCELLED" && (
+                            r.mpPaymentUrl ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
+                                onClick={() => handleCopy(r.mpPaymentUrl!, r.id)}
+                                title={copiedId === r.id ? "¡Copiado!" : "Copiar Link Mercado Pago"}
+                              >
+                                {copiedId === r.id ? <Check className="h-4 w-4 text-emerald-600 animate-scale" /> : <Link className="h-4 w-4" />}
+                              </Button>
+                            ) : (
+                              mpConfigured ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-slate-500 hover:bg-slate-100"
+                                  onClick={() => handleGenerateLink(r.id)}
+                                  title="Generar Link Mercado Pago"
+                                >
+                                  <CreditCard className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled
+                                  className="h-8 w-8 p-0 text-slate-300 cursor-not-allowed"
+                                  title="Mercado Pago no configurado"
+                                >
+                                  <CreditCard className="h-4 w-4 text-slate-200" />
+                                </Button>
+                              )
+                            )
+                          )}
+
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -402,7 +466,6 @@ export function BillingTable({
         </TabsContent>
 
         <TabsContent value="paid" className="mt-0">
-          {/* Similar table but for paid only */}
           <Card className="overflow-hidden border-slate-200">
             <Table>
               <TableHeader className="bg-slate-50/50">
@@ -415,7 +478,16 @@ export function BillingTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRecords.map((r: RecordWithOrg) => (
+                {filteredRecords.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-40 text-center text-slate-400 font-medium">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <Clock className="h-6 w-6 text-slate-300" />
+                        <p>Todavía no hay pagos confirmados en el sistema.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredRecords.map((r: RecordWithOrg) => (
                    <TableRow key={r.id}>
                     <TableCell className="px-5 py-4 font-bold">{r.organization.name}</TableCell>
                     <TableCell className="px-5 py-4 text-slate-500">{r.description}</TableCell>
@@ -446,7 +518,16 @@ export function BillingTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRecords.map((r: RecordWithOrg) => (
+                {filteredRecords.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-40 text-center text-slate-400 font-medium">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <Archive className="h-6 w-6 text-slate-300" />
+                        <p>No hay bajas ni movimientos históricos para mostrar.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredRecords.map((r: RecordWithOrg) => (
                    <TableRow key={r.id}>
                     <TableCell className="px-5 py-4 font-bold text-slate-500">{r.organization.name}</TableCell>
                     <TableCell className="px-5 py-4 text-slate-400">{r.description}</TableCell>
@@ -527,7 +608,7 @@ export function BillingTable({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-black uppercase tracking-widest text-slate-400">Monto ARS *</label>
-                  <Input required type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="h-11 px-4 rounded-xl" />
+                  <Input required type="number" min="0.01" step="any" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="h-11 px-4 rounded-xl" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-black uppercase tracking-widest text-slate-400">Vencimiento</label>
@@ -601,7 +682,7 @@ export function BillingTable({
 
               <div className="pt-10 border-t border-slate-100 text-center">
                 <p className="text-[9px] text-slate-400 font-bold leading-relaxed">
-                  Este documento es un comprobante interno de gestión administrativa de RaicesPilot.<br />
+                  Este documento es un comprobante interno de gestión administrativa de Raíces Pilot.<br />
                   No posee valor fiscal como factura A/B/C. Los pagos vía Mercado Pago son procesados por su respectiva pasarela.
                 </p>
               </div>
@@ -648,7 +729,7 @@ export function BillingTable({
              <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-black uppercase tracking-widest text-slate-400">Estado</label>
-                <select name="status" defaultValue={editingRecord.status} className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold">
+                <select name="status" defaultValue={editingRecord.status} className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold animate-none">
                   <option value="PENDING">Pendiente</option>
                   <option value="PAID">Pagado</option>
                   <option value="CANCELLED">Cancelado</option>

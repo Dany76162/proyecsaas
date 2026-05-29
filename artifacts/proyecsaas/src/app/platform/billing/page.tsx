@@ -50,7 +50,7 @@ export default async function PlatformBillingPage() {
           <Badge variant="brand" className="text-[10px] h-5">Enterprise</Badge>
         </div>
         <p className="text-sm text-slate-500">
-          Gestión centralizada de cobros, balances y cobranza asistida por IA para RaicesPilot.
+          Gestión centralizada de cobros, balances y cobranza asistida por IA para Raíces Pilot.
         </p>
       </div>
 
@@ -74,14 +74,14 @@ export default async function PlatformBillingPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Tasa de Cobro</p>
           <p className="mt-2 text-3xl font-extrabold text-slate-900">
-            {totalPaid + totalPending > 0 ? Math.round((totalPaid / (totalPaid + totalPending)) * 100) : 0}%
+            {totalPaid + totalPending > 0 ? `${Math.round((totalPaid / (totalPaid + totalPending)) * 100)}%` : "Sin datos"}
           </p>
           <p className="mt-1 text-[10px] text-slate-400">Eficiencia mensual</p>
         </div>
       </div>
 
       {/* Interactive table + create */}
-      <BillingTable records={records} activeOrgs={activeOrgs} plans={plans} />
+      <BillingTable records={records} activeOrgs={activeOrgs} plans={plans} mpConfigured={mpConfigured} />
     </div>
   );
 }
