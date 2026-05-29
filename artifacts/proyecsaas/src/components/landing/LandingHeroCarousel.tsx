@@ -6,7 +6,7 @@ import { MessageSquare, Calendar, Building, Sparkles, ArrowRight, ShieldCheck, C
 import { Button } from "@/components/ui/button";
 
 const DEMO_WHATSAPP_URL =
-  "https://wa.me/5491161630205?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20RaicesPilot%20para%20mi%20inmobiliaria.";
+  "https://wa.me/5491166037990?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20Ra%C3%ADces%20Pilot%20para%20mi%20inmobiliaria.";
 
 type Message = {
   id: number;

@@ -170,12 +170,12 @@ export function MobilitySection() {
                       <div className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center overflow-hidden p-1 border border-white/20">
                         <img 
                           src="/brand/logo_transparent_icon.png" 
-                          alt="RaicesPilot" 
+                          alt="Raíces Pilot" 
                           className="h-full w-full object-contain brightness-0 invert" 
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[8px] font-bold leading-tight">RaicesPilot IA</div>
+                        <div className="text-[8px] font-bold leading-tight">Raíces Pilot IA</div>
                         <div className="text-[5px] opacity-70">En línea</div>
                       </div>
                    </div>
@@ -222,7 +222,7 @@ export function MobilitySection() {
                 Controlá tu empresa desde cualquier lugar
               </h2>
               <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-350 max-w-2xl">
-                RaicesPilot funciona desde la web, sin instalaciones ni descargas pesadas. Desde tu computadora o celular podés verificar leads, conversaciones y seguimiento comercial sin estar físicamente en la oficina.
+                Raíces Pilot funciona desde la web, sin instalaciones ni descargas pesadas. Desde tu computadora o celular podés verificar leads, conversaciones y seguimiento comercial sin estar físicamente en la oficina.
               </p>
             </div>
 

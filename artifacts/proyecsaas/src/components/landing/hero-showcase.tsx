@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { MessageSquare, Clock, Users, BarChart3, Zap, CheckCircle2, ArrowRight } from "lucide-react";
@@ -7,7 +7,7 @@ const slides = [
   {
     id: 1,
     title: "Respondé al instante, incluso fuera de horario.",
-    subtitle: "RaicesPilot atiende, ordena y deriva consultas para que ninguna oportunidad quede sin respuesta.",
+    subtitle: "Raíces Pilot atiende, ordena y deriva consultas para que ninguna oportunidad quede sin respuesta.",
     visual: (
       <div className="relative h-full flex items-center justify-center">
         {/* Background gradient */}
@@ -66,7 +66,7 @@ const slides = [
                   <div className="p-4 border-t border-slate-200">
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-10 bg-slate-100 rounded-full px-4 flex items-center">
-                        <span className="text-sm text-slate-500">RaicesPilot está escribiendo...</span>
+                        <span className="text-sm text-slate-500">Raíces Pilot está escribiendo...</span>
                       </div>
                       <div className="w-10 h-10 bg-brand-500 rounded-full flex items-center justify-center">
                         <ArrowRight className="w-4 h-4 text-white" />
@@ -268,7 +268,7 @@ const slides = [
                 <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 bg-brand-500 rounded"></div>
-                    <span className="font-semibold">RaicesPilot</span>
+                    <span className="font-semibold">Raíces Pilot</span>
                   </div>
                   <div className="flex gap-1">
                     <div className="w-3 h-3 rounded-full bg-slate-600"></div>

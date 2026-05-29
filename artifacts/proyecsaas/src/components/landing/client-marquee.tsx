@@ -17,7 +17,7 @@ const DEFAULT_CLIENTS: ClientItem[] = [
   { main: "MelePropiedades", sub: "Inmobiliaria" },
   { main: "Alberto Capelli", sub: "Martillero" },
   { main: "SevenToop", sub: "Marketing Digital" },
-  { main: "RaicesPilot", sub: "Tecnología Inmobiliaria" },
+  { main: "Raíces Pilot", sub: "Tecnología Inmobiliaria" },
 ];
 
 export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientMarqueeProps) {

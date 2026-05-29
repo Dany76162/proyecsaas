@@ -34,7 +34,7 @@ import { prisma } from "@/server/db/prisma";
 import { ThemeToggle } from "@/components/landing/ThemeToggle";
 
 const DEMO_WHATSAPP_URL =
-  "https://wa.me/5491161630205?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20RaicesPilot%20para%20mi%20inmobiliaria.";
+  "https://wa.me/5491166037990?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20Ra%C3%ADces%20Pilot%20para%20mi%20inmobiliaria.";
 
 function Navbar() {
   return (
@@ -221,7 +221,7 @@ export default async function HomePage() {
                     },
                     {
                       num: "02",
-                      title: "RaicesPilot responde y organiza",
+                      title: "Raíces Pilot responde y organiza",
                       desc: "La IA interactúa, califica el interés y perfila al cliente basándose en tu inventario."
                     },
                     {
@@ -338,7 +338,7 @@ export default async function HomePage() {
                   ¿Estás listo para modernizar tu inmobiliaria?
                 </h2>
                 <p className="text-lg text-slate-600 dark:text-slate-350 mb-10 leading-relaxed">
-                  Completá el formulario y coordinamos una demo. Te mostramos cómo RaicesPilot puede ayudarte a organizar tus prospectos, automatizar el seguimiento y cerrar más ventas sin complicaciones técnicas.
+                  Completá el formulario y coordinamos una demo. Te mostramos cómo Raíces Pilot puede ayudarte a organizar tus prospectos, automatizar el seguimiento y cerrar más ventas sin complicaciones técnicas.
                 </p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-700 dark:text-slate-300">
@@ -396,7 +396,18 @@ export default async function HomePage() {
             />
             <span className="text-brand-600 dark:text-brand-400 -ml-0.5">RAÍCES</span>Pilot
           </div>
-          <p>© {new Date().getFullYear()} RaicesPilot. Plataforma Operativa Inmobiliaria.</p>
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <p>© {new Date().getFullYear()} Raíces Pilot. Plataforma Operativa Inmobiliaria.</p>
+            <div className="flex items-center gap-4 text-xs font-semibold">
+              <Link href="/privacy" className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
+                Política de Privacidad
+              </Link>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span className="text-slate-400 dark:text-slate-500 cursor-not-allowed select-none" title="Pendiente de aprobación legal">
+                Términos y Condiciones (Pendiente)
+              </span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

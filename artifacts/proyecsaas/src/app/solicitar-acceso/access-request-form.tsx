@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { MessageCircle, Mail } from "lucide-react";
@@ -46,7 +46,7 @@ Datos de la inmobiliaria:
 * Ciudad/Zona: ${formData.city || "No especificada"}
 * Mensaje: ${formData.message || "Sin mensaje adicional"}`;
 
-    const whatsappUrl = `https://wa.me/5491161630205?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/5491166037990?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
 
