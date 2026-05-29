@@ -27,9 +27,9 @@ import { getSystemStatusSnapshot, type SystemStatusSnapshot } from "@/server/hea
 import { PrintManualButton } from "./PrintManualButton";
 
 const sections = [
-  { id: "vision-operativa", label: "Vision operativa" },
+  { id: "vision-operativa", label: "Visión operativa" },
   { id: "checklist-100", label: "Checklist 100%" },
-  { id: "guias-paso-a-paso", label: "Guias paso a paso" },
+  { id: "guias-paso-a-paso", label: "Guías paso a paso" },
   { id: "modulos-superadmin", label: "Funciones del panel" },
   { id: "troubleshooting", label: "Troubleshooting" },
   { id: "control-comercial", label: "Control Comercial" },
@@ -39,37 +39,37 @@ const operationalDependencies = [
   {
     title: "Meta / WhatsApp",
     description:
-      "Canal principal de mensajeria. Sin webhook correcto, secret, verify token y numero operativo, la plataforma no recibe ni enruta conversaciones.",
+      "Canal principal de mensajería. Sin webhook correcto, secreto de la app (secret), token de verificación (verify token) y número operativo, la plataforma no recibe ni enruta conversaciones.",
   },
   {
-    title: "OpenAI",
+    title: "OpenAI (Motor de IA)",
     description:
-      "Motor de IA para respuestas, clasificacion y automatizaciones. Debe tener key valida y disponibilidad estable.",
+      "Motor de Inteligencia Artificial para respuestas, clasificación y automatizaciones. Requiere una clave API (API key) válida y disponibilidad estable del servicio.",
   },
   {
     title: "Railway",
     description:
-      "Infraestructura de despliegue y secretos del runtime web/worker. Cualquier drift de variables impacta auth, webhooks y colas.",
+      "Infraestructura de despliegue y secretos del tiempo de ejecución (runtime) web y del worker en segundo plano. Cualquier cambio o desalineación de variables de entorno impacta de inmediato en la autenticación, los webhooks y las colas de procesamiento.",
   },
   {
     title: "PostgreSQL",
     description:
-      "Fuente de verdad de usuarios, organizaciones, conversaciones, billing y estados operativos.",
+      "Base de datos relacional y fuente única de verdad para usuarios, organizaciones, conversaciones, facturación y estados operativos.",
   },
   {
-    title: "Redis / Worker",
+    title: "Redis",
     description:
-      "Cola y procesamiento asincrono. Si la app recibe eventos pero el worker o Redis fallan, la operacion queda incompleta.",
+      "Capa de caché de mensajes y procesamiento de tareas asíncronas en segundo plano. Si la aplicación web recibe eventos pero el proceso worker de automatizaciones o Redis fallan, la operación de los agentes queda incompleta.",
   },
   {
-    title: "Mercado Pago",
+    title: "Mercado Pago (Cobros)",
     description:
-      "Capa de cobro online. Necesita credenciales, webhook firmado y URLs de retorno consistentes.",
+      "Capa de cobros en línea para el SaaS. Necesita credenciales de producción, firma de webhook configurada y URLs de retorno (Back URLs) consistentes.",
   },
   {
-    title: "Variables criticas",
+    title: "Variables críticas",
     description:
-      "Secrets y configuraciones sin defaults inseguros para auth, cifrado, webhooks y servicios externos.",
+      "Secretos y configuraciones del sistema sin valores predeterminados (defaults) inseguros para autenticación, cifrado de tokens, webhooks y servicios externos.",
   },
 ] as const;
 
@@ -77,49 +77,49 @@ const checklistGroups = [
   {
     title: "Infraestructura",
     items: [
-      "Aplicacion desplegada y accesible",
-      "Base PostgreSQL activa",
-      "Redis activo",
-      "Worker operativo con heartbeat reciente",
-      "Logs y health checks disponibles",
+      "Aplicación desplegada y accesible en la web",
+      "Base de datos PostgreSQL activa y con lecturas exitosas",
+      "Caché en memoria Redis activo",
+      "Worker en segundo plano operativo con señales periódicas (heartbeat) recientes",
+      "Logs y controles de salud (health checks) disponibles y sin errores",
     ],
   },
   {
     title: "WhatsApp / Meta",
     items: [
-      "Cuenta Meta Business validada",
-      "App de Developers configurada",
-      "Numero de WhatsApp Business operativo",
-      "Webhook productivo apuntando a /api/webhooks/whatsapp",
-      "WHATSAPP_APP_SECRET y WHATSAPP_WEBHOOK_VERIFY_TOKEN presentes",
-      "Canal resuelve a la organizacion correcta",
+      "Cuenta de Meta Business validada por Facebook",
+      "Aplicación en Meta Developers configurada en modo Live (En producción)",
+      "Número de WhatsApp Business oficial operativo y verificado",
+      "Webhook productivo apuntando a la URL /api/webhooks/whatsapp",
+      "Variables `WHATSAPP_APP_SECRET` y `WHATSAPP_WEBHOOK_VERIFY_TOKEN` configuradas en Railway",
+      "Canal de entrada asignado a la organización correspondiente de forma correcta",
     ],
   },
   {
     title: "OpenAI",
     items: [
-      "OPENAI_API_KEY o AI_INTEGRATIONS_OPENAI_API_KEY configurada",
-      "Modelo operativo y disponible",
-      "Integracion accesible desde app y worker",
+      "Variable `OPENAI_API_KEY` o `AI_INTEGRATIONS_OPENAI_API_KEY` configurada con saldo suficiente",
+      "Modelos de IA (GPT-4o y similares) operativos y disponibles en tu región",
+      "Integración accesible tanto desde el servidor web como desde el worker en segundo plano",
     ],
   },
   {
     title: "Mercado Pago",
     items: [
-      "MERCADO_PAGO_ACCESS_TOKEN configurado",
-      "MERCADO_PAGO_WEBHOOK_SECRET presente",
-      "Webhook productivo apuntando a /api/webhooks/mercadopago",
-      "NEXT_PUBLIC_APP_URL correcta para back URLs",
+      "Variable `MERCADO_PAGO_ACCESS_TOKEN` configurada y en modo de producción",
+      "Variable `MERCADO_PAGO_WEBHOOK_SECRET` configurada para validar las firmas de cobro",
+      "Webhook productivo registrado apuntando a /api/webhooks/mercadopago",
+      "Variable `NEXT_PUBLIC_APP_URL` correctamente definida para el procesamiento de URLs de retorno",
     ],
   },
   {
-    title: "Runtime / secretos",
+    title: "Tiempo de ejecución / secretos",
     items: [
-      "AUTH_SESSION_SECRET y AUTH_SHARED_PASSWORD presentes",
-      "WHATSAPP_TOKEN_ENCRYPTION_KEY configurada",
-      "NEXT_PUBLIC_APP_URL consistente con el dominio real",
-      "Sin defaults inseguros activos en produccion",
-      "Politicas de uso y privacidad configuradas en /auth/accept-policies",
+      "Variables `AUTH_SESSION_SECRET` y `AUTH_SHARED_PASSWORD` cargadas con secretos seguros",
+      "Variable de cifrado de tokens de WhatsApp (`WHATSAPP_TOKEN_ENCRYPTION_KEY`) presente",
+      "Variable `NEXT_PUBLIC_APP_URL` configurada de manera consistente con el dominio real",
+      "Sin valores predeterminados (defaults) inseguros activos en el entorno de producción",
+      "Políticas de uso y privacidad públicas y configuradas correctamente en /privacy",
     ],
   },
 ] as const;
@@ -128,74 +128,74 @@ const playbooks = [
   {
     title: "Configurar WhatsApp / Meta desde cero",
     summary:
-      "Alta completa del canal de mensajeria para que entren mensajes reales y se procesen por la capa automatizada.",
+      "Alta completa del canal oficial de mensajería para que entren consultas reales de clientes y se procesen por la capa automatizada.",
     steps: [
-      "Crear o verificar la cuenta de Meta Business.",
-      "Entrar a Meta Developers, crear la app y habilitar WhatsApp.",
-      "Obtener token de acceso, app secret y verify token.",
-      "Registrar el numero operativo y asociarlo al negocio correcto.",
-      "Cargar secretos en Railway y confirmar que el runtime web no marque faltantes.",
-      "Apuntar el webhook productivo a /api/webhooks/whatsapp y validar el challenge.",
-      "Validar un enlace de captacion con [ref:orgslug] para confirmar que la consulta entra a la organizacion correcta.",
-      "Enviar un mensaje de prueba y revisar logs de webhook y worker.",
+      "Crear o verificar la cuenta de Meta Business de la plataforma.",
+      "Ingresar a Meta Developers, crear la aplicación y habilitar el producto WhatsApp.",
+      "Obtener el token de acceso de larga duración, el secreto de la aplicación (app secret) y definir el token de verificación (verify token).",
+      "Registrar el número de teléfono oficial y asociarlo a la cuenta comercial correspondiente.",
+      "Cargar los secretos en la consola de Railway y confirmar que el tiempo de ejecución web no marque variables faltantes.",
+      "Configurar el webhook productivo en Meta Developers apuntando a /api/webhooks/whatsapp y validar el reto (challenge).",
+      "Probar un enlace de captación con el parámetro [ref:orgslug] para confirmar que la consulta ingresa al espacio de la organización correcta.",
+      "Enviar un mensaje real de prueba y verificar el tráfico en los logs de webhooks y el worker en segundo plano.",
     ],
     validation:
-      "Debe verse webhook 200, mensaje recibido, job en cola y actividad asociada a la organizacion.",
+      "El servidor de webhooks debe responder 200 OK, el mensaje debe recibirse, registrar la tarea en cola (job) y mostrar la actividad en la bandeja de entrada.",
   },
   {
     title: "Configurar Railway",
     summary:
-      "Base de despliegue para que web y worker arranquen estables, con servicios y secretos en linea.",
+      "Control del entorno de infraestructura para asegurar la estabilidad del servidor web y del worker en segundo plano con todas las variables en línea.",
     steps: [
-      "Verificar que el servicio web y el worker corran sobre la rama esperada.",
-      "Confirmar DATABASE_URL, DIRECT_URL, REDIS_URL y NEXT_PUBLIC_APP_URL.",
-      "Cargar AUTH_SESSION_SECRET, AUTH_SHARED_PASSWORD y secrets de WhatsApp y Mercado Pago.",
-      "Verificar que el start command no repare schema en runtime.",
-      "Revisar logs de arranque, heartbeat del worker y respuesta de rutas criticas.",
+      "Verificar en la consola de Railway que tanto el servicio web como el worker compilen correctamente sobre la rama esperada.",
+      "Confirmar las variables críticas: `DATABASE_URL`, `DIRECT_URL`, `REDIS_URL` y `NEXT_PUBLIC_APP_URL`.",
+      "Cargar las variables de sesión `AUTH_SESSION_SECRET`, `AUTH_SHARED_PASSWORD` y las credenciales de WhatsApp y Mercado Pago.",
+      "Asegurar que los comandos de inicio utilicen migraciones ya preparadas y no realicen modificaciones destructivas de esquema en producción.",
+      "Revisar logs de inicio, el indicador de latido (heartbeat) del worker y que no haya errores de conexión.",
     ],
     validation:
-      "La plataforma debe arrancar sin errores de configuracion y el worker debe registrar heartbeat.",
+      "La plataforma debe iniciar de manera limpia sin variables faltantes críticas y el worker debe reportar su señal periódica.",
   },
   {
     title: "Configurar OpenAI",
     summary:
-      "Preparar el motor IA que usa la plataforma para conversaciones, clasificacion y automatizacion.",
+      "Habilitación del motor de Inteligencia Artificial que procesa, clasifica e interactúa de manera autónoma con los prospectos e inmobiliarias.",
     steps: [
-      "Obtener la API key del entorno operativo.",
-      "Cargar la key en Railway usando la variable ya soportada por el runtime.",
-      "Confirmar que web y worker apunten a la misma configuracion.",
-      "Validar que el modelo esperado este disponible.",
-      "Ejecutar una prueba de conversacion y revisar logs por errores del proveedor.",
+      "Obtener la API Key desde el panel de proveedores de OpenAI con los permisos de modelo correctos.",
+      "Cargar la clave en Railway utilizando la variable de entorno ya soportada por el sistema.",
+      "Confirmar que el servidor web y el worker en segundo plano utilicen exactamente el mismo secreto de acceso.",
+      "Verificar que el modelo configurado en el sistema esté habilitado y tenga cuota activa.",
+      "Simular una conversación de prueba y auditar los registros para descartar problemas de rate-limit o falta de saldo.",
     ],
     validation:
-      "La respuesta IA debe completarse sin errores de autenticacion ni caidas por modelo no disponible.",
+      "La respuesta de la IA debe completarse de forma fluida sin errores de autenticación (401) ni caídas del modelo.",
   },
   {
     title: "Configurar Mercado Pago",
     summary:
-      "Preparar links de pago, webhook firmado y confirmacion del estado comercial.",
+      "Preparación de los enlaces de suscripción SaaS, validación de firmas digitales de pago y confirmación de estados comerciales.",
     steps: [
-      "Obtener access token y webhook secret desde Mercado Pago.",
-      "Cargar MERCADO_PAGO_ACCESS_TOKEN y MERCADO_PAGO_WEBHOOK_SECRET en Railway.",
-      "Confirmar que NEXT_PUBLIC_APP_URL apunte al dominio real.",
-      "Apuntar el webhook a /api/webhooks/mercadopago.",
-      "Crear un cobro de prueba y verificar recepcion firmada del webhook.",
+      "Obtener el token de acceso de producción y la clave secreta del webhook desde el panel de desarrolladores de Mercado Pago.",
+      "Configurar las variables `MERCADO_PAGO_ACCESS_TOKEN` y `MERCADO_PAGO_WEBHOOK_SECRET` en Railway.",
+      "Confirmar que `NEXT_PUBLIC_APP_URL` esté apuntando al dominio público de producción.",
+      "Registrar el endpoint del webhook apuntando a /api/webhooks/mercadopago con eventos de suscripción y pagos activos.",
+      "Generar una prueba de cobro en el simulador y verificar la recepción firmada digitalmente por la plataforma.",
     ],
     validation:
-      "El link debe generarse bien y el pago debe impactar en el estado comercial esperado.",
+      "Los enlaces de pago deben crearse sin fallos y las notificaciones automáticas deben cambiar el estado del cliente de forma inmediata.",
   },
   {
     title: "Gestión de Privacidad y Auditoría",
     summary:
-      "Controlar cómo el equipo de plataforma accede a los datos de los clientes y asegurar la transparencia.",
+      "Supervisar el acceso administrativo del equipo superadmin a los datos de los clientes y garantizar la transparencia del sistema.",
     steps: [
-      "Confirmar que todos los usuarios acepten los términos en su primer ingreso.",
-      "Validar que el bypass de Superadmin esté activo para soporte técnico.",
-      "Revisar la tabla AuditLog periódicamente para detectar accesos administrativos no justificados.",
-      "Asegurar que las políticas mencionen explícitamente el derecho de auditoría por seguridad.",
+      "Confirmar que todos los usuarios e inmobiliarias acepten los términos y la política de privacidad en su primer ingreso a la app.",
+      "Validar que el bypass de acceso a workspaces de inmobiliarias registre correctamente el log correspondiente en la base de datos.",
+      "Monitorear la tabla AuditLog de forma regular para auditar cualquier acción realizada por un superadmin sobre tenants ajenos.",
+      "Asegurar que los textos informativos en el flujo de ingreso expliquen claramente el alcance administrativo por motivos de seguridad.",
     ],
     validation:
-      "Cada acceso de Superadmin a un workspace ajeno debe generar un log con evento SUPERADMIN_WORKSPACE_ACCESS.",
+      "Cada acceso administrativo a un espacio ajeno debe generar una entrada inmutable con el evento SUPERADMIN_WORKSPACE_ACCESS.",
   },
 ] as const;
 
@@ -205,70 +205,70 @@ const modules = [
     href: "/platform",
     icon: ShieldCheck,
     description:
-      "Vista ejecutiva de salud, riesgo, onboarding y volumen para priorizar intervenciones.",
+      "Vista ejecutiva de la salud del entorno, análisis de riesgos de churn, estado de onboarding y volumen transaccional.",
   },
   {
     title: "Operaciones IA",
     href: "/platform/ai-operations",
     icon: Bot,
     description:
-      "Monitoreo de actividad automatizada, jobs y funcionamiento del motor IA.",
+      "Monitoreo de la actividad automatizada, tareas de procesamiento de lenguaje natural y funcionamiento del motor de IA.",
   },
   {
     title: "Clientes",
     href: "/platform/organizations",
     icon: Building2,
     description:
-      "Inventario operativo de organizaciones, accesos, papelera y estado general de cada tenant.",
+      "Inventario operativo de organizaciones de inmobiliarias, gestión de accesos, suspensión de tenants y papelera de reciclaje.",
   },
   {
-    title: "Atencion a Clientes",
+    title: "Atención a Clientes",
     href: "/platform/support",
     icon: MessageSquare,
     description:
-      "Seguimiento de soporte y asistencia sobre cuentas activas desde la capa plataforma.",
+      "Seguimiento de soporte, tickets y chat interactivo con cuentas activas desde el entorno administrativo central.",
   },
   {
-    title: "Captacion",
+    title: "Captación",
     href: "/platform/captacion",
     icon: Megaphone,
     description:
-      "Link comercial de plataforma para atraer nuevas inmobiliarias interesadas y validar el flujo de entrada por WhatsApp.",
+      "Enlace comercial oficial para captar inmobiliarias interesadas y verificar el flujo de alta automatizada por WhatsApp.",
   },
   {
     title: "Onboarding",
     href: "/platform/onboarding",
     icon: UserPlus,
     description:
-      "Gestion de invitaciones, altas iniciales y activacion de accesos.",
+      "Gestión de invitaciones enviadas, creación de accesos iniciales para nuevas inmobiliarias y control de vencimientos.",
   },
   {
-    title: "Activacion",
+    title: "Activación",
     href: "/platform/activation",
     icon: ActivitySquare,
     description:
-      "Seguimiento de adopcion real para detectar cuentas trabadas, primer lead e intervencion humana.",
+      "Monitoreo del nivel de adopción real del software para detectar cuentas inactivas y proponer asistencia personalizada.",
   },
   {
     title: "Salud del sistema",
     href: "/platform/health",
     icon: ActivitySquare,
     description:
-      "Tablero de integraciones, worker, auditoria y alertas tecnicas del entorno.",
+      "Tablero de integraciones, worker, integraciones de servicios, estado en vivo del worker, registros de auditoría administrativa y alertas técnicas.",
   },
   {
     title: "Comercial",
     href: "/platform/billing",
     icon: CreditCard,
     description:
-      "Control de cobros, links de pago y estados comerciales por organizacion.",
+      "Control de suscripciones, generación manual de cobros, enlaces de pago en línea y estado de facturación por organización.",
   },
   {
-    title: "Configuracion",
+    title: "Configuración",
     href: "/platform/settings",
     icon: Settings,
     description:
-      "Punto de control de ajustes globales y accesos sensibles de plataforma.",
+      "Punto de control administrativo para ajustes globales, credenciales del sistema y secretos sensibles.",
   },
 ] as const;
 
@@ -276,75 +276,75 @@ const troubleshooting = [
   {
     title: "No llegan mensajes de WhatsApp",
     checks: [
-      "Confirmar que Meta apunte a /api/webhooks/whatsapp.",
-      "Revisar app secret, verify token y firma entrante.",
-      "Validar que el phone_number_id resuelva un canal activo.",
-      "Corroborar que el worker siga operativo.",
+      "Confirmar que Meta apunte exactamente a /api/webhooks/whatsapp.",
+      "Revisar el secreto de la app, el token de verificación y la firma criptográfica entrante.",
+      "Validar que el phone_number_id corresponda a un canal activo registrado.",
+      "Corroborar que el worker en segundo plano se encuentre encendido y reportando.",
     ],
   },
   {
-    title: "El worker no procesa",
+    title: "El worker no procesa tareas",
     checks: [
-      "Revisar heartbeat reciente en Salud del sistema.",
-      "Confirmar REDIS_URL y conectividad del worker.",
-      "Buscar timeouts o errores de cola en logs.",
-      "Verificar que la app web este encolando jobs.",
+      "Revisar el estado y latencia del latido (heartbeat) reciente en Salud del sistema.",
+      "Confirmar que la variable `REDIS_URL` tenga credenciales activas y conectividad total.",
+      "Buscar fallos, errores de cola o caídas por límites de memoria en los logs de Railway.",
+      "Verificar que la aplicación web esté encolando correctamente las tareas (jobs).",
     ],
   },
   {
     title: "OpenAI no responde",
     checks: [
-      "Verificar la API key cargada.",
-      "Revisar errores del proveedor en logs.",
-      "Confirmar que el modelo configurado siga disponible.",
+      "Verificar la validez de la API Key cargada en el panel de secretos.",
+      "Revisar errores del proveedor de IA o límites de cuota (rate limits) en los registros.",
+      "Confirmar que el modelo seleccionado siga activo y disponible en el catálogo de OpenAI.",
     ],
   },
   {
-    title: "Mercado Pago no acredita",
+    title: "Mercado Pago no acredita pagos",
     checks: [
-      "Confirmar access token y webhook secret.",
-      "Revisar trafico real hacia /api/webhooks/mercadopago.",
-      "Validar firma, id de notificacion y estado comercial.",
+      "Confirmar la vigencia del access token de producción y el secret del webhook.",
+      "Revisar que haya tráfico de red exitoso hacia la URL /api/webhooks/mercadopago.",
+      "Validar la validez de la firma digital, el ID de notificación y el estado comercial de la inmobiliaria.",
     ],
   },
   {
-    title: "Webhook no valida",
+    title: "Webhook no valida el challenge",
     checks: [
-      "Comparar el secret del proveedor con Railway.",
-      "Verificar headers esperados y body sin alteraciones.",
-      "Confirmar que no se este usando una ruta legacy por error.",
+      "Comparar el token de verificación configurado en el proveedor externo con el de Railway.",
+      "Verificar que los encabezados (headers) esperados estén presentes y el cuerpo sin alteraciones.",
+      "Confirmar que no se esté consumiendo un endpoint antiguo o discontinuado por error.",
     ],
   },
   {
     title: "La consulta entra por link pero no cae en la inmobiliaria correcta",
     checks: [
-      "Validar que el enlace compartido conserve el prefijo [ref:orgslug] en el mensaje inicial.",
-      "Revisar que el slug de la organizacion exista y este activo.",
-      "Confirmar que el webhook productivo sea /api/webhooks/whatsapp y no una ruta legacy.",
+      "Validar que el enlace comercial compartido conserve el prefijo obligatorio [ref:orgslug] en el mensaje predeterminado.",
+      "Revisar que el identificador (slug) de la organización inmobiliaria exista en la base y esté en estado activo.",
+      "Confirmar que el webhook de producción de Meta apunte a la ruta unificada y no a un endpoint desactualizado.",
     ],
   },
   {
-    title: "El link comercial de plataforma no dispara el flujo esperado",
+    title: "El link comercial de la plataforma no inicia la conversación automatizada",
     checks: [
-      "Confirmar que exista PLATFORM_WHATSAPP_NUMBER y que Meta este conectado.",
-      "Verificar que WHATSAPP_ORGANIZATION_ID apunte a una org activa de plataforma.",
-      "Revisar /platform/support para validar si las conversaciones estan entrando al inbox central.",
+      "Confirmar que la variable global `PLATFORM_WHATSAPP_NUMBER` contenga el número oficial y Meta esté conectado.",
+      "Verificar que la variable `WHATSAPP_ORGANIZATION_ID` apunte al slug del tenant superadmin configurado.",
+      "Auditar el canal de soporte para comprobar si las conversaciones entrantes se registran en la bandeja central.",
     ],
   },
   {
     title: "Acceso administrativo denegado (404) en un workspace de cliente",
     checks: [
-      "Confirmar que tu usuario tenga isPlatformAdmin: true.",
-      "Verificar que la URL del workspace use el slug correcto.",
-      "Revisar si el middleware o requireOrganizationMembership están bloqueando por falta de aceptación de políticas.",
+      "Confirmar que el usuario administrador de plataforma tenga la bandera `isPlatformAdmin: true` activa.",
+      "Verificar que la URL del espacio de trabajo del cliente esté utilizando el slug exacto registrado.",
+      "Revisar si el middleware de sesión o las reglas de membresía están bloqueando por falta de aceptación de términos.",
     ],
   },
   {
     title: "El usuario no puede salir de la pantalla de políticas",
     checks: [
-      "Validar que la redirección post-aceptación tenga el parámetro 'next' correcto.",
-      "Verificar que la acción de servidor esté guardando termsAcceptedAt en la base de datos.",
-      "Confirmar que no haya un bucle de redirección en requireSessionUser.",
+      "Validar que la redirección post-aceptación tenga cargado el parámetro de retorno 'next' de forma correcta.",
+      "Comprobar en la base de datos que la acción guarde la fecha en `termsAcceptedAt` para el ID de usuario correspondiente.",
+      "Confirmar que no haya bucles infinitos causados por validaciones duplicadas en `requireSessionUser`.",
     ],
   },
 ] as const;
@@ -457,52 +457,52 @@ function formatOptionalRelativeTime(value: string | null) {
 function getStatusDescription(snapshot: SystemStatusSnapshot) {
   return [
     {
-      title: "WhatsApp",
+      title: "WhatsApp oficial",
       status: snapshot.whatsapp,
       description:
         snapshot.whatsapp === "ok"
-          ? "Webhook y secretos base presentes para operar el canal."
-          : "Faltan secretos base de WhatsApp para validar webhook y recepcion.",
+          ? "Webhook y secretos base configurados para operar el canal de mensajería."
+          : "Faltan secretos de WhatsApp en la configuración para validar firmas y eventos.",
     },
     {
       title: "OpenAI",
       status: snapshot.openai,
       description:
         snapshot.openai === "ok"
-          ? "La key principal del motor IA esta presente."
-          : "No se detecta OPENAI_API_KEY en el runtime actual.",
+          ? "Credencial de acceso de OpenAI API activa."
+          : "Falta la variable de entorno `OPENAI_API_KEY` en el servidor actual.",
     },
     {
       title: "PostgreSQL",
       status: snapshot.db,
       description:
         snapshot.db === "ok"
-          ? "La base responde correctamente a una consulta simple."
-          : "La base no respondio al check de lectura SELECT 1.",
+          ? "La base de datos relacional responde de forma rápida a consultas SELECT."
+          : "Fallo en la comunicación con la base de datos relacional PostgreSQL.",
     },
     {
       title: "Redis / Worker",
       status: snapshot.redis,
       description:
         snapshot.redis === "ok"
-          ? "Redis respondio a PING. La capa de cola tiene conectividad base."
-          : "Redis no respondio al ping. La cola y el worker pueden quedar degradados.",
+          ? "La base en memoria de caché Redis respondió exitosamente al PING."
+          : "Fallo al conectar con Redis. Las colas y el procesamiento asíncrono pueden degradarse.",
     },
     {
       title: "Mercado Pago",
       status: snapshot.mercadopago,
       description:
         snapshot.mercadopago === "ok"
-          ? "Credenciales y secret de webhook presentes."
-          : "Falta access token o webhook secret para la integracion de cobro.",
+          ? "Credenciales comerciales y firma digital de webhook presentes."
+          : "Falta el access token o la firma digital para automatizar la facturación y cobros.",
     },
     {
-      title: "Variables criticas",
+      title: "Variables críticas",
       status: snapshot.runtime,
       description:
         snapshot.runtime === "ok"
-          ? "AUTH_SESSION_SECRET y NEXT_PUBLIC_APP_URL estan presentes."
-          : "Faltan variables base del runtime para auth o URLs del sistema.",
+          ? "Variables `AUTH_SESSION_SECRET` y `NEXT_PUBLIC_APP_URL` presentes."
+          : "Faltan variables críticas del entorno runtime para autenticación o URLs de redirección.",
     },
   ] as const;
 }
@@ -516,10 +516,10 @@ export default async function PlatformManualOperativoPage() {
   const statusCards = getStatusDescription(systemStatus);
   const observabilityCards = [
     {
-      title: "Worker",
+      title: "Proceso en segundo plano (Worker)",
       status: operationalObservability.worker.status,
       metrics: [
-        { label: "Ultimo heartbeat", value: formatOptionalRelativeTime(operationalObservability.worker.lastSeenAt) },
+        { label: "Último latido (heartbeat)", value: formatOptionalRelativeTime(operationalObservability.worker.lastSeenAt) },
         {
           label: "Latencia",
           value:
@@ -531,7 +531,7 @@ export default async function PlatformManualOperativoPage() {
       message: operationalObservability.worker.message,
     },
     {
-      title: "Colas",
+      title: "Colas de procesamiento (BullMQ)",
       status: operationalObservability.queue.status,
       metrics: [
         {
@@ -593,7 +593,7 @@ export default async function PlatformManualOperativoPage() {
             <div className="max-w-none w-full space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-violet-100">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                Fuente oficial de operacion superadmin
+                Fuente oficial de operación superadmin
               </div>
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Manual Operativo</h1>
@@ -605,13 +605,13 @@ export default async function PlatformManualOperativoPage() {
               <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-300">
-                    Para quien
+                    Para quién
                   </p>
                   <p className="mt-1 text-sm font-semibold text-white">Superadmin y soporte tecnico</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-300">
-                    Que resuelve
+                    Qué resuelve
                   </p>
                   <p className="mt-1 text-sm font-semibold text-white">Operacion, configuracion y mantenimiento</p>
                 </div>
@@ -627,7 +627,7 @@ export default async function PlatformManualOperativoPage() {
             <div className="flex flex-col gap-3 lg:items-end shrink-0">
               <PrintManualButton />
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 print:hidden">
-                Centraliza checklist, playbooks y troubleshooting del entorno superadmin.
+                Centraliza checklists, playbooks y troubleshooting del entorno superadmin.
               </div>
             </div>
           </div>
@@ -643,7 +643,7 @@ export default async function PlatformManualOperativoPage() {
                 Estado operativo en vivo
               </h2>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                Lectura rapida del runtime actual para detectar desalineaciones antes de bajar al
+                Lectura rápida del tiempo de ejecución (runtime) actual para detectar desalineaciones antes de bajar al
                 detalle del manual.
               </p>
             </div>
@@ -682,7 +682,7 @@ export default async function PlatformManualOperativoPage() {
                 Alertas operativas
               </p>
               <h2 className="text-xl font-bold tracking-tight text-slate-900">
-                Que mirar primero ahora
+                Qué mirar primero ahora
               </h2>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
                 Las alertas priorizan impacto operativo real y te indican el siguiente modulo del
@@ -717,7 +717,7 @@ export default async function PlatformManualOperativoPage() {
                             {alert.impact}
                           </p>
                           <p className="text-sm leading-6 text-slate-700">
-                            <span className="font-semibold text-slate-900">Accion sugerida:</span>{" "}
+                            <span className="font-semibold text-slate-900">Acción sugerida:</span>{" "}
                             {alert.action}
                           </p>
                         </div>
@@ -728,7 +728,7 @@ export default async function PlatformManualOperativoPage() {
                           href={alert.href}
                           className="shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 print:hidden"
                         >
-                          Abrir modulo
+                          Abrir módulo
                         </Link>
                       ) : null}
                     </div>
@@ -746,7 +746,7 @@ export default async function PlatformManualOperativoPage() {
                 Observabilidad operativa
               </p>
               <h2 className="text-xl font-bold tracking-tight text-slate-900">
-                Senales reales para diagnostico rapido
+                Señales reales para diagnóstico rápido
               </h2>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
                 Esta capa usa fuentes reales del sistema para detectar degradacion en worker, cola y
@@ -796,7 +796,7 @@ export default async function PlatformManualOperativoPage() {
           <aside className="space-y-3 print:hidden xl:col-span-3 2xl:col-span-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-                Navegacion interna
+                Navegación interna
               </p>
               <nav className="mt-3 space-y-1">
                 {sections.map((section) => (
@@ -825,9 +825,9 @@ export default async function PlatformManualOperativoPage() {
           <div className="space-y-8 print:space-y-6 xl:col-span-9 2xl:col-span-10">
             <section id="vision-operativa" className="space-y-5 scroll-mt-24">
               <SectionHeader
-                eyebrow="Vision operativa"
-                title="Que controla el superadmin y de que depende"
-                description="El superadmin sostiene la salud del entorno, el alta de cuentas, las integraciones externas, el estado comercial y la continuidad operativa. Cuando una dependencia critica cae, el impacto se propaga a conversaciones, onboarding, cobros y soporte."
+                eyebrow="Visión operativa"
+                title="Qué controla el superadmin y de qué depende"
+                description="El superadmin sostiene la salud del entorno, el alta de cuentas, las integraciones externas, el estado comercial y la continuidad operativa. Cuando una dependencia crítica cae, el impacto se propaga a conversaciones, onboarding, cobros y soporte."
               />
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
@@ -854,7 +854,7 @@ export default async function PlatformManualOperativoPage() {
               <SectionHeader
                 eyebrow="Checklist"
                 title="Condiciones para operar al 100%"
-                description="Lista de verificacion operativa para dejar el entorno alineado y sin puntos ciegos antes de trabajar sobre clientes reales."
+                description="Lista de verificación operativa para dejar el entorno alineado y sin puntos ciegos antes de trabajar sobre clientes reales."
               />
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -884,9 +884,9 @@ export default async function PlatformManualOperativoPage() {
 
             <section id="guias-paso-a-paso" className="space-y-5 scroll-mt-24">
               <SectionHeader
-                eyebrow="Guias paso a paso"
-                title="Configuraciones criticas del entorno"
-                description="Playbooks escritos sobre la realidad actual del sistema: webhooks, runtime, variables sensibles y validaciones concretas."
+                eyebrow="Guías paso a paso"
+                title="Configuraciones críticas del entorno"
+                description="Playbooks escritos sobre la realidad actual del sistema: webhooks, runtime, variables de entorno y validaciones concretas."
               />
 
               <div className="space-y-4">
@@ -925,8 +925,8 @@ export default async function PlatformManualOperativoPage() {
             <section id="modulos-superadmin" className="space-y-5 scroll-mt-24">
               <SectionHeader
                 eyebrow="Panel superadmin"
-                title="Que hace cada bloque importante de la plataforma"
-                description="Mapa rapido del panel para intervenir con criterio y entender donde mirar segun el problema."
+                title="Qué hace cada bloque importante de la plataforma"
+                description="Mapa rápido del panel superadmin para intervenir con criterio y entender a dónde dirigirse según la alerta reportada."
               />
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
@@ -964,8 +964,8 @@ export default async function PlatformManualOperativoPage() {
             <section id="troubleshooting" className="space-y-5 scroll-mt-24">
               <SectionHeader
                 eyebrow="Troubleshooting"
-                title="Que revisar primero cuando algo falla"
-                description="Lista corta y operativa para cortar tiempo de diagnostico sin abrir diez frentes a la vez."
+                title="Qué revisar primero cuando algo falla"
+                description="Lista corta y operativa para recortar los tiempos de diagnóstico de incidentes sin abrir múltiples frentes a la vez."
               />
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -1046,7 +1046,7 @@ export default async function PlatformManualOperativoPage() {
                     Siguiente etapa
                   </p>
                   <h3 className="text-base font-bold text-slate-900">
-                    Base lista para checks operativos dinamicos
+                    Base lista para checks operativos dinámicos
                   </h3>
                   <p className="max-w-3xl text-sm leading-6 text-slate-600">
                     La estructura ya deja preparado el modulo para sumar estados en vivo, checklist accionable y validaciones automáticas por servicio.
@@ -1054,8 +1054,8 @@ export default async function PlatformManualOperativoPage() {
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
                   <span className="rounded-full border border-slate-200 bg-white px-3 py-1">Health en vivo</span>
-                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1">Checklist dinamico</span>
-                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1">Estados por integracion</span>
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1">Checklist dinámico</span>
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1">Estados por integración</span>
                 </div>
               </div>
             </section>
