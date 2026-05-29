@@ -285,32 +285,32 @@ export function LandingHeroCarousel() {
                 </motion.div>
               </AnimatePresence>
             </div>
-            <div className="relative rounded-2xl border border-white/10 bg-slate-950/80 shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-xl overflow-hidden aspect-[16/9.8] w-full">
-              <div className="h-9 bg-slate-900 border-b border-white/5 flex items-center px-4 justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-rose-500/80" /><span className="h-3 w-3 rounded-full bg-amber-500/80" /><span className="h-3 w-3 rounded-full bg-emerald-500/80" />
+            <div className="relative rounded-2xl border border-white/10 bg-slate-950/80 shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-xl overflow-hidden aspect-[16/9.8] w-full max-w-full">
+              <div className="h-9 bg-slate-900 border-b border-white/5 flex items-center px-2 sm:px-4 justify-between select-none">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-rose-500/80" /><span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-amber-500/80" /><span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-emerald-500/80" />
                 </div>
-                <div className="bg-slate-950/60 rounded px-12 py-1 text-[9px] font-bold text-slate-400 select-none tracking-wide flex items-center gap-1.5">
-                  <Laptop className="h-3 w-3 text-brand-400" /> app.raicespilot.com/crm/dashboard
+                <div className="bg-slate-950/60 rounded px-3 sm:px-12 py-1 text-[8px] sm:text-[9px] font-bold text-slate-400 tracking-wide flex items-center gap-1 sm:gap-1.5 truncate max-w-[70%]">
+                  <Laptop className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-brand-400 shrink-0" /> app.raicespilot.com/crm/dashboard
                 </div>
-                <div className="w-12" />
+                <div className="w-6 sm:w-12 shrink-0" />
               </div>
-              <div className="relative w-full h-[calc(100%-2.25rem)] bg-slate-950">
+              <div className="relative w-full h-[calc(100%-2.25rem)] bg-slate-950 overflow-hidden">
                 <AnimatePresence mode="wait">
                   <motion.div key={currentSlideIdx} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.8 }} className="absolute inset-0 w-full h-full">
-                    <img src={SYSTEM_SLIDES[currentSlideIdx].image} alt={SYSTEM_SLIDES[currentSlideIdx].title} className="w-full h-full object-cover object-center" />
+                    <img src={SYSTEM_SLIDES[currentSlideIdx].image} alt={SYSTEM_SLIDES[currentSlideIdx].title} className="w-full h-full object-cover object-center max-w-full" />
                   </motion.div>
                 </AnimatePresence>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
-              <Button size="lg" asChild className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold tracking-wide shadow-lg shadow-emerald-600/20 transform hover:scale-[1.01] active:scale-[0.99] transition duration-200">
-                <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-                  <MessageSquare className="h-5 w-5" /> Probar Demo en WhatsApp
+            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2 w-full max-w-full overflow-hidden">
+              <Button size="lg" asChild className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold tracking-wide shadow-lg shadow-emerald-600/20 transform hover:scale-[1.01] active:scale-[0.99] transition duration-200 shrink-0 max-w-full">
+                <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full text-center py-3">
+                  <MessageSquare className="h-5 w-5 shrink-0" /> Probar Demo en WhatsApp
                 </a>
               </Button>
-              <Button variant="outline" size="lg" asChild className="w-full sm:w-auto border-white/10 hover:border-white/20 bg-white/[0.03] text-white hover:bg-white/[0.07]">
-                <a href="#contacto">Solicitar Acceso</a>
+              <Button variant="outline" size="lg" asChild className="w-full sm:w-auto border-white/10 hover:border-white/20 bg-white/[0.03] text-white hover:bg-white/[0.07] shrink-0 max-w-full">
+                <a href="#contacto" className="w-full text-center py-3">Solicitar Acceso</a>
               </Button>
             </div>
           </div>
