@@ -62,17 +62,18 @@ const INITIAL_SECTIONS: ChecklistSection[] = [
       { id: "m2", label: "Sección 'Cupo Fundador' muestra correctamente la etiqueta: 'Primeras 100' y descripción de lanzamiento limitado.", status: "PENDIENTE", observation: "" },
       { id: "m3", label: "Sección 'Expansión 2026-2030' muestra la meta 2026 agresiva de 500 inmobiliarias.", status: "PENDIENTE", observation: "" },
       { id: "m4", label: "Sección 'Expansión 2026-2030' muestra la meta corporativa LATAM 2030 de 10.000 inmobiliarias/usuarios.", status: "PENDIENTE", observation: "" },
-      { id: "m5", label: "El botón 'Exportar Markdown' del Modelo de Negocio descarga un archivo .md con los valores vigentes correctos.", status: "PENDIENTE", observation: "" }
+      { id: "m5", label: "El botón 'Exportar Markdown' del Modelo de Negocio descarga un archivo .md con los valores vigentes correctos.", status: "PENDIENTE", observation: "" },
+      { id: "m6", label: "Existe o está planificada la ruta pública /terms o /terminos con su respectiva revisión legal previa al lanzamiento masivo.", status: "PENDIENTE", observation: "" }
     ]
   },
   {
     id: "org",
     title: "B) Organización QA",
     items: [
-      { id: "o1", label: "Existe la organización sandbox 'RaicesPilot QA Test' y se valida a través de su slug: 'raicespilot-qa-test'.", status: "PENDIENTE", observation: "" },
+      { id: "o1", label: "Existe la organización sandbox 'Raíces Pilot QA Test' y se valida a través de su slug: 'raicespilot-qa-test'.", status: "PENDIENTE", observation: "" },
       { id: "o2", label: "La organización posee configurado el plan 'FOUNDER' (o equivalente a la oferta de lanzamiento).", status: "PENDIENTE", observation: "" },
       { id: "o3", label: "Monto del ciclo de suscripción configurado en $65.000 + impuestos.", status: "PENDIENTE", observation: "" },
-      { id: "o4", label: "El estado de la Inteligencia Artificial (aiStatus) de la organización sandbox figura como 'ACTIVE'.", status: "PENDIENTE", observation: "" },
+      { id: "o4", label: "El estado de la Inteligencia Artificial (aiStatus) de la organización sandbox figura como 'ACTIVA'.", status: "PENDIENTE", observation: "" },
       { id: "o5", label: "El límite mensual de conversaciones y el indicador de consumo acumulado son visibles en la interfaz de control.", status: "PENDIENTE", observation: "" },
       { id: "o6", label: "El indicador de fecha del próximo reset mensual de consumo es visible en pantalla.", status: "PENDIENTE", observation: "" }
     ]
@@ -107,6 +108,24 @@ const INITIAL_SECTIONS: ChecklistSection[] = [
       { id: "a3", label: "Se renderiza de forma clara la alerta informando que la Inteligencia Artificial se encuentra pausada temporalmente.", status: "PENDIENTE", observation: "" },
       { id: "a4", label: "Los logs estructurados JSON son correctamente generados y visibles en Railway o consola de desarrollo sin errores de runtime.", status: "PENDIENTE", observation: "" }
     ]
+  },
+  {
+    id: "soporte",
+    title: "F) Soporte, Captación e Integración (Meta)",
+    items: [
+      { id: "f1", label: "El código de la sección de Atención a Clientes / Centro de Soporte está preparado y listo para su uso.", status: "PENDIENTE", observation: "" },
+      { id: "f2", label: "Las pruebas de recepción real de WhatsApp / Meta Business quedan marcadas correctamente como 'Pendiente Externo' hasta la aprobación final de Meta.", status: "PENDIENTE", observation: "" },
+      { id: "f3", label: "El pipeline de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PENDIENTE", observation: "" },
+      { id: "f4", label: "El sistema no promete ni asegura recepción de mensajes reales de producción hasta completar el onboarding de WhatsApp Business.", status: "PENDIENTE", observation: "" }
+    ]
+  },
+  {
+    id: "infraestructura",
+    title: "G) Infraestructura y Servicios Externos",
+    items: [
+      { id: "g1", label: "El Worker de Railway / BullMQ se encuentra activo o en proceso de reinicio para recuperar el heartbeat operativo.", status: "PENDIENTE", observation: "" },
+      { id: "g2", label: "La integración con Mercado Pago está lista para configurar credenciales productivas y webhooks correspondientes.", status: "PENDIENTE", observation: "" }
+    ]
   }
 ];
 
@@ -119,17 +138,18 @@ const INITIAL_PRELOAD_SECTIONS: ChecklistSection[] = [
       { id: "m2", label: "Sección 'Cupo Fundador' muestra correctamente la etiqueta: 'Primeras 100' y descripción de lanzamiento limitado.", status: "PASS", observation: "La sección Cupo Fundador muestra correctamente “Primeras 100” y se entiende como beneficio limitado de lanzamiento." },
       { id: "m3", label: "Sección 'Expansión 2026-2030' muestra la meta 2026 agresiva de 500 inmobiliarias.", status: "PASS", observation: "La sección Expansión 2026–2030 muestra la meta agresiva 2026 de 500 inmobiliarias." },
       { id: "m4", label: "Sección 'Expansión 2026-2030' muestra la meta corporativa LATAM 2030 de 10.000 inmobiliarias/usuarios.", status: "PASS", observation: "La sección Expansión 2026–2030 muestra la visión LATAM 2030 de 10.000 inmobiliarias/usuarios." },
-      { id: "m5", label: "El botón 'Exportar Markdown' del Modelo de Negocio descarga un archivo .md con los valores vigentes correctos.", status: "PASS", observation: "El botón Exportar Markdown del Modelo de Negocio descarga correctamente el archivo .md con los valores vigentes." }
+      { id: "m5", label: "El botón 'Exportar Markdown' del Modelo de Negocio descarga un archivo .md con los valores vigentes correctos.", status: "PASS", observation: "El botón Exportar Markdown del Modelo de Negocio descarga correctamente el archivo .md con los valores vigentes." },
+      { id: "m6", label: "Existe o está planificada la ruta pública /terms o /terminos con su respectiva revisión legal previa al lanzamiento masivo.", status: "WARNING", observation: "Ruta pública /terms pendiente de creación y revisión legal antes del lanzamiento." }
     ]
   },
   {
     id: "org",
     title: "B) Organización QA",
     items: [
-      { id: "o1", label: "Existe la organización sandbox 'RaicesPilot QA Test' y se valida a través de su slug: 'raicespilot-qa-test'.", status: "WARNING", observation: "Pendiente confirmar existencia real de la organización sandbox raicespilot-qa-test en Clientes/Organizaciones." },
+      { id: "o1", label: "Existe la organización sandbox 'Raíces Pilot QA Test' y se valida a través de su slug: 'raicespilot-qa-test'.", status: "WARNING", observation: "Pendiente confirmar existencia real de la organización sandbox raicespilot-qa-test en Clientes/Organizaciones." },
       { id: "o2", label: "La organización posee configurado el plan 'FOUNDER' (o equivalente a la oferta de lanzamiento).", status: "WARNING", observation: "Pendiente configurar o verificar plan FOUNDER en la organización QA." },
       { id: "o3", label: "Monto del ciclo de suscripción configurado en $65.000 + impuestos.", status: "WARNING", observation: "Pendiente verificar monto $65.000 + impuestos en la organización QA." },
-      { id: "o4", label: "El estado de la Inteligencia Artificial (aiStatus) de la organización sandbox figura como 'ACTIVE'.", status: "WARNING", observation: "Pendiente verificar que aiStatus figure como ACTIVE en la organización QA." },
+      { id: "o4", label: "El estado de la Inteligencia Artificial (aiStatus) de la organización sandbox figura como 'ACTIVA'.", status: "WARNING", observation: "Pendiente verificar que aiStatus figure como ACTIVA en la organización QA." },
       { id: "o5", label: "El límite mensual de conversaciones y el indicador de consumo acumulado son visibles en la interfaz de control.", status: "WARNING", observation: "Pendiente verificar límite mensual y contador de conversaciones en la ficha comercial." },
       { id: "o6", label: "El indicador de fecha del próximo reset mensual de consumo es visible en pantalla.", status: "WARNING", observation: "Pendiente verificar fecha del próximo reset mensual." }
     ]
@@ -164,6 +184,24 @@ const INITIAL_PRELOAD_SECTIONS: ChecklistSection[] = [
       { id: "a3", label: "Se renderiza de forma clara la alerta informando que la Inteligencia Artificial se encuentra pausada temporalmente.", status: "PENDIENTE", observation: "Pendiente confirmar alerta visual de IA pausada." },
       { id: "a4", label: "Los logs estructurados JSON son correctamente generados y visibles en Railway o consola de desarrollo sin errores de runtime.", status: "PENDIENTE", observation: "Pendiente revisar logs JSON en Railway." }
     ]
+  },
+  {
+    id: "soporte",
+    title: "F) Soporte, Captación e Integración (Meta)",
+    items: [
+      { id: "f1", label: "El código de la sección de Atención a Clientes / Centro de Soporte está preparado y listo para su uso.", status: "PASS", observation: "Centro de Soporte preparado en código, dependiente de Meta para producción." },
+      { id: "f2", label: "Las pruebas de recepción real de WhatsApp / Meta Business quedan marcadas correctamente como 'Pendiente Externo' hasta la aprobación final de Meta.", status: "WARNING", observation: "Sujeto a aprobación y verificación externa avanzada de Meta." },
+      { id: "f3", label: "El pipeline de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PASS", observation: "Código de captación cerrado y validado." },
+      { id: "f4", label: "El sistema no promete ni asegura recepción de mensajes reales de producción hasta completar el onboarding de WhatsApp Business.", status: "PASS", observation: "El flujo de WhatsApp advierte que requiere configuración productiva." }
+    ]
+  },
+  {
+    id: "infraestructura",
+    title: "G) Infraestructura y Servicios Externos",
+    items: [
+      { id: "g1", label: "El Worker de Railway / BullMQ se encuentra activo o en proceso de reinicio para recuperar el heartbeat operativo.", status: "WARNING", observation: "Worker Railway/BullMQ inactivo, requiere reinicio/relevamiento." },
+      { id: "g2", label: "La integración con Mercado Pago está lista para configurar credenciales productivas y webhooks correspondientes.", status: "WARNING", observation: "Requiere credenciales y webhooks productivos de Mercado Pago." }
+    ]
   }
 ];
 
@@ -176,17 +214,18 @@ const ORGANIZACION_VALIDADA_SECTIONS: ChecklistSection[] = [
       { id: "m2", label: "Sección 'Cupo Fundador' muestra correctamente la etiqueta: 'Primeras 100' y descripción de lanzamiento limitado.", status: "PASS", observation: "La sección Cupo Fundador muestra correctamente “Primeras 100” y se entiende como beneficio limitado de lanzamiento." },
       { id: "m3", label: "Sección 'Expansión 2026-2030' muestra la meta 2026 agresiva de 500 inmobiliarias.", status: "PASS", observation: "La sección Expansión 2026–2030 muestra la meta agresiva 2026 de 500 inmobiliarias." },
       { id: "m4", label: "Sección 'Expansión 2026-2030' muestra la meta corporativa LATAM 2030 de 10.000 inmobiliarias/usuarios.", status: "PASS", observation: "La sección Expansión 2026–2030 muestra la visión LATAM 2030 de 10.000 inmobiliarias/usuarios." },
-      { id: "m5", label: "El botón 'Exportar Markdown' del Modelo de Negocio descarga un archivo .md con los valores vigentes correctos.", status: "PASS", observation: "El botón Exportar Markdown del Modelo de Negocio descarga correctamente el archivo .md con los valores vigentes." }
+      { id: "m5", label: "El botón 'Exportar Markdown' del Modelo de Negocio descarga un archivo .md con los valores vigentes correctos.", status: "PASS", observation: "El botón Exportar Markdown del Modelo de Negocio descarga correctamente el archivo .md con los valores vigentes." },
+      { id: "m6", label: "Existe o está planificada la ruta pública /terms o /terminos con su respectiva revisión legal previa al lanzamiento masivo.", status: "WARNING", observation: "Ruta pública /terms pendiente de creación y revisión legal antes del lanzamiento." }
     ]
   },
   {
     id: "org",
     title: "B) Organización QA",
     items: [
-      { id: "o1", label: "Existe la organización sandbox 'RaicesPilot QA Test' y se valida a través de su slug: 'raicespilot-qa-test'.", status: "PASS", observation: "Organización sandbox creada correctamente. orgId: cmpo8xub70000vd980oa2g23h. Slug: raicespilot-qa-test." },
+      { id: "o1", label: "Existe la organización sandbox 'Raíces Pilot QA Test' y se valida a través de su slug: 'raicespilot-qa-test'.", status: "PASS", observation: "Organización sandbox creada correctamente. orgId: cmpo8xub70000vd980oa2g23h. Slug: raicespilot-qa-test." },
       { id: "o2", label: "La organización posee configurado el plan 'FOUNDER' (o equivalente a la oferta de lanzamiento).", status: "PASS", observation: "La organización posee planCode FOUNDER." },
       { id: "o3", label: "Monto del ciclo de suscripción configurado en $65.000 + impuestos.", status: "PASS", observation: "Monto visible configurado en planLabel: $65.000 + impuestos." },
-      { id: "o4", label: "El estado de la Inteligencia Artificial (aiStatus) de la organización sandbox figura como 'ACTIVE'.", status: "PASS", observation: "aiStatus configurado como ACTIVE." },
+      { id: "o4", label: "El estado de la Inteligencia Artificial (aiStatus) de la organización sandbox figura como 'ACTIVA'.", status: "PASS", observation: "aiStatus configurado como ACTIVE." },
       { id: "o5", label: "El límite mensual de conversaciones y el indicador de consumo acumulado son visibles en la interfaz de control.", status: "PASS", observation: "Límite mensual configurado en 300 conversaciones y consumo actual en 0." },
       { id: "o6", label: "El indicador de fecha del próximo reset mensual de consumo es visible en pantalla.", status: "PASS", observation: "Próximo reset mensual configurado para 2026-06-26." }
     ]
@@ -221,12 +260,30 @@ const ORGANIZACION_VALIDADA_SECTIONS: ChecklistSection[] = [
       { id: "a3", label: "Se renderiza de forma clara la alerta informando que la Inteligencia Artificial se encuentra pausada temporalmente.", status: "PENDIENTE", observation: "Pendiente confirmar alerta visual de IA pausada." },
       { id: "a4", label: "Los logs estructurados JSON son correctamente generados y visibles en Railway o consola de desarrollo sin errores de runtime.", status: "PENDIENTE", observation: "Pendiente revisar logs JSON en Railway." }
     ]
+  },
+  {
+    id: "soporte",
+    title: "F) Soporte, Captación e Integración (Meta)",
+    items: [
+      { id: "f1", label: "El código de la sección de Atención a Clientes / Centro de Soporte está preparado y listo para su uso.", status: "PASS", observation: "Centro de Soporte preparado en código, dependiente de Meta para producción." },
+      { id: "f2", label: "Las pruebas de recepción real de WhatsApp / Meta Business quedan marcadas correctamente como 'Pendiente Externo' hasta la aprobación final de Meta.", status: "WARNING", observation: "Sujeto a aprobación y verificación externa avanzada de Meta." },
+      { id: "f3", label: "El pipeline de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PASS", observation: "Código de captación cerrado y validado." },
+      { id: "f4", label: "El sistema no promete ni asegura recepción de mensajes reales de producción hasta completar el onboarding de WhatsApp Business.", status: "PASS", observation: "El flujo de WhatsApp advierte que requiere configuración productiva." }
+    ]
+  },
+  {
+    id: "infraestructura",
+    title: "G) Infraestructura y Servicios Externos",
+    items: [
+      { id: "g1", label: "El Worker de Railway / BullMQ se encuentra activo o en proceso de reinicio para recuperar el heartbeat operativo.", status: "WARNING", observation: "Worker Railway/BullMQ inactivo, requiere reinicio/relevamiento." },
+      { id: "g2", label: "La integración con Mercado Pago está lista para configurar credenciales productivas y webhooks correspondientes.", status: "WARNING", observation: "Requiere credenciales y webhooks productivos de Mercado Pago." }
+    ]
   }
 ];
 
 const INITIAL_NOTES_PRELOAD = "La sección Modelo de Negocio fue validada correctamente en producción. Queda pendiente confirmar o crear la organización sandbox `raicespilot-qa-test` para validar el flujo comercial, conteo real de conversaciones IA, pausa automática por límite, CRM activo con IA pausada y logs estructurados.";
 
-const ORGANIZACION_VALIDADA_NOTES = "Modelo de Negocio y Organización QA validados correctamente en producción. La organización sandbox raicespilot-qa-test fue creada con plan FOUNDER, monto $65.000 + impuestos, 1/12 pagos, IA ACTIVE, 0/300 conversaciones y próximo reset el 2026-06-26. Quedan pendientes las pruebas C, D y E: control comercial, consumo real de IA, pausa automática por límite, CRM activo con IA pausada, alertas y logs.";
+const ORGANIZACION_VALIDADA_NOTES = "Modelo de Negocio y Organización QA validados correctamente en producción. La organización sandbox raicespilot-qa-test fue creada con plan FOUNDER, monto $65.000 + impuestos, 1/12 pagos, IA ACTIVA, 0/300 conversaciones y próximo reset el 2026-06-26. Quedan pendientes las pruebas C, D, E, F y G: control comercial, consumo real de IA, pausa automática por límite, CRM activo con IA pausada, soporte, captación, worker e integración con Mercado Pago.";
 
 export default function QAOperativoPage() {
   const [commitHash, setCommitHash] = useState("");
@@ -238,8 +295,33 @@ export default function QAOperativoPage() {
     org: true,
     comercial: true,
     consumo: true,
-    alertas: true
+    alertas: true,
+    soporte: true,
+    infraestructura: true
   });
+
+  // Modal Dialog States for Premium Alerts
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalDesc, setModalDesc] = useState("");
+  const [modalConfirmAction, setModalConfirmAction] = useState<(() => void) | null>(null);
+  const [modalIsConfirm, setModalIsConfirm] = useState(false);
+
+  const triggerAlert = (title: string, desc: string) => {
+    setModalTitle(title);
+    setModalDesc(desc);
+    setModalIsConfirm(false);
+    setModalConfirmAction(null);
+    setModalOpen(true);
+  };
+
+  const triggerConfirm = (title: string, desc: string, onConfirm: () => void) => {
+    setModalTitle(title);
+    setModalDesc(desc);
+    setModalIsConfirm(true);
+    setModalConfirmAction(() => onConfirm);
+    setModalOpen(true);
+  };
 
   // Diagnostic states
   const [loadingDiag, setLoadingDiag] = useState(true);
@@ -311,7 +393,7 @@ export default function QAOperativoPage() {
         if (res.data) {
           setSimLog((prev) => [
             ...prev,
-            `[DATOS] Consumo: ${res.data.newUsed}/${res.data.newLimit} | Estado IA: ${res.data.newAiStatus}`
+            `[DATOS] Consumo: ${res.data.newUsed}/${res.data.newLimit} | Estado IA: ${res.data.newAiStatus === "ACTIVE" ? "ACTIVA" : res.data.newAiStatus}`
           ]);
         }
         await runDiagnostic();
@@ -326,31 +408,33 @@ export default function QAOperativoPage() {
   };
 
   const handleInitializeSandbox = async () => {
-    if (!confirm("¿Confirmas la inicialización controlada del Sandbox en producción? Esto creará únicamente los recursos que hagan falta sin alterar ningún dato comercial real.")) {
-      return;
-    }
-
-    setInitializing(true);
-    setInitResult(null);
-    try {
-      const res = await initializeProductionSandboxAction();
-      setInitResult(res);
-      if (res.success) {
-        // Automatically refresh diagnostic to update UI status
-        await runDiagnostic();
-        alert("¡Inicialización de Sandbox completada con éxito!");
-      } else {
-        alert("Error de inicialización: " + res.message);
+    triggerConfirm(
+      "Inicialización de Sandbox",
+      "¿Confirmas la inicialización controlada del Sandbox en producción? Esto creará únicamente los recursos que hagan falta sin alterar ningún dato comercial real y de manera 100% aislada.",
+      async () => {
+        setInitializing(true);
+        setInitResult(null);
+        try {
+          const res = await initializeProductionSandboxAction();
+          setInitResult(res);
+          if (res.success) {
+            await runDiagnostic();
+            triggerAlert("Éxito", "¡Inicialización de Sandbox completada con éxito!");
+          } else {
+            triggerAlert("Error", "Error de inicialización: " + res.message);
+          }
+        } catch (error: any) {
+          console.error("Error initializing sandbox:", error);
+          setInitResult({
+            success: false,
+            message: error.message || String(error)
+          });
+          triggerAlert("Error", "Error: " + (error.message || String(error)));
+        } finally {
+          setInitializing(false);
+        }
       }
-    } catch (error: any) {
-      console.error("Error initializing sandbox:", error);
-      setInitResult({
-        success: false,
-        message: error.message || String(error)
-      });
-    } finally {
-      setInitializing(false);
-    }
+    );
   };
 
   // Save changes helper
@@ -419,16 +503,20 @@ export default function QAOperativoPage() {
   };
 
   const handleClearChecklist = () => {
-    if (confirm("¿Estás seguro de que deseas limpiar el estado guardado en el navegador de este checklist?")) {
-      localStorage.removeItem("qa_commit");
-      localStorage.removeItem("qa_notes");
-      localStorage.removeItem("qa_decision");
-      localStorage.removeItem("qa_sections");
-      setCommitHash("");
-      setGeneralNotes("");
-      setFinalDecision("Pendiente");
-      setSections(INITIAL_SECTIONS);
-    }
+    triggerConfirm(
+      "Limpiar Checklist",
+      "¿Estás seguro de que deseas limpiar el estado guardado en el navegador de este checklist? Esto restablecerá todos los estados de verificación.",
+      () => {
+        localStorage.removeItem("qa_commit");
+        localStorage.removeItem("qa_notes");
+        localStorage.removeItem("qa_decision");
+        localStorage.removeItem("qa_sections");
+        setCommitHash("");
+        setGeneralNotes("");
+        setFinalDecision("Pendiente");
+        setSections(INITIAL_SECTIONS);
+      }
+    );
   };
 
   const handlePrecargarValidacion = () => {
@@ -454,12 +542,14 @@ export default function QAOperativoPage() {
   const handleExportMarkdown = () => {
     const dateStr = new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
     
-    let markdown = `# REPORTE DE QA OPERATIVO - RaicesPilot\n\n`;
+    let markdown = `# REPORTE DE QA OPERATIVO - Raíces Pilot\n\n`;
     markdown += `**Fecha de Emisión:** ${dateStr} (Hora Argentina)\n`;
     markdown += `**Commit Validado:** \`${commitHash.trim() || "no especificado"}\`\n`;
     markdown += `**Ambiente de Ejecución:** Producción (Railway)\n`;
-    markdown += `**Organización Sandbox Autorizada:** RaicesPilot QA Test (\`raicespilot-qa-test\`)\n`;
+    markdown += `**Organización Sandbox Autorizada:** Raíces Pilot QA Test (\`raicespilot-qa-test\`)\n`;
     markdown += `**Resultado / Decisión Final:** **${finalDecision.toUpperCase()}**\n\n`;
+    markdown += `> [!IMPORTANT]\n`;
+    markdown += `> **BARRERA DE SEGURIDAD EXCLUSIVA:** Este reporte certifica pruebas manuales realizadas exclusivamente sobre la organización sandbox \`raicespilot-qa-test\`. No se operó sobre clientes reales.\n\n`;
     
     markdown += `## Notas Generales y Observaciones\n`;
     markdown += `${generalNotes || "*Sin notas generales adicionales.*"}\n\n`;
@@ -470,9 +560,9 @@ export default function QAOperativoPage() {
       markdown += `### ${sec.title}\n`;
       sec.items.forEach((item) => {
         let statusBadge = "⚪ PENDIENTE";
-        if (item.status === "PASS") statusBadge = "🟢 PASS";
-        if (item.status === "FAIL") statusBadge = "🔴 FAIL";
-        if (item.status === "WARNING") statusBadge = "🟡 WARNING";
+        if (item.status === "PASS") statusBadge = "🟢 APROBADO";
+        if (item.status === "FAIL") statusBadge = "🔴 FALLÓ";
+        if (item.status === "WARNING") statusBadge = "🟡 ADVERTENCIA";
         
         markdown += `- **[${statusBadge}]** ${item.label}\n`;
         if (item.observation.trim()) {
@@ -482,7 +572,7 @@ export default function QAOperativoPage() {
       markdown += `\n`;
     });
     
-    markdown += `---\n*Reporte generado de forma segura mediante la Consola de Asistencia Manual de QA.*`;
+    markdown += `---\n*Reporte generado de forma segura mediante la Consola de Asistencia Manual de QA de Raíces Pilot.*`;
 
     const blob = new Blob([markdown], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -507,7 +597,7 @@ export default function QAOperativoPage() {
             BARRERA DE SEGURIDAD EXCLUSIVA
           </h2>
           <p className="text-xs sm:text-sm font-semibold leading-relaxed">
-            Esta consola es de asistencia manual. Toda prueba debe realizarse exclusivamente sobre la organización sandbox RaicesPilot QA Test (<strong className="underline">raicespilot-qa-test</strong>). No usar clientes reales.
+            Esta consola es de asistencia manual. Toda prueba debe realizarse exclusivamente sobre la organización sandbox Raíces Pilot QA Test (<strong className="underline">raicespilot-qa-test</strong>). No usar clientes reales.
           </p>
           <div className="pt-1 flex items-center gap-1.5 text-[10px] text-red-100 font-bold">
             <Info className="w-3.5 h-3.5" />
@@ -553,7 +643,7 @@ export default function QAOperativoPage() {
           <Button
             onClick={handleClearChecklist}
             variant="outline"
-            className="border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-bold"
+            className="border-slate-200 text-slate-650 hover:bg-slate-100 hover:text-slate-900 font-bold"
           >
             <Trash2 className="mr-2 h-4 w-4 text-slate-505" />
             Limpiar local
@@ -579,7 +669,7 @@ export default function QAOperativoPage() {
               <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">Autorizada</Badge>
             </div>
             <div>
-              <h3 className="text-lg font-black tracking-tight text-white leading-tight">RaicesPilot QA Test</h3>
+              <h3 className="text-lg font-black tracking-tight text-white leading-tight">Raíces Pilot QA Test</h3>
               <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
                 Slug: <code className="bg-slate-800 text-slate-200 px-1.5 py-0.5 rounded font-mono text-[11px] font-bold">raicespilot-qa-test</code>
               </p>
@@ -606,7 +696,7 @@ export default function QAOperativoPage() {
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <Activity className="w-4 h-4 text-brand-600 animate-pulse" />
-                Diagnóstico Server-Side
+                Diagnóstico del Servidor
               </h3>
               <Button 
                 onClick={runDiagnostic} 
@@ -819,13 +909,17 @@ export default function QAOperativoPage() {
               <Button
                 disabled={executingSim}
                 onClick={async () => {
-                  if (confirm("¿Restaurar sandbox de IA a 0/300 ACTIVE? Se eliminarán los leads simulados QA.")) {
-                    await runSimAction("Restaurar sandbox", resetSandboxAiAction);
-                  }
+                  triggerConfirm(
+                    "Restaurar Sandbox",
+                    "¿Restaurar sandbox de IA a 0/300 ACTIVA? Se eliminarán los leads simulados QA.",
+                    async () => {
+                      await runSimAction("Restaurar sandbox", resetSandboxAiAction);
+                    }
+                  );
                 }}
                 className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs"
               >
-                Restaurar sandbox IA a 0/300 ACTIVE
+                Restaurar sandbox IA a 0/300 ACTIVA
               </Button>
 
               <Button
@@ -861,9 +955,13 @@ export default function QAOperativoPage() {
               <Button
                 disabled={executingSim}
                 onClick={async () => {
-                  if (confirm("¿Forzar límite de consumo a 2 conversaciones para test rápido de auto-pausa?")) {
-                    await runSimAction("Forzar límite a 2", () => forceSandboxLimitAction(2));
-                  }
+                  triggerConfirm(
+                    "Forzar Límite",
+                    "¿Forzar límite de consumo a 2 conversaciones para test rápido de auto-pausa?",
+                    async () => {
+                      await runSimAction("Forzar límite a 2", () => forceSandboxLimitAction(2));
+                    }
+                  );
                 }}
                 className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs"
               >
@@ -936,7 +1034,7 @@ export default function QAOperativoPage() {
                             }
                             className="text-[9px] uppercase tracking-wider font-extrabold px-2 py-0"
                           >
-                            {item.status}
+                            {item.status === "PASS" ? "APROBADO" : item.status === "FAIL" ? "FALLÓ" : "ADVERTENCIA"}
                           </Badge>
                         )}
                       </div>
@@ -973,7 +1071,13 @@ export default function QAOperativoPage() {
                             className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1 ${btnClass}`}
                           >
                             {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
-                            {statusOption === "PENDIENTE" ? "Pendiente" : statusOption}
+                            {statusOption === "PENDIENTE"
+                              ? "Pendiente"
+                              : statusOption === "PASS"
+                              ? "APROBADO"
+                              : statusOption === "FAIL"
+                              ? "FALLÓ"
+                              : "ADVERTENCIA"}
                           </button>
                         );
                       })}
@@ -985,6 +1089,52 @@ export default function QAOperativoPage() {
           </Card>
         ))}
       </div>
+
+      {/* Modal / Dialog Personalizado Premium */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-fade-in">
+          <Card className="w-full max-w-md bg-white border border-slate-200 shadow-2xl p-6 space-y-6 rounded-2xl animate-zoom-in">
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+                {modalTitle}
+              </h3>
+              <p className="text-sm text-slate-655 leading-relaxed">
+                {modalDesc}
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              {modalIsConfirm ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setModalOpen(false)}
+                    className="border-slate-200 text-slate-700 hover:bg-slate-50 font-bold"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (modalConfirmAction) modalConfirmAction();
+                      setModalOpen(false);
+                    }}
+                    className="bg-brand-600 hover:bg-brand-700 text-white font-bold"
+                  >
+                    Confirmar
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setModalOpen(false)}
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-bold"
+                >
+                  Entendido
+                </Button>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

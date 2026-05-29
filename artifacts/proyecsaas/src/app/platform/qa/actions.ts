@@ -48,7 +48,7 @@ export async function initializeProductionSandboxAction(): Promise<InitializeSan
 
       const createdOrg = await prisma.organization.create({
         data: {
-          name: "RaicesPilot QA Test",
+          name: "Raíces Pilot QA Test",
           slug: targetSlug,
           city: "Buenos Aires",
           isActive: true,
@@ -67,7 +67,7 @@ export async function initializeProductionSandboxAction(): Promise<InitializeSan
               aiMonthlyConversationLimit: 300,
               aiMonthlyConversationsUsed: 0,
               lifetimeGrantedAt: null,
-              internalBillingNotes: "internal-sandbox: RaicesPilot QA Test. No contabilizar en métricas comerciales reales."
+              internalBillingNotes: "internal-sandbox: Raíces Pilot QA Test. No contabilizar en métricas comerciales reales."
             }
           },
           memberships: {
@@ -114,7 +114,7 @@ export async function initializeProductionSandboxAction(): Promise<InitializeSan
             aiMonthlyConversationLimit: 300,
             aiMonthlyConversationsUsed: 0,
             lifetimeGrantedAt: null,
-            internalBillingNotes: "internal-sandbox: RaicesPilot QA Test. No contabilizar en métricas comerciales reales."
+            internalBillingNotes: "internal-sandbox: Raíces Pilot QA Test. No contabilizar en métricas comerciales reales."
           }
         });
 
@@ -156,7 +156,7 @@ export async function initializeProductionSandboxAction(): Promise<InitializeSan
         actorEmail: sessionUser.email,
         entityType: "ORGANIZATION",
         entityId: orgId,
-        entityName: "RaicesPilot QA Test",
+        entityName: "Raíces Pilot QA Test",
         metadata: auditData
       }
     });
@@ -393,7 +393,7 @@ export async function simulateFirstLeadAction(): Promise<SimulatorActionResult> 
         conversationId,
         direction: "OUTBOUND",
         deliveryStatus: "SENT",
-        body: "Hola! Soy el Agente IA de RaicesPilot. Con gusto te asesoro.",
+        body: "Hola! Soy el Agente IA de Raíces Pilot. Con gusto te asesoro.",
         senderName: "AI Agent",
         sentAt: new Date()
       },
