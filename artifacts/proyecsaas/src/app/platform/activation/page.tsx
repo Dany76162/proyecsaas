@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 
@@ -43,7 +43,7 @@ export default async function PlatformActivationPage() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Activacion</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Activación</h1>
         <p className="text-sm text-slate-500">
           Seguimiento real del paso de alta inicial a uso efectivo de la plataforma.
         </p>
@@ -94,9 +94,9 @@ export default async function PlatformActivationPage() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-1.5">
-          <h2 className="text-lg font-bold text-slate-900">Funnel de activacion</h2>
+          <h2 className="text-lg font-bold text-slate-900">Funnel de activación</h2>
           <p className="text-sm text-slate-500">
-            Vista simple para detectar rapido en que parte del recorrido se frenan las
+            Vista simple para detectar rápido en qué parte del recorrido se frenan las
             inmobiliarias.
           </p>
         </div>
@@ -127,10 +127,10 @@ export default async function PlatformActivationPage() {
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-4">
-          <h2 className="text-lg font-bold text-slate-900">Organizaciones y adopcion real</h2>
+          <h2 className="text-lg font-bold text-slate-900">Organizaciones y adopción real</h2>
           <p className="mt-1 text-sm text-slate-500">
             Ordenadas para identificar primero las cuentas trabadas y las que necesitan
-            acompanamiento.
+            acompañamiento.
           </p>
         </div>
 
@@ -138,14 +138,14 @@ export default async function PlatformActivationPage() {
           <table className="w-full min-w-[980px] text-sm">
             <thead>
               <tr className="border-b bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <th className="px-5 py-3.5">Organizacion</th>
+                <th className="px-5 py-3.5">Organización</th>
                 <th className="px-5 py-3.5">Estado</th>
                 <th className="px-5 py-3.5">Onboarding</th>
                 <th className="px-5 py-3.5">Primer lead</th>
-                <th className="px-5 py-3.5">Intervencion</th>
-                <th className="px-5 py-3.5">Ultima actividad</th>
-                <th className="px-5 py-3.5">Tiempo a activacion</th>
-                <th className="px-5 py-3.5">Siguiente accion</th>
+                <th className="px-5 py-3.5">Intervención</th>
+                <th className="px-5 py-3.5">Última actividad</th>
+                <th className="px-5 py-3.5">Tiempo a activación</th>
+                <th className="px-5 py-3.5">Siguiente acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -200,7 +200,7 @@ export default async function PlatformActivationPage() {
                       Sin organizaciones para analizar
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      Cuando haya cuentas activas, esta vista va a mostrar su estado de activacion.
+                      Cuando haya cuentas activas, esta vista va a mostrar su estado de activación.
                     </p>
                   </td>
                 </tr>
