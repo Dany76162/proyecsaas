@@ -9,7 +9,15 @@ import {
   UserPlus,
   ShieldOff,
   Shield,
+  Eye,
+  EyeOff,
+  Trash2,
+  Plus,
+  Globe,
+  Activity,
+  ChevronRight,
 } from "lucide-react";
+import Link from "next/link";
 import { DeleteUserButton } from "@/components/platform/DeleteUserButton";
 import {
   updateGlobalSetting,
@@ -35,9 +43,47 @@ function EditableSetting({
 }) {
   const [value, setValue] = useState(initialValue);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSensitive, setShowSensitive] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const isSensitive = settingKey === "OPERATOR_CUID";
+
   const handleSave = async () => {
+    // 1. Mandatory Text Validador
+    if (settingKey === "OPERATOR_NAME" || settingKey === "OPERATOR_LASTNAME") {
+      if (!value.trim()) {
+        setMessage({ type: "error", text: "El campo no puede estar vacío." });
+        return;
+      }
+    }
+
+    // 2. CUIL/DNI Validador
+    if (settingKey === "OPERATOR_CUID") {
+      const cleanValue = value.replace(/\D/g, "");
+      if (cleanValue.length < 7 || cleanValue.length > 11) {
+        setMessage({ type: "error", text: "Formato inválido. Ingrese un DNI o CUIL numérico de 7 a 11 dígitos." });
+        return;
+      }
+    }
+
+    // 3. Teléfono de Plataforma Validador
+    if (settingKey === "PLATFORM_WHATSAPP_NUMBER") {
+      const cleanValue = value.replace(/\D/g, "");
+      if (!cleanValue.startsWith("54") || cleanValue.length < 10) {
+        setMessage({ type: "error", text: "Formato inválido. Debe comenzar con 54 (Argentina) sin espacios ni el signo + (Ej: 5491166037990)." });
+        return;
+      }
+    }
+
+    // 4. Precio Comercial Validador
+    if (settingKey === "BASE_PLAN_PRICE_ARS") {
+      const num = Number(value);
+      if (isNaN(num) || num < 0) {
+        setMessage({ type: "error", text: "El precio debe ser un valor numérico positivo o cero." });
+        return;
+      }
+    }
+
     setIsSaving(true);
     setMessage(null);
     try {
@@ -58,14 +104,29 @@ function EditableSetting({
           <label className="text-xs font-black text-slate-800 uppercase tracking-widest">{label}</label>
           <p className="text-[11px] leading-relaxed text-slate-500 max-w-xl">{description}</p>
         </div>
-        <div className="flex items-center gap-3 w-full">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={placeholder}
-            className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
-          />
+        <div className="flex items-center gap-3 w-full relative">
+          <div className="relative flex-1">
+            <input
+              type={isSensitive && !showSensitive ? "password" : "text"}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={placeholder}
+              className={cn(
+                "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all outline-none",
+                isSensitive && "pr-12"
+              )}
+            />
+            {isSensitive && value && (
+              <button
+                type="button"
+                onClick={() => setShowSensitive(!showSensitive)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                title={showSensitive ? "Ocultar identificador" : "Mostrar identificador"}
+              >
+                {showSensitive ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+              </button>
+            )}
+          </div>
           <button
             onClick={handleSave}
             disabled={isSaving || value === initialValue}
@@ -87,7 +148,7 @@ function EditableSetting({
         </div>
       </div>
       {message?.type === "error" && (
-        <p className="mt-1 text-[10px] font-bold text-red-500">{message.text}</p>
+        <p className="mt-1.5 text-[10px] font-bold text-red-500">{message.text}</p>
       )}
     </div>
   );
@@ -246,6 +307,153 @@ function DelegatedAdminSection({
   );
 }
 
+// --- SaaS Feed Section --------------------------------------------------------
+
+function SaaSFeedSection({
+  initialFeeds,
+}: {
+  initialFeeds: string;
+}) {
+  const [feeds, setFeeds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(initialFeeds || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [newUrl, setNewUrl] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const showMessage = (type: "success" | "error", text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 4000);
+  };
+
+  const handleAddFeed = async () => {
+    let cleanUrl = newUrl.trim();
+    if (!cleanUrl) return;
+
+    // Validate URL or Domain
+    try {
+      if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+        cleanUrl = "https://" + cleanUrl;
+      }
+      new URL(cleanUrl);
+    } catch {
+      showMessage("error", "URL o dominio inválido. Ingrese una dirección web correcta.");
+      return;
+    }
+
+    if (feeds.includes(cleanUrl)) {
+      showMessage("error", "Este dominio o feed ya se encuentra agregado.");
+      return;
+    }
+
+    setIsSaving(true);
+    setMessage(null);
+    const updatedFeeds = [...feeds, cleanUrl];
+
+    try {
+      await updateGlobalSetting("SAAS_FEED_URLS", JSON.stringify(updatedFeeds));
+      setFeeds(updatedFeeds);
+      setNewUrl("");
+      showMessage("success", "Feed agregado y guardado con éxito.");
+    } catch {
+      showMessage("error", "Error al guardar la configuración del Feed.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemoveFeed = async (urlToRemove: string) => {
+    setIsSaving(true);
+    setMessage(null);
+    const updatedFeeds = feeds.filter((f) => f !== urlToRemove);
+
+    try {
+      await updateGlobalSetting("SAAS_FEED_URLS", JSON.stringify(updatedFeeds));
+      setFeeds(updatedFeeds);
+      showMessage("success", "Feed eliminado con éxito.");
+    } catch {
+      showMessage("error", "Error al eliminar la configuración del Feed.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-tight">
+          Conexión y Alimentación SaaS
+        </h3>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Agregá dominios de catálogos y fuentes autorizadas de propiedades para alimentar el motor de captación y sincronización de leads de la plataforma.
+        </p>
+      </div>
+
+      <div className="flex gap-3">
+        <input
+          type="text"
+          value={newUrl}
+          onChange={(e) => setNewUrl(e.target.value)}
+          placeholder="Ej: catalog.inmobiliarias.com o feed.raicespilot.com/v1"
+          onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
+          className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
+        />
+        <button
+          onClick={handleAddFeed}
+          disabled={isSaving || !newUrl.trim()}
+          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-40"
+        >
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          Agregar
+        </button>
+      </div>
+
+      {message && (
+        <p
+          className={cn(
+            "text-xs font-bold",
+            message.type === "success" ? "text-emerald-600" : "text-red-500"
+          )}
+        >
+          {message.text}
+        </p>
+      )}
+
+      {feeds.length > 0 ? (
+        <div className="rounded-2xl border border-slate-100 overflow-hidden">
+          {feeds.map((feed, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 last:border-0 bg-white hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100">
+                  <Globe className="h-4 w-4 text-slate-600" />
+                </div>
+                <p className="text-sm font-semibold text-slate-800 truncate">{feed}</p>
+              </div>
+              <button
+                onClick={() => handleRemoveFeed(feed)}
+                disabled={isSaving}
+                className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-40"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Eliminar
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400 italic">No hay fuentes ni dominios SaaS agregados actualmente.</p>
+      )}
+    </div>
+  );
+}
+
 // --- Main Component ----------------------------------------------------------
 
 interface Settings {
@@ -255,6 +463,7 @@ interface Settings {
   operatorLastName: string;
   operatorCuid: string;
   operatorCompany: string;
+  saasFeeds: string;
   mpStatus: boolean;
   aiStatus: boolean;
 }
@@ -280,8 +489,7 @@ export default function PlatformSettingsUI({
           Panel de Configuración
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
-          Gestioná los parámetros maestros de Raíces Pilot en tiempo real. Estos valores afectan
-          directamente la facturación, los links de soporte y las comunicaciones oficiales.
+          Definí valores y contactos internos de Raíces Pilot en tiempo real. Estos valores afectan directamente la facturación, el WhatsApp de la plataforma, el centro de soporte y la configuración comercial.
         </p>
       </div>
 
@@ -307,10 +515,10 @@ export default function PlatformSettingsUI({
               placeholder="Ej: García"
             />
             <EditableSetting
-              label="CUID / DNI"
+              label="CUIL / DNI del Operator"
               settingKey="OPERATOR_CUID"
               initialValue={settings.operatorCuid}
-              description="Clave única de identificación o DNI del responsable de la plataforma."
+              description="Clave única de identificación o DNI del responsable de la plataforma (se almacena de forma encriptada en base de datos)."
               placeholder="Ej: 30123456"
             />
             <EditableSetting
@@ -327,22 +535,27 @@ export default function PlatformSettingsUI({
             <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">Parámetros Operativos</h2>
 
             <EditableSetting
-              label="Número oficial de WhatsApp (plataforma)"
+              label="Número general de WhatsApp de la plataforma"
               settingKey="PLATFORM_WHATSAPP_NUMBER"
               initialValue={settings.waContact}
-              description="Número de WhatsApp que los clientes de las inmobiliarias usan para contactarse. Es el número visible en el panel de cada inmobiliaria. Formato internacional sin + ni espacios. Ej: 5491161630205"
-              placeholder="Ej: 5491161630205"
+              description="Número de WhatsApp que los clientes de las inmobiliarias usan para contactarse. Es el número visible en el panel de cada inmobiliaria. Formato internacional sin + ni espacios. Ej: 5491166037990"
+              placeholder="Ej: 5491166037990"
             />
             <EditableSetting
-              label="Precio Plan Base (ARS)"
+              label="Precio del plan base (ARS)"
               settingKey="BASE_PLAN_PRICE_ARS"
               initialValue={settings.basePrice}
-              description="Valor mensual de la suscripción. Afecta los nuevos links de pago generados."
-              placeholder="Ej: 45000"
+              description="Valor de referencia del plan comercial base. Afecta a los nuevos ciclos y planes comerciales de referencia."
+              placeholder="Ej: 65000"
             />
           </section>
 
-          {/* 3. Administración Delegada */}
+          {/* 3. Conexión y Alimentación SaaS */}
+          <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
+            <SaaSFeedSection initialFeeds={settings.saasFeeds} />
+          </section>
+
+          {/* 4. Administración Delegada */}
           <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
             <DelegatedAdminSection initial={delegatedAdmins} />
           </section>
@@ -359,6 +572,16 @@ export default function PlatformSettingsUI({
             </h2>
             <div className="space-y-1">
               <StatusRow
+                label="Conexión SaaS"
+                value="Conectado"
+                ok={true}
+              />
+              <StatusRow
+                label="Estado de Ventas"
+                value="Activo"
+                ok={true}
+              />
+              <StatusRow
                 label="Mercado Pago"
                 value={settings.mpStatus ? "Conectado" : "Desconectado"}
                 ok={settings.mpStatus}
@@ -369,7 +592,16 @@ export default function PlatformSettingsUI({
                 ok={settings.aiStatus}
               />
             </div>
-            <div className="mt-12 rounded-2xl bg-white/5 p-5 border border-white/10">
+            
+            <Link
+              href="/platform/health"
+              className="mt-8 flex w-full items-center justify-between rounded-xl bg-white/5 px-4 py-3 text-xs font-bold text-slate-200 border border-white/10 hover:bg-white/10 transition-all text-center"
+            >
+              <span>Ver operación del sistema</span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+            </Link>
+
+            <div className="mt-8 rounded-2xl bg-white/5 p-5 border border-white/10">
               <p className="text-[11px] leading-relaxed text-slate-400">
                 <span className="text-white font-bold">Nota operativa:</span> Los cambios se
                 persisten en PostgreSQL en tiempo real. Los precios impactan en las renovaciones

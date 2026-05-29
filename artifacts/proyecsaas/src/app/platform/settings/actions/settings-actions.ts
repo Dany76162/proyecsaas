@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 
@@ -49,6 +49,7 @@ export async function getGlobalSettings() {
       operatorLastName: get("OPERATOR_LASTNAME"),
       operatorCuid: get("OPERATOR_CUID"),
       operatorCompany: get("OPERATOR_COMPANY"),
+      saasFeeds: get("SAAS_FEED_URLS", "[]"),
     };
   } catch {
     console.warn("GlobalSetting table not found, using environment fallbacks.");
@@ -59,6 +60,7 @@ export async function getGlobalSettings() {
       operatorLastName: "",
       operatorCuid: "",
       operatorCompany: "",
+      saasFeeds: "[]",
     };
   }
 }

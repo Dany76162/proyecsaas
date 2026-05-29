@@ -82,7 +82,7 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
       >
         <div className="min-w-0">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
-            RaicesPilot
+            Raíces Pilot
           </p>
           <h2 className="mt-1 text-base font-bold tracking-tight text-white leading-tight">
             Superadmin

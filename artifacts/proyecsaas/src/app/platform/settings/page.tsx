@@ -1,4 +1,4 @@
-﻿import { getGlobalSettings, getDelegatedAdmins } from "./actions/settings-actions";
+import { getGlobalSettings, getDelegatedAdmins } from "./actions/settings-actions";
 import PlatformSettingsUI from "./PlatformSettingsUI";
 
 export default async function PlatformSettingsPage() {
@@ -14,6 +14,7 @@ export default async function PlatformSettingsPage() {
     operatorLastName: globalSettings.operatorLastName,
     operatorCuid: globalSettings.operatorCuid,
     operatorCompany: globalSettings.operatorCompany,
+    saasFeeds: globalSettings.saasFeeds,
     mpStatus: !!process.env.MERCADO_PAGO_ACCESS_TOKEN,
     aiStatus: !!(process.env["AI_INTEGRATIONS_OPENAI_API_KEY"] ?? process.env.OPENAI_API_KEY),
   };
