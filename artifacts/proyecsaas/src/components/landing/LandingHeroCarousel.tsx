@@ -314,32 +314,38 @@ export function LandingHeroCarousel() {
               </Button>
             </div>
           </div>
-          <div className="w-full flex items-center justify-center py-10 lg:py-0">
-            <div className="relative w-full max-w-[550px] h-[550px] sm:h-[620px] flex items-center justify-center overflow-visible">
-              <motion.div initial={{ opacity: 0, x: -40, y: 20, scale: 0.95 }} animate={{ opacity: 1, x: -30, y: -10, scale: 1 }} transition={{ duration: 0.8, ease: "easeOut" }} className="absolute z-10 left-4 sm:left-8 w-[230px] sm:w-[265px] aspect-[9/18.5] rounded-[2.3rem] border-[6px] border-slate-800 bg-slate-950 p-2.5 shadow-[0_25px_60px_rgba(0,0,0,0.7)] ring-1 ring-white/10 overflow-hidden transform -rotate-2 hover:rotate-0 hover:scale-105 hover:z-30 transition duration-300">
+          <div className="w-full flex items-center justify-center py-6 lg:py-0 overflow-hidden">
+            <div className="relative w-full max-w-[320px] xs:max-w-[360px] sm:max-w-[480px] md:max-w-[550px] h-[480px] sm:h-[620px] flex items-center justify-center overflow-visible">
+              {/* Celular 1 (Izquierdo) */}
+              <motion.div 
+                initial={{ opacity: 0, x: -30, y: 20, scale: 0.95 }} 
+                animate={{ opacity: 1, x: "-32%", y: "-10%", scale: 1 }} 
+                transition={{ duration: 0.8, ease: "easeOut" }} 
+                className="absolute z-10 w-[170px] xs:w-[190px] sm:w-[265px] aspect-[9/18.5] rounded-[1.8rem] sm:rounded-[2.3rem] border-[4px] sm:border-[6px] border-slate-800 bg-slate-950 p-1.5 sm:p-2.5 shadow-[0_20px_45px_rgba(0,0,0,0.6)] ring-1 ring-white/10 overflow-hidden transform -rotate-2 hover:rotate-0 hover:scale-105 hover:z-30 transition duration-300"
+              >
                 <div className="absolute inset-0 bg-[#e5ddd5] bg-[url('https://i.pinimg.com/originals/97/c0/07/97c0075430c7c310b6193d9d37aa6510.jpg')] bg-repeat bg-[length:120px] opacity-90" />
-                <div className="absolute top-0 inset-x-0 h-11 bg-[#075e54] text-white flex items-center px-3 gap-2 z-30 shadow-md">
-                  <div className="h-5 w-5 rounded-full bg-white/10 flex items-center justify-center border border-white/20 p-0.5 shrink-0 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-9 sm:h-11 bg-[#075e54] text-white flex items-center px-2 sm:px-3 gap-1.5 sm:gap-2 z-30 shadow-md">
+                  <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-white/10 flex items-center justify-center border border-white/20 p-0.5 shrink-0 overflow-hidden">
                     <img src="/brand/logo_transparent_icon.png" alt="Logo avatar" className="h-full w-full object-contain brightness-0 invert" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-[9.5px] font-extrabold leading-tight truncate">Asistente IA • RaícesPilot</h4>
-                    <p className="text-[7px] opacity-75 flex items-center gap-0.5 mt-0.5"><span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" /> En línea</p>
+                    <h4 className="text-[7.5px] sm:text-[9.5px] font-extrabold leading-tight truncate">Asistente IA • Raíces Pilot</h4>
+                    <p className="text-[5.5px] sm:text-[7px] opacity-75 flex items-center gap-0.5 mt-0.5"><span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" /> En línea</p>
                   </div>
                 </div>
-                <div className="absolute inset-x-0 bottom-11 top-11 overflow-y-auto px-2 py-3 flex flex-col gap-2 scrollbar-none z-20">
+                <div className="absolute inset-x-0 bottom-9 sm:bottom-11 top-9 sm:top-11 overflow-y-auto px-1.5 sm:px-2 py-2 sm:py-3 flex flex-col gap-1.5 sm:gap-2 scrollbar-none z-20">
                   <AnimatePresence>
                     {visibleMessages1.map((message) => (
-                      <motion.div key={message.id} initial={{ opacity: 0, x: message.sender === "ai" ? 15 : -15, y: 6 }} animate={{ opacity: 1, x: 0, y: 0 }} exit={{ opacity: 0 }} className={`max-w-[85%] rounded-lg p-2 shadow-sm relative text-[8.5px] sm:text-[9.5px] leading-relaxed ${message.sender === "ai" ? "self-start bg-white text-slate-800 rounded-tl-none" : "self-end bg-[#dcf8c6] text-slate-900 rounded-tr-none"}`}>
+                      <motion.div key={message.id} initial={{ opacity: 0, x: message.sender === "ai" ? 15 : -15, y: 6 }} animate={{ opacity: 1, x: 0, y: 0 }} exit={{ opacity: 0 }} className={`max-w-[85%] rounded-lg p-1.5 sm:p-2 shadow-sm relative text-[7px] sm:text-[9.5px] leading-relaxed ${message.sender === "ai" ? "self-start bg-white text-slate-800 rounded-tl-none" : "self-end bg-[#dcf8c6] text-slate-900 rounded-tr-none"}`}>
                         <p>{message.text}</p>
                         {message.propertyCard && (
-                          <div className="mt-1.5 rounded-md border border-slate-200 bg-white overflow-hidden shadow-sm max-w-xs text-slate-800">
-                            <img src={message.propertyCard.image} alt={message.propertyCard.title} className="w-full h-16 object-cover" />
-                            <div className="p-1.5 space-y-0.5">
-                              <h5 className="font-bold text-[8px] text-slate-900 leading-tight truncate">{message.propertyCard.title}</h5>
-                              <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-100 mt-1">
-                                <span className="text-[9px] font-black text-brand-600">{message.propertyCard.price}</span>
-                                <span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-wider">Palermo</span>
+                          <div className="mt-1 sm:mt-1.5 rounded-md border border-slate-200 bg-white overflow-hidden shadow-sm max-w-xs text-slate-800">
+                            <img src={message.propertyCard.image} alt={message.propertyCard.title} className="w-full h-12 sm:h-16 object-cover" />
+                            <div className="p-1 sm:p-1.5 space-y-0.5">
+                              <h5 className="font-bold text-[6.5px] sm:text-[8px] text-slate-900 leading-tight truncate">{message.propertyCard.title}</h5>
+                              <div className="flex items-center justify-between gap-1 pt-0.5 sm:pt-1 border-t border-slate-100 mt-0.5 sm:mt-1">
+                                <span className="text-[7.5px] sm:text-[9px] font-black text-brand-600">{message.propertyCard.price}</span>
+                                <span className="text-[5.5px] sm:text-[6.5px] font-bold text-slate-400 uppercase tracking-wider">Palermo</span>
                               </div>
                             </div>
                           </div>
@@ -348,40 +354,47 @@ export function LandingHeroCarousel() {
                     ))}
                   </AnimatePresence>
                 </div>
-                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-16 h-3 bg-slate-950 rounded-full z-40" />
+                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-10 sm:w-16 h-2 sm:h-3 bg-slate-950 rounded-full z-40" />
               </motion.div>
-              <motion.div initial={{ opacity: 0, x: 40, y: 40, scale: 0.95 }} animate={{ opacity: 1, x: 30, y: 10, scale: 1 }} transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }} className="absolute z-20 right-4 sm:right-8 bottom-[-10px] w-[230px] sm:w-[265px] aspect-[9/18.5] rounded-[2.3rem] border-[6px] border-slate-800 bg-slate-950 p-2.5 shadow-[0_30px_70px_rgba(0,0,0,0.8)] ring-1 ring-white/15 overflow-hidden transform rotate-2 hover:rotate-0 hover:scale-105 hover:z-30 transition duration-300">
+
+              {/* Celular 2 (Derecho) */}
+              <motion.div 
+                initial={{ opacity: 0, x: 30, y: 40, scale: 0.95 }} 
+                animate={{ opacity: 1, x: "32%", y: "10%", scale: 1 }} 
+                transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }} 
+                className="absolute z-20 w-[170px] xs:w-[190px] sm:w-[265px] aspect-[9/18.5] rounded-[1.8rem] sm:rounded-[2.3rem] border-[4px] sm:border-[6px] border-slate-800 bg-slate-950 p-1.5 sm:p-2.5 shadow-[0_25px_55px_rgba(0,0,0,0.7)] ring-1 ring-white/15 overflow-hidden transform rotate-2 hover:rotate-0 hover:scale-105 hover:z-30 transition duration-300"
+              >
                 <div className="absolute inset-0 bg-[#e5ddd5] bg-[url('https://i.pinimg.com/originals/97/c0/07/97c0075430c7c310b6193d9d37aa6510.jpg')] bg-repeat bg-[length:120px] opacity-90" />
-                <div className="absolute top-0 inset-x-0 h-11 bg-[#075e54] text-white flex items-center px-3 gap-2 z-30 shadow-md">
-                  <div className="h-5 w-5 rounded-full bg-white/10 flex items-center justify-center border border-white/20 p-0.5 shrink-0 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-9 sm:h-11 bg-[#075e54] text-white flex items-center px-2 sm:px-3 gap-1.5 sm:gap-2 z-30 shadow-md">
+                  <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-white/10 flex items-center justify-center border border-white/20 p-0.5 shrink-0 overflow-hidden">
                     <img src="/brand/logo_transparent_icon.png" alt="Logo avatar" className="h-full w-full object-contain brightness-0 invert" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-[9.5px] font-extrabold leading-tight truncate">Asistente IA • RaícesPilot</h4>
-                    <p className="text-[7px] opacity-75 flex items-center gap-0.5 mt-0.5"><span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" /> En línea</p>
+                    <h4 className="text-[7.5px] sm:text-[9.5px] font-extrabold leading-tight truncate">Asistente IA • Raíces Pilot</h4>
+                    <p className="text-[5.5px] sm:text-[7px] opacity-75 flex items-center gap-0.5 mt-0.5"><span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" /> En línea</p>
                   </div>
                 </div>
-                <div className="absolute inset-x-0 bottom-11 top-11 overflow-y-auto px-2 py-3 flex flex-col gap-2 scrollbar-none z-20">
+                <div className="absolute inset-x-0 bottom-9 sm:bottom-11 top-9 sm:top-11 overflow-y-auto px-1.5 sm:px-2 py-2 sm:py-3 flex flex-col gap-1.5 sm:gap-2 scrollbar-none z-20">
                   <AnimatePresence>
                     {visibleMessages2.map((message) => (
-                      <motion.div key={message.id} initial={{ opacity: 0, x: message.sender === "ai" ? 15 : -15, y: 6 }} animate={{ opacity: 1, x: 0, y: 0 }} exit={{ opacity: 0 }} className={`max-w-[85%] rounded-lg p-2 shadow-sm relative text-[8.5px] sm:text-[9.5px] leading-relaxed ${message.sender === "ai" ? "self-start bg-white text-slate-800 rounded-tl-none" : "self-end bg-[#dcf8c6] text-slate-900 rounded-tr-none"}`}>
+                      <motion.div key={message.id} initial={{ opacity: 0, x: message.sender === "ai" ? 15 : -15, y: 6 }} animate={{ opacity: 1, x: 0, y: 0 }} exit={{ opacity: 0 }} className={`max-w-[85%] rounded-lg p-1.5 sm:p-2 shadow-sm relative text-[7px] sm:text-[9.5px] leading-relaxed ${message.sender === "ai" ? "self-start bg-white text-slate-800 rounded-tl-none" : "self-end bg-[#dcf8c6] text-slate-900 rounded-tr-none"}`}>
                         <p className="whitespace-pre-line">{message.text}</p>
                         {message.portalCard && (
-                          <div className="mt-1.5 rounded-md border border-slate-200 bg-[#0f172a] text-white overflow-hidden shadow-sm max-w-xs">
-                            <div className="bg-[#1e293b] p-1.5 flex items-center justify-between border-b border-white/5">
+                          <div className="mt-1 sm:mt-1.5 rounded-md border border-slate-200 bg-[#0f172a] text-white overflow-hidden shadow-sm max-w-xs">
+                            <div className="bg-[#1e293b] p-1 sm:p-1.5 flex items-center justify-between border-b border-white/5">
                               <div className="flex items-center gap-1">
-                                <img src="/brand/logo_transparent_icon.png" alt="Raices" className="h-3 w-3 object-contain brightness-0 invert" /><span className="text-[7px] font-extrabold uppercase tracking-wider text-brand-400">RaícesPortal</span>
+                                <img src="/brand/logo_transparent_icon.png" alt="Raices" className="h-2.5 w-2.5 sm:h-3 sm:w-3 object-contain brightness-0 invert" /><span className="text-[5.5px] sm:text-[7px] font-extrabold uppercase tracking-wider text-brand-400">RaícesPortal</span>
                               </div>
                             </div>
-                            <div className="p-1.5 space-y-1">
+                            <div className="p-1 sm:p-1.5 space-y-0.5 sm:space-y-1">
                               {message.portalCard.properties.map((prop, idx) => (
-                                <div key={idx} className="flex gap-2 items-center bg-slate-900/60 p-1 rounded border border-white/5">
-                                  <img src={prop.image} alt={prop.title} className="w-7 h-7 rounded object-cover shrink-0" />
-                                  <div className="flex-1 min-w-0"><h6 className="font-bold text-[7px] leading-tight truncate text-white">{prop.title}</h6></div>
-                                  <span className="text-[8px] font-black text-brand-400 shrink-0">{prop.price}</span>
+                                <div key={idx} className="flex gap-1.5 sm:gap-2 items-center bg-slate-900/60 p-0.5 sm:p-1 rounded border border-white/5">
+                                  <img src={prop.image} alt={prop.title} className="w-5 h-5 sm:w-7 sm:h-7 rounded object-cover shrink-0" />
+                                  <div className="flex-1 min-w-0"><h6 className="font-bold text-[5.5px] sm:text-[7px] leading-tight truncate text-white">{prop.title}</h6></div>
+                                  <span className="text-[6.5px] sm:text-[8px] font-black text-brand-400 shrink-0">{prop.price}</span>
                                 </div>
                               ))}
-                              <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="block w-full py-1.5 rounded bg-brand-500 text-white font-extrabold text-[7px] uppercase tracking-widest text-center transition shadow shadow-brand-500/20">Ver Selección & Tours 360°</a>
+                              <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="block w-full py-1 sm:py-1.5 rounded bg-brand-500 text-white font-extrabold text-[5.5px] sm:text-[7px] uppercase tracking-widest text-center transition shadow shadow-brand-500/20">Ver Selección & Tours 360°</a>
                             </div>
                           </div>
                         )}
@@ -389,7 +402,7 @@ export function LandingHeroCarousel() {
                     ))}
                   </AnimatePresence>
                 </div>
-                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-16 h-3 bg-slate-950 rounded-full z-40" />
+                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-10 sm:w-16 h-2 sm:h-3 bg-slate-950 rounded-full z-40" />
               </motion.div>
             </div>
           </div>
