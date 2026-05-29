@@ -403,9 +403,9 @@ export default async function HomePage() {
                 Política de Privacidad
               </Link>
               <span className="text-slate-300 dark:text-slate-700">|</span>
-              <span className="text-slate-400 dark:text-slate-500 cursor-not-allowed select-none" title="Pendiente de aprobación legal">
-                Términos y Condiciones (Pendiente)
-              </span>
+              <Link href="/terms" className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
+                Términos y Condiciones
+              </Link>
             </div>
           </div>
         </div>
