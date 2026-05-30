@@ -79,8 +79,10 @@ function normalizeWhatsAppRecipientPhone(value: string) {
   // Workaround sandbox Meta / Argentina:
   // inbound suele venir como 54911...
   // pero el sandbox allowed list muchas veces espera 5411...
-  if (digitsOnly.startsWith("549") && digitsOnly.length === 13) {
-    return "54" + digitsOnly.slice(3);
+  if (process.env.WHATSAPP_SANDBOX === "true") {
+    if (digitsOnly.startsWith("549") && digitsOnly.length === 13) {
+      return "54" + digitsOnly.slice(3);
+    }
   }
 
   return digitsOnly;
@@ -266,6 +268,14 @@ export async function attemptWhatsAppOutboundDelivery(
   }, DELIVERY_TIMEOUT_MS);
 
   const finalTo = normalizeWhatsAppRecipientPhone(input.recipientPhone);
+  const maskedTo = finalTo.length > 5 ? `${finalTo.slice(0, 4)}...${finalTo.slice(-3)}` : finalTo;
+
+  console.log(
+    `[OUTBOUND_DELIVERY_TRY] Attempting WhatsApp Cloud API send. ` +
+    `Recipient (masked): ${maskedTo}, ` +
+    `PhoneNumberId: ${input.channel.phoneNumberId}, ` +
+    `outboundMessageId: ${input.outboundMessageId}`
+  );
 
   try {
     const response = await fetch(
@@ -303,7 +313,18 @@ export async function attemptWhatsAppOutboundDelivery(
       }
       | null;
 
+    console.log(
+      `[OUTBOUND_DELIVERY_RESPONSE] Received response from WhatsApp Cloud API. ` +
+      `Recipient (masked): ${maskedTo}, ` +
+      `HTTP Status: ${response.status}`
+    );
+
     if (!response.ok) {
+      console.error(
+        `[OUTBOUND_DELIVERY_ERROR] WhatsApp Cloud API returned error status. ` +
+        `HTTP Status: ${response.status}, ` +
+        `Meta Error: ${payload?.error ? JSON.stringify(payload.error) : "No error payload"}`
+      );
       return {
         deliveryStatus: "failed",
         sendAttempted: true,
