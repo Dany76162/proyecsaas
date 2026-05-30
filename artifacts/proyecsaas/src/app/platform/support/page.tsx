@@ -1,4 +1,4 @@
-﻿import { getSupportConversations, getSupportMessages, sendSupportResponse } from "./actions/support-actions";
+import { getSupportConversations, getSupportMessages, sendSupportResponse } from "./actions/support-actions";
 import SupportChatUI from "./SupportChatUI";
 
 export default async function SupportPage() {
@@ -21,6 +21,7 @@ export default async function SupportPage() {
         initialConversations={initialConversations}
         onSendAction={sendSupportResponse}
         onFetchMessagesAction={getSupportMessages}
+        onFetchConversationsAction={getSupportConversations}
       />
     </div>
   );

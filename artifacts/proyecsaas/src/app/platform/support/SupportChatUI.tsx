@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { Search, Send, User, Clock, Check, MoreVertical, ArrowLeft } from "lucide-react";
@@ -13,10 +13,12 @@ export default function SupportChatUI({
   initialConversations,
   onSendAction,
   onFetchMessagesAction,
+  onFetchConversationsAction,
 }: {
   initialConversations: Conversation[];
   onSendAction: (conversationId: string, text: string) => Promise<any>;
   onFetchMessagesAction: (conversationId: string) => Promise<Message[]>;
+  onFetchConversationsAction: () => Promise<Conversation[]>;
 }) {
   const [conversations, setConversations] = useState(initialConversations);
   const [activeId, setActiveId] = useState<string | null>(initialConversations[0]?.id || null);
@@ -37,6 +39,47 @@ export default function SupportChatUI({
       setTimeout(() => scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight), 100);
     });
   }, [activeId]);
+
+  // Background polling for conversations and active conversation messages
+  useEffect(() => {
+    let active = true;
+
+    const interval = setInterval(async () => {
+      if (!active) return;
+
+      // 1. Fetch conversations in background
+      try {
+        const nextConvs = await onFetchConversationsAction();
+        if (active) {
+          setConversations(nextConvs);
+        }
+      } catch (e) {
+        console.error("Failed to poll conversations:", e);
+      }
+
+      // 2. Fetch messages for active conversation in background
+      if (activeId) {
+        try {
+          const nextMsgs = await onFetchMessagesAction(activeId);
+          if (active) {
+            // Determine if a new message arrived to scroll to bottom
+            const hadNewMessage = nextMsgs.length > messages.length;
+            setMessages(nextMsgs);
+            if (hadNewMessage) {
+              setTimeout(() => scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight), 100);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to poll messages:", e);
+        }
+      }
+    }, 3500);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [activeId, messages.length, onFetchConversationsAction, onFetchMessagesAction]);
 
   const activeConv = conversations.find(c => c.id === activeId);
 
