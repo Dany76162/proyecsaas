@@ -1,4 +1,4 @@
-﻿import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -47,9 +47,9 @@ function validateMPSignature(request: NextRequest): boolean {
     return false;
   }
 
-  const notificationId = request.nextUrl.searchParams.get("id") ?? "";
+  const dataId = (request.nextUrl.searchParams.get("data.id") ?? request.nextUrl.searchParams.get("id") ?? "").toLowerCase();
   const requestId = request.headers.get("x-request-id") ?? "";
-  const message = `id:${notificationId};request-id:${requestId};ts:${ts}`;
+  const message = `id:${dataId};request-id:${requestId};ts:${ts};`;
 
   const expectedBuf = Buffer.from(
     createHmac("sha256", secret).update(message).digest("hex"),
