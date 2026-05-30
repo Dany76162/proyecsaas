@@ -222,6 +222,13 @@ export async function attemptWhatsAppOutboundDelivery(
         providerMessageId: data?.key?.id,
       };
 
+      if (input.channel.instanceName) {
+        prisma.whatsAppChannel.update({
+          where: { instanceName: input.channel.instanceName },
+          data: { lastDeliveryAt: new Date() },
+        }).catch((err) => console.error("Failed to update lastDeliveryAt:", err));
+      }
+
       if (input.senderKind === "human") {
         await resolveConversationFollowUp(prisma, {
           organizationId: input.organizationId,
@@ -357,6 +364,13 @@ export async function attemptWhatsAppOutboundDelivery(
       },
       providerMessageId: payload?.messages?.[0]?.id,
     };
+
+    if (input.channel.phoneNumberId) {
+      prisma.whatsAppChannel.update({
+        where: { phoneNumberId: input.channel.phoneNumberId },
+        data: { lastDeliveryAt: new Date() },
+      }).catch((err) => console.error("Failed to update lastDeliveryAt:", err));
+    }
 
     if (input.senderKind === "human") {
       try {

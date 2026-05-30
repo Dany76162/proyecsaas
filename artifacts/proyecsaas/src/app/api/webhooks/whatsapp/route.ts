@@ -126,6 +126,17 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      if (channel.channelId) {
+        try {
+          await prisma.whatsAppChannel.update({
+            where: { id: channel.channelId },
+            data: { lastInboundAt: new Date() },
+          });
+        } catch (e) {
+          console.error("Failed to update lastInboundAt:", e);
+        }
+      }
+
       const contact = value.contacts?.[0];
 
       for (const message of value.messages) {
