@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import { prisma } from "@/server/db/prisma";
 import { getAutomationQueue } from "@/server/queues";
@@ -86,20 +86,32 @@ async function getQueueSnapshot(): Promise<OperationalObservabilitySnapshot["que
 }
 
 async function getWhatsAppSnapshot(): Promise<OperationalObservabilitySnapshot["whatsapp"]> {
-  const [activeChannels, lastInbound, lastDelivery, lastError] = await Promise.all([
-    prisma.whatsAppChannel.count({ where: { status: "ACTIVE" } }),
+  const activeCloudChannels = await prisma.whatsAppChannel.count({
+    where: { provider: "WHATSAPP_CLOUD", status: "ACTIVE" }
+  });
+
+  const activeChannels = await prisma.whatsAppChannel.count({
+    where: { status: "ACTIVE" }
+  });
+
+  // Prioritize WHATSAPP_CLOUD channels for health metrics if at least one is active
+  const queryFilter = activeCloudChannels > 0
+    ? { provider: "WHATSAPP_CLOUD" as const, status: "ACTIVE" as const }
+    : { status: "ACTIVE" as const };
+
+  const [lastInbound, lastDelivery, lastError] = await Promise.all([
     prisma.whatsAppChannel.findFirst({
-      where: { lastInboundAt: { not: null } },
+      where: { ...queryFilter, lastInboundAt: { not: null } },
       orderBy: { lastInboundAt: "desc" },
       select: { lastInboundAt: true },
     }),
     prisma.whatsAppChannel.findFirst({
-      where: { lastDeliveryAt: { not: null } },
+      where: { ...queryFilter, lastDeliveryAt: { not: null } },
       orderBy: { lastDeliveryAt: "desc" },
       select: { lastDeliveryAt: true },
     }),
     prisma.whatsAppChannel.findFirst({
-      where: { lastErrorAt: { not: null } },
+      where: { ...queryFilter, lastErrorAt: { not: null } },
       orderBy: { lastErrorAt: "desc" },
       select: { lastErrorAt: true, lastErrorCode: true },
     }),
