@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { 
   ArrowUpRight, 
   Users, 
@@ -25,6 +26,7 @@ import {
   getSetupChecklistStatus,
   listWorkspaceNotifications,
 } from "@/modules/organizations/service";
+import { clearWorkspaceNotificationsAction } from "@/modules/organizations/actions";
 import { getPropertySummary } from "@/modules/properties/service";
 import { listOrganizationUsers } from "@/modules/users/service";
 import { getVisitSummary } from "@/modules/visits/service";
@@ -88,6 +90,19 @@ export default async function OrganizationHomePage({
   const aiPct =
     convTotal > 0 ? Math.round((convAi / convTotal) * 100) : null;
   const humanPct = aiPct !== null ? 100 - aiPct : null;
+
+  // Calculo de porcentajes para el embudo de ventas
+  const totalLeads = leadSummary.total || 0;
+  const contactedPct = totalLeads > 0 ? Math.round((leadSummary.contactedCount / totalLeads) * 100) : 0;
+  const interestedPct = totalLeads > 0 ? Math.round((leadSummary.interestedCount / totalLeads) * 100) : 0;
+  const visitPct = totalLeads > 0 ? Math.round((visitSummary.confirmedCount / totalLeads) * 100) : 0;
+  const closedPct = totalLeads > 0 ? Math.round((leadSummary.closedCount / totalLeads) * 100) : 0;
+
+  async function handleClearNotifications() {
+    "use server";
+    await clearWorkspaceNotificationsAction(orgSlug);
+    revalidatePath(`/${orgSlug}`);
+  }
 
   return (
     <>
@@ -194,6 +209,58 @@ export default async function OrganizationHomePage({
                 <p className="mt-1 text-[10px] font-medium text-amber-600">Confirmadas</p>
               </div>
             </div>
+
+            {/* Embudo Visual CSS */}
+            {totalLeads > 0 ? (
+              <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/40 p-5 space-y-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Eficiencia Comercial por Etapas</h4>
+                <div className="space-y-3.5">
+                  {/* Contactados */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold text-slate-700">
+                      <span>Contactados ({leadSummary.contactedCount})</span>
+                      <span className="tabular-nums">{contactedPct}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-slate-400 rounded-full transition-all duration-500" style={{ width: `${contactedPct}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Calificados */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold text-slate-700">
+                      <span>Calificados/Interesados ({leadSummary.interestedCount})</span>
+                      <span className="tabular-nums text-brand-600">{interestedPct}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-brand-500 rounded-full transition-all duration-500" style={{ width: `${interestedPct}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Visitas */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold text-slate-700">
+                      <span>Visitas de Negociación ({visitSummary.confirmedCount})</span>
+                      <span className="tabular-nums text-amber-600">{visitPct}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${visitPct}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Cerrados */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold text-slate-700">
+                      <span>Cierres Exitosos ({leadSummary.closedCount})</span>
+                      <span className="tabular-nums text-emerald-600">{closedPct}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${closedPct}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {/* Prospectos Prioritarios */}
             <div className="mt-6 border-t border-slate-100 pt-5">
@@ -328,9 +395,13 @@ export default async function OrganizationHomePage({
             title="Alertas Críticas"
             description="Eventos que requieren revisión inmediata."
             actions={
-              <button className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600">
-                Limpiar todas
-              </button>
+              notifications.length > 0 ? (
+                <form action={handleClearNotifications}>
+                  <button type="submit" className="text-[10px] font-bold uppercase tracking-widest text-brand-600 hover:text-brand-700 transition">
+                    Limpiar todas
+                  </button>
+                </form>
+              ) : null
             }
           >
             <div className="space-y-3">

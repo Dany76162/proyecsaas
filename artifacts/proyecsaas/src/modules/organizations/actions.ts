@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { MembershipRole } from "@prisma/client";
 
@@ -68,3 +68,27 @@ export async function updatePropertySourceAction(
 
   return { success: true, message: "Fuente de propiedades guardada." };
 }
+
+/**
+ * Marks all notifications for the organization as read (readAt = now) safely.
+ * Auth: active session + org membership. Minimum role: AGENT.
+ */
+export async function clearWorkspaceNotificationsAction(
+  orgSlug: string,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  await prisma.notification.updateMany({
+    where: {
+      organizationId: membership.organization.id,
+      readAt: null,
+    },
+    data: {
+      readAt: new Date(),
+    },
+  });
+
+  return { success: true, message: "Notificaciones archivadas correctamente." };
+}
+

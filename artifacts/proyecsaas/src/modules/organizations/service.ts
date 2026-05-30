@@ -238,6 +238,7 @@ export async function listWorkspaceNotifications(
       organization: {
         slug: orgSlug,
       },
+      readAt: null,
     },
     orderBy: {
       createdAt: "desc",
