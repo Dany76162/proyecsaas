@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { getWhatsAppLink } from "@/lib/constants";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -246,7 +247,7 @@ export default async function InvitePage({
 
           <div className="mt-20 pt-10 border-t border-slate-200/60">
             <p className="text-center text-[13px] text-slate-400 font-medium">
-              ¿Tenés problemas? <a href="https://wa.me/5491161630205?text=Hola%2C%20tengo%20un%20problema%20con%20mi%20invitación%20a%20RaicesPilot." target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-brand-600 transition-colors underline decoration-slate-300 underline-offset-8 decoration-2">Contactá a soporte</a>
+              ¿Tenés problemas? <a href={getWhatsAppLink("Hola, tengo un problema con mi invitación a Raíces Pilot.")} target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-brand-600 transition-colors underline decoration-slate-300 underline-offset-8 decoration-2">Contactá a soporte</a>
             </p>
           </div>
         </div>

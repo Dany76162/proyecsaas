@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RotateCcw, Home, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getWhatsAppLink } from "@/lib/constants";
 
 export default function GlobalError({
   error,
@@ -62,7 +63,7 @@ export default function GlobalError({
         <div className="pt-10 border-t border-slate-100">
           <p className="text-sm text-slate-400 mb-4">¿Necesitas ayuda inmediata?</p>
           <Button variant="outline" asChild className="rounded-full border-slate-200 text-slate-600 gap-2">
-            <a href="https://wa.me/5491161630205" target="_blank" rel="noopener noreferrer">
+            <a href={getWhatsAppLink("Hola, necesito soporte técnico con mi plataforma Raíces Pilot.")} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-4 w-4 text-emerald-500" />
               Soporte vía WhatsApp
             </a>

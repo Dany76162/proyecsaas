@@ -8,7 +8,7 @@ process.env.DATABASE_URL = "postgresql://proyecsaas_user:1234@localhost:5432/pro
 const prisma = new PrismaClient();
 
 async function setup() {
-  const rawNumber = "+54 9 11 6163-0205";
+  const rawNumber = "+54 9 11 6603-7990";
   // Limpiamos el nÃºmero para wa.me (solo dÃ­gitos)
   const cleanNumber = rawNumber.replace(/\D/g, "");
   

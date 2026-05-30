@@ -25,6 +25,7 @@ import type { MembershipRole } from "@prisma/client";
 import type { OrganizationSummary } from "@/modules/organizations/types";
 import { logoutAction } from "@/server/auth/actions";
 import { cn } from "@/lib/utils";
+import { getWhatsAppLink } from "@/lib/constants";
 
 type WorkspaceSidebarProps = {
   organization: OrganizationSummary;
@@ -57,7 +58,7 @@ const MANAGEMENT_NAV = [
 ] as const;
 
 const HELP_NAV = [
-  { label: "Soporte Técnico", href: "https://wa.me/5491161630205", icon: MessageSquare },
+  { label: "Soporte Técnico", href: getWhatsAppLink("Hola, necesito soporte técnico con mi plataforma Raíces Pilot."), icon: MessageSquare },
   { label: "Manual de Uso",   path: "/manual-uso",             icon: BookOpen },
 ] as const;
 

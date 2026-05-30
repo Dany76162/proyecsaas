@@ -12,6 +12,7 @@ import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { getWhatsAppLink } from "@/lib/constants";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -162,7 +163,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     Clave de Acceso
                   </label>
                   <a 
-                    href="https://wa.me/5491161630205?text=Hola%2C%20olvidé%20mi%20clave%20de%20acceso%20a%20RaicesPilot.%20¿Podrían%20ayudarme%20a%20restablecerla%3F" 
+                    href={getWhatsAppLink("Hola, olvidé mi clave de acceso a Raíces Pilot. ¿Podrían ayudarme a restablecerla?")} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-[11px] font-bold text-brand-600 hover:text-brand-700 transition-colors uppercase tracking-wider"
@@ -200,7 +201,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           <div className="mt-20 pt-10 border-t border-slate-200/60">
             <p className="text-center text-[13px] text-slate-400 font-medium">
-              ¿No tenés acceso? <a href="https://wa.me/5491161630205?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20RaicesPilot%20para%20mi%20inmobiliaria." target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-brand-600 transition-colors underline decoration-slate-300 underline-offset-8 decoration-2">Solicitá una demo</a>
+              ¿No tenés acceso? <a href={getWhatsAppLink("Hola, quiero solicitar una demo de Raíces Pilot para mi inmobiliaria.")} target="_blank" rel="noopener noreferrer" className="font-bold text-slate-900 hover:text-brand-600 transition-colors underline decoration-slate-300 underline-offset-8 decoration-2">Solicitá una demo</a>
             </p>
           </div>
         </div>

@@ -7,6 +7,7 @@ import type { MembershipRole } from "@prisma/client";
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
 import type { OrganizationSummary } from "@/modules/organizations/types";
 import { MessageCircle } from "lucide-react";
+import { getWhatsAppLink } from "@/lib/constants";
 
 export function WorkspaceShell({
   organization,
@@ -100,7 +101,7 @@ export function WorkspaceShell({
         {/* FLOATING SUPPORT BUTTON – hidden via MutationObserver when any dialog is open */}
         <a
           ref={supportRef}
-          href="https://wa.me/5491161630205?text=Hola%21%20Necesito%20soporte%20técnico%20con%20mi%20plataforma%20RaicesPilot."
+          href={getWhatsAppLink("Hola, necesito soporte técnico con mi plataforma Raíces Pilot.")}
           target="_blank"
           rel="noopener noreferrer"
           className="floating-support-btn fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-2xl shadow-emerald-500/40 transition-all hover:scale-110 hover:bg-emerald-600 active:scale-95 group print:hidden"

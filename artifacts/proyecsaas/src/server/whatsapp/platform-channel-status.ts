@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Resolves the platform-level WhatsApp channel status for display in the
  * Admin Inmobiliario panel.
  *
@@ -18,7 +18,7 @@ export type MetaChannelStatus =
   | "not_configured"; // none of the WhatsApp env vars are set
 
 export interface PlatformWhatsAppStatus {
-  /** Human-readable phone number (e.g. "5491161630205"). Null if not configured yet. */
+  /** Human-readable phone number (e.g. "5491166037990"). Null if not configured yet. */
   platformPhone: string | null;
   /** Status of the Meta Cloud API channel credentials. */
   metaStatus: MetaChannelStatus;

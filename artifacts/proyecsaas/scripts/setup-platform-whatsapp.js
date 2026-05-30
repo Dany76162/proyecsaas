@@ -10,7 +10,7 @@ async function setup() {
 
   try {
     const key = "PLATFORM_WHATSAPP_NUMBER";
-    const value = "5491161630205";
+    const value = "5491166037990";
 
     const setting = await prisma.globalSetting.findUnique({ where: { key } });
 
