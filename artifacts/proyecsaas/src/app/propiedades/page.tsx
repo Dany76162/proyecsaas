@@ -481,22 +481,25 @@ export default async function PublicPortalPropertiesPage({
             {properties.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2">
                 {properties.map((prop) => {
-                  const primaryImg = prop.images.find((img: { isPrimary: boolean; url: string }) => img.isPrimary) || prop.images[0] || null;
+                  const primaryImg = (prop.images || []).find((img: { isPrimary: boolean; url: string }) => img.isPrimary) || (prop.images || [])[0] || null;
+                  
+                  const currencyCode = (prop.currency && prop.currency.trim() !== "") ? prop.currency.trim().toUpperCase() : "USD";
+                  const isValidCurrency = /^[A-Z]{3}$/.test(currencyCode);
                   const priceFormatted = prop.priceCents != null
                     ? new Intl.NumberFormat("es-AR", {
                         style: "currency",
-                        currency: prop.currency ?? "USD",
+                        currency: isValidCurrency ? currencyCode : "USD",
                         maximumFractionDigits: 0
-                      }).format(prop.priceCents / 100)
+                      }).format(Number(prop.priceCents) / 100)
                     : "A consultar";
 
                   const detailsLink = prop.organization?.slug ? `/cat/${prop.organization.slug}/${prop.id}` : "#";
 
                   // Enlace de WhatsApp directo con la inmobiliaria dueña para resguardar multi-tenant absoluto
-                  const waText = encodeURIComponent(`Hola, vi tu propiedad "${prop.title}" en el portal general Raíces Pilot y me gustaría obtener más detalles.`);
+                  const waText = encodeURIComponent(`Hola, vi tu propiedad "${prop.title || 'Inmueble'}" en el portal general Raíces Pilot y me gustaría obtener más detalles.`);
                   const targetPhone = prop.organization?.contactWhatsapp || prop.organization?.contactPhone;
                   const whatsappUrl = targetPhone
-                    ? `https://wa.me/${targetPhone.replace(/[^0-9]/g, "")}?text=${waText}`
+                    ? `https://wa.me/${String(targetPhone).replace(/[^0-9]/g, "")}?text=${waText}`
                     : detailsLink;
 
                   return (
@@ -530,7 +533,7 @@ export default async function PublicPortalPropertiesPage({
                           </span>
                         </div>
 
-                        {prop.panoramas.length > 0 && (
+                        {(prop.panoramas || []).length > 0 && (
                           <div className="absolute bottom-3 right-3">
                             <span className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
                               <Compass className="h-3.5 w-3.5 animate-spin-slow" /> Tour 360°
