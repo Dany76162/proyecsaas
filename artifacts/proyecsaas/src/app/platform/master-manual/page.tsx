@@ -268,7 +268,7 @@ export default function MasterManualPage() {
                 <Globe className="h-4 w-4" />
                 <span className="font-bold uppercase text-[11px] tracking-wider">Dirección Única del Catálogo</span>
               </div>
-              <p className="text-xs text-slate-600">Disponible públicamente en la ruta estándar <code>/{"{orgSlug}"}/catalog</code>, donde <code>orgSlug</code> representa el identificador exclusivo asignado a la inmobiliaria durante su registro.</p>
+              <p className="text-xs text-slate-600">Disponible públicamente en la ruta estándar <code>/cat/{"{orgSlug}"}</code>, donde <code>orgSlug</code> representa el identificador exclusivo asignado a la inmobiliaria durante su registro.</p>
             </div>
             <div className="border border-slate-200 p-5 rounded-xl bg-slate-50/50">
               <div className="flex items-center gap-2 mb-2 text-brand-700">

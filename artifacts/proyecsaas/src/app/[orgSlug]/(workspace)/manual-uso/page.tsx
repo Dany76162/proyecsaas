@@ -237,7 +237,7 @@ export default async function WorkspaceManualUsoPage({
                 </p>
                 <div className="print:hidden">
                   <a
-                    href={`/${orgSlug}/catalog`}
+                    href={`/cat/${orgSlug}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-slate-800"

@@ -18,6 +18,7 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   /^\/api\/whatsapp\/webhook(\/|$)/,
   /^\/api\/properties\/sync-from-source/,
   /^\/[^/]+\/catalog(\/|$)/,
+  /^\/cat(\/|$)/,
   /^\/google.*\.html$/,
 ];
 
