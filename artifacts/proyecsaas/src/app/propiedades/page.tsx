@@ -147,39 +147,135 @@ export default async function PublicPortalPropertiesPage({
   }
 
   // 3. Ejecutar consulta de propiedades
-  const properties = await prisma.property.findMany({
-    where: whereClause,
-    include: {
+  let properties: any[] = [];
+  try {
+    properties = await prisma.property.findMany({
+      where: whereClause,
+      include: {
+        organization: {
+          select: {
+            name: true,
+            slug: true,
+            contactPhone: true,
+            contactWhatsapp: true,
+          },
+        },
+        images: {
+          select: {
+            url: true,
+            isPrimary: true,
+          },
+          orderBy: {
+            sortOrder: "asc",
+          },
+        },
+        panoramas: {
+          select: {
+            id: true,
+          },
+          take: 1,
+        },
+      },
+      orderBy: [
+        { isFeatured: "desc" },
+        { createdAt: "desc" },
+      ],
+      take: 100, // Límite de control para performance
+    });
+  } catch (error) {
+    console.warn("[propiedades] Error querying properties with advanced fields, falling back to legacy schema:", error);
+    
+    // Fallback: remover isFeatured de orderBy y reconstruir el where seguro
+    const fallbackWhere: any = {
+      publicVisible: true,
+      status: "AVAILABLE",
       organization: {
-        select: {
-          name: true,
-          slug: true,
-          contactPhone: true,
-          contactWhatsapp: true,
+        isActive: true,
+      },
+    };
+
+    if (params.operation) {
+      fallbackWhere.operationType = params.operation;
+    }
+    if (params.type) {
+      fallbackWhere.propertyType = {
+        contains: params.type,
+        mode: "insensitive",
+      };
+    }
+    if (params.location) {
+      fallbackWhere.OR = [
+        { city: { contains: params.location, mode: "insensitive" } },
+        { neighborhood: { contains: params.location, mode: "insensitive" } },
+      ];
+    }
+    if (params.minPrice || params.maxPrice) {
+      fallbackWhere.priceCents = {};
+      if (params.minPrice) {
+        const minVal = parseFloat(params.minPrice);
+        if (!isNaN(minVal)) {
+          fallbackWhere.priceCents.gte = Math.round(minVal * 100);
+        }
+      }
+      if (params.maxPrice) {
+        const maxVal = parseFloat(params.maxPrice);
+        if (!isNaN(maxVal)) {
+          fallbackWhere.priceCents.lte = Math.round(maxVal * 100);
+        }
+      }
+    }
+    if (params.bedrooms) {
+      const beds = parseInt(params.bedrooms, 10);
+      if (!isNaN(beds)) {
+        fallbackWhere.bedrooms = { gte: beds };
+      }
+    }
+    if (params.bathrooms) {
+      const baths = parseInt(params.bathrooms, 10);
+      if (!isNaN(baths)) {
+        fallbackWhere.bathrooms = { gte: baths };
+      }
+    }
+    if (params.orgSlug) {
+      fallbackWhere.organization = {
+        slug: params.orgSlug,
+        isActive: true,
+      };
+    }
+
+    properties = await prisma.property.findMany({
+      where: fallbackWhere,
+      include: {
+        organization: {
+          select: {
+            name: true,
+            slug: true,
+            contactPhone: true,
+            contactWhatsapp: true,
+          },
+        },
+        images: {
+          select: {
+            url: true,
+            isPrimary: true,
+          },
+          orderBy: {
+            sortOrder: "asc",
+          },
+        },
+        panoramas: {
+          select: {
+            id: true,
+          },
+          take: 1,
         },
       },
-      images: {
-        select: {
-          url: true,
-          isPrimary: true,
-        },
-        orderBy: {
-          sortOrder: "asc",
-        },
-      },
-      panoramas: {
-        select: {
-          id: true,
-        },
-        take: 1,
-      },
-    },
-    orderBy: [
-      { isFeatured: "desc" },
-      { createdAt: "desc" },
-    ],
-    take: 100, // Límite de control para performance
-  });
+      orderBy: [
+        { createdAt: "desc" },
+      ],
+      take: 100,
+    });
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased">
@@ -380,7 +476,7 @@ export default async function PublicPortalPropertiesPage({
             {properties.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2">
                 {properties.map((prop) => {
-                  const primaryImg = prop.images.find((img) => img.isPrimary) || prop.images[0] || null;
+                  const primaryImg = prop.images.find((img: { isPrimary: boolean; url: string }) => img.isPrimary) || prop.images[0] || null;
                   const priceFormatted = prop.priceCents != null
                     ? new Intl.NumberFormat("es-AR", {
                         style: "currency",
@@ -389,11 +485,11 @@ export default async function PublicPortalPropertiesPage({
                       }).format(prop.priceCents / 100)
                     : "A consultar";
 
-                  const detailsLink = `/cat/${prop.organization.slug}/${prop.id}`;
+                  const detailsLink = prop.organization?.slug ? `/cat/${prop.organization.slug}/${prop.id}` : "#";
 
                   // Enlace de WhatsApp directo con la inmobiliaria dueña para resguardar multi-tenant absoluto
                   const waText = encodeURIComponent(`Hola, vi tu propiedad "${prop.title}" en el portal general Raíces Pilot y me gustaría obtener más detalles.`);
-                  const targetPhone = prop.organization.contactWhatsapp || prop.organization.contactPhone;
+                  const targetPhone = prop.organization?.contactWhatsapp || prop.organization?.contactPhone;
                   const whatsappUrl = targetPhone
                     ? `https://wa.me/${targetPhone.replace(/[^0-9]/g, "")}?text=${waText}`
                     : detailsLink;
@@ -447,7 +543,7 @@ export default async function PublicPortalPropertiesPage({
                               Ofrecido por
                             </span>
                             <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 border border-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                              {prop.organization.name}
+                              {prop.organization?.name ?? "Inmobiliaria"}
                             </span>
                           </div>
 

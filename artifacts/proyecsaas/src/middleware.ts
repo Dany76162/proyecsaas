@@ -13,6 +13,7 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   "/terms",
   "/terminos",
   "/propiedades",
+  "/manifest.json",
   /^\/map\/.+/,
   /^\/invite\/.+/,
   /^\/api\/webhooks\//,
