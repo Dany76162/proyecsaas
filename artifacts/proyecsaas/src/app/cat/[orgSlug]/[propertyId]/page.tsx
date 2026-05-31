@@ -28,46 +28,54 @@ import { PublicLeadForm } from "./public-lead-form";
 export async function generateMetadata({ params }: { params: Promise<{ orgSlug: string; propertyId: string }> }) {
   const { orgSlug, propertyId } = await params;
   
-  const property = await prisma.property.findFirst({
-    where: {
-      id: propertyId,
-      organization: { slug: orgSlug },
-      status: "AVAILABLE",
-      publicVisible: true,
-    },
-    select: {
-      title: true,
-      description: true,
-      priceCents: true,
-      currency: true,
-      images: {
-        where: { isPrimary: true },
-        take: 1,
-        select: { url: true }
+  try {
+    const property = await prisma.property.findFirst({
+      where: {
+        id: propertyId,
+        organization: { slug: orgSlug },
+        status: "AVAILABLE",
+        publicVisible: true,
+      },
+      select: {
+        title: true,
+        description: true,
+        priceCents: true,
+        currency: true,
+        images: {
+          where: { isPrimary: true },
+          take: 1,
+          select: { url: true }
+        }
       }
-    }
-  });
+    });
 
-  if (!property) {
+    if (!property) {
+      return {
+        title: "Propiedad — Catálogo",
+      };
+    }
+
+    const price = property.priceCents 
+      ? formatCurrency(property.priceCents, property.currency ?? "USD") 
+      : "A consultar";
+    const image = property.images[0]?.url;
+
+    return {
+      title: `${property.title} — ${price}`,
+      description: property.description ?? "Detalles de la propiedad disponible.",
+      openGraph: {
+        title: property.title,
+        description: property.description ?? "",
+        images: image ? [{ url: image }] : [],
+      },
+    };
+  } catch (error) {
+    console.error("[generateMetadata] Failed to fetch property metadata safely:", error);
     return {
       title: "Propiedad — Catálogo",
+      description: "Detalles de la propiedad disponible.",
     };
   }
-
-  const price = property.priceCents 
-    ? formatCurrency(property.priceCents, property.currency ?? "USD") 
-    : "A consultar";
-  const image = property.images[0]?.url;
-
-  return {
-    title: `${property.title} — ${price}`,
-    description: property.description ?? "Detalles de la propiedad disponible.",
-    openGraph: {
-      title: property.title,
-      description: property.description ?? "",
-      images: image ? [{ url: image }] : [],
-    },
-  };
 }
 
 export default async function PublicPropertyDetailPage({

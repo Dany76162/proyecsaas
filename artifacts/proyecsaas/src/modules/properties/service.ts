@@ -46,15 +46,48 @@ type PropertyImageRow = {
 export async function listOrganizationProperties(
   orgSlug: string,
 ): Promise<PropertyListItem[]> {
-  const properties = await prisma.property.findMany({
-    where: {
-      organization: {
-        slug: orgSlug,
+  let properties: any[] = [];
+  try {
+    properties = await prisma.property.findMany({
+      where: {
+        organization: {
+          slug: orgSlug,
+        },
       },
-    },
-    orderBy: [{ publicVisible: "desc" }, { createdAt: "desc" }],
-    take: 400,
-  });
+      orderBy: [{ publicVisible: "desc" }, { createdAt: "desc" }],
+      take: 400,
+    });
+  } catch (error) {
+    console.warn("[service] listOrganizationProperties failed with advanced columns, falling back to legacy select:", error);
+    properties = await prisma.property.findMany({
+      where: {
+        organization: {
+          slug: orgSlug,
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        address: true,
+        city: true,
+        neighborhood: true,
+        propertyType: true,
+        operationType: true,
+        status: true,
+        publicVisible: true,
+        priceCents: true,
+        currency: true,
+        expensesCents: true,
+        rooms: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        parkingSpots: true,
+      },
+      orderBy: [{ publicVisible: "desc" }, { createdAt: "desc" }],
+      take: 400,
+    });
+  }
 
   return properties.map((property) => ({
     id: property.id,
@@ -100,69 +133,127 @@ export async function getPropertyDetail(
   orgSlug: string,
   propertyId: string,
 ): Promise<PropertyDetail | null> {
-  const property = await prisma.property.findFirst({
-    where: {
-      id: propertyId,
-      organization: {
-        slug: orgSlug,
+  let property: any = null;
+  try {
+    property = await prisma.property.findFirst({
+      where: {
+        id: propertyId,
+        organization: {
+          slug: orgSlug,
+        },
       },
-    },
-    select: {
-      id: true,
-      organizationId: true,
-      title: true,
-      description: true,
-      address: true,
-      city: true,
-      neighborhood: true,
-      propertyType: true,
-      operationType: true,
-      status: true,
-      publicVisible: true,
-      priceCents: true,
-      currency: true,
-      expensesCents: true,
-      rooms: true,
-      bedrooms: true,
-      bathrooms: true,
-      surfaceM2: true,
-      parkingSpots: true,
-      amenities: true,
-      externalLink: true,
-      videoUrl: true,
-      latitude: true,
-      longitude: true,
-      province: true,
-      country: true,
-      showExactLocation: true,
-      isFeatured: true,
-      coveredSurfaceM2: true,
-      totalSurfaceM2: true,
-      yearBuilt: true,
-      petsAllowed: true,
-      professionalApt: true,
-      creditApt: true,
-      organization: true,
-      interestedLeads: {
-        include: {
-          owner: true,
+      select: {
+        id: true,
+        organizationId: true,
+        title: true,
+        description: true,
+        address: true,
+        city: true,
+        neighborhood: true,
+        propertyType: true,
+        operationType: true,
+        status: true,
+        publicVisible: true,
+        priceCents: true,
+        currency: true,
+        expensesCents: true,
+        rooms: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        parkingSpots: true,
+        amenities: true,
+        externalLink: true,
+        videoUrl: true,
+        latitude: true,
+        longitude: true,
+        province: true,
+        country: true,
+        showExactLocation: true,
+        isFeatured: true,
+        coveredSurfaceM2: true,
+        totalSurfaceM2: true,
+        yearBuilt: true,
+        petsAllowed: true,
+        professionalApt: true,
+        creditApt: true,
+        organization: true,
+        interestedLeads: {
+          include: {
+            owner: true,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: 50,
         },
-        orderBy: {
-          updatedAt: "desc",
+        visits: {
+          include: {
+            lead: true,
+          },
+          orderBy: {
+            scheduledAt: "asc",
+          },
+          take: 50,
         },
-        take: 50,
       },
-      visits: {
-        include: {
-          lead: true,
+    });
+  } catch (error) {
+    console.warn("[service] getPropertyDetail failed with advanced columns, falling back to legacy select:", error);
+    property = await prisma.property.findFirst({
+      where: {
+        id: propertyId,
+        organization: {
+          slug: orgSlug,
         },
-        orderBy: {
-          scheduledAt: "asc",
-        },
-        take: 50,
       },
-    },
-  });
+      select: {
+        id: true,
+        organizationId: true,
+        title: true,
+        description: true,
+        address: true,
+        city: true,
+        neighborhood: true,
+        propertyType: true,
+        operationType: true,
+        status: true,
+        publicVisible: true,
+        priceCents: true,
+        currency: true,
+        expensesCents: true,
+        rooms: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        parkingSpots: true,
+        amenities: true,
+        externalLink: true,
+        videoUrl: true,
+        latitude: true,
+        longitude: true,
+        organization: true,
+        interestedLeads: {
+          include: {
+            owner: true,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: 50,
+        },
+        visits: {
+          include: {
+            lead: true,
+          },
+          orderBy: {
+            scheduledAt: "asc",
+          },
+          take: 50,
+        },
+      },
+    });
+  }
 
   if (!property) {
     return null;
@@ -174,14 +265,14 @@ export async function getPropertyDetail(
     listPropertyPanoramas(property.id, property.organizationId),
   ]);
 
-  const interestedLeads = property.interestedLeads.map((lead) => ({
+  const interestedLeads = property.interestedLeads.map((lead: any) => ({
     id: lead.id,
     fullName: lead.fullName,
     status: lead.status,
     ownerName: lead.owner?.fullName ?? "Sin asignar",
   }));
 
-  const visits = property.visits.map((visit) => ({
+  const visits = property.visits.map((visit: any) => ({
     id: visit.id,
     scheduledAt: visit.scheduledAt.toISOString(),
     status: visit.status,
@@ -241,16 +332,16 @@ export async function getPropertyDetail(
     floorPlanUrl,
     latitude: property.latitude ? Number(property.latitude) : undefined,
     longitude: property.longitude ? Number(property.longitude) : undefined,
-    province: property.province,
-    country: property.country,
-    showExactLocation: property.showExactLocation,
-    isFeatured: property.isFeatured,
-    coveredSurfaceM2: property.coveredSurfaceM2,
-    totalSurfaceM2: property.totalSurfaceM2,
-    yearBuilt: property.yearBuilt,
-    petsAllowed: property.petsAllowed,
-    professionalApt: property.professionalApt,
-    creditApt: property.creditApt,
+    province: property.province ?? null,
+    country: property.country ?? null,
+    showExactLocation: property.showExactLocation ?? false,
+    isFeatured: property.isFeatured ?? false,
+    coveredSurfaceM2: property.coveredSurfaceM2 ?? null,
+    totalSurfaceM2: property.totalSurfaceM2 ?? null,
+    yearBuilt: property.yearBuilt ?? null,
+    petsAllowed: property.petsAllowed ?? true,
+    professionalApt: property.professionalApt ?? false,
+    creditApt: property.creditApt ?? false,
     interestedLeads,
     visits,
     images,
@@ -376,35 +467,63 @@ function parsePanoramaConnections(value: string | null) {
 }
 
 export async function listPublicProperties() {
-  return prisma.property
-    .findMany({
+  try {
+    const properties = await prisma.property.findMany({
       where: {
         publicVisible: true,
       },
       orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
       take: 400,
-    })
-    .then((properties) =>
-      properties.map((property) => ({
-        id: property.id,
-        title: property.title,
-        address: property.address,
-        city: property.city,
-        neighborhood: property.neighborhood,
-        propertyType: property.propertyType,
-        operationType: property.operationType,
-        status: property.status,
-        publicVisible: property.publicVisible,
-        priceCents: property.priceCents,
-        currency: property.currency,
-        expensesCents: property.expensesCents,
-        rooms: property.rooms,
-        bedrooms: property.bedrooms,
-        bathrooms: property.bathrooms,
-        surfaceM2: property.surfaceM2,
-        parkingSpots: property.parkingSpots,
-      })),
-    );
+    });
+    return properties.map((property) => ({
+      id: property.id,
+      title: property.title,
+      address: property.address,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      propertyType: property.propertyType,
+      operationType: property.operationType,
+      status: property.status,
+      publicVisible: property.publicVisible,
+      priceCents: property.priceCents,
+      currency: property.currency,
+      expensesCents: property.expensesCents,
+      rooms: property.rooms,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      surfaceM2: property.surfaceM2,
+      parkingSpots: property.parkingSpots,
+    }));
+  } catch (error) {
+    console.warn("[service] listPublicProperties failed, falling back to legacy select:", error);
+    const properties = await prisma.property.findMany({
+      where: {
+        publicVisible: true,
+      },
+      select: {
+        id: true,
+        title: true,
+        address: true,
+        city: true,
+        neighborhood: true,
+        propertyType: true,
+        operationType: true,
+        status: true,
+        publicVisible: true,
+        priceCents: true,
+        currency: true,
+        expensesCents: true,
+        rooms: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        parkingSpots: true,
+      },
+      orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
+      take: 400,
+    });
+    return properties;
+  }
 }
 
 export async function getPublicPropertyDetail(propertyId: string): Promise<PropertyDetail | null> {
@@ -433,55 +552,126 @@ export async function getPublicPropertyDetail(propertyId: string): Promise<Prope
 export async function listPublicPropertiesByOrgSlug(
   orgSlug: string,
 ): Promise<PublicCatalogProperty[]> {
-  const properties = await prisma.property.findMany({
-    where: {
-      organization: {
-        slug: orgSlug,
+  try {
+    const properties = await prisma.property.findMany({
+      where: {
+        organization: {
+          slug: orgSlug,
+        },
+        publicVisible: true,
+        status: "AVAILABLE",
       },
-      publicVisible: true,
-      status: "AVAILABLE",
-    },
-    include: {
-      images: {
-        select: {
-          id: true,
-          url: true,
-          isPrimary: true,
+      include: {
+        images: {
+          select: {
+            id: true,
+            url: true,
+            isPrimary: true,
+          },
+        },
+        panoramas: {
+          select: {
+            id: true,
+            url: true,
+            roomName: true,
+            label: true,
+          },
         },
       },
-      panoramas: {
-        select: {
-          id: true,
-          url: true,
-          roomName: true,
-          label: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 400,
-  });
+      orderBy: { createdAt: "desc" },
+      take: 400,
+    });
 
-  return properties.map((property) => ({
-    id: property.id,
-    title: property.title,
-    address: property.address,
-    city: property.city,
-    neighborhood: property.neighborhood,
-    propertyType: property.propertyType,
-    operationType: property.operationType,
-    status: property.status,
-    publicVisible: property.publicVisible,
-    priceCents: property.priceCents,
-    currency: property.currency,
-    expensesCents: property.expensesCents,
-    rooms: property.rooms,
-    bedrooms: property.bedrooms,
-    bathrooms: property.bathrooms,
-    surfaceM2: property.surfaceM2,
-    parkingSpots: property.parkingSpots,
-    images: property.images,
-    panoramas: property.panoramas,
-  }));
+    return properties.map((property) => ({
+      id: property.id,
+      title: property.title,
+      address: property.address,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      propertyType: property.propertyType,
+      operationType: property.operationType,
+      status: property.status,
+      publicVisible: property.publicVisible,
+      priceCents: property.priceCents,
+      currency: property.currency,
+      expensesCents: property.expensesCents,
+      rooms: property.rooms,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      surfaceM2: property.surfaceM2,
+      parkingSpots: property.parkingSpots,
+      images: property.images,
+      panoramas: property.panoramas,
+    }));
+  } catch (error) {
+    console.warn("[service] listPublicPropertiesByOrgSlug failed, falling back to legacy select:", error);
+    const properties = await prisma.property.findMany({
+      where: {
+        organization: {
+          slug: orgSlug,
+        },
+        publicVisible: true,
+        status: "AVAILABLE",
+      },
+      select: {
+        id: true,
+        title: true,
+        address: true,
+        city: true,
+        neighborhood: true,
+        propertyType: true,
+        operationType: true,
+        status: true,
+        publicVisible: true,
+        priceCents: true,
+        currency: true,
+        expensesCents: true,
+        rooms: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        parkingSpots: true,
+        images: {
+          select: {
+            id: true,
+            url: true,
+            isPrimary: true,
+          },
+        },
+        panoramas: {
+          select: {
+            id: true,
+            url: true,
+            roomName: true,
+            label: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 400,
+    });
+
+    return properties.map((property) => ({
+      id: property.id,
+      title: property.title,
+      address: property.address,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      propertyType: property.propertyType,
+      operationType: property.operationType,
+      status: property.status,
+      publicVisible: property.publicVisible,
+      priceCents: property.priceCents,
+      currency: property.currency,
+      expensesCents: property.expensesCents,
+      rooms: property.rooms,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      surfaceM2: property.surfaceM2,
+      parkingSpots: property.parkingSpots,
+      images: property.images,
+      panoramas: property.panoramas,
+    }));
+  }
 }
 
