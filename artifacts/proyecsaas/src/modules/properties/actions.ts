@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { MembershipRole } from "@prisma/client";
+import { Prisma, MembershipRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
@@ -91,12 +91,12 @@ function parseMajorUnitToCentsStr(raw: string): string {
 }
 
 export async function updatePropertyAction(formData: FormData) {
+  const orgSlug = String(formData.get("orgSlug") ?? "");
+  const rawPropertyId = String(formData.get("propertyId") ?? "");
+
   try {
-    const orgSlug = String(formData.get("orgSlug") ?? "");
     const { membership } = await requireOrganizationMembership(orgSlug);
     assertMinimumRole(membership.role, MembershipRole.AGENT);
-
-    const rawPropertyId = String(formData.get("propertyId") ?? "");
 
     const parsed = updatePropertySchema.safeParse({
       propertyId: rawPropertyId,
@@ -174,8 +174,8 @@ export async function updatePropertyAction(formData: FormData) {
           country: parsed.data.country ?? "Argentina",
           showExactLocation: parsed.data.showExactLocation,
           isFeatured: parsed.data.isFeatured,
-          latitude: parsed.data.latitude,
-          longitude: parsed.data.longitude,
+          latitude: parsed.data.latitude ? new Prisma.Decimal(parsed.data.latitude) : null,
+          longitude: parsed.data.longitude ? new Prisma.Decimal(parsed.data.longitude) : null,
           rooms: parsed.data.rooms,
           bedrooms: parsed.data.bedrooms,
           bathrooms: parsed.data.bathrooms,
@@ -210,8 +210,8 @@ export async function updatePropertyAction(formData: FormData) {
           address: parsed.data.address,
           city: parsed.data.city,
           neighborhood: parsed.data.neighborhood,
-          latitude: parsed.data.latitude,
-          longitude: parsed.data.longitude,
+          latitude: parsed.data.latitude ? new Prisma.Decimal(parsed.data.latitude) : null,
+          longitude: parsed.data.longitude ? new Prisma.Decimal(parsed.data.longitude) : null,
           rooms: parsed.data.rooms,
           bedrooms: parsed.data.bedrooms,
           bathrooms: parsed.data.bathrooms,
@@ -232,12 +232,13 @@ export async function updatePropertyAction(formData: FormData) {
     revalidatePath(`/${orgSlug}/visits`);
 
     redirectToPropertyResult(orgSlug, property.id, { success: "property-updated" });
-  } catch (error) {
+  } catch (error: any) {
     if (isRedirectError(error)) {
       throw error;
     }
     console.error('[updatePropertyAction]', error);
-    return { success: false, message: 'No se pudo guardar la propiedad. Intentá de nuevo.' };
+    const errMessage = error?.message ? encodeURIComponent(error.message) : "update-failed";
+    redirectToPropertyResult(orgSlug, rawPropertyId, { error: errMessage });
   }
 }
 
