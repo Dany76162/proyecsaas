@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { LeadStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -376,3 +376,144 @@ export async function confirmLeadPropertyAction(formData: FormData) {
       : `/${orgSlug}/leads/${leadId}?success=lead-updated`,
   );
 }
+
+export async function createLeadFromPublicPropertyAction(payload: {
+  orgSlug: string;
+  propertyId: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  message?: string;
+  honeypot?: string;
+}) {
+  const { orgSlug, propertyId, fullName, phone, email, message, honeypot } = payload;
+
+  // 1. Anti-spam honeypot check
+  if (honeypot) {
+    // Silently succeed to trick bots
+    return { success: true };
+  }
+
+  // 2. Server-side validation
+  if (!fullName || fullName.trim().length < 2) {
+    return { success: false, error: "El nombre completo es requerido y debe ser válido." };
+  }
+
+  if (!phone || phone.trim().length < 6) {
+    return { success: false, error: "El teléfono o WhatsApp es requerido y debe ser válido." };
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { success: false, error: "El formato de email no es válido." };
+  }
+
+  if (message && message.length > 1000) {
+    return { success: false, error: "El mensaje no puede superar los 1000 caracteres." };
+  }
+
+  try {
+    // 3. Validate property and safe tenant matching
+    const property = await prisma.property.findFirst({
+      where: {
+        id: propertyId,
+        organization: { slug: orgSlug },
+        publicVisible: true,
+        status: "AVAILABLE",
+      },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    if (!property) {
+      return { success: false, error: "La propiedad consultada no se encuentra disponible." };
+    }
+
+    const organizationId = property.organization.id;
+
+    // 4. Resolve default owner for this tenant
+    const defaultOwner = await prisma.membership.findFirst({
+      where: {
+        organizationId,
+      },
+      select: {
+        userId: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    const leadCountBefore = await prisma.lead.count({
+      where: {
+        organizationId,
+      },
+    });
+
+    // 5. Create Lead inside the correct tenant organization
+    const lead = await prisma.lead.create({
+      data: {
+        organizationId,
+        ownerId: defaultOwner?.userId,
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email?.trim() || null,
+        status: LeadStatus.NEW,
+        source: "PUBLIC_CATALOG_PROPERTY",
+        notes: message?.trim() || `Consulta interesada en la propiedad "${property.title}".`,
+        interestLabel: "Nueva consulta",
+        budgetLabel: "Catálogo público",
+        propertyId: property.id,
+        lastContactAt: new Date(),
+      },
+    });
+
+    // 6. Track first lead activation event if applicable
+    if (leadCountBefore === 0) {
+      try {
+        await trackActivationEventOnce(prisma, {
+          event: ACTIVATION_EVENTS.firstLeadCreated,
+          organizationId,
+          organizationSlug: orgSlug,
+          organizationName: property.organization.name,
+          metadata: {
+            source: "public_catalog",
+            leadId: lead.id,
+          },
+        });
+      } catch (err) {
+        console.error("Error tracking first lead activation event:", err);
+      }
+    }
+
+    // 7. Create internal Notification inside the workspace
+    await prisma.notification.create({
+      data: {
+        organizationId,
+        type: "OPERATOR_ACTION_REQUIRED",
+        title: `Nueva consulta de catálogo: ${fullName.trim()}`,
+        body: `Consulta recibida para "${property.title}". Mensaje: ${message?.trim() || "Sin mensaje"}`,
+        link: `/${orgSlug}/leads/${lead.id}`,
+        entityType: "lead",
+        entityId: lead.id,
+      },
+    });
+
+    // 8. Revalidate paths to reflect updates immediately in workspace
+    revalidatePath(`/${orgSlug}/leads`);
+    revalidatePath(`/${orgSlug}/leads/${lead.id}`);
+    revalidatePath(`/${orgSlug}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating public catalog lead:", error);
+    return { success: false, error: "Ocurrió un error inesperado al procesar tu consulta." };
+  }
+}
+
