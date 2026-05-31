@@ -8,16 +8,20 @@ import { Compass, Sparkles, MapPin, X, AlertCircle } from "lucide-react";
 type MarkerData = {
   id: string;
   title: string;
-  price: number | null;
+  price?: number | null;
+  priceCents?: number | null;
   currency: string;
-  operation: string;
-  propertyType: string;
+  operation?: string;
+  operationType?: string | null;
+  propertyType: string | null;
   url: string;
   imageUrl: string | null;
   hasTour360: boolean;
   approximate: boolean;
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
+  latitude?: number;
+  longitude?: number;
   locationLabel: string;
 };
 
@@ -168,6 +172,22 @@ export default function PropertyMap({ filters, onBoundsChange }: PropertyMapProp
     circlesRef.current = [];
 
     markersData.forEach((marker) => {
+      // 1. Extraer latitud y longitud de forma ultra defensiva
+      const lat = Number(marker.latitude ?? marker.lat);
+      const lng = Number(marker.longitude ?? marker.lng);
+
+      // Validar que las coordenadas sean números válidos dentro de los rangos correctos
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        console.warn("[PropertyMap] Ignorando propiedad con coordenadas inválidas o NaN:", marker.id, lat, lng);
+        return;
+      }
+
+      // 2. Extraer precio normalizado desde centavos si es necesario
+      let displayPrice = marker.price;
+      if (displayPrice == null && marker.priceCents != null) {
+        displayPrice = marker.priceCents / 100;
+      }
+
       const el = document.createElement("div");
       el.className = "cursor-pointer group relative flex items-center justify-center";
 
@@ -216,8 +236,8 @@ export default function PropertyMap({ filters, onBoundsChange }: PropertyMapProp
             <p class="text-xs font-semibold text-slate-400 mb-2">${marker.approximate ? "Zona aproximada" : marker.locationLabel}</p>
             <div class="flex items-center justify-between border-t border-slate-100 pt-3 mt-2">
               <span class="text-sm font-extrabold text-slate-950">${
-                marker.price != null
-                  ? `${marker.currency} ${marker.price.toLocaleString("es-AR")}`
+                displayPrice != null
+                  ? `${marker.currency} ${displayPrice.toLocaleString("es-AR")}`
                   : "A consultar"
               }</span>
               <a href="${marker.url}" class="rounded-lg bg-slate-900 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-slate-800 transition">Ver ficha</a>
@@ -229,7 +249,7 @@ export default function PropertyMap({ filters, onBoundsChange }: PropertyMapProp
       const popup = new maplibregl.Popup({ offset: 15, closeButton: false }).setHTML(popupHtml);
 
       const m = new maplibregl.Marker({ element: el })
-        .setLngLat([marker.lng, marker.lat])
+        .setLngLat([lng, lat])
         .setPopup(popup)
         .addTo(map);
 

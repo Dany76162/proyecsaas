@@ -296,8 +296,6 @@ export async function GET(request: Request) {
         approximate,
         latitude: lat,
         longitude: lng,
-        rawLatitude: prop.latitude,
-        rawLongitude: prop.longitude,
         locationLabel,
         imageUrl: primaryImage,
         url: `/cat/${prop.organization.slug}/${prop.id}`,
