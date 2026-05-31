@@ -117,6 +117,8 @@ export async function updatePropertyAction(formData: FormData) {
       country: String(formData.get("country") ?? ""),
       showExactLocation: formData.get("showExactLocation") === "on",
       isFeatured: formData.get("isFeatured") === "on",
+      latitude: String(formData.get("latitude") ?? ""),
+      longitude: String(formData.get("longitude") ?? ""),
       // Características
       rooms: String(formData.get("rooms") ?? ""),
       bedrooms: String(formData.get("bedrooms") ?? ""),
@@ -170,6 +172,8 @@ export async function updatePropertyAction(formData: FormData) {
         country: parsed.data.country ?? "Argentina",
         showExactLocation: parsed.data.showExactLocation,
         isFeatured: parsed.data.isFeatured,
+        latitude: parsed.data.latitude,
+        longitude: parsed.data.longitude,
         rooms: parsed.data.rooms,
         bedrooms: parsed.data.bedrooms,
         bathrooms: parsed.data.bathrooms,

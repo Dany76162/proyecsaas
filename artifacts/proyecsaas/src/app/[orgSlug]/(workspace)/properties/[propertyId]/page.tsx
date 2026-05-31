@@ -8,6 +8,7 @@ import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { MediaManager } from "@/components/properties/media-manager";
 import { CatalogSharingActions } from "@/components/properties/catalog-sharing-actions";
+import { CoordinatesFields } from "@/components/properties/coordinates-fields";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
 import { updatePropertyAction } from "@/modules/properties/actions";
 import { getPropertyDetail } from "@/modules/properties/service";
@@ -369,22 +370,20 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. Argentina"
               />
             </div>
-
-            <div className="sm:col-span-2">
-              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
-                <input
-                  name="showExactLocation"
-                  type="checkbox"
-                  defaultChecked={property.showExactLocation}
-                  className="h-4 w-4 rounded border-slate-300 accent-brand-500"
-                />
-                <div>
-                  <span className="font-medium">Mostrar ubicación exacta públicamente</span>
-                  <p className="text-xs text-slate-400 mt-0.5">Si se desmarca, solo se mostrará la zona aproximada en el mapa.</p>
-                </div>
-              </label>
-            </div>
           </div>
+        </SectionCard>
+
+        {/* Sección: Ubicación y privacidad del mapa */}
+        <SectionCard
+          eyebrow="Mapa"
+          title="Ubicación y privacidad del mapa"
+          description="Estos datos preparan la propiedad para el futuro mapa público de Raíces Pilot. Si ocultás la ubicación exacta, el portal mostrará una zona aproximada para proteger la operación inmobiliaria."
+        >
+          <CoordinatesFields
+            initialLatitude={property.latitude?.toString() ?? null}
+            initialLongitude={property.longitude?.toString() ?? null}
+            initialShowExactLocation={property.showExactLocation}
+          />
         </SectionCard>
 
         {/* Sección 3: Características */}

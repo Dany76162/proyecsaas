@@ -53,6 +53,16 @@ export const updatePropertySchema = z.object({
   country: z.preprocess(emptyStringToNull, z.string().trim().max(120).nullable()),
   showExactLocation: z.boolean(),
   isFeatured: z.boolean(),
+  latitude: z.preprocess(emptyStringToNull, z.string().trim().nullable().refine((val) => {
+    if (val === null) return true;
+    const num = Number(val);
+    return !isNaN(num) && num >= -90 && num <= 90;
+  }, "La latitud debe estar entre -90 y 90.")),
+  longitude: z.preprocess(emptyStringToNull, z.string().trim().nullable().refine((val) => {
+    if (val === null) return true;
+    const num = Number(val);
+    return !isNaN(num) && num >= -180 && num <= 180;
+  }, "La longitud debe estar entre -180 y 180.")),
   // Características
   rooms: z.preprocess(stringNumberToNullableInt, z.number().int().nonnegative().nullable()),
   bedrooms: z.preprocess(stringNumberToNullableInt, z.number().int().nonnegative().nullable()),
