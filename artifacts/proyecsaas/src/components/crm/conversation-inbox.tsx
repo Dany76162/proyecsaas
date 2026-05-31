@@ -398,13 +398,23 @@ export function ConversationInbox({
         {/* Scrollable Feed */}
         <div className="flex-1 space-y-0.5 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-inner custom-scrollbar">
           {filtered.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
-              <p className="text-xs font-semibold text-slate-400 italic">
+            <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-slate-50/30 rounded-2xl border border-dashed border-slate-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3 mx-auto">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                 {activeFilter === "failed"
-                  ? "No hay fallas de envío."
+                  ? "Cero errores de envío"
                   : activeFilter === "followup"
-                    ? "La bandeja operativa está vacía."
-                    : "No hay conversaciones."}
+                    ? "Bandeja limpia"
+                    : "Sin chats"}
+              </p>
+              <p className="mt-1 text-xs font-medium text-slate-500 leading-relaxed">
+                {activeFilter === "failed"
+                  ? "Todos tus mensajes salieron correctamente."
+                  : activeFilter === "followup"
+                    ? "No tenés intervenciones humanas pendientes."
+                    : "Esperando tus primeras consultas de clientes."}
               </p>
             </div>
           ) : (
@@ -438,12 +448,41 @@ export function ConversationInbox({
             </button>
             <ConversationDetail conv={selected} orgSlug={orgSlug} currentCursor={currentCursor} />
           </>
+        ) : filtered.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center text-center p-8 max-w-md mx-auto space-y-6">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-soft">
+              <MessageSquare className="h-8 w-8 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-slate-900">Bandeja de entrada vacía</h3>
+              <p className="text-sm font-medium leading-relaxed text-slate-500">
+                Tu centro de operaciones de chat está listo para recibir consultas. Cuando un cliente te escriba por primera vez por WhatsApp, la IA responderá de forma automática y creará el lead en tu CRM.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 text-left shadow-soft">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">¿Cómo empezar?</p>
+              <p className="mt-2 text-xs font-semibold text-slate-600 leading-relaxed">
+                Compartí tu enlace de captación o tu código QR para que los interesados puedan chatear directamente con tu inmobiliaria.
+              </p>
+              <Link
+                href={`/${orgSlug}/captacion`}
+                className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-[11px] font-bold uppercase tracking-widest text-white transition hover:bg-slate-800"
+              >
+                Ir a Captación de Leads
+              </Link>
+            </div>
+          </div>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center text-center opacity-40">
-            <div className="h-10 w-10 rounded-full border-4 border-slate-200 border-t-brand-500 animate-spin mb-4" />
-            <p className="text-xs font-bold text-slate-900 uppercase tracking-widest">
-              Selecciona una conversación
-            </p>
+          <div className="flex h-full flex-col items-center justify-center text-center p-8 max-w-sm mx-auto space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+              <MessageSquare className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-slate-900">Seleccioná una conversación</h3>
+              <p className="text-xs font-medium leading-relaxed text-slate-500">
+                Elegí cualquier conversación de la lista de la izquierda para ver el chat en tiempo real y el panel de asistencia de IA.
+              </p>
+            </div>
           </div>
         )}
       </div>
