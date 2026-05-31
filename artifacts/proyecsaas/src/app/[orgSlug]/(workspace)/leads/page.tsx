@@ -45,7 +45,7 @@ const TEMPERATURE_CONFIG = {
   hot:     { label: "Caliente", tone: "warning" as const, dot: "bg-red-400" },
   warm:    { label: "Tibio",    tone: "info"    as const, dot: "bg-amber-400" },
   cold:    { label: "Frío",     tone: "neutral" as const, dot: "bg-slate-400" },
-  unclear: { label: "—",        tone: "neutral" as const, dot: "bg-slate-300" },
+  unclear: { label: "Indefinido", tone: "neutral" as const, dot: "bg-slate-300" },
 };
 
 export default async function LeadsPage({
@@ -209,7 +209,7 @@ export default async function LeadsPage({
                   Responsable
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Temp.
+                  Temperatura
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                   Etapa

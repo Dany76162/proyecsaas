@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ const TEMPERATURE_CONFIG = {
   hot:     { tone: "warning" as const, label: "Caliente", dot: "bg-red-400" },
   warm:    { tone: "info"    as const, label: "Tibio",    dot: "bg-amber-400" },
   cold:    { tone: "neutral" as const, label: "Frío",     dot: "bg-slate-400" },
-  unclear: { tone: "neutral" as const, label: "â€”",        dot: "bg-slate-300" },
+  unclear: { tone: "neutral" as const, label: "Indefinido", dot: "bg-slate-300" },
 };
 
 export function LeadMiniCard({
