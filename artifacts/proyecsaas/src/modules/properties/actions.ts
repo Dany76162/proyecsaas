@@ -157,6 +157,7 @@ export async function updatePropertyAction(formData: FormData) {
     try {
       await prisma.property.update({
         where: { id: property.id },
+        select: { id: true },
         data: {
           title: parsed.data.title,
           operationType: parsed.data.operationType,
@@ -196,6 +197,7 @@ export async function updatePropertyAction(formData: FormData) {
       console.warn("[actions] updatePropertyAction failed with advanced columns, falling back to legacy update:", updateError);
       await prisma.property.update({
         where: { id: property.id },
+        select: { id: true },
         data: {
           title: parsed.data.title,
           operationType: parsed.data.operationType,
