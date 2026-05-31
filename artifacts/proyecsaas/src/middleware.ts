@@ -12,6 +12,7 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   "/privacy",
   "/terms",
   "/terminos",
+  "/propiedades",
   /^\/map\/.+/,
   /^\/invite\/.+/,
   /^\/api\/webhooks\//,

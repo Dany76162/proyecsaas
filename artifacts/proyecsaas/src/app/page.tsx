@@ -56,6 +56,7 @@ function Navbar() {
           <a href="#como-funciona" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition">Cómo funciona</a>
           <a href="#tour-360" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition">Tour 360º</a>
           <a href="#beneficios" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition">Beneficios</a>
+          <Link href="/propiedades" className="text-sm font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-350 transition">Propiedades</Link>
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
