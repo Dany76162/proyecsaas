@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Calendar, ArrowRight } from "lucide-react";
+
 
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
@@ -155,11 +157,51 @@ export default async function VisitsPage({
 
         <div className="space-y-4">
           {visits.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">
-              {view === "upcoming"
-                ? 'No hay visitas pendientes ni confirmadas. Usá "Todas" para el historial.'
-                : "No hay visitas registradas."}
-            </p>
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/30 p-8 text-center max-w-xl mx-auto my-6 space-y-6">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-soft mx-auto">
+                <Calendar className="h-7 w-7" />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-slate-900">No hay visitas agendadas</h3>
+                <p className="text-sm font-medium leading-relaxed text-slate-500">
+                  {view === "upcoming"
+                    ? "No tenés visitas programadas o confirmadas en tu agenda inmediata. Usá la pestaña 'Todas' para revisar el historial completo."
+                    : "Aún no hay visitas registradas para este mes en tu organización."}
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 text-left bg-white border border-slate-100 rounded-2xl p-5 shadow-soft">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Automatizado por IA</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-600 leading-relaxed">
+                    El asistente inteligente coordinará citas directamente con los interesados por WhatsApp según la disponibilidad de tu equipo.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Desde el CRM</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-600 leading-relaxed">
+                    Podés programar una visita en cualquier momento ingresando a la ficha del Lead interesado en la sección de Prospectos.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <Link
+                  href={`/${orgSlug}/leads`}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-6 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-slate-800"
+                >
+                  Ir a Prospectos
+                  <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                </Link>
+                <Link
+                  href={`/${orgSlug}/properties`}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-xs font-bold uppercase tracking-widest text-slate-700 transition hover:bg-slate-50"
+                >
+                  Ver Propiedades
+                </Link>
+              </div>
+            </div>
           ) : (
             visits.map((visit) => (
               <article
