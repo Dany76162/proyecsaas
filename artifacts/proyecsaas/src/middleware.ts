@@ -16,6 +16,7 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   "/manifest.json",
   /^\/map\/.+/,
   /^\/invite\/.+/,
+  /^\/api\/public\//,
   /^\/api\/webhooks\//,
   /^\/api\/whatsapp\/webhook(\/|$)/,
   /^\/api\/properties\/sync-from-source/,
