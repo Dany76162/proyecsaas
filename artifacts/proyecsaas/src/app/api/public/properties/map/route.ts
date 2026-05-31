@@ -25,12 +25,16 @@ function getDeterministicOffset(id: string): { offsetLat: number; offsetLng: num
 
 // Build standard Prisma filters from URL search params
 function buildFilters(searchParams: URLSearchParams) {
+  const debug = searchParams.get("debug") === "true";
   const filters: any = {
     publicVisible: true,
     status: "AVAILABLE",
-    latitude: { not: null },
-    longitude: { not: null },
   };
+
+  if (!debug) {
+    filters.latitude = { not: null };
+    filters.longitude = { not: null };
+  }
 
   // Operation Type
   const operation = searchParams.get("operation");
@@ -256,6 +260,8 @@ export async function GET(request: Request) {
         approximate,
         latitude: lat,
         longitude: lng,
+        rawLatitude: prop.latitude,
+        rawLongitude: prop.longitude,
         locationLabel,
         imageUrl: primaryImage,
         url: `/cat/${prop.organization.slug}/${prop.id}`,
