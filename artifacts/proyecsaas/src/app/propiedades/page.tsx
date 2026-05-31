@@ -60,27 +60,32 @@ export default async function PublicPortalPropertiesPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const params = await searchParams;
+  const params = (await searchParams) || {};
 
   // 1. Obtener todas las inmobiliarias que tienen al menos una propiedad pública disponible
-  const activeOrgs = await prisma.organization.findMany({
-    where: {
-      isActive: true,
-      properties: {
-        some: {
-          publicVisible: true,
-          status: "AVAILABLE",
+  let activeOrgs: Array<{ name: string; slug: string }> = [];
+  try {
+    activeOrgs = await prisma.organization.findMany({
+      where: {
+        isActive: true,
+        properties: {
+          some: {
+            publicVisible: true,
+            status: "AVAILABLE",
+          },
         },
       },
-    },
-    select: {
-      name: true,
-      slug: true,
-    },
-    orderBy: {
-      name: "asc",
-    },
-  });
+      select: {
+        name: true,
+        slug: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("[propiedades] Error fetching active organizations:", error);
+  }
 
   // 2. Construir filtros dinámicos basados en los searchParams
   const whereClause: any = {
