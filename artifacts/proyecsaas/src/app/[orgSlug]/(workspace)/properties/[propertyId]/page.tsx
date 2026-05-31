@@ -287,7 +287,7 @@ export default async function PropertyDetailPage({
               />
             </div>
 
-            <div className="sm:col-span-2 lg:col-span-3">
+            <div className="sm:col-span-2 lg:col-span-3 grid gap-4 sm:grid-cols-2">
               <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
                 <input
                   name="publicVisible"
@@ -297,7 +297,20 @@ export default async function PropertyDetailPage({
                 />
                 <div>
                   <span className="font-medium">Publicar esta propiedad</span>
-                  <p className="text-xs text-slate-400 mt-0.5">Aparecerá en el mapa público y portales externos.</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Aparecerá en el catálogo público y mapa.</p>
+                </div>
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
+                <input
+                  name="isFeatured"
+                  type="checkbox"
+                  defaultChecked={property.isFeatured}
+                  className="h-4 w-4 rounded border-slate-300 accent-brand-500"
+                />
+                <div>
+                  <span className="font-medium">Propiedad destacada</span>
+                  <p className="text-xs text-slate-400 mt-0.5">Se mostrará prioritariamente en portales.</p>
                 </div>
               </label>
             </div>
@@ -337,6 +350,39 @@ export default async function PropertyDetailPage({
                 className={inputClass}
                 placeholder="Ej. Buenos Aires"
               />
+            </div>
+            <div>
+              <label className={labelClass}>Provincia</label>
+              <input
+                name="province"
+                defaultValue={property.province ?? ""}
+                className={inputClass}
+                placeholder="Ej. Buenos Aires"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>País</label>
+              <input
+                name="country"
+                defaultValue={property.country ?? "Argentina"}
+                className={inputClass}
+                placeholder="Ej. Argentina"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
+                <input
+                  name="showExactLocation"
+                  type="checkbox"
+                  defaultChecked={property.showExactLocation}
+                  className="h-4 w-4 rounded border-slate-300 accent-brand-500"
+                />
+                <div>
+                  <span className="font-medium">Mostrar ubicación exacta públicamente</span>
+                  <p className="text-xs text-slate-400 mt-0.5">Si se desmarca, solo se mostrará la zona aproximada en el mapa.</p>
+                </div>
+              </label>
             </div>
           </div>
         </SectionCard>
@@ -393,6 +439,28 @@ export default async function PropertyDetailPage({
               />
             </div>
             <div>
+              <label className={labelClass}>Superficie Cubierta (m²)</label>
+              <input
+                name="coveredSurfaceM2"
+                type="number"
+                min="0"
+                defaultValue={property.coveredSurfaceM2 ?? ""}
+                className={inputClass}
+                placeholder="Ej. 60"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Superficie Total (m²)</label>
+              <input
+                name="totalSurfaceM2"
+                type="number"
+                min="0"
+                defaultValue={property.totalSurfaceM2 ?? ""}
+                className={inputClass}
+                placeholder="Ej. 65"
+              />
+            </div>
+            <div>
               <label className={labelClass}>Cocheras</label>
               <input
                 name="parkingSpots"
@@ -403,6 +471,65 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. 1"
               />
             </div>
+            <div>
+              <label className={labelClass}>Año de Construcción</label>
+              <input
+                name="yearBuilt"
+                type="number"
+                min="1800"
+                max="2100"
+                defaultValue={property.yearBuilt ?? ""}
+                className={inputClass}
+                placeholder="Ej. 2015"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-slate-100 pt-6">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">Aptitudes y Condiciones</h4>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
+                <input
+                  name="petsAllowed"
+                  type="checkbox"
+                  defaultChecked={property.petsAllowed}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500"
+                />
+                <div>
+                  <span className="font-medium">Admite Mascotas</span>
+                  <p className="text-xs text-slate-400 mt-0.5">Permite animales domésticos en la propiedad.</p>
+                </div>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
+                <input
+                  name="professionalApt"
+                  type="checkbox"
+                  defaultChecked={property.professionalApt}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500"
+                />
+                <div>
+                  <span className="font-medium">Apto Profesional</span>
+                  <p className="text-xs text-slate-400 mt-0.5">Habilitado para uso comercial u oficina.</p>
+                </div>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
+                <input
+                  name="creditApt"
+                  type="checkbox"
+                  defaultChecked={property.creditApt}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500"
+                />
+                <div>
+                  <span className="font-medium">Apto Crédito</span>
+                  <p className="text-xs text-slate-400 mt-0.5">Acepta compra mediante crédito hipotecario bancario.</p>
+                </div>
+              </label>
+            </div>
+            <p className="mt-4 text-xs text-slate-400 text-center bg-slate-50 rounded-xl p-3 border border-slate-100/60">
+              💡 Completar estos datos físicos y geográficos robustece la ficha pública, optimiza las búsquedas inteligentes del Agente IA en WhatsApp y garantiza una correcta categorización de cara al futuro mapa interactivo.
+            </p>
           </div>
         </SectionCard>
 

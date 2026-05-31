@@ -293,6 +293,19 @@ model Property {
   floorPlanUrl      String?
   externalSourceUrl String?
   externalId        String?
+  
+  // Datos geograficos y fisicos avanzados (Fase 3)
+  province          String?
+  country           String?            @default("Argentina")
+  showExactLocation Boolean            @default(false)
+  isFeatured        Boolean            @default(false)
+  coveredSurfaceM2  Int?
+  totalSurfaceM2    Int?
+  yearBuilt         Int?
+  petsAllowed       Boolean            @default(true)
+  professionalApt   Boolean            @default(false)
+  creditApt         Boolean            @default(false)
+
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   conversations     Conversation[]     @relation("ConversationPropertyContext")
   interestedLeads   Lead[]             @relation("LeadPropertyInterest")

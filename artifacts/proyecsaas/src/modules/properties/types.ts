@@ -77,6 +77,16 @@ export type PropertyDetail = PropertyListItem & {
   floorPlanUrl: string | null;
   latitude?: number;
   longitude?: number;
+  province: string | null;
+  country: string | null;
+  showExactLocation: boolean;
+  isFeatured: boolean;
+  coveredSurfaceM2: number | null;
+  totalSurfaceM2: number | null;
+  yearBuilt: number | null;
+  petsAllowed: boolean;
+  professionalApt: boolean;
+  creditApt: boolean;
   interestedLeads: PropertyInterestLead[];
   visits: PropertyVisitItem[];
   images: PropertyImageItem[];
