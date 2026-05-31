@@ -250,7 +250,25 @@ export default async function PublicPortalPropertiesPage({
 
     properties = await prisma.property.findMany({
       where: fallbackWhere,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        priceCents: true,
+        currency: true,
+        address: true,
+        city: true,
+        neighborhood: true,
+        rooms: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        parkingSpots: true,
+        publicVisible: true,
+        status: true,
+        operationType: true,
+        propertyType: true,
+        createdAt: true,
         organization: {
           select: {
             name: true,
