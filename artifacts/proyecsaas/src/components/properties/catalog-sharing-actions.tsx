@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Copy, Check, MessageSquare, ExternalLink } from "lucide-react";
@@ -15,8 +15,8 @@ export function CatalogSharingActions({ orgSlug, orgName }: CatalogSharingAction
 
   // En un entorno Vercel/Railway real o localhost, esto construye la URL completa
   const getCatalogUrl = () => {
-    if (typeof window === "undefined") return `/${orgSlug}/catalog`;
-    return `${window.location.origin}/${orgSlug}/catalog`;
+    if (typeof window === "undefined") return `/cat/${orgSlug}`;
+    return `${window.location.origin}/cat/${orgSlug}`;
   };
 
   const catalogUrl = getCatalogUrl();
@@ -42,7 +42,7 @@ export function CatalogSharingActions({ orgSlug, orgName }: CatalogSharingAction
     <div className="flex flex-wrap items-center gap-2">
       {/* Botón original: Ver catálogo */}
       <Link
-        href={`/${orgSlug}/catalog`}
+        href={`/cat/${orgSlug}`}
         target="_blank"
         className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 shadow-soft"
       >

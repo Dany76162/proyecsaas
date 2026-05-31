@@ -83,3 +83,8 @@ export type PropertyDetail = PropertyListItem & {
   panoramas: PropertyPanoramaItem[];
   organizationSlug: string;
 };
+
+export type PublicCatalogProperty = PropertyListItem & {
+  images: { id: string; url: string; isPrimary: boolean }[];
+  panoramas: { id: string; url: string; roomName: string | null; label: string | null }[];
+};

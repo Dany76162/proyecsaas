@@ -8,6 +8,7 @@ import type {
   PropertyDetail,
   PropertyListItem,
   PropertySummary,
+  PublicCatalogProperty,
 } from "@/modules/properties/types";
 
 type PropertyFloorPlanRow = {
@@ -408,3 +409,59 @@ export async function getPublicPropertyDetail(propertyId: string): Promise<Prope
 
   return getPropertyDetail(property.organization.slug, property.id);
 }
+
+export async function listPublicPropertiesByOrgSlug(
+  orgSlug: string,
+): Promise<PublicCatalogProperty[]> {
+  const properties = await prisma.property.findMany({
+    where: {
+      organization: {
+        slug: orgSlug,
+      },
+      publicVisible: true,
+      status: "AVAILABLE",
+    },
+    include: {
+      images: {
+        select: {
+          id: true,
+          url: true,
+          isPrimary: true,
+        },
+      },
+      panoramas: {
+        select: {
+          id: true,
+          url: true,
+          roomName: true,
+          label: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 400,
+  });
+
+  return properties.map((property) => ({
+    id: property.id,
+    title: property.title,
+    address: property.address,
+    city: property.city,
+    neighborhood: property.neighborhood,
+    propertyType: property.propertyType,
+    operationType: property.operationType,
+    status: property.status,
+    publicVisible: property.publicVisible,
+    priceCents: property.priceCents,
+    currency: property.currency,
+    expensesCents: property.expensesCents,
+    rooms: property.rooms,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    surfaceM2: property.surfaceM2,
+    parkingSpots: property.parkingSpots,
+    images: property.images,
+    panoramas: property.panoramas,
+  }));
+}
+
