@@ -148,7 +148,7 @@ export default function SupportChatUI({
             >
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className="text-sm font-bold text-slate-900 truncate">{conv.participantName}</span>
-                <span className="text-[10px] font-bold text-slate-400 shrink-0">
+                <span className="text-[10px] font-bold text-slate-400 shrink-0" suppressHydrationWarning>
                     {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -193,7 +193,7 @@ export default function SupportChatUI({
             {/* Burbujas de Mensaje */}
             <div 
               ref={scrollRef}
-              className="flex-1 overflow-y-auto bg-[url('/chat-bg.png')] bg-repeat p-8 space-y-4"
+              className="flex-1 overflow-y-auto p-8 space-y-4"
               style={{ backgroundColor: '#f8fafc' }}
             >
               {isFetchingMsgs && (
@@ -217,7 +217,7 @@ export default function SupportChatUI({
                     {msg.body}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1.5 px-1">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter" suppressHydrationWarning>
                         {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     {msg.direction === "OUTBOUND" && <Check className="h-3 w-3 text-indigo-400" />}
