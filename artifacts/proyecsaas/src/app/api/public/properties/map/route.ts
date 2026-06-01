@@ -162,85 +162,43 @@ export async function GET(request: Request) {
 
     const filters = buildFilters(searchParams);
 
-    let rawProperties: any[] = [];
-
-    try {
-      // 1. Try modern query selecting showExactLocation and province
-      rawProperties = await prisma.property.findMany({
-        where: filters,
-        select: {
-          id: true,
-          title: true,
-          priceCents: true,
-          currency: true,
-          operationType: true,
-          propertyType: true,
-          bedrooms: true,
-          bathrooms: true,
-          surfaceM2: true,
-          latitude: true,
-          longitude: true,
-          showExactLocation: true,
-          neighborhood: true,
-          city: true,
-          province: true,
-          organization: {
-            select: {
-              slug: true,
-            },
-          },
-          images: {
-            where: { isPrimary: true },
-            take: 1,
-            select: { url: true },
-          },
-          panoramas: {
-            take: 1,
-            select: { id: true },
+    // Select legacy-safe. Evita P2022 en DB Railway legacy.
+    // showExactLocation y province no existen en la DB legacy — se omiten del select.
+    // showExact siempre false (ver mapeo abajo) → coordenadas siempre ofuscadas.
+    const rawProperties = await prisma.property.findMany({
+      where: filters,
+      select: {
+        id: true,
+        title: true,
+        priceCents: true,
+        currency: true,
+        operationType: true,
+        propertyType: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        latitude: true,
+        longitude: true,
+        neighborhood: true,
+        city: true,
+        organization: {
+          select: {
+            slug: true,
           },
         },
-        orderBy: { createdAt: "desc" },
-        take: 200,
-      });
-    } catch (dbError) {
-      console.warn("[api/public/properties/map] Modern query failed, falling back to legacy select:", dbError);
-      
-      // 2. Safe legacy query fallback excluding showExactLocation and province
-      rawProperties = await prisma.property.findMany({
-        where: filters,
-        select: {
-          id: true,
-          title: true,
-          priceCents: true,
-          currency: true,
-          operationType: true,
-          propertyType: true,
-          bedrooms: true,
-          bathrooms: true,
-          surfaceM2: true,
-          latitude: true,
-          longitude: true,
-          neighborhood: true,
-          city: true,
-          organization: {
-            select: {
-              slug: true,
-            },
-          },
-          images: {
-            where: { isPrimary: true },
-            take: 1,
-            select: { url: true },
-          },
-          panoramas: {
-            take: 1,
-            select: { id: true },
-          },
+        images: {
+          where: { isPrimary: true },
+          take: 1,
+          select: { url: true },
         },
-        orderBy: { createdAt: "desc" },
-        take: 200,
-      });
-    }
+        panoramas: {
+          take: 1,
+          select: { id: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
 
     // Format properties and apply geo-privacy rules
     const markers = rawProperties.map((prop) => {
@@ -248,38 +206,18 @@ export async function GET(request: Request) {
       const primaryImage = prop.images && prop.images[0] ? prop.images[0].url : null;
       const hasTour360 = prop.panoramas && prop.panoramas.length > 0;
       
-      // Coerce showExactLocation: default to false if field does not exist in legacy DB
-      const showExact = prop.showExactLocation ?? false;
-      
+      // showExactLocation no existe en DB Railway legacy → siempre ofuscado.
       const realLat = Number(prop.latitude);
       const realLng = Number(prop.longitude);
-      
-      let lat = realLat;
-      let lng = realLng;
-      let approximate = false;
-      let locationLabel = "";
 
-      // Construct dynamic label safely
-      const parts = [prop.neighborhood, prop.city, prop.province].filter(Boolean);
-      
-      if (showExact) {
-        approximate = false;
-        lat = realLat;
-        lng = realLng;
-        locationLabel = parts.join(", ") || "Ubicación confirmada";
-      } else {
-        approximate = true;
-        // Apply deterministic math offset
-        const { offsetLat, offsetLng } = getDeterministicOffset(prop.id);
-        lat = Number((realLat + offsetLat).toFixed(6));
-        lng = Number((realLng + offsetLng).toFixed(6));
-        
-        // Hide specific street addresses, construct general location
-        const generalParts = [prop.neighborhood, prop.city].filter(Boolean);
-        locationLabel = generalParts.length > 0 
-          ? `Zona aproximada en ${generalParts.join(", ")}` 
-          : "Zona aproximada";
-      }
+      const { offsetLat, offsetLng } = getDeterministicOffset(prop.id);
+      const lat = Number((realLat + offsetLat).toFixed(6));
+      const lng = Number((realLng + offsetLng).toFixed(6));
+
+      const generalParts = [prop.neighborhood, prop.city].filter(Boolean);
+      const locationLabel = generalParts.length > 0
+        ? `Zona aproximada en ${generalParts.join(", ")}`
+        : "Zona aproximada";
 
       return {
         id: prop.id,
@@ -293,7 +231,7 @@ export async function GET(request: Request) {
         bathrooms: prop.bathrooms,
         surfaceM2: prop.surfaceM2,
         hasTour360,
-        approximate,
+        approximate: true,
         latitude: lat,
         longitude: lng,
         locationLabel,
