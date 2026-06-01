@@ -9,6 +9,7 @@ import {
   removePropertyMediaBatchAction,
   setPropertyFloorPlanAction,
   updatePanoramaSettingsAction,
+  setPropertyImagePrimaryAction,
 } from "@/modules/properties/actions";
 import type { PropertyImageItem, PropertyPanoramaItem } from "@/modules/properties/types";
 import { CameraCaptureModal } from "./camera-capture-modal";
@@ -137,6 +138,26 @@ export function MediaPanel({
     });
     setSpatialMessage(null);
   }, [activePanorama]);
+
+  function handleSetPrimary(image: PropertyImageItem) {
+    if (image.category === "PANORAMA") return;
+    setDeleteError(null);
+    startTransition(async () => {
+      try {
+        const result = await setPropertyImagePrimaryAction(orgSlug, {
+          propertyId,
+          imageId: image.id,
+        });
+        if (!result.success) {
+          setDeleteError(result.message ?? "No se pudo establecer la portada.");
+          return;
+        }
+        onSaveChanges();
+      } catch (error: any) {
+        setDeleteError(error.message ?? "Error al establecer la portada.");
+      }
+    });
+  }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -515,8 +536,8 @@ export function MediaPanel({
                 </button>
 
                 {image.isPrimary && (
-                  <span className="absolute left-1 top-1 rounded bg-brand-500 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                    P
+                  <span className="absolute left-1 top-1 rounded bg-blue-600 px-1.5 py-0.5 text-[8px] font-extrabold text-white tracking-widest uppercase shadow">
+                    PORTADA
                   </span>
                 )}
                 {isActive && (
@@ -533,15 +554,28 @@ export function MediaPanel({
                     <Check className="h-3 w-3" />
                   </span>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteImage(image)}
-                    disabled={isPending}
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded bg-red-600 text-white opacity-0 shadow transition hover:bg-red-700 group-hover:opacity-100"
-                    title="Eliminar imagen"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(image)}
+                      disabled={isPending}
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded bg-red-600 text-white opacity-0 shadow transition hover:bg-red-700 group-hover:opacity-100"
+                      title="Eliminar imagen"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    {!image.isPrimary && image.category !== "PANORAMA" && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetPrimary(image)}
+                        disabled={isPending}
+                        className="absolute bottom-1 inset-x-1 flex h-6 items-center justify-center rounded bg-blue-600 text-[8px] font-extrabold uppercase tracking-widest text-white opacity-0 shadow transition hover:bg-blue-700 group-hover:opacity-100"
+                        title="Usar como portada"
+                      >
+                        Usar Portada
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             );
