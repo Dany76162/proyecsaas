@@ -177,6 +177,7 @@ export async function getPropertyDetail(
         petsAllowed: true,
         professionalApt: true,
         creditApt: true,
+        condition: true,
         organization: true,
         interestedLeads: {
           include: {
@@ -342,6 +343,7 @@ export async function getPropertyDetail(
     petsAllowed: property.petsAllowed ?? true,
     professionalApt: property.professionalApt ?? false,
     creditApt: property.creditApt ?? false,
+    condition: property.condition ?? null,
     interestedLeads,
     visits,
     images,
@@ -471,6 +473,7 @@ export async function listPublicProperties() {
     const properties = await prisma.property.findMany({
       where: {
         publicVisible: true,
+        status: "AVAILABLE",
       },
       orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
       take: 400,
@@ -499,6 +502,7 @@ export async function listPublicProperties() {
     const properties = await prisma.property.findMany({
       where: {
         publicVisible: true,
+        status: "AVAILABLE",
       },
       select: {
         id: true,
@@ -578,7 +582,7 @@ export async function listPublicPropertiesByOrgSlug(
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
       take: 400,
     });
 
@@ -599,6 +603,8 @@ export async function listPublicPropertiesByOrgSlug(
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       surfaceM2: property.surfaceM2,
+      coveredSurfaceM2: (property as any).coveredSurfaceM2 ?? null,
+      totalSurfaceM2: (property as any).totalSurfaceM2 ?? null,
       parkingSpots: property.parkingSpots,
       images: property.images,
       panoramas: property.panoramas,
@@ -668,6 +674,8 @@ export async function listPublicPropertiesByOrgSlug(
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       surfaceM2: property.surfaceM2,
+      coveredSurfaceM2: null,
+      totalSurfaceM2: null,
       parkingSpots: property.parkingSpots,
       images: property.images,
       panoramas: property.panoramas,

@@ -38,10 +38,10 @@ const VISIT_STATUS_LABEL: Record<string, string> = {
 };
 
 const OPERATION_TYPE_LABEL: Record<string, string> = {
-  SALE: "Comprar",
-  RENT: "Alquilar",
-  TEMPORARY: "Temporal",
-  EMPRENDIMIENTO: "Emprendimientos",
+  SALE: "Venta",
+  RENT: "Alquiler",
+  TEMPORARY: "Temporario",
+  EMPRENDIMIENTO: "Emprendimiento",
 };
 
 function getPropertyStatusTone(status: string) {
@@ -229,10 +229,10 @@ export default async function PropertyDetailPage({
               <label className={labelClass}>Tipo de operación</label>
               <select name="operationType" defaultValue={property.operationType ?? ""} className={inputClass}>
                 <option value="">Sin especificar</option>
-                <option value="RENT">Alquilar</option>
-                <option value="SALE">Comprar</option>
-                <option value="TEMPORARY">Temporal</option>
-                <option value="EMPRENDIMIENTO">Emprendimientos</option>
+                <option value="RENT">Alquiler</option>
+                <option value="SALE">Venta</option>
+                <option value="TEMPORARY">Temporario</option>
+                <option value="EMPRENDIMIENTO">Emprendimiento</option>
               </select>
             </div>
 

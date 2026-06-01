@@ -195,7 +195,15 @@ export default async function PublicPropertyDetailPage({
               
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white">
-                  {property.operationType === "SALE" || property.operationType === "Venta" ? "Venta" : property.operationType === "RENT" || property.operationType === "Alquiler" ? "Alquiler" : "Temporario"}
+                  {property.operationType === "SALE" || property.operationType === "Venta"
+                    ? "Venta"
+                    : property.operationType === "RENT" || property.operationType === "Alquiler"
+                      ? "Alquiler"
+                      : property.operationType === "TEMPORARY" || property.operationType === "Temporario"
+                        ? "Temporario"
+                        : property.operationType === "EMPRENDIMIENTO" || property.operationType === "Emprendimiento"
+                          ? "Emprendimiento"
+                          : property.operationType || "Propiedad"}
                 </span>
                 <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-extrabold tracking-widest text-slate-500 uppercase">
                   {property.propertyType || "Propiedad"}

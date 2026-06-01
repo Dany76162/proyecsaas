@@ -264,10 +264,10 @@ export default async function PublicPortalPropertiesPage({
             <label className={labelClass}>Operación</label>
             <select name="operation" defaultValue={params.operation ?? ""} className={inputClass}>
               <option value="">Cualquiera</option>
-              <option value="RENT">Alquilar</option>
-              <option value="SALE">Comprar</option>
-              <option value="TEMPORARY">Temporal</option>
-              <option value="EMPRENDIMIENTO">Emprendimientos</option>
+              <option value="RENT">Alquiler</option>
+              <option value="SALE">Venta</option>
+              <option value="TEMPORARY">Temporario</option>
+              <option value="EMPRENDIMIENTO">Emprendimiento</option>
             </select>
           </div>
           <div>
@@ -374,10 +374,10 @@ export default async function PublicPortalPropertiesPage({
           <label className={barLabel}>Operación</label>
           <select name="operation" defaultValue={params.operation ?? ""} className={barInput}>
             <option value="">Cualquiera</option>
-            <option value="RENT">Alquilar</option>
-            <option value="SALE">Comprar</option>
-            <option value="TEMPORARY">Temporal</option>
-            <option value="EMPRENDIMIENTO">Emprendimientos</option>
+            <option value="RENT">Alquiler</option>
+            <option value="SALE">Venta</option>
+            <option value="TEMPORARY">Temporario</option>
+            <option value="EMPRENDIMIENTO">Emprendimiento</option>
           </select>
         </div>
         {/* Tipo */}

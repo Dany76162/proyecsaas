@@ -39,9 +39,9 @@ const PropertyMap = dynamic(() => import("./property-map"), {
 });
 
 const OP_LABEL: Record<string, string> = {
-  SALE: "Comprar",
-  RENT: "Alquilar",
-  TEMPORARY: "Temporal",
+  SALE: "Venta",
+  RENT: "Alquiler",
+  TEMPORARY: "Temporario",
   EMPRENDIMIENTO: "Emprendimiento",
 };
 
@@ -72,9 +72,9 @@ function links(prop: any) {
   const waMsg = encodeURIComponent(
     `Hola, vi "${prop.title || "Inmueble"}" en Raíces Pilot y me gustaría más detalles.`
   );
-  const phone = prop.organization?.contactWhatsapp || prop.organization?.contactPhone;
-  const wa = phone
-    ? `https://wa.me/${String(phone).replace(/[^0-9]/g, "")}?text=${waMsg}`
+  const waPhone = prop.organization?.contactWhatsapp;
+  const wa = waPhone
+    ? `https://wa.me/${String(waPhone).replace(/[^0-9]/g, "")}?text=${waMsg}`
     : detail;
   return { detail, wa };
 }

@@ -254,7 +254,9 @@ export default async function PublicOrganizationCatalogPage({
                   ? "Alquiler"
                   : property.operationType === "TEMPORARY" || property.operationType === "Temporario"
                     ? "Temporario"
-                    : property.operationType || "Disponible";
+                    : property.operationType === "EMPRENDIMIENTO" || property.operationType === "Emprendimiento"
+                      ? "Emprendimiento"
+                      : property.operationType || "Disponible";
 
               return (
                 <article 
@@ -319,7 +321,7 @@ export default async function PublicOrganizationCatalogPage({
                         </div>
                         <div className="flex items-center gap-1 text-[11px] font-bold">
                           <Maximize2 className="h-3.5 w-3.5 text-slate-400" />
-                          <span>{property.surfaceM2 ? `${property.surfaceM2} m²` : "—"}</span>
+                          <span>{(property.totalSurfaceM2 || property.surfaceM2 || property.coveredSurfaceM2) ? `${property.totalSurfaceM2 || property.surfaceM2 || property.coveredSurfaceM2} m²` : "—"}</span>
                         </div>
                       </div>
                     </div>
@@ -332,6 +334,11 @@ export default async function PublicOrganizationCatalogPage({
                           {price}
                         </p>
                       </div>
+                      {property.expensesCents ? (
+                        <p className="text-[10px] font-semibold text-slate-400 text-right">
+                          + expensas {formatCurrency(property.expensesCents, property.currency ?? "USD")}
+                        </p>
+                      ) : null}
 
                       <div className="grid gap-2 grid-cols-2">
                         {/* CTA: Ver Ficha (Apunta a /cat/[orgSlug]/[propertyId]) */}

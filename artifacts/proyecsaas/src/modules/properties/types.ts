@@ -87,6 +87,7 @@ export type PropertyDetail = PropertyListItem & {
   petsAllowed: boolean;
   professionalApt: boolean;
   creditApt: boolean;
+  condition?: string | null;
   interestedLeads: PropertyInterestLead[];
   visits: PropertyVisitItem[];
   images: PropertyImageItem[];
@@ -95,6 +96,8 @@ export type PropertyDetail = PropertyListItem & {
 };
 
 export type PublicCatalogProperty = PropertyListItem & {
+  coveredSurfaceM2: number | null;
+  totalSurfaceM2: number | null;
   images: { id: string; url: string; isPrimary: boolean }[];
   panoramas: { id: string; url: string; roomName: string | null; label: string | null }[];
 };
