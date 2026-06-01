@@ -54,6 +54,12 @@ export default function SupportChatUI({
           setConversations(nextConvs);
         }
       } catch (e) {
+        // Si el Server Action no existe es porque hubo un nuevo deploy —
+        // recargar la página para sincronizar el bundle del cliente.
+        if (e instanceof Error && e.message.includes("Failed to find Server Action")) {
+          window.location.reload();
+          return;
+        }
         console.error("Failed to poll conversations:", e);
       }
 
@@ -70,6 +76,10 @@ export default function SupportChatUI({
             }
           }
         } catch (e) {
+          if (e instanceof Error && e.message.includes("Failed to find Server Action")) {
+            window.location.reload();
+            return;
+          }
           console.error("Failed to poll messages:", e);
         }
       }
