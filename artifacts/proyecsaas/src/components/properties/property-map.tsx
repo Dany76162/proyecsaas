@@ -38,11 +38,13 @@ type PropertyMapProps = {
     orgSlug?: string;
   };
   onBoundsChange?: (boundsStr: string) => void;
+  /** Override outer container classes. Defaults to the standalone card style. */
+  mapClassName?: string;
 };
 
 const MAP_STYLE_DEFAULT = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
-export default function PropertyMap({ filters, onBoundsChange }: PropertyMapProps) {
+export default function PropertyMap({ filters, onBoundsChange, mapClassName }: PropertyMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -258,7 +260,7 @@ export default function PropertyMap({ filters, onBoundsChange }: PropertyMapProp
   }, [markersData]);
 
   return (
-    <div className="relative w-full h-full min-h-[350px] lg:min-h-[500px] bg-slate-50 border border-slate-200 rounded-[2rem] overflow-hidden shadow-soft">
+    <div className={mapClassName ?? "relative w-full h-full min-h-[350px] lg:min-h-[500px] bg-slate-50 border border-slate-200 rounded-[2rem] overflow-hidden shadow-soft"}>
       {/* Mapbox container */}
       <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-10" />
 
