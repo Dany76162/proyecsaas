@@ -131,6 +131,7 @@ export async function updatePropertyAction(formData: FormData) {
       petsAllowed: formData.get("petsAllowed") === "on",
       professionalApt: formData.get("professionalApt") === "on",
       creditApt: formData.get("creditApt") === "on",
+      condition: String(formData.get("condition") ?? ""),
       // Descripción y multimedia
       description: String(formData.get("description") ?? ""),
       amenities: String(formData.get("amenities") ?? ""),
@@ -187,6 +188,7 @@ export async function updatePropertyAction(formData: FormData) {
           petsAllowed: parsed.data.petsAllowed,
           professionalApt: parsed.data.professionalApt,
           creditApt: parsed.data.creditApt,
+          condition: parsed.data.condition,
           description: parsed.data.description,
           amenities: parsed.data.amenities,
           externalLink: parsed.data.externalLink,

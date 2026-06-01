@@ -38,9 +38,10 @@ const VISIT_STATUS_LABEL: Record<string, string> = {
 };
 
 const OPERATION_TYPE_LABEL: Record<string, string> = {
-  SALE: "Venta",
-  RENT: "Alquiler",
-  TEMPORARY: "Alquiler temporario",
+  SALE: "Comprar",
+  RENT: "Alquilar",
+  TEMPORARY: "Temporal",
+  EMPRENDIMIENTO: "Emprendimientos",
 };
 
 function getPropertyStatusTone(status: string) {
@@ -225,23 +226,40 @@ export default async function PropertyDetailPage({
             </div>
 
             <div>
-              <label className={labelClass}>Operación</label>
+              <label className={labelClass}>Tipo de operación</label>
               <select name="operationType" defaultValue={property.operationType ?? ""} className={inputClass}>
                 <option value="">Sin especificar</option>
-                <option value="SALE">Venta</option>
-                <option value="RENT">Alquiler</option>
-                <option value="TEMPORARY">Alquiler temporario</option>
+                <option value="RENT">Alquilar</option>
+                <option value="SALE">Comprar</option>
+                <option value="TEMPORARY">Temporal</option>
+                <option value="EMPRENDIMIENTO">Emprendimientos</option>
               </select>
             </div>
 
             <div>
               <label className={labelClass}>Tipo de propiedad</label>
-              <input
-                name="propertyType"
-                defaultValue={property.propertyType ?? ""}
-                className={inputClass}
-                placeholder="Departamento, casa, terreno…"
-              />
+              <select name="propertyType" defaultValue={property.propertyType ?? ""} className={inputClass}>
+                <option value="">Sin especificar</option>
+                <option value="Departamento">Departamento</option>
+                <option value="Casa">Casa</option>
+                <option value="PH">PH</option>
+                <option value="Terreno">Terreno</option>
+                <option value="Local comercial">Local comercial</option>
+                <option value="Campo">Campo</option>
+                <option value="Quinta vacacional">Quinta vacacional</option>
+                <option value="Oficina comercial">Oficina comercial</option>
+                <option value="Garage">Garage</option>
+                <option value="Bodega-Galpón">Bodega-Galpón</option>
+                <option value="Fondo de comercio">Fondo de comercio</option>
+                <option value="Hotel">Hotel</option>
+                <option value="Depósito">Depósito</option>
+                <option value="Bóveda, nicho o parcela">Bóveda, nicho o parcela</option>
+                <option value="Cama náutica">Cama náutica</option>
+                <option value="Consultorio">Consultorio</option>
+                <option value="Edificio">Edificio</option>
+                <option value="Desarrollo horizontal">Desarrollo horizontal</option>
+                <option value="Desarrollo vertical">Desarrollo vertical</option>
+              </select>
             </div>
 
             <div>
@@ -270,9 +288,18 @@ export default async function PropertyDetailPage({
             <div>
               <label className={labelClass}>Moneda</label>
               <select name="currency" defaultValue={property.currency ?? "USD"} className={inputClass}>
-                <option value="USD">USD</option>
-                <option value="ARS">ARS</option>
-                <option value="EUR">EUR</option>
+                <option value="USD">USD — Dólar</option>
+                <option value="ARS">ARS — Peso argentino</option>
+                <option value="MXN">MXN — Peso mexicano</option>
+                <option value="CLP">CLP — Peso chileno</option>
+                <option value="COP">COP — Peso colombiano</option>
+                <option value="UYU">UYU — Peso uruguayo</option>
+                <option value="PEN">PEN — Sol peruano</option>
+                <option value="BOB">BOB — Boliviano</option>
+                <option value="PYG">PYG — Guaraní paraguayo</option>
+                <option value="DOP">DOP — Peso dominicano</option>
+                <option value="BRL">BRL — Real brasileño</option>
+                <option value="EUR">EUR — Euro</option>
               </select>
             </div>
 
@@ -525,6 +552,22 @@ export default async function PropertyDetailPage({
                   <p className="text-xs text-slate-400 mt-0.5">Acepta compra mediante crédito hipotecario bancario.</p>
                 </div>
               </label>
+            </div>
+
+            <div className="mt-4">
+              <label className={labelClass}>Estado / Antigüedad</label>
+              <select
+                name="condition"
+                defaultValue={(property as any).condition ?? ""}
+                className={inputClass}
+              >
+                <option value="">Sin especificar</option>
+                <option value="UNDER_CONSTRUCTION">En construcción</option>
+                <option value="NEW">A estrenar</option>
+                <option value="UP_TO_5_YEARS">Hasta 5 años</option>
+                <option value="GOOD">Buen estado</option>
+                <option value="OLD">Antiguo</option>
+              </select>
             </div>
             <p className="mt-4 text-xs text-slate-400 text-center bg-slate-50 rounded-xl p-3 border border-slate-100/60">
               💡 Completar estos datos físicos y geográficos robustece la ficha pública, optimiza las búsquedas inteligentes del Agente IA en WhatsApp y garantiza una correcta categorización de cara al futuro mapa interactivo.

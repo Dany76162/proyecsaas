@@ -75,6 +75,7 @@ export const updatePropertySchema = z.object({
   petsAllowed: z.boolean(),
   professionalApt: z.boolean(),
   creditApt: z.boolean(),
+  condition: z.preprocess(emptyStringToNull, z.string().trim().max(50).nullable()),
   // Descripción y multimedia
   description: z.preprocess(emptyStringToNull, z.string().trim().max(4000).nullable()),
   amenities: z.preprocess(emptyStringToNull, z.string().trim().max(500).nullable()),
