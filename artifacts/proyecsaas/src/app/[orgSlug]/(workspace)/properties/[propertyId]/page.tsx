@@ -420,7 +420,8 @@ export default async function PropertyDetailPage({
           description="Datos para matching automático de leads y filtros de búsqueda."
         >
           <div className="grid gap-4 sm:grid-cols-3">
-            <div>
+            {/* Ambientes — solo residencial */}
+            <div data-char-hide="non-residential">
               <label className={labelClass}>Ambientes</label>
               <input
                 name="rooms"
@@ -431,7 +432,8 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. 3"
               />
             </div>
-            <div>
+            {/* Dormitorios — solo residencial */}
+            <div data-char-hide="non-residential">
               <label className={labelClass}>Dormitorios</label>
               <input
                 name="bedrooms"
@@ -442,7 +444,8 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. 2"
               />
             </div>
-            <div>
+            {/* Baños — solo residencial */}
+            <div data-char-hide="non-residential">
               <label className={labelClass}>Baños</label>
               <input
                 name="bathrooms"
@@ -453,8 +456,9 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. 1"
               />
             </div>
+            {/* Superficie — siempre visible, label cambia según tipo */}
             <div>
-              <label className={labelClass}>Superficie (m²)</label>
+              <label className={labelClass} data-char-label="surface">Superficie (m²)</label>
               <input
                 name="surfaceM2"
                 type="number"
@@ -464,7 +468,8 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. 65"
               />
             </div>
-            <div>
+            {/* Superficie Cubierta — no aplica para terrenos/campos */}
+            <div data-char-hide="land">
               <label className={labelClass}>Superficie Cubierta (m²)</label>
               <input
                 name="coveredSurfaceM2"
@@ -475,8 +480,9 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. 60"
               />
             </div>
+            {/* Superficie Total — siempre visible */}
             <div>
-              <label className={labelClass}>Superficie Total (m²)</label>
+              <label className={labelClass} data-char-label="totalSurface">Superficie Total (m²)</label>
               <input
                 name="totalSurfaceM2"
                 type="number"
@@ -486,6 +492,7 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. 65"
               />
             </div>
+            {/* Cocheras — siempre visible */}
             <div>
               <label className={labelClass}>Cocheras</label>
               <input
@@ -497,7 +504,8 @@ export default async function PropertyDetailPage({
                 placeholder="Ej. 1"
               />
             </div>
-            <div>
+            {/* Año de Construcción — no aplica para terrenos/campos */}
+            <div data-char-hide="land">
               <label className={labelClass}>Año de Construcción</label>
               <input
                 name="yearBuilt"
@@ -514,7 +522,8 @@ export default async function PropertyDetailPage({
           <div className="mt-6 border-t border-slate-100 pt-6">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">Aptitudes y Condiciones</h4>
             <div className="grid gap-4 sm:grid-cols-3">
-              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
+              {/* Admite Mascotas — solo residencial */}
+              <label data-char-hide="non-residential" className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
                 <input
                   name="petsAllowed"
                   type="checkbox"
@@ -527,6 +536,7 @@ export default async function PropertyDetailPage({
                 </div>
               </label>
 
+              {/* Apto Profesional — siempre visible */}
               <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
                 <input
                   name="professionalApt"
@@ -540,6 +550,7 @@ export default async function PropertyDetailPage({
                 </div>
               </label>
 
+              {/* Apto Crédito — siempre visible */}
               <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50">
                 <input
                   name="creditApt"
@@ -554,7 +565,8 @@ export default async function PropertyDetailPage({
               </label>
             </div>
 
-            <div className="mt-4">
+            {/* Estado / Antigüedad — no aplica para terrenos/campos */}
+            <div className="mt-4" data-char-hide="land">
               <label className={labelClass}>Estado / Antigüedad</label>
               <select
                 name="condition"
@@ -710,6 +722,66 @@ export default async function PropertyDetailPage({
           </div>
         </SectionCard>
       </section>
+
+      {/* Script: adaptar campos de características según tipo de propiedad */}
+      <script dangerouslySetInnerHTML={{ __html: `
+        (function () {
+          // Tipos que NO son residenciales (ocultar ambientes/dorm/baños/mascotas)
+          var NON_RESIDENTIAL = new Set([
+            'Terreno','Campo','Garage','Bóveda, nicho o parcela','Cama náutica',
+            'Bodega-Galpón','Depósito','Local comercial','Oficina comercial',
+            'Consultorio','Fondo de comercio'
+          ]);
+          // Tipos que son puro terreno/suelo (ocultar también sup cubierta, año, estado)
+          var LAND = new Set([
+            'Terreno','Campo','Bóveda, nicho o parcela','Cama náutica'
+          ]);
+
+          function applyType(type) {
+            var isNonResidential = NON_RESIDENTIAL.has(type);
+            var isLand = LAND.has(type);
+
+            // Ocultar/mostrar según data-char-hide
+            document.querySelectorAll('[data-char-hide]').forEach(function (el) {
+              var rule = el.getAttribute('data-char-hide');
+              var shouldHide = (rule === 'non-residential' && isNonResidential) ||
+                               (rule === 'land' && isLand);
+              if (shouldHide) {
+                el.style.display = 'none';
+                // Limpiar inputs/selects ocultos para no enviar datos irrelevantes
+                el.querySelectorAll('input[type="number"], input[type="text"]').forEach(function (i) {
+                  i.value = '';
+                });
+              } else {
+                el.style.display = '';
+              }
+            });
+
+            // Adaptar label de Superficie según tipo
+            var surfLabel = document.querySelector('[data-char-label="surface"]');
+            if (surfLabel) {
+              surfLabel.textContent = isLand ? 'Superficie (m²) — 1 ha = 10.000 m²' : 'Superficie (m²)';
+            }
+            var totalLabel = document.querySelector('[data-char-label="totalSurface"]');
+            if (totalLabel) {
+              totalLabel.textContent = isLand ? 'Superficie Total del Lote (m²)' : 'Superficie Total (m²)';
+            }
+          }
+
+          function init() {
+            var sel = document.querySelector('select[name="propertyType"]');
+            if (!sel) return;
+            applyType(sel.value);
+            sel.addEventListener('change', function (e) { applyType(e.target.value); });
+          }
+
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+          } else {
+            init();
+          }
+        })();
+      ` }} />
     </>
   );
 }
