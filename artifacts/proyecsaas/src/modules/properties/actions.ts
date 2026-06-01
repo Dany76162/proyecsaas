@@ -465,28 +465,11 @@ export async function removePropertyImageAction(
   return { success: true, message: "Imagen eliminada." };
 }
 
+// Demo tour deshabilitado: las URLs apuntaban a rutas locales inexistentes en Railway.
 const demoTourScenes = [
-  {
-    url: "/uploads/property-media/panoramas360/demo-living.jpg",
-    title: "Living demo",
-    roomName: "Living",
-    positionX: -3,
-    positionY: 0,
-  },
-  {
-    url: "/uploads/property-media/panoramas360/demo-cocina.jpg",
-    title: "Cocina demo",
-    roomName: "Cocina",
-    positionX: 0,
-    positionY: -2.4,
-  },
-  {
-    url: "/uploads/property-media/panoramas360/demo-dormitorio.jpg",
-    title: "Dormitorio demo",
-    roomName: "Dormitorio",
-    positionX: 3,
-    positionY: 0,
-  },
+  { url: "", title: "Living demo", roomName: "Living", positionX: -3, positionY: 0 },
+  { url: "", title: "Cocina demo", roomName: "Cocina", positionX: 0, positionY: -2.4 },
+  { url: "", title: "Dormitorio demo", roomName: "Dormitorio", positionX: 3, positionY: 0 },
 ];
 
 export async function createPropertyDemoTourAction(
@@ -504,11 +487,13 @@ export async function createPropertyDemoTourAction(
     return { success: false, message: "Propiedad no encontrada." };
   }
 
-  const existing = await prisma.propertyPanorama.count({
-    where: { propertyId: property.id, organizationId: membership.organization.id },
-  });
-  if (existing > 0) {
-    return { success: false, message: "La propiedad ya tiene escenas 360." };
+  // Tour demo deshabilitado en producción: URLs apuntaban a filesystem local
+  // efímero de Railway. Usar cámara guiada o subir imágenes 360° directamente.
+  if (demoTourScenes.length === 0) {
+    return {
+      success: false,
+      message: "El tour demo no está disponible. Usá la cámara guiada o subí imágenes 360° directamente.",
+    };
   }
 
   const created = await prisma.$transaction(async (tx) => {

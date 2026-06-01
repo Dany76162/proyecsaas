@@ -2,12 +2,12 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { 
-  Building2, 
-  Compass, 
-  Phone, 
+import {
+  Building2,
+  Compass,
+  Phone,
   Mail,
-  MapPin, 
+  MapPin,
   ChevronLeft,
   Sparkles,
   BedDouble,
@@ -15,7 +15,8 @@ import {
   Maximize2,
   Car,
   Home,
-  FileText
+  FileText,
+  Video,
 } from "lucide-react";
 
 import { prisma } from "@/server/db/prisma";
@@ -25,6 +26,20 @@ import { PanoramaViewer } from "@/components/properties/panorama-viewer";
 import { ImageGallery } from "@/components/properties/image-gallery";
 import { PublicLeadForm } from "./public-lead-form";
 import { PropertyLocationMap } from "@/components/properties/property-location-map";
+
+function getVideoEmbedUrl(url: string): { type: "youtube" | "vimeo" | "direct"; src: string } {
+  if (/youtu\.be\/|youtube\.com/.test(url)) {
+    const match = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+    const id = match?.[1] ?? "";
+    return { type: "youtube", src: `https://www.youtube.com/embed/${id}` };
+  }
+  if (/vimeo\.com/.test(url)) {
+    const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    const id = match?.[1] ?? "";
+    return { type: "vimeo", src: `https://player.vimeo.com/video/${id}` };
+  }
+  return { type: "direct", src: url };
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ orgSlug: string; propertyId: string }> }) {
   const { orgSlug, propertyId } = await params;
@@ -286,22 +301,85 @@ export default async function PublicPropertyDetailPage({
               }} 
             />
 
-            {/* Photo Gallery Block */}
-            <div className="bg-white rounded-[2rem] border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-4">
-              <h3 className="text-lg font-bold text-slate-900">
-                Galería de imágenes
-              </h3>
-              {property.images && property.images.length > 0 ? (
-                <div className="rounded-xl overflow-hidden border border-slate-100">
-                  <ImageGallery images={property.images} />
+            {/* Photo Gallery Block — excluye imágenes 360° (equirectangulares distorsionadas) */}
+            {(() => {
+              const galleryImages = property.images.filter((img) => img.category !== "PANORAMA");
+              return (
+                <div className="bg-white rounded-[2rem] border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-4">
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Galería de imágenes
+                  </h3>
+                  {galleryImages.length > 0 ? (
+                    <div className="rounded-xl overflow-hidden border border-slate-100">
+                      <ImageGallery images={galleryImages} />
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-250 p-8 text-center bg-slate-50">
+                      <p className="text-sm font-bold text-slate-400">No se dispone de imágenes adicionales</p>
+                      <p className="text-xs text-slate-350 mt-1">Consultá a nuestro equipo por catálogo fotográfico completo</p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-250 p-8 text-center bg-slate-50">
-                  <p className="text-sm font-bold text-slate-400">No se dispone de imágenes adicionales</p>
-                  <p className="text-xs text-slate-350 mt-1">Consultá a nuestro equipo por catálogo fotográfico completo</p>
+              );
+            })()}
+
+            {/* Video Block */}
+            {property.videoUrl && (() => {
+              const video = getVideoEmbedUrl(property.videoUrl);
+              return (
+                <div className="bg-white rounded-[2rem] border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-4">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Video className="h-5 w-5 text-slate-500" />
+                    Video de la propiedad
+                  </h3>
+                  {video.type === "youtube" || video.type === "vimeo" ? (
+                    <div className="aspect-video w-full rounded-xl overflow-hidden border border-slate-100">
+                      <iframe
+                        src={video.src}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                        allowFullScreen
+                      />
+                    </div>
+                  ) : (
+                    <video
+                      src={video.src}
+                      controls
+                      className="w-full rounded-xl border border-slate-100"
+                    />
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
+
+            {/* Floor Plan Block */}
+            {property.floorPlanUrl && (
+              <div className="bg-white rounded-[2rem] border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-4">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Home className="h-5 w-5 text-slate-500" />
+                  Plano de la propiedad
+                </h3>
+                {property.floorPlanUrl.toLowerCase().endsWith(".pdf") ? (
+                  <a
+                    href={property.floorPlanUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    <FileText className="h-5 w-5 text-slate-500" />
+                    Ver plano en PDF
+                  </a>
+                ) : (
+                  <a href={property.floorPlanUrl} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={property.floorPlanUrl}
+                      alt="Plano de la propiedad"
+                      className="w-full rounded-xl border border-slate-100 hover:opacity-90 transition cursor-zoom-in"
+                    />
+                  </a>
+                )}
+              </div>
+            )}
 
           </div>
 

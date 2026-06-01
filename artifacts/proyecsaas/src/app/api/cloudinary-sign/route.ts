@@ -18,11 +18,6 @@ function signCloudinaryRequest(params: Record<string, string | number>, apiSecre
 }
 
 export async function POST(req: Request) {
-  console.log('ENV CHECK:', {
-    hasKey: !!process.env.CLOUDINARY_API_KEY,
-    hasSecret: !!process.env.CLOUDINARY_API_SECRET,
-    cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-  })
   const apiSecret = process.env.CLOUDINARY_API_SECRET
   const apiKey = process.env.CLOUDINARY_API_KEY
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
