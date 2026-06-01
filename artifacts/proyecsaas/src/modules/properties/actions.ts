@@ -244,7 +244,7 @@ export async function updatePropertyAction(formData: FormData) {
   }
 }
 
-// â”€â”€â”€ Delete action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€ Delete action â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 /**
  * Permanently deletes a property and cleans up all related records.
@@ -252,9 +252,9 @@ export async function updatePropertyAction(formData: FormData) {
  * Cascade behavior:
  *   - PropertyImage   → deleted via DB cascade (onDelete: Cascade)
  *   - Visit           → deleted via DB cascade (onDelete: Cascade)
- *   - Lead.propertyId → nulled (onDelete: Restrict â€” leads are decoupled, not deleted)
- *   - Conversation.propertyId → nulled (onDelete: Restrict â€” conversations preserved)
- *   - AvailabilitySlot.propertyId → nulled (onDelete: Restrict â€” slots preserved without property context)
+ *   - Lead.propertyId → nulled (onDelete: Restrict â€" leads are decoupled, not deleted)
+ *   - Conversation.propertyId → nulled (onDelete: Restrict â€" conversations preserved)
+ *   - AvailabilitySlot.propertyId → nulled (onDelete: Restrict â€" slots preserved without property context)
  *
  * Auth: requires ADMIN role. Agents can edit but not delete.
  */
@@ -283,28 +283,60 @@ export async function deletePropertyAction(
     return { success: false, message: "Propiedad no encontrada." };
   }
 
-  // Use a transaction: null out Restrict relations first, then delete.
-  await prisma.$transaction([
-    // Decouple leads (preserve lead records, just remove the property reference)
-    prisma.lead.updateMany({
-      where: { propertyId: property.id, organizationId: membership.organization.id },
-      data: { propertyId: null },
-    }),
-    // Decouple conversations (preserve conversation history)
-    prisma.conversation.updateMany({
-      where: { propertyId: property.id, organizationId: membership.organization.id },
-      data: { propertyId: null },
-    }),
-    // Decouple availability slots (keep agent availability, remove property context)
-    prisma.availabilitySlot.updateMany({
-      where: { propertyId: property.id, organizationId: membership.organization.id },
-      data: { propertyId: null },
-    }),
-    // Delete the property â€” images and visits cascade automatically
-    prisma.property.delete({
+  try {
+    // Intento principal: desacoplar referencias y eliminar en transacción
+    await prisma.$transaction([
+      // Decouple leads (preserve lead records, just remove the property reference)
+      prisma.lead.updateMany({
+        where: { propertyId: property.id, organizationId: membership.organization.id },
+        data: { propertyId: null },
+      }),
+      // Decouple conversations (preserve conversation history)
+      prisma.conversation.updateMany({
+        where: { propertyId: property.id, organizationId: membership.organization.id },
+        data: { propertyId: null },
+      }),
+      // Decouple availability slots (keep agent availability, remove property context)
+      prisma.availabilitySlot.updateMany({
+        where: { propertyId: property.id, organizationId: membership.organization.id },
+        data: { propertyId: null },
+      }),
+      // Delete the property — images and visits cascade automatically
+      prisma.property.delete({
+        where: { id: property.id },
+      }),
+    ]);
+  } catch (txError: any) {
+    // Fallback: si el $transaction falla (ej. columna organizationId faltante en AvailabilitySlot
+    // en DB Railway legacy), desacoplar individualmente con try/catch y luego eliminar.
+    console.warn('[deletePropertyAction] tx failed, fallback:', String((txError as any).message ?? txError));
+
+    try {
+      await prisma.lead.updateMany({
+        where: { propertyId: property.id },
+        data: { propertyId: null },
+      });
+    } catch (_e) { console.warn('[deletePropertyAction] lead decouple skipped'); }
+
+    try {
+      await prisma.conversation.updateMany({
+        where: { propertyId: property.id },
+        data: { propertyId: null },
+      });
+    } catch (_e) { console.warn('[deletePropertyAction] conversation decouple skipped'); }
+
+    try {
+      await prisma.availabilitySlot.updateMany({
+        where: { propertyId: property.id },
+        data: { propertyId: null },
+      });
+    } catch (_e) { /* slot decouple optional in legacy db */ }
+
+    // La eliminación de la propiedad sí es necesaria
+    await prisma.property.delete({
       where: { id: property.id },
-    }),
-  ]);
+    });
+  }
 
   revalidatePath(`/${orgSlug}/properties`);
   revalidatePath(`/${orgSlug}/leads`);
@@ -313,7 +345,7 @@ export async function deletePropertyAction(
   return { success: true, message: "Propiedad eliminada correctamente." };
 }
 
-// â”€â”€â”€ Video action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€ Video action â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 /**
  * Sets or clears the video URL for a property.
@@ -349,7 +381,7 @@ export async function setPropertyVideoAction(
   return { success: true, message: parsed.data.url ? "Video actualizado." : "Video eliminado." };
 }
 
-// â”€â”€â”€ Image actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€ Image actions â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 export async function setPropertyFloorPlanAction(
   orgSlug: string,
