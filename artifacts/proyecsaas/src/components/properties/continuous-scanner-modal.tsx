@@ -211,9 +211,13 @@ async function stitchWithService(frames: ScannedFrame[], propertyId: string): Pr
     });
   } catch (fetchErr: any) {
     if (fetchErr.name === "AbortError") {
-      throw new Error("El servicio de costura tardó demasiado en responder (Timeout de 60 segundos).");
+      // Timeout del servicio: usar fallback local
+      console.warn("[scanner] Stitch service timeout, using local canvas fallback.");
+      return buildLocalPanoramaFile(frames, propertyId);
     }
-    throw fetchErr;
+    // Error de red (Failed to fetch, servicio caído, etc.): usar fallback local
+    console.warn("[scanner] Stitch service unreachable, using local canvas fallback:", fetchErr.message);
+    return buildLocalPanoramaFile(frames, propertyId);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -271,6 +275,12 @@ export function ContinuousScannerModal({
   // Estados del HUD Premium animado
   const [flashOpacity, setFlashOpacity] = useState(0);
   const [lastCoveredSector, setLastCoveredSector] = useState<string | null>(null);
+
+  // Detección de círculo horizontal completo
+  const [fullCircleDetected, setFullCircleDetected] = useState(false);
+  const fullCircleDetectedRef = useRef(false); // ref para evitar stale closure en el event handler
+  const startFrontYawRef = useRef<number | null>(null);  // yaw de la primera captura frontal
+  const maxFrontDeviationRef = useRef(0);                // máxima desviación desde el inicio
 
   // Referencias para la lógica de captura
   const scannedFramesRef = useRef<ScannedFrame[]>([]);
@@ -352,6 +362,10 @@ export function ContinuousScannerModal({
         floor: new Set(),
       });
       hasAttemptedFinishRef.current = false;
+      setFullCircleDetected(false);
+      fullCircleDetectedRef.current = false;
+      startFrontYawRef.current = null;
+      maxFrontDeviationRef.current = 0;
     }
   }, [open]);
 
@@ -480,30 +494,48 @@ export function ContinuousScannerModal({
         }
 
         // Registrar frame y calcular zona
-        const registerFrameAndZone = (blob: Blob) => {
+        const registerFrameAndZone = (_blob: Blob) => {
           const sector = Math.floor(((alpha + 360) % 360) / 30); // 0-11
           const zone = getZone(beta);
-          
+
+          // ── Detección de círculo horizontal completo ──────────────────────
+          if (zone === "front") {
+            if (startFrontYawRef.current === null) {
+              startFrontYawRef.current = alpha;
+            } else {
+              const deviation = Math.abs(angleDiff(alpha, startFrontYawRef.current));
+              if (deviation > maxFrontDeviationRef.current) {
+                maxFrontDeviationRef.current = deviation;
+              }
+              // Círculo completo: se alejó >160° Y volvió a ≤25° del inicio
+              if (
+                maxFrontDeviationRef.current > 160 &&
+                deviation <= 25 &&
+                !fullCircleDetectedRef.current
+              ) {
+                fullCircleDetectedRef.current = true;
+                setFullCircleDetected(true);
+                speak("Círculo completo. Ahora apuntá hacia el techo");
+              }
+            }
+          }
+
           setZoneCoverage((prev) => {
             const nextSet = new Set(prev[zone]);
             const prevSize = nextSet.size;
             nextSet.add(sector);
-            
+
             // Si el sector es nuevo, avisar con voz
             if (nextSet.size > prevSize) {
               speakThrottled("Área escaneada", 1500);
             }
 
-            // Avisos de transiciones
+            // Avisos de transiciones por cobertura de sectores
             const frontSize = zone === "front" ? nextSet.size : prev.front.size;
             const ceilingSize = zone === "ceiling" ? nextSet.size : prev.ceiling.size;
-            
-            const prevFrontSize = prev.front.size;
             const prevCeilingSize = prev.ceiling.size;
 
-            if (zone === "front" && frontSize === 10 && prevFrontSize === 9) {
-              speak("Perfecto. Ahora apuntá hacia el techo");
-            } else if (zone === "ceiling" && frontSize >= 10 && ceilingSize === 4 && prevCeilingSize === 3) {
+            if (zone === "ceiling" && (frontSize >= 10 || fullCircleDetectedRef.current) && ceilingSize === 4 && prevCeilingSize === 3) {
               speak("Bien. Ahora apuntá hacia el piso");
             }
 
@@ -663,8 +695,10 @@ export function ContinuousScannerModal({
   }, [modalStep, cameraReady, orientation.alpha]);
 
   // Auto-finalización inteligente
+  // Frente completo: círculo detectado O ≥10 sectores cubiertos (cualquiera primero)
+  const frontComplete = fullCircleDetected || zoneCoverage.front.size >= 10;
   const isComplete =
-    zoneCoverage.front.size >= 10 &&
+    frontComplete &&
     zoneCoverage.ceiling.size >= 4 &&
     zoneCoverage.floor.size >= 4;
 
@@ -680,19 +714,19 @@ export function ContinuousScannerModal({
   }, [isComplete, modalStep]);
 
   // Guía progresiva
-  const guidance =
-    zoneCoverage.front.size < 10
-      ? "Girá lentamente para cubrir el ambiente"
-      : zoneCoverage.ceiling.size < 4
-        ? "✓ Frente completo — Apuntá hacia el techo"
-        : zoneCoverage.floor.size < 4
-          ? "✓ Techo completo — Apuntá hacia el piso"
-          : "✓ Escaneo completo — Finalizando...";
+  const guidance = !frontComplete
+    ? "Girá lentamente — volvé al punto de inicio para completar el círculo"
+    : zoneCoverage.ceiling.size < 4
+      ? "✓ Círculo completo — Apuntá hacia el techo"
+      : zoneCoverage.floor.size < 4
+        ? "✓ Techo completo — Apuntá hacia el piso"
+        : "✓ Escaneo completo — Finalizando...";
 
   const canFinish = scannedFrames.length >= MIN_REQUIRED_FRAMES;
 
   // Porcentajes de cobertura por zonas
-  const frontPct = Math.round((zoneCoverage.front.size / 12) * 100);
+  // Frente: si el círculo fue detectado ya mostramos 100%, sino el progreso de sectores
+  const frontPct = frontComplete ? 100 : Math.round((zoneCoverage.front.size / 12) * 100);
   const ceilingPct = Math.round((Math.min(zoneCoverage.ceiling.size, 6) / 6) * 100);
   const floorPct = Math.round((Math.min(zoneCoverage.floor.size, 6) / 6) * 100);
 
@@ -1062,6 +1096,10 @@ export function ContinuousScannerModal({
                         floor: new Set(),
                       });
                       hasAttemptedFinishRef.current = false;
+                      setFullCircleDetected(false);
+                      fullCircleDetectedRef.current = false;
+                      startFrontYawRef.current = null;
+                      maxFrontDeviationRef.current = 0;
                     }}
                     disabled={scannedFrames.length === 0 || isPending}
                     className="px-6 py-3 rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white/80 disabled:opacity-30 cursor-pointer"
