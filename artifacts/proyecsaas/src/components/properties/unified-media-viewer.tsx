@@ -36,6 +36,12 @@ export function UnifiedMediaViewer({
   const hasReal = realImages && realImages.length > 0
   const hasRenders = renderImages && renderImages.length > 0
   const hasPlano = !!floorPlanUrl
+  const isPdf = !!floorPlanUrl && (
+    floorPlanUrl.toLowerCase().split(/[?#]/)[0].endsWith('.pdf') ||
+    floorPlanUrl.includes('/raw/upload/') ||
+    floorPlanUrl.includes('/files/') ||
+    floorPlanUrl.toLowerCase().includes('.pdf')
+  )
 
   const getInitialTab = () => {
     if (hasPanoramas) return '360'
@@ -189,26 +195,61 @@ export function UnifiedMediaViewer({
 
         {activeTab === 'plano' && hasPlano && (
           <div className="flex-1 w-full h-full flex flex-col bg-slate-900 overflow-hidden relative">
-            {floorPlanUrl!.toLowerCase().endsWith('.pdf') ? (
-              <div className="w-full h-full flex flex-col">
-                <iframe
-                  src={`${floorPlanUrl}#toolbar=1&navpanes=1&scrollbar=1&zoom=100`}
-                  className="w-full h-full border-none bg-slate-850"
-                  title="Plano Técnico PDF"
-                />
-                <div className="bg-slate-950 border-t border-slate-800 px-6 py-3 flex items-center justify-between shrink-0">
-                  <p className="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
-                    📄 Plano Vectorial PDF • Utilizá los controles superiores para acercar, alejar o rotar.
-                  </p>
-                  <a
-                    href={floorPlanUrl!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white px-4 transition active:scale-95 shadow-md"
-                  >
-                    <span>Abrir en nueva pestaña</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </a>
+            {isPdf ? (
+              <div className="w-full h-full flex flex-col lg:flex-row">
+                {/* PDF Embed / Interactive Viewer */}
+                <div className="flex-1 h-full min-h-[300px] relative bg-slate-950">
+                  <iframe
+                    src={`${floorPlanUrl}#toolbar=1&navpanes=1&scrollbar=1&zoom=100`}
+                    className="w-full h-full border-none"
+                    title="Plano Técnico PDF"
+                  />
+                </div>
+                
+                {/* Premium Sidebar with Fallback & Direct actions */}
+                <div className="w-full lg:w-80 shrink-0 bg-slate-950 border-t lg:border-t-0 lg:border-l border-slate-800 p-6 flex flex-col justify-between gap-6 overflow-y-auto">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-blue-400">
+                      <Layers className="h-5 w-5 shrink-0" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest">Documento Técnico</span>
+                    </div>
+                    <h4 className="text-base font-bold text-white leading-tight">
+                      Plano y Mensura Oficial
+                    </h4>
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                      Si tu navegador o dispositivo móvil no puede renderizar el visor interactivo de forma directa, podés abrirlo en pantalla completa o descargarlo en alta resolución.
+                    </p>
+                    
+                    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 space-y-3">
+                      <div className="flex items-center gap-2.5 text-xs font-bold text-slate-350">
+                        <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+                        Formato PDF Vectorial
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                        Este formato permite realizar zoom digital sin perder nitidez en líneas técnicas ni tipografías de mensura.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <a
+                      href={floorPlanUrl!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs font-extrabold uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+                    >
+                      <span>Abrir en nueva pestaña</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </a>
+                    
+                    <a
+                      href={floorPlanUrl!}
+                      download
+                      className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-850 bg-white/[0.02] hover:bg-white/[0.06] text-xs font-extrabold uppercase tracking-widest text-slate-300 transition-all active:scale-95"
+                    >
+                      <span>Descargar plano (PDF)</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             ) : (

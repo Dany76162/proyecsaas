@@ -123,9 +123,12 @@ export async function uploadToPropertyMedia(
   formData.append("api_key", apiKey);
   formData.append("signature", signature);
 
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf") || category === "FLOOR_PLAN";
+  const resourceType = isPdf ? "auto" : "image";
+
   return new Promise<string>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`);
     
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
