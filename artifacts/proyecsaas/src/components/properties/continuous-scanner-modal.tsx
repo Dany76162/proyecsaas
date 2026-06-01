@@ -130,11 +130,56 @@ function subsampleFrames(frames: ScannedFrame[], maxFrames = 30): ScannedFrame[]
   return result;
 }
 
+async function buildLocalPanoramaFile(frames: ScannedFrame[], propertyId: string): Promise<File> {
+  const sorted = [...frames].sort((a, b) => a.yaw - b.yaw);
+  const bitmaps = await Promise.all(sorted.map((f) => createImageBitmap(f.blob)));
+  const first = bitmaps[0];
+  if (!first) throw new Error("No hay imágenes para unir.");
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 4096;
+  canvas.height = 2048;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("No se pudo preparar el lienzo 360.");
+
+  ctx.fillStyle = "#020617";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // ~683px por sector de 60° horizontal, ~682px por zona de pitch
+  const patchW = Math.ceil(canvas.width / 6);
+  const patchH = Math.ceil(canvas.height / 3);
+
+  bitmaps.forEach((bitmap, i) => {
+    const frame = sorted[i];
+    if (!frame) return;
+    const x = Math.round((frame.yaw / 360) * canvas.width) - patchW / 2;
+    const y = Math.round((frame.pitch / 180) * canvas.height) - patchH / 2;
+    ctx.drawImage(bitmap, x, y, patchW, patchH);
+    bitmap.close();
+  });
+
+  return new Promise<File>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return reject(new Error("No se pudo generar la imagen 360."));
+        resolve(
+          new File([blob], `${propertyId}-360-scan.jpg`, {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          }),
+        );
+      },
+      "image/jpeg",
+      0.88,
+    );
+  });
+}
+
 async function stitchWithService(frames: ScannedFrame[], propertyId: string): Promise<File> {
   const STITCH_URL = process.env.NEXT_PUBLIC_STITCH_SERVICE_URL;
 
   if (!STITCH_URL) {
-    throw new Error("Servicio de unión de imágenes 360 no configurado en el servidor.");
+    return buildLocalPanoramaFile(frames, propertyId);
   }
 
   const framePayloads = await Promise.all(
@@ -699,7 +744,8 @@ export function ContinuousScannerModal({
     } catch (saveError: any) {
       console.error("handleFinish ERROR:", saveError);
       setError(String(saveError.message ?? saveError));
-      setModalStep("SCANNING");
+      // Quedarse en PROCESSING para mostrar el error — no volver a SCANNING
+      // (volver reiniciaría la cámara y llamaría setError(null), borrando el mensaje)
     }
   };
 
@@ -785,21 +831,47 @@ export function ContinuousScannerModal({
           {/* STEP 2: PROCESSING / STITCHING */}
           {modalStep === "PROCESSING" && (
             <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-[#060814] via-[#0b0f19] to-[#03040b] p-6 text-center">
-              <div className="relative mb-6">
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 blur opacity-40 animate-pulse" />
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#0b0f19] border border-white/10">
-                  <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
-                </div>
-              </div>
-              <h3 className="text-xl font-bold mb-2 tracking-tight text-white">Procesando Escaneo 360°</h3>
-              <div className="mt-2 space-y-2">
-                <p className="text-sm font-semibold text-emerald-400">
-                  Procesando y uniendo {scannedFrames.length} fotos...
-                </p>
-                <p className="text-xs text-white/55 max-w-xs leading-relaxed mx-auto">
-                  Esto puede tardar entre 15 y 30 segundos debido al procesamiento matemático de las costuras en el servidor.
-                </p>
-              </div>
+              {error ? (
+                <>
+                  <VideoOff className="mx-auto mb-4 h-12 w-12 text-rose-400" />
+                  <h3 className="text-xl font-bold mb-2 tracking-tight text-white">Error al procesar</h3>
+                  <p className="text-sm text-rose-300 max-w-xs leading-relaxed mx-auto">{error}</p>
+                  <div className="mt-8 flex flex-col gap-3 w-full max-w-xs mx-auto">
+                    <button
+                      type="button"
+                      onClick={() => { setError(null); setModalStep("SCANNING"); }}
+                      className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-6 py-3 text-sm font-bold text-white transition"
+                    >
+                      Volver al escaneo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={close}
+                      className="w-full rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] px-6 py-3 text-sm font-semibold text-white/80 transition"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="relative mb-6">
+                    <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 blur opacity-40 animate-pulse" />
+                    <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#0b0f19] border border-white/10">
+                      <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 tracking-tight text-white">Procesando Escaneo 360°</h3>
+                  <div className="mt-2 space-y-2">
+                    <p className="text-sm font-semibold text-emerald-400">
+                      Procesando y uniendo {scannedFrames.length} fotos...
+                    </p>
+                    <p className="text-xs text-white/55 max-w-xs leading-relaxed mx-auto">
+                      Esto puede tardar entre 15 y 30 segundos debido al procesamiento matemático de las costuras en el servidor.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
