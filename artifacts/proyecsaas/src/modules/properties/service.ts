@@ -46,48 +46,38 @@ type PropertyImageRow = {
 export async function listOrganizationProperties(
   orgSlug: string,
 ): Promise<PropertyListItem[]> {
-  let properties: any[] = [];
-  try {
-    properties = await prisma.property.findMany({
-      where: {
-        organization: {
-          slug: orgSlug,
-        },
+  // Select explícito con columnas legacy-safe únicamente.
+  // Evita SELECT * que dispara P2022 contra DB Railway legacy.
+  const properties = await prisma.property.findMany({
+    where: {
+      organization: {
+        slug: orgSlug,
       },
-      orderBy: [{ publicVisible: "desc" }, { createdAt: "desc" }],
-      take: 400,
-    });
-  } catch (error) {
-    console.warn("[service] listOrganizationProperties failed with advanced columns, falling back to legacy select:", error);
-    properties = await prisma.property.findMany({
-      where: {
-        organization: {
-          slug: orgSlug,
-        },
-      },
-      select: {
-        id: true,
-        title: true,
-        address: true,
-        city: true,
-        neighborhood: true,
-        propertyType: true,
-        operationType: true,
-        status: true,
-        publicVisible: true,
-        priceCents: true,
-        currency: true,
-        expensesCents: true,
-        rooms: true,
-        bedrooms: true,
-        bathrooms: true,
-        surfaceM2: true,
-        parkingSpots: true,
-      },
-      orderBy: [{ publicVisible: "desc" }, { createdAt: "desc" }],
-      take: 400,
-    });
-  }
+    },
+    select: {
+      id: true,
+      title: true,
+      address: true,
+      city: true,
+      neighborhood: true,
+      propertyType: true,
+      operationType: true,
+      status: true,
+      publicVisible: true,
+      priceCents: true,
+      currency: true,
+      expensesCents: true,
+      rooms: true,
+      bedrooms: true,
+      bathrooms: true,
+      surfaceM2: true,
+      parkingSpots: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: [{ publicVisible: "desc" }, { createdAt: "desc" }],
+    take: 400,
+  });
 
   return properties.map((property) => ({
     id: property.id,
@@ -469,65 +459,35 @@ function parsePanoramaConnections(value: string | null) {
 }
 
 export async function listPublicProperties() {
-  try {
-    const properties = await prisma.property.findMany({
-      where: {
-        publicVisible: true,
-        status: "AVAILABLE",
-      },
-      orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
-      take: 400,
-    });
-    return properties.map((property) => ({
-      id: property.id,
-      title: property.title,
-      address: property.address,
-      city: property.city,
-      neighborhood: property.neighborhood,
-      propertyType: property.propertyType,
-      operationType: property.operationType,
-      status: property.status,
-      publicVisible: property.publicVisible,
-      priceCents: property.priceCents,
-      currency: property.currency,
-      expensesCents: property.expensesCents,
-      rooms: property.rooms,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      surfaceM2: property.surfaceM2,
-      parkingSpots: property.parkingSpots,
-    }));
-  } catch (error) {
-    console.warn("[service] listPublicProperties failed, falling back to legacy select:", error);
-    const properties = await prisma.property.findMany({
-      where: {
-        publicVisible: true,
-        status: "AVAILABLE",
-      },
-      select: {
-        id: true,
-        title: true,
-        address: true,
-        city: true,
-        neighborhood: true,
-        propertyType: true,
-        operationType: true,
-        status: true,
-        publicVisible: true,
-        priceCents: true,
-        currency: true,
-        expensesCents: true,
-        rooms: true,
-        bedrooms: true,
-        bathrooms: true,
-        surfaceM2: true,
-        parkingSpots: true,
-      },
-      orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
-      take: 400,
-    });
-    return properties;
-  }
+  // Select explícito legacy-safe. Evita SELECT * y P2022 en DB Railway legacy.
+  const properties = await prisma.property.findMany({
+    where: {
+      publicVisible: true,
+      status: "AVAILABLE",
+    },
+    select: {
+      id: true,
+      title: true,
+      address: true,
+      city: true,
+      neighborhood: true,
+      propertyType: true,
+      operationType: true,
+      status: true,
+      publicVisible: true,
+      priceCents: true,
+      currency: true,
+      expensesCents: true,
+      rooms: true,
+      bedrooms: true,
+      bathrooms: true,
+      surfaceM2: true,
+      parkingSpots: true,
+    },
+    orderBy: [{ organizationId: "asc" }, { createdAt: "desc" }],
+    take: 400,
+  });
+  return properties;
 }
 
 export async function getPublicPropertyDetail(propertyId: string): Promise<PropertyDetail | null> {
@@ -556,130 +516,77 @@ export async function getPublicPropertyDetail(propertyId: string): Promise<Prope
 export async function listPublicPropertiesByOrgSlug(
   orgSlug: string,
 ): Promise<PublicCatalogProperty[]> {
-  try {
-    const properties = await prisma.property.findMany({
-      where: {
-        organization: {
-          slug: orgSlug,
-        },
-        publicVisible: true,
-        status: "AVAILABLE",
+  // Select explícito legacy-safe. Evita SELECT * (via include sin select) y P2022.
+  // isFeatured eliminado del orderBy — no existe en DB Railway legacy.
+  // coveredSurfaceM2/totalSurfaceM2 quedan null hasta migración DB.
+  const properties = await prisma.property.findMany({
+    where: {
+      organization: {
+        slug: orgSlug,
       },
-      include: {
-        images: {
-          select: {
-            id: true,
-            url: true,
-            isPrimary: true,
-          },
-        },
-        panoramas: {
-          select: {
-            id: true,
-            url: true,
-            roomName: true,
-            label: true,
-          },
+      publicVisible: true,
+      status: "AVAILABLE",
+    },
+    select: {
+      id: true,
+      title: true,
+      address: true,
+      city: true,
+      neighborhood: true,
+      propertyType: true,
+      operationType: true,
+      status: true,
+      publicVisible: true,
+      priceCents: true,
+      currency: true,
+      expensesCents: true,
+      rooms: true,
+      bedrooms: true,
+      bathrooms: true,
+      surfaceM2: true,
+      parkingSpots: true,
+      images: {
+        select: {
+          id: true,
+          url: true,
+          isPrimary: true,
         },
       },
-      orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
-      take: 400,
-    });
+      panoramas: {
+        select: {
+          id: true,
+          url: true,
+          roomName: true,
+          label: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 400,
+  });
 
-    return properties.map((property) => ({
-      id: property.id,
-      title: property.title,
-      address: property.address,
-      city: property.city,
-      neighborhood: property.neighborhood,
-      propertyType: property.propertyType,
-      operationType: property.operationType,
-      status: property.status,
-      publicVisible: property.publicVisible,
-      priceCents: property.priceCents,
-      currency: property.currency,
-      expensesCents: property.expensesCents,
-      rooms: property.rooms,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      surfaceM2: property.surfaceM2,
-      coveredSurfaceM2: (property as any).coveredSurfaceM2 ?? null,
-      totalSurfaceM2: (property as any).totalSurfaceM2 ?? null,
-      parkingSpots: property.parkingSpots,
-      images: property.images,
-      panoramas: property.panoramas,
-    }));
-  } catch (error) {
-    console.warn("[service] listPublicPropertiesByOrgSlug failed, falling back to legacy select:", error);
-    const properties = await prisma.property.findMany({
-      where: {
-        organization: {
-          slug: orgSlug,
-        },
-        publicVisible: true,
-        status: "AVAILABLE",
-      },
-      select: {
-        id: true,
-        title: true,
-        address: true,
-        city: true,
-        neighborhood: true,
-        propertyType: true,
-        operationType: true,
-        status: true,
-        publicVisible: true,
-        priceCents: true,
-        currency: true,
-        expensesCents: true,
-        rooms: true,
-        bedrooms: true,
-        bathrooms: true,
-        surfaceM2: true,
-        parkingSpots: true,
-        images: {
-          select: {
-            id: true,
-            url: true,
-            isPrimary: true,
-          },
-        },
-        panoramas: {
-          select: {
-            id: true,
-            url: true,
-            roomName: true,
-            label: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 400,
-    });
-
-    return properties.map((property) => ({
-      id: property.id,
-      title: property.title,
-      address: property.address,
-      city: property.city,
-      neighborhood: property.neighborhood,
-      propertyType: property.propertyType,
-      operationType: property.operationType,
-      status: property.status,
-      publicVisible: property.publicVisible,
-      priceCents: property.priceCents,
-      currency: property.currency,
-      expensesCents: property.expensesCents,
-      rooms: property.rooms,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      surfaceM2: property.surfaceM2,
-      coveredSurfaceM2: null,
-      totalSurfaceM2: null,
-      parkingSpots: property.parkingSpots,
-      images: property.images,
-      panoramas: property.panoramas,
-    }));
-  }
+  return properties.map((property) => ({
+    id: property.id,
+    title: property.title,
+    address: property.address,
+    city: property.city,
+    neighborhood: property.neighborhood,
+    propertyType: property.propertyType,
+    operationType: property.operationType,
+    status: property.status,
+    publicVisible: property.publicVisible,
+    priceCents: property.priceCents,
+    currency: property.currency,
+    expensesCents: property.expensesCents,
+    rooms: property.rooms,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    surfaceM2: property.surfaceM2,
+    coveredSurfaceM2: null,
+    totalSurfaceM2: null,
+    parkingSpots: property.parkingSpots,
+    images: property.images,
+    panoramas: property.panoramas,
+  }));
 }
 

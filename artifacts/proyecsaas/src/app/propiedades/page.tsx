@@ -183,7 +183,29 @@ export default async function PublicPortalPropertiesPage({
   try {
     properties = await prisma.property.findMany({
       where: whereClause,
-      include: {
+      // Select explícito legacy-safe. Evita SELECT * y P2022 en cargas normales.
+      // isFeatured eliminado del orderBy — no existe en DB Railway legacy.
+      // El try/catch sigue activo para filtros avanzados (condition, yearBuilt, etc.)
+      // que pueden referenciar columnas modernas en el WHERE.
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        priceCents: true,
+        currency: true,
+        address: true,
+        city: true,
+        neighborhood: true,
+        rooms: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        parkingSpots: true,
+        publicVisible: true,
+        status: true,
+        operationType: true,
+        propertyType: true,
+        createdAt: true,
         organization: {
           select: { name: true, slug: true, contactPhone: true, contactWhatsapp: true },
         },
@@ -193,7 +215,7 @@ export default async function PublicPortalPropertiesPage({
         },
         panoramas: { select: { id: true }, take: 1 },
       },
-      orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ createdAt: "desc" }],
       take: 100,
     });
   } catch (error) {
