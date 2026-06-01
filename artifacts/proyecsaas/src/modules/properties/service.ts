@@ -123,128 +123,63 @@ export async function getPropertyDetail(
   orgSlug: string,
   propertyId: string,
 ): Promise<PropertyDetail | null> {
-  let property: any = null;
-  try {
-    property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        organization: {
-          slug: orgSlug,
-        },
+  // Select legacy-safe. Evita P2022 en DB Railway legacy.
+  // Columnas modernas (province, country, isFeatured, coveredSurfaceM2, totalSurfaceM2,
+  // yearBuilt, petsAllowed, professionalApt, creditApt, condition, showExactLocation)
+  // retornan null/defaults via ?? en el return object hasta que se migre la DB.
+  const property = await prisma.property.findFirst({
+    where: {
+      id: propertyId,
+      organization: {
+        slug: orgSlug,
       },
-      select: {
-        id: true,
-        organizationId: true,
-        title: true,
-        description: true,
-        address: true,
-        city: true,
-        neighborhood: true,
-        propertyType: true,
-        operationType: true,
-        status: true,
-        publicVisible: true,
-        priceCents: true,
-        currency: true,
-        expensesCents: true,
-        rooms: true,
-        bedrooms: true,
-        bathrooms: true,
-        surfaceM2: true,
-        parkingSpots: true,
-        amenities: true,
-        externalLink: true,
-        videoUrl: true,
-        latitude: true,
-        longitude: true,
-        province: true,
-        country: true,
-        showExactLocation: true,
-        isFeatured: true,
-        coveredSurfaceM2: true,
-        totalSurfaceM2: true,
-        yearBuilt: true,
-        petsAllowed: true,
-        professionalApt: true,
-        creditApt: true,
-        condition: true,
-        organization: true,
-        interestedLeads: {
-          include: {
-            owner: true,
-          },
-          orderBy: {
-            updatedAt: "desc",
-          },
-          take: 50,
+    },
+    select: {
+      id: true,
+      organizationId: true,
+      title: true,
+      description: true,
+      address: true,
+      city: true,
+      neighborhood: true,
+      propertyType: true,
+      operationType: true,
+      status: true,
+      publicVisible: true,
+      priceCents: true,
+      currency: true,
+      expensesCents: true,
+      rooms: true,
+      bedrooms: true,
+      bathrooms: true,
+      surfaceM2: true,
+      parkingSpots: true,
+      amenities: true,
+      externalLink: true,
+      videoUrl: true,
+      latitude: true,
+      longitude: true,
+      organization: true,
+      interestedLeads: {
+        include: {
+          owner: true,
         },
-        visits: {
-          include: {
-            lead: true,
-          },
-          orderBy: {
-            scheduledAt: "asc",
-          },
-          take: 50,
+        orderBy: {
+          updatedAt: "desc",
         },
+        take: 50,
       },
-    });
-  } catch (error) {
-    console.warn("[service] getPropertyDetail failed with advanced columns, falling back to legacy select:", error);
-    property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        organization: {
-          slug: orgSlug,
+      visits: {
+        include: {
+          lead: true,
         },
+        orderBy: {
+          scheduledAt: "asc",
+        },
+        take: 50,
       },
-      select: {
-        id: true,
-        organizationId: true,
-        title: true,
-        description: true,
-        address: true,
-        city: true,
-        neighborhood: true,
-        propertyType: true,
-        operationType: true,
-        status: true,
-        publicVisible: true,
-        priceCents: true,
-        currency: true,
-        expensesCents: true,
-        rooms: true,
-        bedrooms: true,
-        bathrooms: true,
-        surfaceM2: true,
-        parkingSpots: true,
-        amenities: true,
-        externalLink: true,
-        videoUrl: true,
-        latitude: true,
-        longitude: true,
-        organization: true,
-        interestedLeads: {
-          include: {
-            owner: true,
-          },
-          orderBy: {
-            updatedAt: "desc",
-          },
-          take: 50,
-        },
-        visits: {
-          include: {
-            lead: true,
-          },
-          orderBy: {
-            scheduledAt: "asc",
-          },
-          take: 50,
-        },
-      },
-    });
-  }
+    },
+  });
 
   if (!property) {
     return null;
@@ -323,17 +258,17 @@ export async function getPropertyDetail(
     floorPlanUrl,
     latitude: property.latitude ? Number(property.latitude) : undefined,
     longitude: property.longitude ? Number(property.longitude) : undefined,
-    province: property.province ?? null,
-    country: property.country ?? null,
-    showExactLocation: property.showExactLocation ?? false,
-    isFeatured: property.isFeatured ?? false,
-    coveredSurfaceM2: property.coveredSurfaceM2 ?? null,
-    totalSurfaceM2: property.totalSurfaceM2 ?? null,
-    yearBuilt: property.yearBuilt ?? null,
-    petsAllowed: property.petsAllowed ?? true,
-    professionalApt: property.professionalApt ?? false,
-    creditApt: property.creditApt ?? false,
-    condition: property.condition ?? null,
+    province: null,
+    country: null,
+    showExactLocation: false,
+    isFeatured: false,
+    coveredSurfaceM2: null,
+    totalSurfaceM2: null,
+    yearBuilt: null,
+    petsAllowed: true,
+    professionalApt: false,
+    creditApt: false,
+    condition: null,
     interestedLeads,
     visits,
     images,
