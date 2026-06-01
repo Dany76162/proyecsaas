@@ -304,6 +304,7 @@ export async function deletePropertyAction(
       // Delete the property — images and visits cascade automatically
       prisma.property.delete({
         where: { id: property.id },
+        select: { id: true },
       }),
     ]);
   } catch (txError: any) {
@@ -335,6 +336,7 @@ export async function deletePropertyAction(
     // La eliminación de la propiedad sí es necesaria
     await prisma.property.delete({
       where: { id: property.id },
+      select: { id: true },
     });
   }
 
