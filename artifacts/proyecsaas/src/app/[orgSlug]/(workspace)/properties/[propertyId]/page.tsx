@@ -204,7 +204,7 @@ export default async function PropertyDetailPage({
       </section>
 
       {/* Edit form — all in one submit */}
-      <form action={async (formData) => { "use server"; await updatePropertyAction(formData); }} className="space-y-6">
+      <form action={updatePropertyAction} className="space-y-6">
         <input type="hidden" name="orgSlug" value={orgSlug} />
         <input type="hidden" name="propertyId" value={property.id} />
 

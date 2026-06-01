@@ -196,56 +196,53 @@ export function UnifiedMediaViewer({
         {activeTab === 'plano' && hasPlano && (
           <div className="flex-1 w-full h-full flex flex-col bg-slate-900 overflow-hidden relative">
             {isPdf ? (
-              <div className="w-full h-full flex flex-col lg:flex-row">
-                {/* PDF Embed / Interactive Viewer */}
-                <div className="flex-1 h-full min-h-[300px] relative bg-slate-950">
-                  <iframe
-                    src={`${floorPlanUrl}#toolbar=1&navpanes=1&scrollbar=1&zoom=100`}
-                    className="w-full h-full border-none"
-                    title="Plano Técnico PDF"
-                  />
-                </div>
-                
-                {/* Premium Sidebar with Fallback & Direct actions */}
-                <div className="w-full lg:w-80 shrink-0 bg-slate-950 border-t lg:border-t-0 lg:border-l border-slate-800 p-6 flex flex-col justify-between gap-6 overflow-y-auto">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-blue-400">
-                      <Layers className="h-5 w-5 shrink-0" />
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest">Documento Técnico</span>
-                    </div>
-                    <h4 className="text-base font-bold text-white leading-tight">
-                      Plano y Mensura Oficial
-                    </h4>
-                    <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                      Si tu navegador o dispositivo móvil no puede renderizar el visor interactivo de forma directa, podés abrirlo en pantalla completa o descargarlo en alta resolución.
-                    </p>
-                    
-                    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 space-y-3">
-                      <div className="flex items-center gap-2.5 text-xs font-bold text-slate-350">
-                        <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-                        Formato PDF Vectorial
-                      </div>
-                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                        Este formato permite realizar zoom digital sin perder nitidez en líneas técnicas ni tipografías de mensura.
-                      </p>
-                    </div>
+              /* Tarjeta profesional para PDF — iframe omitido por incompatibilidad
+                 cross-origin/X-Frame-Options en Cloudinary y fallo en Safari/iOS */
+              <div className="w-full h-full flex items-center justify-center p-6 sm:p-10 bg-slate-950">
+                <div className="w-full max-w-md flex flex-col items-center gap-6 text-center">
+                  {/* Ícono documento PDF */}
+                  <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-blue-600/10 border border-blue-500/20 shadow-xl shadow-blue-900/30">
+                    <svg className="h-10 w-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
                   </div>
 
-                  <div className="space-y-2.5">
+                  {/* Info */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-blue-400">
+                      <Layers className="h-4 w-4 shrink-0" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest">Documento Técnico</span>
+                    </div>
+                    <h4 className="text-xl font-extrabold text-white leading-tight">
+                      Plano Técnico PDF
+                    </h4>
+                    <p className="text-sm text-slate-400 font-medium leading-relaxed">
+                      El plano de esta propiedad está disponible en formato PDF vectorial de alta resolución. Podés abrirlo en pantalla completa o descargarlo directamente.
+                    </p>
+                  </div>
+
+                  {/* Badge */}
+                  <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-3 flex items-center gap-2.5 text-xs font-bold text-slate-400">
+                    <span className="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                    Formato PDF Vectorial — Zoom sin pérdida de calidad
+                  </div>
+
+                  {/* Botones */}
+                  <div className="w-full space-y-2.5">
                     <a
                       href={floorPlanUrl!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs font-extrabold uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+                      className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-sm font-extrabold uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-blue-600/20"
                     >
-                      <span>Abrir en nueva pestaña</span>
+                      <span>Abrir plano en nueva pestaña</span>
                       <ChevronRight className="h-4 w-4" />
                     </a>
-                    
+
                     <a
                       href={floorPlanUrl!}
                       download
-                      className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-850 bg-white/[0.02] hover:bg-white/[0.06] text-xs font-extrabold uppercase tracking-widest text-slate-300 transition-all active:scale-95"
+                      className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-white/[0.03] hover:bg-white/[0.07] text-sm font-extrabold uppercase tracking-widest text-slate-300 transition-all active:scale-95"
                     >
                       <span>Descargar plano (PDF)</span>
                     </a>
