@@ -24,6 +24,7 @@ import { formatCurrency } from "@/lib/utils";
 import { PanoramaViewer } from "@/components/properties/panorama-viewer";
 import { ImageGallery } from "@/components/properties/image-gallery";
 import { PublicLeadForm } from "./public-lead-form";
+import { PropertyLocationMap } from "@/components/properties/property-location-map";
 
 export async function generateMetadata({ params }: { params: Promise<{ orgSlug: string; propertyId: string }> }) {
   const { orgSlug, propertyId } = await params;
@@ -264,6 +265,18 @@ export default async function PublicPropertyDetailPage({
                 {property.description || "Esta propiedad no cuenta con una descripción detallada cargada aún. Por favor contactá a la inmobiliaria responsable para recibir más información comercial."}
               </p>
             </div>
+
+            {/* Location Map Block (FASE 5E) */}
+            <PropertyLocationMap 
+              property={{
+                id: property.id,
+                title: property.title,
+                latitude: property.latitude,
+                longitude: property.longitude,
+                approximate: !property.showExactLocation,
+                locationLabel: location
+              }} 
+            />
 
             {/* Photo Gallery Block */}
             <div className="bg-white rounded-[2rem] border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-4">
