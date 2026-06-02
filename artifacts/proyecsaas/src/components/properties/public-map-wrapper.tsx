@@ -101,13 +101,18 @@ function FullCard({ prop }: { prop: any }) {
             {OP_LABEL[prop.operationType ?? ""] ?? "Propiedad"}
           </span>
         </div>
-        {(prop.panoramas || []).length > 0 && (
-          <div className="absolute bottom-3 right-3">
+        <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1">
+          {(prop.panoramas || []).length > 0 && (
             <span className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow">
               <Compass className="h-3 w-3 animate-spin-slow" /> Tour 360°
             </span>
-          </div>
-        )}
+          )}
+          {prop.floorPlanUrl && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-700/90 px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow">
+              Plano
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex flex-1 flex-col p-4">
         <div className="flex-1">
@@ -180,6 +185,9 @@ function MediumCard({ prop }: { prop: any }) {
           </span>
           {(prop.panoramas || []).length > 0 && (
             <span className="rounded bg-brand-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-tight">360°</span>
+          )}
+          {prop.floorPlanUrl && (
+            <span className="rounded bg-slate-600 px-1.5 py-0.5 text-[9px] font-bold text-white leading-tight">Plano</span>
           )}
         </div>
         {prop.isFeatured && (

@@ -214,6 +214,7 @@ export default async function PublicPortalPropertiesPage({
           orderBy: { sortOrder: "asc" },
         },
         panoramas: { select: { id: true }, take: 1 },
+        floorPlanUrl: true,
       },
       orderBy: [{ createdAt: "desc" }],
       take: 100,

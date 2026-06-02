@@ -117,13 +117,13 @@ export function PanoramaViewer({
       containerRef.current.addEventListener('click', handleContainerClick);
     }
 
-    const script = document.createElement('script')
-    script.src = '/pannellum.js'
-    script.onload = () => {
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.href = '/pannellum.css'
-      document.head.appendChild(link)
+    const initPannellum = () => {
+      if (!document.querySelector('link[href="/pannellum.css"]')) {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = '/pannellum.css'
+        document.head.appendChild(link)
+      }
 
       const hotspotStyle = document.createElement('style')
       hotspotStyle.textContent = `
@@ -159,7 +159,7 @@ export function PanoramaViewer({
       }
 
       if (!containerRef.current) return
-      
+
       try {
         if (safeScenes.length === 1) {
           // @ts-ignore
@@ -232,12 +232,24 @@ export function PanoramaViewer({
         console.error("Error al inicializar Pannellum", err)
       }
     }
-    
-    script.onerror = () => {
-      console.error("No se pudo cargar el visor 360° local de Pannellum")
+
+    // Si pannellum ya está en window (script cacheado de render anterior), inicializar directo.
+    // Si el script ya fue inyectado pero todavía está cargando, reusar el evento load.
+    // Solo en caso contrario inyectar el tag <script> por primera vez.
+    if (typeof (window as any).pannellum !== 'undefined') {
+      initPannellum()
+    } else {
+      const existingScript = document.querySelector('script[src="/pannellum.js"]')
+      if (existingScript) {
+        existingScript.addEventListener('load', initPannellum)
+      } else {
+        const script = document.createElement('script')
+        script.src = '/pannellum.js'
+        script.onload = initPannellum
+        script.onerror = () => console.error('No se pudo cargar el visor 360° local de Pannellum')
+        document.head.appendChild(script)
+      }
     }
-    
-    document.head.appendChild(script)
 
     return () => {
       if (containerRef.current) {
