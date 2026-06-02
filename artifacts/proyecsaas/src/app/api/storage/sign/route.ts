@@ -9,7 +9,17 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { filename, contentType, size, category, orgSlug, propertyId } = body;
+    const { filename, size, category, orgSlug, propertyId } = body;
+    let { contentType } = body;
+
+    // Normalizar contentType vacío/null — algunos browsers no detectan MIME de PDF
+    if (!contentType || contentType === "application/octet-stream") {
+      const ext = (filename || "").split(".").pop()?.toLowerCase();
+      if (ext === "pdf") contentType = "application/pdf";
+      else if (ext === "jpg" || ext === "jpeg") contentType = "image/jpeg";
+      else if (ext === "png") contentType = "image/png";
+      else if (ext === "webp") contentType = "image/webp";
+    }
 
     if (!filename || !contentType || !category || !orgSlug || !propertyId) {
       return NextResponse.json(
@@ -65,12 +75,15 @@ export async function POST(req: Request) {
     }
 
     // Validar PDF para planos, e imágenes para panoramas
-    if (category === "FLOOR_PLAN" && contentType !== "application/pdf") {
+    const isPdfContent = contentType === "application/pdf" || contentType === "application/x-pdf";
+    if (category === "FLOOR_PLAN" && !isPdfContent) {
       return NextResponse.json(
-        { error: "Los planos técnicos deben ser en formato PDF (application/pdf)." },
+        { error: "Los planos técnicos deben ser en formato PDF." },
         { status: 400 }
       );
     }
+    // Normalizar variante no estándar
+    if (category === "FLOOR_PLAN") contentType = "application/pdf";
 
     if (category === "PANORAMA") {
       const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -109,9 +122,10 @@ export async function POST(req: Request) {
       uploadUrl,
       publicUrl,
       method: "PUT",
+      // Solo Content-Type como header del PUT. Cache-Control eliminado para evitar que el
+      // preflight CORS requiera ese header en AllowedHeaders del bucket R2.
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
 

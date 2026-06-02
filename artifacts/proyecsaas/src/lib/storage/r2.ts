@@ -38,7 +38,8 @@ export async function generateR2PresignedUrl(
     Bucket: bucket,
     Key: key,
     ContentType: contentType,
-    CacheControl: "public, max-age=31536000, immutable",
+    // CacheControl omitido: incluirlo causa que el preflight CORS requiera
+    // Cache-Control en AllowedHeaders. Sin él el PUT solo necesita Content-Type.
   });
 
   const uploadUrl = await getSignedUrl(client, command, { expiresIn: expiresInSeconds });
