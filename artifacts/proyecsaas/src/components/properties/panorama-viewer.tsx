@@ -118,11 +118,11 @@ export function PanoramaViewer({
     }
 
     const script = document.createElement('script')
-    script.src = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js'
+    script.src = '/pannellum.js'
     script.onload = () => {
       const link = document.createElement('link')
       link.rel = 'stylesheet'
-      link.href = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css'
+      link.href = '/pannellum.css'
       document.head.appendChild(link)
 
       const hotspotStyle = document.createElement('style')

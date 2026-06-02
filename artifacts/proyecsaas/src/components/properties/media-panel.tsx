@@ -431,9 +431,18 @@ export function MediaPanel({
           Subir imagen
         </Button>
         {activeCategory === "PANORAMA" && (
-          <Button type="button" onClick={() => setIsCameraOpen(true)} className="mt-2 w-full gap-2 bg-brand-600 hover:bg-brand-700">
+          <Button
+            type="button"
+            onClick={() => {
+              const proceed = window.confirm(
+                "Captura asistida experimental. Para calidad profesional, te recomendamos subir imágenes de una cámara 360° real (Insta360, GoPro, Ricoh Theta, etc.). ¿Querés continuar con la captura asistida experimental?"
+              );
+              if (proceed) setIsCameraOpen(true);
+            }}
+            className="mt-2 w-full gap-2 bg-brand-600 hover:bg-brand-700"
+          >
             <Camera className="h-4 w-4" />
-            Escanear con celular
+            Escanear con celular (Experimental)
           </Button>
         )}
         <Button
@@ -459,15 +468,11 @@ export function MediaPanel({
         )}
         {floorPlanMessage && <p className="mt-2 text-xs text-white/55">{floorPlanMessage}</p>}
         {panoramas.length === 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={createDemoTour}
-            disabled={isSpatialPending}
-            className="mt-2 w-full bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
-          >
-            Crear tour demo
-          </Button>
+          <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-center">
+            <p className="text-[10px] font-semibold text-white/50 leading-normal">
+              Para iniciar un tour 360°, subí imágenes panorámicas reales generadas con una cámara profesional.
+            </p>
+          </div>
         )}
 
         <div className="mt-3 flex gap-2">
@@ -817,6 +822,95 @@ export function MediaPanel({
                   updatePositionFromPointer(event.currentTarget, event);
                 }}
               />
+            </div>
+
+            <div className="space-y-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/45">Orden y Preferencia</p>
+              
+              <Button
+                type="button"
+                onClick={async () => {
+                  setSpatialMessage(null);
+                  startSpatialTransition(async () => {
+                    try {
+                      const result = await updatePanoramaSettingsAction(orgSlug, {
+                        propertyId,
+                        panoramaId: activePanorama.id,
+                        sortOrder: 0,
+                      });
+                      if (result.success) {
+                        setSpatialMessage("★ Escena marcada como inicial.");
+                        onSaveChanges();
+                      } else {
+                        setSpatialMessage(result.message ?? "Error al guardar.");
+                      }
+                    } catch (e: any) {
+                      setSpatialMessage(e.message || "Error al actualizar.");
+                    }
+                  });
+                }}
+                disabled={isSpatialPending}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white h-9 gap-1.5 rounded-lg shadow-md"
+              >
+                ★ Establecer como Inicial
+              </Button>
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={async () => {
+                    const currentIndex = panoramas.findIndex(p => p.id === activePanorama.id);
+                    if (currentIndex <= 0) return;
+                    const prevPanorama = panoramas[currentIndex - 1];
+                    
+                    startSpatialTransition(async () => {
+                      await updatePanoramaSettingsAction(orgSlug, {
+                        propertyId,
+                        panoramaId: activePanorama.id,
+                        sortOrder: currentIndex - 1,
+                      });
+                      await updatePanoramaSettingsAction(orgSlug, {
+                        propertyId,
+                        panoramaId: prevPanorama.id,
+                        sortOrder: currentIndex,
+                      });
+                      onSaveChanges();
+                    });
+                  }}
+                  disabled={isSpatialPending || panoramas.findIndex(p => p.id === activePanorama.id) === 0}
+                  className="flex-1 bg-white/[0.04] text-[10px] font-semibold text-white/80 hover:bg-white/[0.08] hover:text-white h-8"
+                >
+                  ◀ Mover atrás
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={async () => {
+                    const currentIndex = panoramas.findIndex(p => p.id === activePanorama.id);
+                    if (currentIndex === -1 || currentIndex >= panoramas.length - 1) return;
+                    const nextPanorama = panoramas[currentIndex + 1];
+                    
+                    startSpatialTransition(async () => {
+                      await updatePanoramaSettingsAction(orgSlug, {
+                        propertyId,
+                        panoramaId: activePanorama.id,
+                        sortOrder: currentIndex + 1,
+                      });
+                      await updatePanoramaSettingsAction(orgSlug, {
+                        propertyId,
+                        panoramaId: nextPanorama.id,
+                        sortOrder: currentIndex,
+                      });
+                      onSaveChanges();
+                    });
+                  }}
+                  disabled={isSpatialPending || panoramas.findIndex(p => p.id === activePanorama.id) === panoramas.length - 1}
+                  className="flex-1 bg-white/[0.04] text-[10px] font-semibold text-white/80 hover:bg-white/[0.08] hover:text-white h-8"
+                >
+                  Mover adelante ▶
+                </Button>
+              </div>
             </div>
 
             <Button

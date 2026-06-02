@@ -267,7 +267,7 @@ export function MediaUploadModal({
     if (!isSaving) onOpenChange(nextOpen);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!file || !title.trim()) return;
     setError(null);
 
@@ -275,6 +275,27 @@ export function MediaUploadModal({
     if (file.size > maxUploadSize) {
       setError(`La imagen supera el maximo permitido de ${formatMegabytes(maxUploadSize)}.`);
       return;
+    }
+
+    if (category === "PANORAMA") {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      const aspectPassed = await new Promise<boolean>((resolve) => {
+        img.onload = () => {
+          const aspect = img.width / img.height;
+          URL.revokeObjectURL(img.src);
+          if (aspect < 1.5) {
+            setError("Esta imagen no parece ser una panorámica 360°. Para un tour profesional, subí una imagen equirectangular exportada desde Insta360, GoPro MAX, Ricoh Theta o drone panorámico.");
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        };
+        img.onerror = () => {
+          resolve(true); // Allow as fallback
+        };
+      });
+      if (!aspectPassed) return;
     }
 
     setProgress(1);

@@ -956,6 +956,16 @@ export async function updatePanoramaSettingsAction(
 
   const connections = parsed.data.connections !== undefined ? JSON.stringify(parsed.data.connections) : null;
 
+  if (parsed.data.sortOrder === 0) {
+    // Shift all other panoramas for this property so the new initial scene is 0
+    await prisma.$executeRaw`
+      UPDATE "PropertyPanorama"
+      SET "sortOrder" = "sortOrder" + 1
+      WHERE "propertyId" = ${panorama.propertyId}
+        AND "id" != ${panorama.id}
+    `;
+  }
+
   await prisma.$executeRaw`
     UPDATE "PropertyPanorama"
     SET
@@ -970,7 +980,8 @@ export async function updatePanoramaSettingsAction(
       "initialPitch" = CASE WHEN ${parsed.data.initialPitch !== undefined} THEN ${parsed.data.initialPitch ?? null} ELSE "initialPitch" END,
       "initialHfov" = CASE WHEN ${parsed.data.initialHfov !== undefined} THEN ${parsed.data.initialHfov ?? null} ELSE "initialHfov" END,
       "hotspotPitch" = CASE WHEN ${parsed.data.hotspotPitch !== undefined} THEN ${parsed.data.hotspotPitch ?? null} ELSE "hotspotPitch" END,
-      "hotspotYaw" = CASE WHEN ${parsed.data.hotspotYaw !== undefined} THEN ${parsed.data.hotspotYaw ?? null} ELSE "hotspotYaw" END
+      "hotspotYaw" = CASE WHEN ${parsed.data.hotspotYaw !== undefined} THEN ${parsed.data.hotspotYaw ?? null} ELSE "hotspotYaw" END,
+      "sortOrder" = CASE WHEN ${parsed.data.sortOrder !== undefined} THEN ${parsed.data.sortOrder ?? null} ELSE "sortOrder" END
     WHERE "id" = ${panorama.id}
   `;
 
