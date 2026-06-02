@@ -86,6 +86,69 @@ export async function uploadToPropertyMedia(
   propertyId: string,
   onProgress: (pct: number) => void,
 ): Promise<string> {
+  const isR2Target = category === "FLOOR_PLAN" || category === "PANORAMA";
+
+  if (isR2Target) {
+    // 1. Obtener firma/presigned URL para R2/S3
+    let signRes: Response;
+    try {
+      signRes = await fetch("/api/storage/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+          category,
+          orgSlug,
+          propertyId,
+        }),
+      });
+    } catch (error: any) {
+      throw new Error(`Error de red al conectar con /api/storage/sign: ${error.message || error}`);
+    }
+
+    if (!signRes.ok) {
+      let errMsg = "Error al obtener la firma de storage";
+      try {
+        const errData = await signRes.json();
+        if (errData && errData.error) errMsg = errData.error;
+      } catch {}
+      throw new Error(errMsg);
+    }
+
+    const { uploadUrl, publicUrl, method, headers } = await signRes.json();
+
+    // 2. Subir directamente a Cloudflare R2 / S3-compatible usando PUT
+    return new Promise<string>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method || "PUT", uploadUrl);
+      
+      if (headers) {
+        Object.entries(headers).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value as string);
+        });
+      }
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 200 || xhr.status === 201) {
+          resolve(publicUrl);
+        } else {
+          reject(new Error(`Storage Upload Error (Status ${xhr.status}): ${xhr.responseText}`));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Error de red al subir al storage Cloudflare R2."));
+      xhr.send(file);
+    });
+  }
+
   const folder = folderByCategory[category];
 
   // 1. Obtener firma del servidor
