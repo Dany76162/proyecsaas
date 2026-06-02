@@ -31,54 +31,10 @@ import { MobilitySection } from "@/components/landing/MobilitySection";
 import { Tour360Section } from "@/components/landing/Tour360Section";
 import Image from "next/image";
 import { prisma } from "@/server/db/prisma";
-import { ThemeToggle } from "@/components/landing/ThemeToggle";
+import { Navbar } from "@/components/landing/Navbar";
 
 const DEMO_WHATSAPP_URL =
   "https://wa.me/5491166037990?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20Ra%C3%ADces%20Pilot%20para%20mi%20inmobiliaria.";
-
-function Navbar() {
-  return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md transition-colors duration-300">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <div className="flex items-center gap-0 shrink-0">
-          <img 
-            src="/brand/logo_transparent_icon.png" 
-            alt="RaícesPilot Logo" 
-            className="h-10 sm:h-16 w-auto object-contain brightness-0 dark:invert" 
-          />
-          <span className="text-base sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white -ml-1">
-            <span className="text-brand-600 dark:text-brand-400">RAÍCES</span><span className="font-light">Pilot</span>
-          </span>
-        </div>
-        
-        <nav className="hidden items-center gap-8 md:flex">
-          <a href="#producto" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition">Producto</a>
-          <a href="#como-funciona" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition">Cómo funciona</a>
-          <a href="#tour-360" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition">Tour 360º</a>
-          <a href="#beneficios" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition">Beneficios</a>
-          <Link href="/propiedades" className="text-sm font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-350 transition">Propiedades</Link>
-        </nav>
-
-        <div className="flex items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-          <Button variant="ghost" asChild className="hidden sm:inline-flex dark:text-slate-200 dark:hover:bg-slate-900">
-            <Link href="/login">Acceder</Link>
-          </Button>
-          <Button asChild size="sm" className="sm:hidden">
-            <Link href="/login">
-              Acceder
-            </Link>
-          </Button>
-          <Button asChild className="hidden sm:inline-flex">
-            <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-              Solicitar demo
-            </a>
-          </Button>
-        </div>
-      </div>
-    </header>
-  );
-}
 
 export default async function HomePage() {
   const sessionUser = await getSessionUser();
