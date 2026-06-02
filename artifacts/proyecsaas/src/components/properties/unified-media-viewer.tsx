@@ -42,6 +42,11 @@ export function UnifiedMediaViewer({
     floorPlanUrl.includes('/files/') ||
     floorPlanUrl.toLowerCase().includes('.pdf')
   )
+  // URL subida con resource_type=auto/image en lugar de raw — Cloudinary sirve un
+  // thumbnail de imagen, no el binario PDF. El usuario debe reemplazar el plano.
+  const isLegacyCloudinaryPdf = isPdf &&
+    !!floorPlanUrl?.includes('cloudinary.com') &&
+    !!floorPlanUrl?.includes('/image/upload/')
 
   const getInitialTab = () => {
     if (hasPanoramas) return '360'
@@ -221,11 +226,25 @@ export function UnifiedMediaViewer({
                     </p>
                   </div>
 
-                  {/* Badge */}
-                  <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-3 flex items-center gap-2.5 text-xs font-bold text-slate-400">
-                    <span className="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                    Formato PDF Vectorial — Zoom sin pérdida de calidad
-                  </div>
+                  {/* Badge / estado */}
+                  {isLegacyCloudinaryPdf ? (
+                    <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 px-5 py-3 flex items-start gap-2.5 text-xs font-semibold text-amber-300 text-left">
+                      <span className="flex h-2 w-2 rounded-full bg-amber-400 shrink-0 mt-0.5" />
+                      <span>
+                        Este plano puede no abrirse correctamente. Si el botón no funciona, solicitá a la inmobiliaria que vuelva a subir el plano actualizado.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-3 flex items-center gap-2.5 text-xs font-bold text-slate-400">
+                      <span className="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                      Formato PDF Vectorial — Zoom sin pérdida de calidad
+                    </div>
+                  )}
+
+                  {/* Nota de fallback siempre visible */}
+                  <p className="text-[11px] text-slate-500 font-medium text-center leading-relaxed">
+                    Si el plano no abre correctamente, solicitá a la inmobiliaria una copia actualizada.
+                  </p>
 
                   {/* Botones */}
                   <div className="w-full space-y-2.5">

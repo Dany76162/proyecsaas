@@ -123,8 +123,11 @@ export async function uploadToPropertyMedia(
   formData.append("api_key", apiKey);
   formData.append("signature", signature);
 
-  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf") || category === "FLOOR_PLAN";
-  const resourceType = isPdf ? "auto" : "image";
+  // PDFs reales se suben como "raw" para que Cloudinary los sirva como binario
+  // con Content-Type: application/pdf. "auto" o "image" convierten el PDF a imagen
+  // (thumbnail de página 1) y rompen la descarga/visualización en el navegador.
+  const isActualPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  const resourceType = isActualPdf ? "raw" : "image";
 
   return new Promise<string>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
