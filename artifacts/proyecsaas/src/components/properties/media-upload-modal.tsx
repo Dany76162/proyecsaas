@@ -284,7 +284,7 @@ export function MediaUploadModal({
         img.onload = () => {
           const aspect = img.width / img.height;
           URL.revokeObjectURL(img.src);
-          if (aspect < 1.5) {
+          if (aspect < 1.8) {
             setError("Esta imagen no parece ser una panorámica 360°. Para un tour profesional, subí una imagen equirectangular exportada desde Insta360, GoPro MAX, Ricoh Theta o drone panorámico.");
             resolve(false);
           } else {

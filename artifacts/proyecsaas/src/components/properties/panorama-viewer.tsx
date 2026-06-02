@@ -234,7 +234,7 @@ export function PanoramaViewer({
     }
     
     script.onerror = () => {
-      console.error("No se pudo cargar el script de Pannellum desde CDN")
+      console.error("No se pudo cargar el visor 360° local de Pannellum")
     }
     
     document.head.appendChild(script)

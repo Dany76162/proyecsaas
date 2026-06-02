@@ -5,7 +5,6 @@ import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, X }
 
 import { Button } from "@/components/ui/button";
 import {
-  createPropertyDemoTourAction,
   removePropertyMediaBatchAction,
   setPropertyFloorPlanAction,
   updatePanoramaSettingsAction,
@@ -350,21 +349,6 @@ export function MediaPanel({
     });
   }
 
-  function createDemoTour() {
-    setSpatialMessage(null);
-    setDeleteError(null);
-
-    startSpatialTransition(async () => {
-      const result = await createPropertyDemoTourAction(orgSlug, propertyId);
-      if (!result.success) {
-        setDeleteError(result.message ?? "No se pudo crear el tour demo.");
-        return;
-      }
-
-      setSpatialMessage(result.message ?? "Escenas demo creadas. Actualizando...");
-      onSaveChanges();
-    });
-  }
 
   return (
     <aside

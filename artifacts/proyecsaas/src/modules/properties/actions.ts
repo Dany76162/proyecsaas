@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { Prisma, MembershipRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -497,115 +496,6 @@ export async function removePropertyImageAction(
 
   revalidatePath(`/${orgSlug}/properties/${image.propertyId}`);
   return { success: true, message: "Imagen eliminada." };
-}
-
-// Demo tour deshabilitado: las URLs apuntaban a rutas locales inexistentes en Railway.
-const demoTourScenes = [
-  { url: "", title: "Living demo", roomName: "Living", positionX: -3, positionY: 0 },
-  { url: "", title: "Cocina demo", roomName: "Cocina", positionX: 0, positionY: -2.4 },
-  { url: "", title: "Dormitorio demo", roomName: "Dormitorio", positionX: 3, positionY: 0 },
-];
-
-export async function createPropertyDemoTourAction(
-  orgSlug: string,
-  propertyId: string,
-): Promise<ActionResult> {
-  const { membership } = await requireOrganizationMembership(orgSlug);
-  assertMinimumRole(membership.role, MembershipRole.AGENT);
-
-  const property = await prisma.property.findFirst({
-    where: { id: propertyId, organizationId: membership.organization.id },
-    select: { id: true },
-  });
-  if (!property) {
-    return { success: false, message: "Propiedad no encontrada." };
-  }
-
-  // Tour demo deshabilitado en producción: URLs apuntaban a filesystem local
-  // efímero de Railway. Usar cámara guiada o subir imágenes 360° directamente.
-  if (demoTourScenes.length === 0) {
-    return {
-      success: false,
-      message: "El tour demo no está disponible. Usá la cámara guiada o subí imágenes 360° directamente.",
-    };
-  }
-
-  const created = await prisma.$transaction(async (tx) => {
-    const panoramas = [];
-
-    for (let index = 0; index < demoTourScenes.length; index += 1) {
-      const scene = demoTourScenes[index];
-      await tx.propertyImage.create({
-        data: {
-          propertyId: property.id,
-          organizationId: membership.organization.id,
-          url: scene.url,
-          altText: scene.title,
-          category: "PANORAMA",
-          isPrimary: false,
-          sortOrder: index,
-        },
-      });
-
-      const panorama: { id: string } = {
-        id: randomUUID(),
-      };
-
-      await tx.$executeRaw`
-        INSERT INTO "PropertyPanorama" (
-          "id",
-          "propertyId",
-          "organizationId",
-          "url",
-          "label",
-          "roomName",
-          "direction",
-          "floor",
-          "positionX",
-          "positionY",
-          "positionZ",
-          "connections",
-          "sortOrder",
-          "createdAt"
-        )
-        VALUES (
-          ${panorama.id},
-          ${property.id},
-          ${membership.organization.id},
-          ${scene.url},
-          ${scene.title},
-          ${scene.roomName},
-          ${"CENTER"},
-          ${0},
-          ${scene.positionX},
-          ${scene.positionY},
-          ${0},
-          ${"[]"},
-          ${index},
-          NOW()
-        )
-      `;
-
-      panoramas.push(panorama);
-    }
-
-    for (let index = 0; index < panoramas.length; index += 1) {
-      const connections = [panoramas[index - 1]?.id, panoramas[index + 1]?.id].filter(
-        (id): id is string => Boolean(id),
-      );
-
-      await tx.$executeRaw`
-        UPDATE "PropertyPanorama"
-        SET "connections" = ${JSON.stringify(connections)}
-        WHERE "id" = ${panoramas[index].id}
-      `;
-    }
-
-    return panoramas;
-  });
-
-  revalidatePath(`/${orgSlug}/properties/${property.id}`);
-  return { success: true, message: `${created.length} escenas demo creadas.` };
 }
 
 export async function removePropertyMediaBatchAction(
