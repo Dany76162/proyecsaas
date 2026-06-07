@@ -67,6 +67,31 @@ export default async function PublicOrganizationCatalogPage({
   // Listar propiedades con filtros publicVisible=true y status=AVAILABLE
   const properties = await listPublicPropertiesByOrgSlug(orgSlug);
 
+  // Listar desarrollos públicos y activos
+  const rawDevelopments = await prisma.development.findMany({
+    where: {
+      Organization: { slug: orgSlug },
+      status: "ACTIVE",
+      publicVisible: true,
+    },
+    include: {
+      DevelopmentLot: {
+        select: {
+          id: true,
+          status: true,
+          priceCents: true,
+          currency: true,
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const developments = rawDevelopments.map(dev => ({
+    ...dev,
+    lots: dev.DevelopmentLot,
+  }));
+
   // Filtrar en memoria para mayor robustez y performance
   let filteredProperties = properties;
 
@@ -211,6 +236,94 @@ export default async function PublicOrganizationCatalogPage({
 
       {/* --- Main Catalogue Section --- */}
       <main className="mx-auto max-w-[2000px] w-full px-4 sm:px-8 lg:px-16 2xl:px-24 py-12">
+        
+        {/* --- Loteos y Desarrollos Interactivos --- */}
+        {developments.length > 0 && (
+          <section className="mb-14 border-b border-slate-200/60 pb-12">
+            <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-2">
+              <Compass className="h-6 w-6 text-blue-600 animate-pulse" />
+              Loteos y Desarrollos Interactivos
+            </h2>
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {developments.map((dev) => {
+                const totalLots = dev.lots.length;
+                const availableLots = dev.lots.filter(l => l.status === "AVAILABLE").length;
+                
+                // Buscar precio mínimo de lotes disponibles
+                const prices = dev.lots
+                  .filter(l => l.status === "AVAILABLE" && l.priceCents)
+                  .map(l => l.priceCents as number);
+                const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+                const currency = dev.lots[0]?.currency || "USD";
+
+                return (
+                  <article 
+                    key={dev.id} 
+                    className="group overflow-hidden rounded-[2.2rem] border-2 border-blue-500/10 bg-[#0f172a] text-white shadow-lg transition-all duration-300 hover:shadow-2xl hover:border-blue-500/30 flex flex-col h-full hover:-translate-y-1.5"
+                  >
+                    {/* Map/Satellite Image Placeholder */}
+                    <div className="relative aspect-[4/3] bg-slate-950 overflow-hidden shrink-0 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent opacity-60 z-10" />
+                      <div className="text-5xl opacity-40 group-hover:scale-110 transition duration-500 select-none">🗺️</div>
+                      
+                      {/* Active Masterplan Badge */}
+                      <div className="absolute top-4 left-4 z-20">
+                        <span className="rounded-full bg-blue-600 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-sm flex items-center gap-1.5">
+                          <Compass className="h-3 w-3 animate-spin-slow" />
+                          Masterplan Activo
+                        </span>
+                      </div>
+
+                      {/* Lot Count Badge */}
+                      <div className="absolute bottom-4 right-4 z-20">
+                        <span className="rounded-full bg-slate-900/80 backdrop-blur-sm px-3.5 py-1.5 text-[9px] font-extrabold uppercase tracking-widest text-emerald-400 border border-emerald-500/20">
+                          {availableLots} de {totalLots} libres
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6 flex flex-col flex-1">
+                      <div className="space-y-2.5 flex-1">
+                        <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-blue-400">Desarrollo Loteo</span>
+                        <h3 className="text-lg font-bold text-white line-clamp-1 group-hover:text-blue-400 transition-colors leading-tight">
+                          {dev.name}
+                        </h3>
+                        {dev.description && (
+                          <p className="text-xs text-slate-450 line-clamp-2 leading-relaxed font-medium">
+                            {dev.description}
+                          </p>
+                        )}
+                        {(dev.city || dev.province) && (
+                          <p className="flex items-center gap-1.5 text-xs text-slate-450 font-semibold pt-1">
+                            <MapPin className="h-4 w-4 text-blue-500 shrink-0" />
+                            {[dev.city, dev.province].filter(Boolean).join(", ")}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="border-t border-slate-800 mt-5 pt-4 flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lotes Desde</p>
+                          <p className="text-base font-black text-emerald-400">
+                            {minPrice ? formatCurrency(minPrice, currency) : "A consultar"}
+                          </p>
+                        </div>
+                        <Link
+                          href={`/cat/${orgSlug}/developments/${dev.id}`}
+                          className="rounded-2xl bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 text-xs font-bold transition shadow-md shadow-blue-600/20"
+                        >
+                          Ver Plano ➔
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {filteredProperties.length === 0 ? (
           
           /* Premium Empty State */

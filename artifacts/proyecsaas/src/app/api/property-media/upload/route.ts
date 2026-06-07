@@ -13,7 +13,16 @@ const MAX_PANORAMA_IMAGE_SIZE = 512 * 1024 * 1024;
 const MAX_FLOOR_PLAN_SIZE = 50 * 1024 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
-const ALLOWED_FLOOR_PLAN_TYPES = new Set([...ALLOWED_IMAGE_TYPES, "application/pdf"]);
+const ALLOWED_FLOOR_PLAN_TYPES = new Set([
+  ...ALLOWED_IMAGE_TYPES, 
+  "application/pdf", 
+  "image/vnd.dxf", 
+  "application/dxf", 
+  "application/x-dxf", 
+  "text/plain", 
+  "text/x-dxf", 
+  "application/octet-stream"
+]);
 
 type PropertyMediaUploadCategory = PropertyImageCategory | "FLOOR_PLAN";
 

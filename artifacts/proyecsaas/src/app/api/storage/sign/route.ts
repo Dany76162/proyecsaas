@@ -76,17 +76,17 @@ export async function POST(req: Request) {
 
     // Validar PDF para planos, e imágenes para panoramas
     const isPdfContent = contentType === "application/pdf" || contentType === "application/x-pdf";
-    if (category === "FLOOR_PLAN" && !isPdfContent) {
+    const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (category === "FLOOR_PLAN" && !isPdfContent && !allowedImageTypes.includes(contentType)) {
       return NextResponse.json(
-        { error: "Los planos técnicos deben ser en formato PDF." },
+        { error: "Los planos técnicos deben ser PDF o imagen (JPEG, PNG o WebP)." },
         { status: 400 }
       );
     }
     // Normalizar variante no estándar
-    if (category === "FLOOR_PLAN") contentType = "application/pdf";
+    if (category === "FLOOR_PLAN" && isPdfContent) contentType = "application/pdf";
 
     if (category === "PANORAMA") {
-      const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
       if (!allowedImageTypes.includes(contentType)) {
         return NextResponse.json(
           { error: "Las panorámicas deben ser en formato de imagen (JPEG, PNG o WebP)." },
