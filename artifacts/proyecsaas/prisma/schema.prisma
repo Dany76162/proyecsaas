@@ -133,6 +133,7 @@ enum BillingMode {
 }
 
 model User {
+  DevelopmentReservation DevelopmentReservation[]
   id                String             @id @default(cuid())
   email             String             @unique
   fullName          String
@@ -186,6 +187,7 @@ model PasswordResetToken {
 }
 
 model Organization {
+  Development            Development[]
   id                     String             @id @default(cuid())
   name                   String
   slug                   String             @unique
@@ -238,6 +240,7 @@ model Membership {
 }
 
 model Lead {
+  DevelopmentReservation DevelopmentReservation[]
   id             String         @id @default(cuid())
   organizationId String
   ownerId        String?
@@ -1369,4 +1372,176 @@ model ProspectingSuppression {
   reason    SuppressionReason
   source    String?
   createdAt DateTime          @default(now())
+}
+
+
+model Development {
+  id                   String                @id @default(cuid())
+  organizationId       String
+  name                 String
+  description          String?
+  address              String?
+  city                 String?
+  province             String?
+  country              String?               @default("Argentina")
+  status               DevelopmentStatus     @default(DRAFT)
+  publicVisible        Boolean               @default(false)
+  masterplanSVG        String?
+  masterplanSourceUrl  String?
+  masterplanSourceKind String?
+  latitude             Decimal?              @db.Decimal(10, 7)
+  longitude            Decimal?              @db.Decimal(10, 7)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  mapCenterLat         Float?                @default(-34.6037)
+  mapCenterLng         Float?                @default(-58.3816)
+  mapZoom              Int?                  @default(16)
+  overlayBounds        String?
+  overlayRotation      Float?                @default(0)
+
+  logoUrl              String?
+  companyLogoUrl       String?
+  themeColor           String?               @default("#0D9488")
+  brochurePlanUrl      String?
+  contactPhone         String?
+  contactWeb           String?
+  contactAddress       String?
+  services             String[]              @default([])
+  pricePerSqmEtapa1   Float?
+  pricePerSqmEtapa2   Float?
+  pricePerSqmEtapa3   Float?
+  pricePerSqmEtapa4   Float?
+  pricePerSqmEtapa5   Float?
+
+  Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  DevelopmentLot       DevelopmentLot[]
+  DevelopmentMapImage  DevelopmentMapImage[]
+
+  @@index([organizationId, publicVisible])
+  @@index([organizationId, status])
+}
+
+model DevelopmentLot {
+  id                     String                   @id @default(cuid())
+  developmentId          String
+  organizationId         String
+  lotNumber              String
+  status                 DevelopmentLotStatus     @default(AVAILABLE)
+  pathData               String?
+  centerX                Float?
+  centerY                Float?
+  areaSqm                Float?
+  priceCents             Int?
+  currency               String?                  @default("USD")
+  linkedPropertyId       String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  etapaNombre            String?
+  etapaColor             String?
+
+  frontMeters            Float?
+  backMeters             Float?
+  manzana                String?
+  destino                String?
+  clientName             String?
+  sellerName             String?
+
+  Development            Development              @relation(fields: [developmentId], references: [id])
+  DevelopmentLotHistory  DevelopmentLotHistory[]
+  DevelopmentMapImage    DevelopmentMapImage[]
+  DevelopmentReservation DevelopmentReservation[]
+
+  @@unique([developmentId, lotNumber])
+  @@index([developmentId, status])
+  @@index([organizationId])
+}
+
+model DevelopmentLotHistory {
+  id             String               @id @default(cuid())
+  lotId          String
+  organizationId String
+  userId         String?
+  previousStatus DevelopmentLotStatus
+  newStatus      DevelopmentLotStatus
+  reason         String?
+  metadata       Json?
+  createdAt      DateTime             @default(now())
+  DevelopmentLot DevelopmentLot       @relation(fields: [lotId], references: [id], onDelete: Cascade)
+
+  @@index([lotId])
+  @@index([organizationId])
+}
+
+model DevelopmentMapImage {
+  id             String          @id
+  developmentId  String
+  unidadId       String?
+  url            String
+  tipo           String
+  titulo         String?
+  lat            Float
+  lng            Float
+  orden          Int             @default(0)
+  altitudM       Float?
+  imageHeading   Float?
+  latOffset      Float?
+  lngOffset      Float?
+  planRotation   Float?
+  planScale      Float?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime
+  overlayConfig  Json?
+  Development    Development     @relation(fields: [developmentId], references: [id], onDelete: Cascade)
+  DevelopmentLot DevelopmentLot? @relation(fields: [unidadId], references: [id])
+
+  @@index([developmentId])
+}
+
+model DevelopmentReservation {
+  id             String                       @id @default(cuid())
+  lotId          String
+  organizationId String
+  leadId         String?
+  agentId        String?
+  status         DevelopmentReservationStatus @default(PENDING_APPROVAL)
+  depositCents   Int?
+  notes          String?
+  expiresAt      DateTime?
+  approvedById   String?
+  approvedAt     DateTime?
+  cancelledById  String?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  User           User?                        @relation(fields: [agentId], references: [id])
+  Lead           Lead?                        @relation(fields: [leadId, organizationId], references: [id, organizationId])
+  DevelopmentLot DevelopmentLot               @relation(fields: [lotId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([lotId])
+  @@index([organizationId, status])
+}
+
+enum DevelopmentLotStatus {
+  AVAILABLE
+  RESERVED_PENDING
+  RESERVED
+  SOLD
+  BLOCKED
+}
+
+enum DevelopmentReservationStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  CANCELLED
+  SOLD
+}
+
+enum DevelopmentStatus {
+  DRAFT
+  ACTIVE
+  SOLD_OUT
+  PAUSED
+  CANCELLED
 }
