@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { prisma } from "@/server/db/prisma";
 import { requirePlatformAdmin } from "@/server/auth/access";
@@ -92,7 +92,7 @@ export async function getTenantsAiHealth(): Promise<TenantAiHealth[]> {
 
   return orgs.map(org => {
     const wa = org.whatsappChannels[0];
-    const ai = org.aiAgents[0];
+    const ai = org.aiAgents;
     const sub = org.subscription;
     
     let daysLeft = null;
