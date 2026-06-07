@@ -1,4 +1,4 @@
-﻿// Mercado Pago Checkout Preferences helper.
+// Mercado Pago Checkout Preferences helper.
 // Requires env var: MERCADO_PAGO_ACCESS_TOKEN (from MP panel > Credenciales).
 // Uses production API. For sandbox, set MERCADO_PAGO_SANDBOX=true.
 //
@@ -7,8 +7,13 @@
 export type MPPreferenceInput = {
   title: string;
   amountARS: number; // amount in full ARS (not cents)
-  externalReference: string; // billing record ID â€” used to correlate with DB
+  externalReference: string; // billing record ID — used to correlate with DB
   payerEmail?: string;
+  backUrls?: {
+    success?: string;
+    failure?: string;
+    pending?: string;
+  };
 };
 
 export type MPPreferenceResult = {
@@ -50,9 +55,9 @@ export async function createMercadoPagoPreference(
     payer: input.payerEmail ? { email: input.payerEmail } : undefined,
     external_reference: input.externalReference,
     back_urls: {
-      success: `${appUrl}/platform/billing`,
-      failure: `${appUrl}/platform/billing`,
-      pending: `${appUrl}/platform/billing`,
+      success: input.backUrls?.success ?? `${appUrl}/platform/billing`,
+      failure: input.backUrls?.failure ?? `${appUrl}/platform/billing`,
+      pending: input.backUrls?.pending ?? `${appUrl}/platform/billing`,
     },
     auto_return: "approved",
   };
