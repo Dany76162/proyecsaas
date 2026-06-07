@@ -19,6 +19,7 @@ import {
   Users2,
   Settings,
   Smartphone,
+  LandPlot,
 } from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
@@ -43,6 +44,7 @@ const OPERATION_NAV = [
   { label: "Conversaciones", path: "/conversations",icon: MessageSquare },
   { label: "Visitas",        path: "/visits",       icon: Calendar },
   { label: "Propiedades",    path: "/properties",   icon: Building2 },
+  { label: "Desarrollos",    path: "/developments",   icon: LandPlot },
 ] as const;
 
 const AUTOMATION_NAV = [

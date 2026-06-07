@@ -1,0 +1,1740 @@
+"use client";
+
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Map as MapIcon, Layers as LayersIcon, Filter, ZoomIn, ZoomOut,
+    Crosshair, X, Search, MapPin, Check, Save, Camera, Grid3x3, Compass, Hash
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+    useMasterplanStore,
+    useFilteredUnits,
+    MasterplanUnit,
+} from "@/lib/masterplan-store";
+import MasterplanSidePanel from "./masterplan-side-panel";
+import MasterplanFilters from "./masterplan-filters";
+import MasterplanComparator from "./masterplan-comparator";
+import OverlayEditor, { OverlayConfig } from "./overlay-editor";
+// Fase futura: Tour 360 desacoplado del commit inicial de Desarrollos.
+// import Tour360Viewer from "./tour360-viewer";
+// const InfraestructuraTool = dynamic(() => import("./infraestructura-tool"), { ssr: false });
+// const ImagenesMapaTool = dynamic(() => import("./imagenes-mapa-tool"), { ssr: false });
+import { getProjectBlueprintData } from "@/lib/actions/unidades";
+import { BlueprintEmbeddedMeta } from "@/lib/blueprint-utils";
+import PlanGalleryPicker, { type PlanGalleryItem } from "@/components/plan-gallery/plan-gallery-picker";
+
+// ─── Status colors ───
+const STATUS_COLORS: Record<string, string> = {
+    DISPONIBLE: "#10b981",
+    BLOQUEADO: "#94a3b8",
+    RESERVADA: "#f59e0b",
+    VENDIDA: "#ef4444",
+    SUSPENDIDO: "#64748b",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+    DISPONIBLE: "Disponible",
+    BLOQUEADO: "Bloqueado",
+    RESERVADA: "Reservada",
+    VENDIDA: "Vendida",
+    SUSPENDIDO: "Suspendido",
+};
+
+export interface Tour360Marker {
+    tourId: string;
+    nombre: string;
+    unidadId: string;
+    thumbnail?: string;
+    sceneCount?: number;
+    defaultSceneUrl?: string;
+    defaultSceneId?: string;
+    defaultSceneOverlay?: Record<string, number> | null;
+}
+
+interface MasterplanMapProps {
+    proyectoId: string;
+    modo: "admin" | "public";
+    canEdit?: boolean;
+    initialUnits?: MasterplanUnit[];
+    overlayImageUrl?: string;
+    centerLat?: number;
+    centerLng?: number;
+    mapZoom?: number;
+    tours360?: Tour360Marker[];
+}
+
+type OverlayCorners = [[number, number], [number, number], [number, number], [number, number]];
+
+function projectSvgPointToGeo(
+    nx: number,
+    ny: number,
+    bounds: [[number, number], [number, number]] | null,
+    rotation = 0,
+    corners?: OverlayCorners | null,
+): [number, number] | null {
+    if (corners && corners.length === 4) {
+        const [sw, se, ne, nw] = corners;
+        const top: [number, number] = [
+            nw[0] + (ne[0] - nw[0]) * nx,
+            nw[1] + (ne[1] - nw[1]) * nx,
+        ];
+        const bottom: [number, number] = [
+            sw[0] + (se[0] - sw[0]) * nx,
+            sw[1] + (se[1] - sw[1]) * nx,
+        ];
+        return [
+            top[0] + (bottom[0] - top[0]) * ny,
+            top[1] + (bottom[1] - top[1]) * ny,
+        ];
+    }
+
+    if (!bounds) return null;
+
+    const [[swLat, swLng], [neLat, neLng]] = bounds;
+    const cLat = (swLat + neLat) / 2;
+    const cLng = (swLng + neLng) / 2;
+    const rawLat = neLat - ny * (neLat - swLat);
+    const rawLng = swLng + nx * (neLng - swLng);
+
+    if (rotation !== 0) {
+        const rotRad = (rotation * Math.PI) / 180;
+        const dLat = rawLat - cLat;
+        const dLng = rawLng - cLng;
+        return [
+            cLat + dLat * Math.cos(rotRad) - dLng * Math.sin(rotRad),
+            cLng + dLat * Math.sin(rotRad) + dLng * Math.cos(rotRad),
+        ];
+    }
+
+    return [rawLat, rawLng];
+}
+
+export default function MasterplanMap({
+    proyectoId,
+    modo,
+    canEdit = false,
+    initialUnits = [],
+    overlayImageUrl,
+    centerLat = -34.6037,
+    centerLng = -58.3816,
+    mapZoom = 15,
+    tours360 = [],
+}: MasterplanMapProps) {
+    const {
+        units, setUnits,
+        selectedUnitId, setSelectedUnitId,
+        hoveredUnitId, setHoveredUnitId,
+        comparisonIds, toggleComparison, clearComparison,
+        showComparator, setShowComparator,
+        showFilters, setShowFilters,
+    } = useMasterplanStore();
+
+    const filteredUnits = useFilteredUnits();
+    const filteredIds = useMemo(() => new Set(filteredUnits.map((u) => u.id)), [filteredUnits]);
+
+    const [blueprintLoaded, setBlueprintLoaded] = useState(false);
+    const [hasSavedBlueprint, setHasSavedBlueprint] = useState(false);
+    const [blueprintMeta, setBlueprintMeta] = useState<BlueprintEmbeddedMeta | null>(null);
+    const [svgProjectionViewBox, setSvgProjectionViewBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+    const mapRef = useRef<HTMLDivElement>(null);
+    const leafletMapRef = useRef<any>(null);
+    const polygonsRef = useRef<Map<string, any>>(new Map());
+    const prevUnitsRef = useRef<MasterplanUnit[]>([]);
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
+    const [isMapReady, setIsMapReady] = useState(false);
+    const [mapView, setMapView] = useState<"satellite" | "street">("satellite");
+    const [tooltip, setTooltip] = useState<{ x: number; y: number; unit: MasterplanUnit } | null>(null);
+
+    // Overlay editor state (bounds only — no image overlay)
+    const [overlayConfig, setOverlayConfig] = useState<OverlayConfig | null>(null);
+    const [isEditingOverlay, setIsEditingOverlay] = useState(false);
+    const [isLoadingOverlay, setIsLoadingOverlay] = useState(false);
+    const [planGalleryItems, setPlanGalleryItems] = useState<PlanGalleryItem[]>([]);
+    const [showPlanGallery, setShowPlanGallery] = useState(false);
+
+    // Tour 360 state
+    const [activeTour, setActiveTour] = useState<{ url: string; title: string; sceneId?: string; initialOverlay?: Record<string, number> | null } | null>(null);
+
+    // Location search state
+    const [showLocationPanel, setShowLocationPanel] = useState(false);
+    const [locationQuery, setLocationQuery] = useState("");
+    const [locationResults, setLocationResults] = useState<{ display_name: string; lat: string; lon: string }[]>([]);
+    const [manualLat, setManualLat] = useState<string>("");
+    const [manualLng, setManualLng] = useState<string>("");
+    const [isSavingLocation, setIsSavingLocation] = useState(false);
+    const [locationSaved, setLocationSaved] = useState(false);
+    const locationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Save plan position state
+    const [isSavingPlan, setIsSavingPlan] = useState(false);
+    const [planSaved, setPlanSaved] = useState(false);
+
+    // Active tool panel (mutually exclusive)
+    const [activePanel, setActivePanel] = useState<"infraestructura" | "imagenes" | null>(null);
+
+    // Tour 360° preview card state
+    const [tourPreview, setTourPreview] = useState<{
+        tour: Tour360Marker;
+        screenX: number;
+        screenY: number;
+    } | null>(null);
+
+    // Camera marker layers ref
+    const cameraMarkersRef = useRef<Map<string, any>>(new Map());
+
+    // Map rotation state (0-360)
+    const [mapRotation, setMapRotation] = useState(0);
+    const rotationPluginLoadedRef = useRef(false);
+    const hasAttemptedRescueRef = useRef(false); // Verdent improvement: prevents infinite visual restoration loops
+
+    const svgBlobUrlRef = useRef<string | null>(null);
+    const autoOpenedOverlayRef = useRef(false);
+    const [isLoadingPlan, setIsLoadingPlan] = useState(false);
+    const overlayPreviewFrameRef = useRef<number | null>(null);
+    const overlayPreviewPayloadRef = useRef<{
+        bounds: [[number, number], [number, number]];
+        rotation: number;
+        corners: OverlayCorners | null;
+    } | null>(null);
+    const contentBoundsRef = useRef<any | null>(null);
+    const hasAutoFitContentRef = useRef(false);
+
+    // Toggle numbers state
+    const [showNumbers, setShowNumbers] = useState(false);
+    const showNumbersRef = useRef(false);
+
+    useEffect(() => {
+        showNumbersRef.current = showNumbers;
+        if (!leafletMapRef.current) return;
+        const z = leafletMapRef.current.getZoom();
+        const MIN_LABEL_ZOOM = 17;
+        polygonsRef.current.forEach((layer, key) => {
+            if (key.startsWith("label-")) {
+                layer.setOpacity(showNumbers && z >= MIN_LABEL_ZOOM ? 1 : 0);
+            }
+        });
+    }, [showNumbers]);
+
+    // Reset selection state when entering Paso 4 (prevent bleedover from Paso 3)
+    useEffect(() => {
+        autoOpenedOverlayRef.current = false;
+        hasAutoFitContentRef.current = false;
+        contentBoundsRef.current = null;
+        setSelectedUnitId(null);
+        setHoveredUnitId(null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [proyectoId]);
+
+    const readJsonResponse = useCallback(async (response: Response) => {
+        const raw = await response.text();
+        if (!raw) return {};
+
+        try {
+            return JSON.parse(raw) as any;
+        } catch {
+            throw new Error(`Respuesta no parseable del servidor (${response.status})`);
+        }
+    }, []);
+
+    const loadPlanGallery = useCallback(async () => {
+        try {
+            const response = await fetch(`/api/developments/${proyectoId}/plan-gallery`);
+            const data = await readJsonResponse(response);
+            if (response.ok && Array.isArray(data.items)) {
+                setPlanGalleryItems(data.items);
+            }
+        } catch {
+            // optional support UI
+        }
+    }, [proyectoId, readJsonResponse]);
+
+    useEffect(() => {
+        loadPlanGallery();
+    }, [loadPlanGallery]);
+
+    const extractSvgViewBox = useCallback((svgString: string | null | undefined) => {
+        if (!svgString || typeof window === "undefined") return null;
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgString, "image/svg+xml");
+            const svg = doc.documentElement;
+            if (!svg || svg.tagName.toLowerCase() !== "svg") return null;
+            const rawViewBox = svg.getAttribute("viewBox");
+            if (!rawViewBox) return null;
+            const values = rawViewBox.trim().split(/[\s,]+/).map(Number);
+            if (values.length !== 4 || values.some((value) => !Number.isFinite(value))) return null;
+            const [x, y, w, h] = values;
+            if (w <= 0 || h <= 0) return null;
+            return { x, y, w, h };
+        } catch {
+            return null;
+        }
+    }, []);
+
+    const buildMapOverlaySvg = useCallback((svgString: string, meta: BlueprintEmbeddedMeta | null) => {
+        if (typeof window === "undefined" || meta?.processingMode !== "detected-lots") {
+            return svgString;
+        }
+
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgString, "image/svg+xml");
+            const svg = doc.documentElement;
+
+            if (!svg || svg.tagName.toLowerCase() !== "svg") {
+                return svgString;
+            }
+
+            const style = doc.createElementNS("http://www.w3.org/2000/svg", "style");
+            style.textContent = `
+                .map-overlay-root { overflow: visible; }
+                .map-overlay-root text,
+                .map-overlay-root .lot-label,
+                .map-overlay-root .dxf-text {
+                    display: none !important;
+                }
+                .map-overlay-root path,
+                .map-overlay-root polygon,
+                .map-overlay-root polyline,
+                .map-overlay-root rect,
+                .map-overlay-root circle,
+                .map-overlay-root ellipse,
+                .map-overlay-root line {
+                    paint-order: stroke fill markers;
+                    stroke: rgba(255,255,255,0.82) !important;
+                    stroke-linejoin: round;
+                    stroke-linecap: round;
+                    filter: drop-shadow(0 0 1px rgba(0,0,0,0.32));
+                    shape-rendering: geometricPrecision;
+                }
+            `;
+            svg.insertBefore(style, svg.firstChild);
+            svg.setAttribute("class", `${svg.getAttribute("class") ?? ""} map-overlay-root`.trim());
+
+            svg.querySelectorAll("path, polygon, polyline, rect, circle, ellipse, line").forEach((node) => {
+                const tag = node.tagName.toLowerCase();
+                const d = node.getAttribute("d") || "";
+                const isClosed =
+                    d.includes("Z") ||
+                    tag === "polygon" ||
+                    tag === "rect" ||
+                    tag === "circle" ||
+                    tag === "ellipse";
+
+                const currentStrokeWidth = parseFloat(node.getAttribute("stroke-width") || "0.8");
+                const nextStrokeWidth = Number.isFinite(currentStrokeWidth)
+                    ? Math.max(currentStrokeWidth * 1.15, 0.7)
+                    : 0.7;
+
+                node.setAttribute("stroke-width", nextStrokeWidth.toFixed(2));
+                node.setAttribute("stroke-opacity", "0.9");
+                node.setAttribute("opacity", "1");
+                node.setAttribute("fill", isClosed ? "rgba(255,255,255,0.07)" : "none");
+            });
+
+            return new XMLSerializer().serializeToString(svg);
+        } catch {
+            return svgString;
+        }
+    }, []);
+
+    const loadSavedBlueprintOverlay = useCallback(async (openEditor = false) => {
+        const res = await fetch(`/api/developments/${proyectoId}/blueprint`);
+        if (!res.ok) {
+            if (openEditor) setIsEditingOverlay(true);
+            return false;
+        }
+
+        const data = await readJsonResponse(res);
+        setBlueprintMeta((data.blueprintMeta as BlueprintEmbeddedMeta | null) ?? null);
+        setSvgProjectionViewBox(extractSvgViewBox(data.masterplanSVG as string | null));
+
+        if (!data.masterplanSVG) {
+            setHasSavedBlueprint(false);
+            if (openEditor) setIsEditingOverlay(true);
+            return false;
+        }
+
+        setHasSavedBlueprint(true);
+
+        if (svgBlobUrlRef.current) {
+            URL.revokeObjectURL(svgBlobUrlRef.current);
+        }
+
+        const overlaySvg = buildMapOverlaySvg(
+            data.masterplanSVG as string,
+            (data.blueprintMeta as BlueprintEmbeddedMeta | null) ?? null
+        );
+        const blob = new Blob([overlaySvg], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        svgBlobUrlRef.current = url;
+
+        setOverlayConfig((prev) => ({
+            imageUrl: url,
+            bounds: prev?.bounds ?? null,
+            rotation: prev?.rotation ?? 0,
+            opacity: prev?.opacity ?? 0.9,
+            corners: prev?.corners ?? null,
+        }));
+
+        if (openEditor) setIsEditingOverlay(true);
+        return true;
+    }, [buildMapOverlaySvg, extractSvgViewBox, proyectoId, readJsonResponse]);
+
+    // Fetch blueprint data (units with SVG paths) — same source as Paso 3
+    useEffect(() => {
+        const fetchBlueprint = async () => {
+            // Fast-path: if caller already provided units, use them
+            if (initialUnits && initialUnits.length > 0) {
+                if (units.length === 0) {
+                    setUnits(initialUnits);
+                }
+            } else {
+                const res = await getProjectBlueprintData(proyectoId);
+                if (res.success && res.data) {
+                    setUnits(res.data as any);
+                }
+            }
+
+            try {
+                await loadSavedBlueprintOverlay(false);
+            } catch (error) {
+                console.error("Failed to load saved blueprint overlay:", error);
+                setHasSavedBlueprint(false);
+                setBlueprintMeta(null);
+            } finally {
+                setBlueprintLoaded(true);
+            }
+        };
+        fetchBlueprint();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialUnits, loadSavedBlueprintOverlay, proyectoId, setUnits, units.length]);
+
+    // Load saved overlay config from API
+    useEffect(() => {
+        const loadOverlay = async () => {
+            setIsLoadingOverlay(true);
+            try {
+                const res = await fetch(`/api/developments/${proyectoId}/overlay`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.config) {
+                        // Blob URLs expire between sessions — strip them (bounds are kept for polygon geo-transform)
+                        const cfg = data.config;
+                        const imageUrl = cfg.imageUrl && !cfg.imageUrl.startsWith("blob:") ? cfg.imageUrl : null;
+                        setOverlayConfig((prev) => ({
+                            ...cfg,
+                            imageUrl: imageUrl ?? prev?.imageUrl ?? null,
+                            opacity: prev?.opacity ?? cfg.opacity ?? 0.8,
+                            corners: cfg.corners ?? prev?.corners ?? null,
+                        }));
+                        // Bounds exist in DB: the user already positioned the plan.
+                        // Skip the auto-fitBounds in drawPolygons so the map keeps
+                        // the stored mapCenterLat/Lng/Zoom on every remount
+                        // (navigating away and back, or F5).
+                        if (cfg.bounds) {
+                            hasAutoFitContentRef.current = true;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load overlay config:", err);
+            } finally {
+                setIsLoadingOverlay(false);
+            }
+        };
+        loadOverlay();
+    }, [proyectoId]);
+
+    // Note: the overlay IMAGE is not auto-loaded on mount.
+    // overlayConfig.bounds is used for polygon geo-transformation.
+    // If a saved blueprint exists but has not been positioned yet, open the editor once
+    // so the admin can start adjusting it without re-uploading anything.
+    useEffect(() => {
+        if (
+            modo === "admin" &&
+            isMapReady &&
+            hasSavedBlueprint &&
+            !!overlayConfig?.imageUrl &&
+            !overlayConfig?.bounds &&
+            !isEditingOverlay &&
+            !autoOpenedOverlayRef.current
+        ) {
+            autoOpenedOverlayRef.current = true;
+            setIsEditingOverlay(true);
+        }
+    }, [hasSavedBlueprint, isEditingOverlay, isMapReady, modo, overlayConfig?.bounds, overlayConfig?.imageUrl]);
+
+    /**
+     * Verdent's Rescue Effect:
+     * If we have a saved blueprint and bounds, but NO imageUrl (e.g. after refresh),
+     * we should regenerate the visual blob ONLY if we haven't tried yet this session.
+     */
+    useEffect(() => {
+        if (
+            isMapReady &&
+            hasSavedBlueprint &&
+            overlayConfig?.bounds &&
+            !overlayConfig?.imageUrl &&
+            !isLoadingPlan &&
+            !hasAttemptedRescueRef.current
+        ) {
+            hasAttemptedRescueRef.current = true;
+            console.log("[Rescue] Georeferencing exists but visual blob is missing. Rehydrating...");
+            loadSavedBlueprintOverlay(false);
+        }
+    }, [hasSavedBlueprint, isMapReady, isLoadingPlan, loadSavedBlueprintOverlay, overlayConfig?.bounds, overlayConfig?.imageUrl]);
+
+    // Initialize Leaflet map
+    useEffect(() => {
+        if (!mapRef.current) return;
+
+        let isCanceled = false;
+
+        const initMap = async () => {
+            // Check if map is already initialized on this ref
+            if (leafletMapRef.current) return;
+
+            // Also check if the DOM element already has a leaflet instance (defensive)
+            if ((mapRef.current as any)?._leaflet_id) {
+                return;
+            }
+
+            const L = (await import("leaflet")).default;
+
+            if (isCanceled) return;
+
+            // Fix Leaflet default icon issue
+            delete (L.Icon.Default.prototype as any)._getIconUrl;
+            L.Icon.Default.mergeOptions({
+                iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+                iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+                shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+            });
+
+            // Double check before creating
+            if (!mapRef.current) return;
+
+            try {
+                const L = (await import("leaflet")).default;
+                (window as any).L = L; // Expose L to window so the plugin can find and patch it
+
+                // Load leaflet-rotate plugin if not loaded
+                if (!rotationPluginLoadedRef.current) {
+                    await new Promise<void>((resolve) => {
+                        const script = document.createElement("script");
+                        script.src = "https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js";
+                        script.async = true;
+                        script.onload = () => {
+                            rotationPluginLoadedRef.current = true;
+                            resolve();
+                        };
+                        document.head.appendChild(script);
+                    });
+                }
+
+                if (isCanceled) return;
+
+                const mapOptions: any = {
+                    center: [centerLat, centerLng],
+                    zoom: mapZoom,
+                    zoomSnap: 0.1,
+                    zoomDelta: 0.1,
+                    zoomControl: false,
+                    attributionControl: false,
+                    rotate: true,
+                    touchRotate: true,
+                    rotateControl: false,
+                };
+
+                const map = (L as any).map(mapRef.current, mapOptions);
+
+                // Listen for rotation changes to update UI
+                map.on("rotate", () => {
+                    setMapRotation((map as any).getBearing());
+                });
+
+                // Manual Alt + Drag rotation handler for PC (mobile feel)
+                map.on("mousedown", (e: any) => {
+                    if (e.originalEvent.altKey) {
+                        (map as any).dragging.disable();
+                        const startX = e.originalEvent.clientX;
+                        const startBearing = (map as any).getBearing();
+
+                        const onMouseMove = (moveEvent: MouseEvent) => {
+                            const deltaX = moveEvent.clientX - startX;
+                            (map as any).setBearing(startBearing + deltaX);
+                        };
+
+                        const onMouseUp = () => {
+                            window.removeEventListener("mousemove", onMouseMove);
+                            window.removeEventListener("mouseup", onMouseUp);
+                            (map as any).dragging.enable();
+                        };
+
+                        window.addEventListener("mousemove", onMouseMove);
+                        window.addEventListener("mouseup", onMouseUp);
+                    }
+                });
+
+                // Google satellite tile layer
+                const satellite = L.tileLayer(
+                    "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+                    { maxZoom: 21, subdomains: ["mt0", "mt1", "mt2", "mt3"] }
+                );
+
+                const streets = L.tileLayer(
+                    "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                    { maxZoom: 21, subdomains: ["mt0", "mt1", "mt2", "mt3"] }
+                );
+
+                const hybrid = L.tileLayer(
+                    "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+                    { maxZoom: 21, subdomains: ["mt0", "mt1", "mt2", "mt3"] }
+                );
+
+                satellite.addTo(map);
+
+                // Store references for layer switching
+                (map as any)._tileLayers = { satellite, streets, hybrid };
+                (map as any)._currentTile = satellite;
+
+                // Attribution
+                L.control.attribution({
+                    position: "bottomleft",
+                    prefix: "Seventoop | Leaflet"
+                }).addTo(map);
+
+                leafletMapRef.current = map;
+                setIsMapReady(true);
+
+                // Toggle label-marker visibility on zoom — labels only readable when zoomed in
+                const MIN_LABEL_ZOOM = 17;
+                map.on("zoomend", () => {
+                    const z = map.getZoom();
+                    polygonsRef.current.forEach((layer, key) => {
+                        if (key.startsWith("label-")) {
+                            layer.setOpacity(showNumbersRef.current && z >= MIN_LABEL_ZOOM ? 1 : 0);
+                        }
+                    });
+                });
+
+                // Invalidate size via ResizeObserver — fires whenever the container actually resizes
+                if (mapRef.current) {
+                    const ro = new ResizeObserver(() => {
+                        leafletMapRef.current?.invalidateSize();
+                    });
+                    ro.observe(mapRef.current);
+                    resizeObserverRef.current = ro;
+                }
+                // Also fire once immediately after layout settles
+                setTimeout(() => map.invalidateSize(), 150);
+            } catch (error) {
+                console.warn("Map initialization error:", error);
+            }
+        };
+
+        initMap();
+
+        return () => {
+            isCanceled = true;
+            if (svgBlobUrlRef.current) {
+                URL.revokeObjectURL(svgBlobUrlRef.current);
+                svgBlobUrlRef.current = null;
+            }
+            resizeObserverRef.current?.disconnect();
+            resizeObserverRef.current = null;
+            if (leafletMapRef.current) {
+                leafletMapRef.current.remove();
+                leafletMapRef.current = null;
+                setIsMapReady(false);
+            }
+        };
+    }, [centerLat, centerLng, mapZoom]);
+
+    // No image overlay is ever rendered — the polygon layer is the sole visual representation.
+
+    // ─── SVG viewBox computed from unit paths (needed for SVG→Geo transform) ──
+    const svgViewBox = useMemo(() => {
+        if (svgProjectionViewBox) return svgProjectionViewBox;
+        if (units.length === 0) return null;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const u of units) {
+            let path = u.path;
+            if (!path && (u as any).coordenadasMasterplan) {
+                try { const c = JSON.parse((u as any).coordenadasMasterplan); path = c.path; } catch {}
+            }
+            if (!path) continue;
+            const nums = path.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
+            if (!nums) continue;
+            for (let i = 0; i + 1 < nums.length; i += 2) {
+                const x = parseFloat(nums[i]), y = parseFloat(nums[i + 1]);
+                if (!isNaN(x) && !isNaN(y)) {
+                    if (x < minX) minX = x; if (x > maxX) maxX = x;
+                    if (y < minY) minY = y; if (y > maxY) maxY = y;
+                }
+            }
+        }
+        if (minX === Infinity) return null;
+        return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }, [svgProjectionViewBox, units]);
+
+    // Draw lot polygons on map
+    useEffect(() => {
+        if (!isMapReady || !leafletMapRef.current || units.length === 0) return;
+
+        // Fast path: if only unit estados changed (no structural/coord changes), patch styles directly.
+        // This avoids the full removeLayer/addLayer cycle that causes visible flicker.
+        const prev = prevUnitsRef.current;
+        const onlyEstadoChanged =
+            prev.length === units.length &&
+            polygonsRef.current.size > 0 &&
+            units.every((u, i) => prev[i]?.id === u.id);
+
+        if (onlyEstadoChanged) {
+            let anyEstadoChanged = false;
+            units.forEach((unit) => {
+                const prevUnit = prev.find((p) => p.id === unit.id);
+                if (!prevUnit || prevUnit.estado === unit.estado) return;
+                anyEstadoChanged = true;
+                const polygon = polygonsRef.current.get(unit.id);
+                if (!polygon) return;
+                const color = STATUS_COLORS[unit.estado] || "#94a3b8";
+                const isSelected = selectedUnitId === unit.id;
+                polygon.setStyle({
+                    color: isSelected ? "#ffffff" : color,
+                    fillColor: color,
+                });
+            });
+            prevUnitsRef.current = units;
+            if (anyEstadoChanged) return; // styles patched — skip full redraw
+        }
+
+        prevUnitsRef.current = units;
+
+        const drawPolygons = async () => {
+            const L = (await import("leaflet")).default;
+            const map = leafletMapRef.current!;
+            const contentBounds = L.latLngBounds([]);
+
+            // Clear old polygons
+            polygonsRef.current.forEach((poly) => map.removeLayer(poly));
+            polygonsRef.current.clear();
+
+            units.forEach((unit) => {
+                let coords: [number, number][] | null = null;
+
+                // Option 1: native geoJSON (explicit lat/lng array stored in DB)
+                if (unit.geoJSON) {
+                    try { coords = JSON.parse(unit.geoJSON); } catch {}
+                }
+
+                // Option 2: SVG path → geo via saved overlay transform
+                if (!coords && svgViewBox && overlayConfig?.bounds) {
+                    let svgPath = unit.path;
+                    if (!svgPath && (unit as any).coordenadasMasterplan) {
+                        try {
+                            const c = JSON.parse((unit as any).coordenadasMasterplan);
+                            svgPath = c.path;
+                        } catch {}
+                    }
+                    if (svgPath) {
+                        const nums = svgPath.match(/-?[\d.]+(?:e[+-]?\d+)?/g);
+                        if (nums && nums.length >= 4) {
+                            const pts: [number, number][] = [];
+                            for (let i = 0; i + 1 < nums.length; i += 2) {
+                                const sx = parseFloat(nums[i]), sy = parseFloat(nums[i + 1]);
+                                if (isNaN(sx) || isNaN(sy)) continue;
+                                const nx = svgViewBox.w > 0 ? (sx - svgViewBox.x) / svgViewBox.w : 0;
+                                const ny = svgViewBox.h > 0 ? (sy - svgViewBox.y) / svgViewBox.h : 0;
+                                const projected = projectSvgPointToGeo(
+                                    nx,
+                                    ny,
+                                    overlayConfig.bounds,
+                                    overlayConfig.rotation ?? 0,
+                                    overlayConfig.corners ?? null,
+                                );
+                                if (projected) pts.push(projected);
+                            }
+                            if (pts.length >= 3) coords = pts;
+                        }
+                    }
+                }
+
+                if (!coords || coords.length < 3) return;
+
+                const isFiltered = filteredIds.has(unit.id);
+                const color = STATUS_COLORS[unit.estado] || "#94a3b8";
+                const isSelected = selectedUnitId === unit.id;
+
+                const polygon = L.polygon(coords, {
+                    color: isSelected ? "#ffffff" : color,
+                    fillColor: color,
+                    fillOpacity: isFiltered ? 0.5 : 0.1,
+                    weight: isSelected ? 2.2 : 0.8,
+                    className: "lot-polygon",
+                });
+                contentBounds.extend(polygon.getBounds());
+
+                // Tooltip
+                polygon.bindTooltip(
+                    `<div style="font-family: Inter, sans-serif; padding: 2px 0;">
+                        <div style="font-weight: 700; font-size: 13px; margin-bottom: 2px;">Lote ${unit.numero}</div>
+                        <div style="font-size: 11px; color: #94a3b8;">
+                            ${unit.superficie ? `${unit.superficie} m²` : ""}
+                            ${unit.precio ? `• $${unit.precio.toLocaleString()}` : ""}
+                        </div>
+                        <div style="margin-top: 4px; font-size: 10px; font-weight: 600; color: ${color}; text-transform: uppercase;">
+                            ${STATUS_LABELS[unit.estado] ?? unit.estado}
+                        </div>
+                    </div>`,
+                    { sticky: true, direction: "top", className: "lot-tooltip" }
+                );
+
+                // Click handler
+                polygon.on("click", () => {
+                    setSelectedUnitId(selectedUnitId === unit.id ? null : unit.id);
+                });
+
+                // Context menu for comparison
+                polygon.on("contextmenu", (e: any) => {
+                    e.originalEvent.preventDefault();
+                    toggleComparison(unit.id);
+                });
+
+                polygon.addTo(map);
+                polygonsRef.current.set(unit.id, polygon);
+
+                // Add label — centered exactly on the polygon
+                if (isFiltered) {
+                    // Prefer internalId (clean number), then numeric-only extraction
+                    let labelText = unit.numero;
+                    if ((unit as any).coordenadasMasterplan) {
+                        try {
+                            const c = JSON.parse((unit as any).coordenadasMasterplan);
+                            if (c.internalId != null) labelText = String(c.internalId);
+                        } catch {}
+                    }
+                    if (!/^\d+$/.test(labelText)) {
+                        const numMatch = labelText.match(/\d+/);
+                        if (numMatch) labelText = numMatch[0];
+                    }
+
+                    // Bbox center: consistent visual position across irregular polygons
+                    const cLats = coords.map(c => c[0]), cLngs = coords.map(c => c[1]);
+                    const centroid: [number, number] = [
+                        (Math.min(...cLats) + Math.max(...cLats)) / 2,
+                        (Math.min(...cLngs) + Math.max(...cLngs)) / 2,
+                    ];
+                    const projectedPoints = coords.map((coord) => map.latLngToContainerPoint(coord as any));
+                    const pixelWidth = Math.max(...projectedPoints.map((point) => point.x)) - Math.min(...projectedPoints.map((point) => point.x));
+                    const pixelHeight = Math.max(...projectedPoints.map((point) => point.y)) - Math.min(...projectedPoints.map((point) => point.y));
+                    const minSide = Math.max(8, Math.min(pixelWidth, pixelHeight));
+                    const textLengthFactor = Math.max(0.58, 1 - Math.max(labelText.length - 3, 0) * 0.12);
+                    const fontSize = Math.max(
+                        9,
+                        Math.min(
+                            minSide * 0.72 * textLengthFactor,
+                            pixelWidth * 0.78 / Math.max(labelText.length * 0.62, 1),
+                            pixelHeight * 0.76,
+                            26
+                        )
+                    );
+                    const label = L.marker(centroid, {
+                        icon: L.divIcon({
+                            className: "",
+                            // iconSize [0,0] + iconAnchor [0,0]: marker point is the origin
+                            // translate(-50%,-50%) perfectly centers the text regardless of its width
+                            html: `<div style="
+                                transform: translate(-50%, -50%);
+                                font-size: ${fontSize.toFixed(1)}px;
+                                font-weight: 700;
+                                color: white;
+                                text-shadow: 0 1px 2px rgba(0,0,0,0.72);
+                                pointer-events: none;
+                                white-space: nowrap;
+                                text-align: center;
+                                line-height: 1;
+                            ">${labelText}</div>`,
+                            iconSize: [0, 0],
+                            iconAnchor: [0, 0],
+                        }),
+                        interactive: false,
+                    });
+                    label.addTo(map);
+                    // Hide label at low zoom — only show when individual lots are readable
+                    label.setOpacity(showNumbersRef.current && map.getZoom() >= 17 ? 1 : 0);
+                    polygonsRef.current.set(`label-${unit.id}`, label);
+                }
+            });
+
+            contentBoundsRef.current = contentBounds.isValid() ? contentBounds : null;
+            if (!hasAutoFitContentRef.current && contentBounds.isValid()) {
+                hasAutoFitContentRef.current = true;
+                map.fitBounds(contentBounds, { padding: [40, 40], maxZoom: 19, animate: false });
+            }
+        };
+
+        drawPolygons();
+    // overlayConfig y svgViewBox son parte del cálculo de coordenadas
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMapReady, units, filteredIds, selectedUnitId, overlayConfig, svgViewBox]);
+
+    // Fase futura: Camera markers para Tour 360° desacoplados del commit inicial de Desarrollos.
+    // El useEffect que dibuja marcadores de cámara en el mapa está comentado junto con tour360-viewer.
+
+    // Real-time preview: update existing Leaflet polygon positions without full redraw
+    const updatePolygonPositionsLive = useCallback((
+        newBounds: [[number, number], [number, number]],
+        rotation = 0,
+        corners?: OverlayCorners | null,
+    ) => {
+        if (!svgViewBox) return;
+
+        units.forEach(unit => {
+            const polygon = polygonsRef.current.get(unit.id);
+            if (!polygon) return;
+
+            let svgPath: string | undefined = unit.path;
+            if (!svgPath && (unit as any).coordenadasMasterplan) {
+                try { const c = JSON.parse((unit as any).coordenadasMasterplan); svgPath = c.path; } catch {}
+            }
+            if (!svgPath) return;
+
+            const nums = svgPath.match(/-?[\d.]+(?:e[+-]?\d+)?/g);
+            if (!nums || nums.length < 4) return;
+
+            const pts: [number, number][] = [];
+            for (let i = 0; i + 1 < nums.length; i += 2) {
+                const sx = parseFloat(nums[i]), sy = parseFloat(nums[i + 1]);
+                if (isNaN(sx) || isNaN(sy)) continue;
+                const nx = svgViewBox.w > 0 ? (sx - svgViewBox.x) / svgViewBox.w : 0;
+                const ny = svgViewBox.h > 0 ? (sy - svgViewBox.y) / svgViewBox.h : 0;
+                const projected = projectSvgPointToGeo(nx, ny, newBounds, rotation, corners);
+                if (projected) pts.push(projected);
+            }
+            if (pts.length >= 3) {
+                polygon.setLatLngs(pts);
+                // Bbox center for label (consistent across irregular polygons)
+                const label = polygonsRef.current.get(`label-${unit.id}`);
+                if (label) {
+                    const lLats = pts.map(c => c[0]), lLngs = pts.map(c => c[1]);
+                    label.setLatLng([
+                        (Math.min(...lLats) + Math.max(...lLats)) / 2,
+                        (Math.min(...lLngs) + Math.max(...lLngs)) / 2,
+                    ]);
+                }
+            }
+        });
+    }, [units, svgViewBox]);
+
+    const handleOverlayBoundsChange = useCallback((
+        bounds: [[number, number], [number, number]],
+        rotation: number,
+        corners: OverlayCorners | null,
+    ) => {
+        overlayPreviewPayloadRef.current = { bounds, rotation, corners };
+        if (overlayPreviewFrameRef.current != null) return;
+
+        overlayPreviewFrameRef.current = window.requestAnimationFrame(() => {
+            overlayPreviewFrameRef.current = null;
+            const payload = overlayPreviewPayloadRef.current;
+            overlayPreviewPayloadRef.current = null;
+            if (!payload) return;
+            updatePolygonPositionsLive(
+                payload.bounds,
+                payload.rotation,
+                payload.corners,
+            );
+        });
+    }, [updatePolygonPositionsLive]);
+
+    useEffect(() => {
+        return () => {
+            if (overlayPreviewFrameRef.current != null) {
+                window.cancelAnimationFrame(overlayPreviewFrameRef.current);
+                overlayPreviewFrameRef.current = null;
+            }
+            overlayPreviewPayloadRef.current = null;
+        };
+    }, []);
+
+    // ─── Location search (Nominatim) ─────────────────────────────────────────
+    const searchLocation = useCallback((query: string) => {
+        if (!query.trim() || query.length < 3) { setLocationResults([]); return; }
+        if (locationTimerRef.current) clearTimeout(locationTimerRef.current);
+        locationTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`,
+                    { headers: { "Accept-Language": "es,en" } }
+                );
+                if (res.ok) setLocationResults(await res.json());
+            } catch { /* silent */ }
+        }, 500);
+    }, []);
+
+    const flyToLocation = useCallback((lat: number, lng: number, zoom = 16) => {
+        if (!leafletMapRef.current) return;
+        leafletMapRef.current.flyTo([lat, lng], zoom, { animate: true, duration: 1.2 });
+        setManualLat(lat.toFixed(6));
+        setManualLng(lng.toFixed(6));
+        setLocationResults([]);
+        setLocationQuery("");
+    }, []);
+
+    const saveMapLocation = useCallback(async () => {
+        if (!leafletMapRef.current) return;
+        setIsSavingLocation(true);
+        try {
+            const center = leafletMapRef.current.getCenter();
+            const zoom = leafletMapRef.current.getZoom();
+            const res = await fetch(`/api/developments/${proyectoId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mapCenterLat: center.lat, mapCenterLng: center.lng, mapZoom: zoom }),
+            });
+            if (res.ok) {
+                setLocationSaved(true);
+                setTimeout(() => setLocationSaved(false), 3000);
+            }
+        } catch { /* silent */ } finally {
+            setIsSavingLocation(false);
+        }
+    }, [proyectoId]);
+
+    // Switch map view
+    const handleSwitchView = useCallback((view: "satellite" | "street") => {
+        const map = leafletMapRef.current;
+        if (!map) return;
+        const layers = (map as any)._tileLayers;
+        const current = (map as any)._currentTile;
+        if (current) map.removeLayer(current);
+
+        const newLayer = view === "satellite" ? layers.satellite : layers.hybrid;
+        newLayer.addTo(map);
+        (map as any)._currentTile = newLayer;
+        setMapView(view);
+    }, []);
+
+    // Zoom controls
+    const handleZoomIn = () => leafletMapRef.current?.zoomIn();
+    const handleZoomOut = () => leafletMapRef.current?.zoomOut();
+    const handleResetView = useCallback(() => {
+        const map = leafletMapRef.current;
+        if (!map) return;
+        if (contentBoundsRef.current?.isValid?.()) {
+            map.fitBounds(contentBoundsRef.current, { padding: [40, 40], maxZoom: 19, animate: true });
+            return;
+        }
+        map.setView([centerLat, centerLng], mapZoom);
+    }, [centerLat, centerLng, mapZoom]);
+
+    // Save current overlay config (bounds + rotation) from the toolbar
+    const handleSavePlan = useCallback(async () => {
+        if (!overlayConfig?.bounds) return;
+        setIsSavingPlan(true);
+        try {
+            const res = await fetch(`/api/developments/${proyectoId}/overlay`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    imageUrl: overlayConfig.imageUrl && !overlayConfig.imageUrl.startsWith("blob:") ? overlayConfig.imageUrl : null,
+                    bounds: overlayConfig.bounds,
+                    corners: overlayConfig.corners ?? null,
+                    rotation: overlayConfig.rotation ?? 0,
+                    mapCenter: leafletMapRef.current ? {
+                        lat: leafletMapRef.current.getCenter().lat,
+                        lng: leafletMapRef.current.getCenter().lng,
+                        zoom: leafletMapRef.current.getZoom(),
+                    } : undefined,
+                }),
+            });
+            if (res.ok) {
+                setPlanSaved(true);
+                setTimeout(() => setPlanSaved(false), 3000);
+            }
+        } catch { /* silent */ } finally {
+            setIsSavingPlan(false);
+        }
+    }, [proyectoId, overlayConfig]);
+
+    // Delete overlay configuration from database
+    const handleDeleteOverlay = useCallback(async () => {
+        if (!window.confirm("¿Eliminar la posición del plano en el mapa? Esto no borra el plano ni las unidades; solo elimina la georreferenciación guardada.")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/developments/${proyectoId}/overlay`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    imageUrl: null,
+                    bounds: null,
+                    corners: null,
+                    rotation: 0,
+                }),
+            });
+
+            if (res.ok) {
+                setOverlayConfig(null);
+                setIsEditingOverlay(false);
+                setPlanSaved(false);
+            }
+        } catch (error) {
+            console.error("Delete overlay failed:", error);
+        }
+    }, [proyectoId]);
+
+    // Load masterplan SVG from paso 3 as overlay image
+    const handleLoadPlanOverlay = useCallback(async () => {
+        if (!leafletMapRef.current) return;
+
+        // If we already have the blob loaded, just open the editor
+        if (overlayConfig?.imageUrl && overlayConfig.imageUrl.startsWith("blob:")) {
+            setIsEditingOverlay(true);
+            return;
+        }
+
+        setIsLoadingPlan(true);
+        try {
+            await loadSavedBlueprintOverlay(true);
+        } catch (e) {
+            console.error("Error cargando blueprint como overlay:", e);
+            setIsEditingOverlay(true);
+        } finally {
+            setIsLoadingPlan(false);
+        }
+    }, [loadSavedBlueprintOverlay, overlayConfig?.imageUrl]);
+
+    const selectedUnit = units.find((u) => u.id === selectedUnitId) || null;
+
+    return (
+        <div className="relative flex flex-col w-full h-full min-h-[400px] bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-b-2xl overflow-hidden">
+            {/* Leaflet CSS & Plugins */}
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+            <link rel="stylesheet" href="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.css" />
+
+            {/* ── Admin toolbar (OUTSIDE the map, no overlap) ── */}
+            {modo === "admin" && (
+                <div className="flex-shrink-0 bg-slate-950/90 border-b border-slate-700/50 px-3 py-2 pr-12">
+                    <div className="flex items-center gap-2 flex-wrap min-h-[36px]">
+
+                        {/* SECTION 1: Ubicación */}
+                        <div className="relative flex items-center gap-1.5">
+                            {!showLocationPanel ? (
+                                <button
+                                    onClick={() => setShowLocationPanel(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all whitespace-nowrap"
+                                >
+                                    <MapPin className="w-3.5 h-3.5 text-brand-400" />
+                                    Ubicación del proyecto
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    {/* Search input with dropdown */}
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar dirección..."
+                                            value={locationQuery}
+                                            onChange={(e) => { setLocationQuery(e.target.value); searchLocation(e.target.value); }}
+                                            className="text-xs pl-7 pr-2 py-1.5 w-52 bg-slate-800 border border-slate-600 rounded-lg focus:outline-none focus:border-brand-500 text-white placeholder-slate-500"
+                                        />
+                                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                                        {locationResults.length > 0 && (
+                                            <div className="absolute top-full left-0 mt-1 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto z-[2000]">
+                                                {locationResults.map((r, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => flyToLocation(parseFloat(r.lat), parseFloat(r.lon))}
+                                                        className="w-full text-left text-[11px] px-3 py-2 hover:bg-brand-500/20 text-slate-300 border-b border-slate-800 last:border-0 transition-colors leading-tight"
+                                                    >
+                                                        {r.display_name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Lat input */}
+                                    <input
+                                        type="number"
+                                        placeholder="Lat"
+                                        value={manualLat}
+                                        onChange={(e) => setManualLat(e.target.value)}
+                                        step="0.000001"
+                                        className="text-xs px-2 py-1.5 w-28 bg-slate-800 border border-slate-600 rounded-lg focus:outline-none focus:border-brand-500 text-white placeholder-slate-500"
+                                    />
+                                    {/* Lng input */}
+                                    <input
+                                        type="number"
+                                        placeholder="Lng"
+                                        value={manualLng}
+                                        onChange={(e) => setManualLng(e.target.value)}
+                                        step="0.000001"
+                                        className="text-xs px-2 py-1.5 w-28 bg-slate-800 border border-slate-600 rounded-lg focus:outline-none focus:border-brand-500 text-white placeholder-slate-500"
+                                    />
+                                    {/* Go to coords */}
+                                    <button
+                                        onClick={() => {
+                                            const lat = parseFloat(manualLat);
+                                            const lng = parseFloat(manualLng);
+                                            if (!isNaN(lat) && !isNaN(lng)) flyToLocation(lat, lng);
+                                        }}
+                                        title="Ir a coordenadas"
+                                        className="p-1.5 bg-slate-700 hover:bg-brand-500 text-slate-300 hover:text-white rounded-lg transition-colors flex-shrink-0"
+                                    >
+                                        <Crosshair className="w-3.5 h-3.5" />
+                                    </button>
+                                    {/* Save location */}
+                                    <button
+                                        onClick={saveMapLocation}
+                                        disabled={isSavingLocation}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
+                                    >
+                                        {isSavingLocation ? (
+                                            <div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                        ) : locationSaved ? (
+                                            <><Check className="w-3 h-3" />Guardado</>
+                                        ) : (
+                                            <><MapIcon className="w-3 h-3" />Guardar</>
+                                        )}
+                                    </button>
+                                    {/* Close */}
+                                    <button
+                                        onClick={() => { setShowLocationPanel(false); setLocationResults([]); setLocationQuery(""); }}
+                                        className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors flex-shrink-0"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Separator */}
+                        {!showLocationPanel && <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />}
+
+                        {/* SECTION 2: Polygon positioning */}
+                        <button
+                            onClick={handleLoadPlanOverlay}
+                            disabled={!isMapReady || isLoadingPlan || isLoadingOverlay || !blueprintLoaded}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all disabled:opacity-50",
+                                isEditingOverlay
+                                    ? "bg-indigo-500 text-white border-transparent"
+                                    : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                            )}
+                        >
+                            {isLoadingPlan ? (
+                                <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <LayersIcon className="w-3.5 h-3.5" />
+                            )}
+                            {hasSavedBlueprint ? "Ajustar Plano" : "Cargar y Ajustar Plano"}
+                        </button>
+
+                        <button
+                            onClick={() => setShowPlanGallery((v) => !v)}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                                showPlanGallery
+                                    ? "bg-indigo-500 text-white border-transparent"
+                                    : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                            )}
+                        >
+                            <Grid3x3 className="w-3.5 h-3.5" />
+                            Galeria de planos
+                        </button>
+
+                        {/* Separator */}
+                        <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />
+
+                        {/* SECTION 3: Map controls — in toolbar so they don't overlap the side panel */}
+                        <div className="flex items-center gap-1 bg-slate-800/80 backdrop-blur-sm p-1 rounded-xl border border-slate-700/50">
+                            <button onClick={handleZoomIn} title="Acercar" className="w-8 h-8 rounded-lg hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors">
+                                <ZoomIn className="w-4 h-4" />
+                            </button>
+                            <button onClick={handleZoomOut} title="Alejar" className="w-8 h-8 rounded-lg hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors">
+                                <ZoomOut className="w-4 h-4" />
+                            </button>
+
+                            {/* Map Base Rotation Controls */}
+                            <div className="flex items-center gap-0.5 bg-slate-900/50 rounded-lg p-0.5 border border-slate-700/50 ml-1">
+                                <button
+                                    onClick={() => {
+                                        if (leafletMapRef.current) {
+                                            const current = (leafletMapRef.current as any).getBearing() || 0;
+                                            (leafletMapRef.current as any).setBearing(current - 5);
+                                        }
+                                    }}
+                                    title="Rotar izquierda (-5°)"
+                                    className="w-7 h-7 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors text-[9px] font-bold"
+                                >
+                                    -5°
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (leafletMapRef.current) {
+                                            const current = (leafletMapRef.current as any).getBearing() || 0;
+                                            (leafletMapRef.current as any).setBearing(current - 1);
+                                        }
+                                    }}
+                                    title="Rotar izquierda fino (-1°)"
+                                    className="w-7 h-7 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors text-[9px] font-bold"
+                                >
+                                    -1°
+                                </button>
+
+                                {/* Compass / Reset North */}
+                                <button
+                                    onClick={() => {
+                                        if (leafletMapRef.current) {
+                                            (leafletMapRef.current as any).setBearing(0);
+                                        }
+                                    }}
+                                    title="Resetear Norte (0°)"
+                                    className={cn(
+                                        "w-12 h-7 mx-1 rounded flex items-center justify-center gap-1 transition-all relative overflow-hidden",
+                                        Math.abs(mapRotation) > 0.5
+                                            ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
+                                            : "hover:bg-slate-700 text-slate-400"
+                                    )}
+                                >
+                                    <div
+                                        className="transition-transform duration-300 ease-out flex-shrink-0"
+                                        style={{ transform: `rotate(${-mapRotation}deg)` }}
+                                    >
+                                        <div className="relative">
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-bold text-red-500">N</div>
+                                            <Compass className="w-3.5 h-3.5" />
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-bold font-mono tracking-tighter">
+                                        {Math.abs(mapRotation) < 0.5 ? "0°" : `${mapRotation > 0 ? "+" : ""}${Math.round(mapRotation)}°`}
+                                    </span>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        if (leafletMapRef.current) {
+                                            const current = (leafletMapRef.current as any).getBearing() || 0;
+                                            (leafletMapRef.current as any).setBearing(current + 1);
+                                        }
+                                    }}
+                                    title="Rotar derecha fino (+1°)"
+                                    className="w-7 h-7 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors text-[9px] font-bold"
+                                >
+                                    +1°
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (leafletMapRef.current) {
+                                            const current = (leafletMapRef.current as any).getBearing() || 0;
+                                            (leafletMapRef.current as any).setBearing(current + 5);
+                                        }
+                                    }}
+                                    title="Rotar derecha (+5°)"
+                                    className="w-7 h-7 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors text-[9px] font-bold"
+                                >
+                                    +5°
+                                </button>
+                            </div>
+
+                            <button onClick={handleResetView} title="Centrar vista" className="w-8 h-8 rounded-lg hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors">
+                                <Crosshair className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Separator */}
+                        {overlayConfig?.bounds && <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />}
+
+                        {/* SECTION 4: Save plan position */}
+                        {overlayConfig?.bounds && !isEditingOverlay && (
+                            <button
+                                onClick={handleSavePlan}
+                                disabled={isSavingPlan}
+                                title="Guardar posición del plano"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all disabled:opacity-50 bg-orange-500 hover:bg-orange-600 text-white border-transparent"
+                            >
+                                {isSavingPlan ? (
+                                    <div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                ) : planSaved ? (
+                                    <><Check className="w-3 h-3" />Guardado</>
+                                ) : (
+                                    <><Save className="w-3 h-3" />Guardar</>
+                                )}
+                            </button>
+                        )}
+
+                        {/* Fase futura: InfraestructuraTool e ImagenesMapaTool desacoplados del commit inicial de Desarrollos. */}
+                        {/* {isMapReady && leafletMapRef.current && (
+                            <>
+                                <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />
+                                <InfraestructuraTool
+                                    proyectoId={proyectoId}
+                                    map={leafletMapRef.current}
+                                    isOpen={activePanel === "infraestructura"}
+                                    onOpenChange={(open) => setActivePanel(open ? "infraestructura" : null)}
+                                />
+                                <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />
+                                <ImagenesMapaTool
+                                    proyectoId={proyectoId}
+                                    map={leafletMapRef.current}
+                                    overlayBounds={overlayConfig?.bounds ?? null}
+                                    overlayRotation={overlayConfig?.rotation ?? 0}
+                                    svgViewBox={svgViewBox}
+                                    anchorPoints={blueprintMeta?.anchorPoints ?? null}
+                                    isOpen={activePanel === "imagenes"}
+                                    onOpenChange={(open) => setActivePanel(open ? "imagenes" : null)}
+                                />
+                            </>
+                        )} */}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Map area (flex-1 takes remaining height) ── */}
+            {modo === "admin" && showPlanGallery && (
+                <div className="flex-shrink-0 bg-slate-950 border-b border-slate-700/50 px-3 py-3">
+                    <div className="max-w-xl">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                            <div>
+                                <p className="text-sm font-bold text-white">Galeria de planos</p>
+                                <p className="text-xs text-slate-400">Elegi cual queres usar en el mapa interactivo antes de posicionarlo.</p>
+                            </div>
+                            <button
+                                onClick={() => setShowPlanGallery(false)}
+                                className="text-xs font-semibold text-slate-400 hover:text-white"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                        <PlanGalleryPicker
+                            proyectoId={proyectoId}
+                            items={planGalleryItems}
+                            selectedId={planGalleryItems.find((item) => item.imageUrl === overlayConfig?.imageUrl)?.id ?? null}
+                            onSelect={(item) => {
+                                setOverlayConfig((prev) => ({
+                                    imageUrl: item.imageUrl,
+                                    bounds: prev?.bounds ?? null,
+                                    rotation: prev?.rotation ?? 0,
+                                    opacity: prev?.opacity ?? 0.9,
+                                    corners: prev?.corners ?? null,
+                                }));
+                                setShowPlanGallery(false);
+                                setIsEditingOverlay(true);
+                            }}
+                            onItemsChange={setPlanGalleryItems}
+                            allowUpload={false}
+                        />
+                    </div>
+                </div>
+            )}
+
+            <div className="relative flex-1 min-h-0 overflow-hidden">
+                {/* Leaflet container */}
+                <div ref={mapRef} className="w-full h-full z-0" />
+
+                {/* Loading overlay */}
+                {!isMapReady && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/90">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="w-10 h-10 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm text-slate-300 font-medium">Cargando mapa interactivo...</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Map top-left floating controls */}
+                <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2">
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={cn(
+                            "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-sm transition-all",
+                            showFilters
+                                ? "bg-brand-500 text-white"
+                                : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700"
+                        )}
+                    >
+                        <Filter className="w-3.5 h-3.5" />Filtros
+                    </button>
+
+                    <button
+                        onClick={() => setShowNumbers(!showNumbers)}
+                        className={cn(
+                            "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-sm transition-all",
+                            showNumbers
+                                ? "bg-brand-500 text-white"
+                                : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700"
+                        )}
+                    >
+                        <Hash className="w-3.5 h-3.5" />Nros
+                    </button>
+
+                    {/* Map view toggle */}
+                    <div className="flex rounded-xl overflow-hidden shadow-lg">
+                        <button
+                            onClick={() => handleSwitchView("satellite")}
+                            className={cn(
+                                "px-3 py-2 text-xs font-semibold backdrop-blur-sm transition-all",
+                                mapView === "satellite"
+                                    ? "bg-brand-500 text-white"
+                                    : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200"
+                            )}
+                        >
+                            Satélite
+                        </button>
+                        <button
+                            onClick={() => handleSwitchView("street")}
+                            className={cn(
+                                "px-3 py-2 text-xs font-semibold backdrop-blur-sm transition-all",
+                                mapView === "street"
+                                    ? "bg-brand-500 text-white"
+                                    : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200"
+                            )}
+                        >
+                            Híbrido
+                        </button>
+                    </div>
+                </div>
+
+                {/* Zoom controls — public mode only; admin uses toolbar */}
+                {modo !== "admin" && (
+                    <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1">
+                        <button onClick={handleZoomIn} title="Acercar" className="w-9 h-9 rounded-xl bg-white/90 dark:bg-slate-800/90 shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all backdrop-blur-sm">
+                            <ZoomIn className="w-4 h-4" />
+                        </button>
+                        <button onClick={handleZoomOut} title="Alejar" className="w-9 h-9 rounded-xl bg-white/90 dark:bg-slate-800/90 shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all backdrop-blur-sm">
+                            <ZoomOut className="w-4 h-4" />
+                        </button>
+                        <button onClick={handleResetView} title="Centrar vista" className="w-9 h-9 rounded-xl bg-white/90 dark:bg-slate-800/90 shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all backdrop-blur-sm">
+                            <Crosshair className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Hint: no overlay bounds configured yet — lotes can't be positioned */}
+                {blueprintLoaded && hasSavedBlueprint && !overlayConfig?.bounds && modo === "admin" && (
+                    <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[999] pointer-events-none">
+                        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/90 backdrop-blur-sm text-white text-xs font-medium border border-slate-700/60 shadow-xl whitespace-nowrap">
+                            <MapPin className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+                            Ya hay un plano guardado. Ajustalo sobre el mapa para ubicarlo y posicionarlo.
+                        </div>
+                    </div>
+                )}
+
+                {/* Legend — bottom-left so the side panel (right) never covers it */}
+                <div className="absolute bottom-4 left-4 z-[1000] bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2">
+                    <div className="flex items-center gap-3">
+                        {Object.entries(STATUS_COLORS).map(([key, color]) => (
+                            <div key={key} className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
+                                <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">{STATUS_LABELS[key]}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Comparison floating button */}
+                <AnimatePresence>
+                    {comparisonIds.length > 0 && (
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 20, opacity: 0 }}
+                            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000]"
+                        >
+                            <div className="flex items-center gap-2 bg-brand-500 text-white rounded-xl shadow-xl px-4 py-2.5">
+                                <button onClick={() => setShowComparator(true)} className="text-sm font-semibold hover:underline">
+                                    Comparar {comparisonIds.length} unidad{comparisonIds.length > 1 ? "es" : ""}
+                                </button>
+                                <button onClick={clearComparison} className="p-0.5 hover:bg-white/20 rounded">
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Filters sidebar */}
+                <AnimatePresence>
+                    {showFilters && (
+                        <motion.div
+                            initial={{ x: -300, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: -300, opacity: 0 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            className="absolute top-14 left-3 bottom-4 z-[1000] w-[260px]"
+                        >
+                            <MasterplanFilters onClose={() => setShowFilters(false)} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Side Panel */}
+                <AnimatePresence>
+                    {selectedUnit && (
+                        <MasterplanSidePanel
+                            unit={selectedUnit}
+                            modo={modo}
+                            canEdit={canEdit}
+                            onClose={() => setSelectedUnitId(null)}
+                        />
+                    )}
+                </AnimatePresence>
+
+                {/* Comparator Modal */}
+                <AnimatePresence>
+                    {showComparator && (
+                        <MasterplanComparator
+                            units={units.filter((u) => comparisonIds.includes(u.id))}
+                            onClose={() => setShowComparator(false)}
+                            onRemove={(id) => toggleComparison(id)}
+                        />
+                    )}
+                </AnimatePresence>
+
+                {/* Overlay Editor */}
+                <AnimatePresence>
+                    {isEditingOverlay && isMapReady && leafletMapRef.current && (
+                        <OverlayEditor
+                            proyectoId={proyectoId}
+                            map={leafletMapRef.current}
+                            existingConfig={overlayConfig}
+                            onBoundsChange={handleOverlayBoundsChange}
+                            onSave={(config) => {
+                                setOverlayConfig(config);
+                                setIsEditingOverlay(false);
+                            }}
+                            onCancel={() => {
+                                if (overlayConfig?.bounds) {
+                                    updatePolygonPositionsLive(
+                                        overlayConfig.bounds,
+                                        overlayConfig.rotation ?? 0,
+                                        overlayConfig.corners ?? null,
+                                    );
+                                }
+                                if (!overlayConfig?.bounds) setOverlayConfig(null);
+                                setIsEditingOverlay(false);
+                            }}
+                            onDelete={handleDeleteOverlay}
+                        />
+                    )}
+                </AnimatePresence>
+
+                {/* Fase futura: Tour 360 Viewer Modal y Preview Card desacoplados del commit inicial de Desarrollos. */}
+                {/* <AnimatePresence>
+                    {activeTour && (
+                        <Tour360Viewer
+                            imageUrl={activeTour.url}
+                            title={activeTour.title}
+                            onClose={() => setActiveTour(null)}
+                            sceneId={activeTour.sceneId}
+                            initialOverlay={activeTour.initialOverlay}
+                        />
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {tourPreview && (
+                        <motion.div
+                            key="tour-preview"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute z-[1200] w-56"
+                            style={{
+                                left: Math.min(Math.max(8, tourPreview.screenX - 112), (mapRef.current?.clientWidth ?? 400) - 232),
+                                top: Math.max(8, tourPreview.screenY - 220),
+                            }}
+                        >
+                            <div className="bg-slate-900/95 backdrop-blur-sm border border-violet-500/40 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+                                {tourPreview.tour.thumbnail && (
+                                    <div className="h-28 overflow-hidden">
+                                        <img
+                                            src={tourPreview.tour.thumbnail}
+                                            alt={tourPreview.tour.nombre}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/80" />
+                                    </div>
+                                )}
+                                {!tourPreview.tour.thumbnail && (
+                                    <div className="h-16 bg-violet-500/10 flex items-center justify-center">
+                                        <Camera className="w-8 h-8 text-violet-400/50" />
+                                    </div>
+                                )}
+                                <div className="p-3">
+                                    <p className="text-xs font-bold text-white mb-0.5">{tourPreview.tour.nombre}</p>
+                                    {tourPreview.tour.sceneCount != null && (
+                                        <p className="text-[10px] text-slate-400 mb-2.5">
+                                            {tourPreview.tour.sceneCount} escena{tourPreview.tour.sceneCount !== 1 ? "s" : ""}
+                                        </p>
+                                    )}
+                                    <div className="flex gap-1.5">
+                                        {tourPreview.tour.defaultSceneUrl && (
+                                            <button
+                                                onClick={() => {
+                                                    setActiveTour({ url: tourPreview.tour.defaultSceneUrl!, title: tourPreview.tour.nombre, sceneId: tourPreview.tour.defaultSceneId, initialOverlay: tourPreview.tour.defaultSceneOverlay });
+                                                    setTourPreview(null);
+                                                }}
+                                                className="flex-1 py-1.5 bg-violet-500 hover:bg-violet-600 text-white text-xs font-bold rounded-xl transition-colors"
+                                            >
+                                                Ver en 360°
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => setTourPreview(null)}
+                                            className="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-xl transition-colors"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence> */}
+            </div>
+
+            {/* Custom styles */}
+            <style jsx global>{`
+                .lot-tooltip {
+                    background: rgba(15, 23, 42, 0.95) !important;
+                    border: 1px solid rgba(100, 116, 139, 0.3) !important;
+                    border-radius: 12px !important;
+                    padding: 8px 12px !important;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+                    color: white !important;
+                }
+                .lot-tooltip::before {
+                    border-top-color: rgba(15, 23, 42, 0.95) !important;
+                }
+                .lot-label {
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }
+                .lot-polygon {
+                    transition: fill-opacity 0.2s, stroke-width 0.15s;
+                    cursor: pointer;
+                }
+                .lot-polygon:hover {
+                    fill-opacity: 0.7 !important;
+                    stroke-width: 2 !important;
+                }
+                .leaflet-container {
+                    font-family: Inter, system-ui, sans-serif;
+                }
+                .infra-layer {
+                    cursor: pointer;
+                }
+            `}</style>
+        </div>
+    );
+}
+

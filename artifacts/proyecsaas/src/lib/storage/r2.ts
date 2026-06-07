@@ -44,9 +44,36 @@ export async function generateR2PresignedUrl(
 
   const uploadUrl = await getSignedUrl(client, command, { expiresIn: expiresInSeconds });
   
-  // Construct public URL
-  const base = publicBaseUrl ? publicBaseUrl.replace(/\/$/, "") : `${endpoint!.replace(/\/$/, "")}/${bucket}`;
-  const publicUrl = `${base}/${key}`;
+  const publicUrl = getR2PublicUrl(key);
 
   return { uploadUrl, publicUrl };
+}
+
+export async function uploadBufferToR2(
+  key: string,
+  body: Buffer,
+  contentType: string
+): Promise<{ publicUrl: string }> {
+  const client = getR2Client();
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucketName!,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    })
+  );
+
+  return { publicUrl: getR2PublicUrl(key) };
+}
+
+function getR2PublicUrl(key: string) {
+  // En desarrollo o si no hay dominio personalizado configurado, usamos el proxy de Next.js
+  // para evitar problemas de CORS con los dominios por defecto *.r2.dev de Cloudflare.
+  if (process.env.NODE_ENV === "development" || !publicBaseUrl || publicBaseUrl.includes(".r2.dev")) {
+    return `/api/storage/view?key=${encodeURIComponent(key)}`;
+  }
+  const base = publicBaseUrl.replace(/\/$/, "");
+  return `${base}/${key}`;
 }
