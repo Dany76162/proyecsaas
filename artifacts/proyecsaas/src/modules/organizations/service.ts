@@ -195,7 +195,7 @@ export async function getSetupChecklistStatus(
 
   const profileComplete = Boolean(org.name?.trim() && org.city?.trim());
   const propertiesLoaded = org._count.properties > 0;
-  const agentConfigured = org.aiAgents && ["ACTIVE", "PAUSED", "DRAFT"].includes(org.aiAgents.status) ? true : false;
+  const agentConfigured = Boolean(org.aiAgents[0] && ["ACTIVE", "PAUSED", "DRAFT"].includes(org.aiAgents[0].status));
   const whatsappConnected = org.whatsappChannels.length > 0;
 
   const panoramasCount = await prisma.propertyPanorama.count({

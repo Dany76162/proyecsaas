@@ -92,7 +92,9 @@ export async function getTenantsAiHealth(): Promise<TenantAiHealth[]> {
 
   return orgs.map(org => {
     const wa = org.whatsappChannels[0];
-    const ai = org.aiAgents;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const aiRaw: any = org.aiAgents;
+    const ai: { status: string } | null = Array.isArray(aiRaw) ? (aiRaw[0] ?? null) : (aiRaw ?? null);
     const sub = org.subscription;
     
     let daysLeft = null;
