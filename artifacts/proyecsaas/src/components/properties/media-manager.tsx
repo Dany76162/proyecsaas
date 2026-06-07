@@ -29,6 +29,7 @@ export function MediaManager({
   const [images, setImages] = useState(initialImages || []);
   const [panoramas, setPanoramas] = useState(initialPanoramas || []);
   const [floorPlanUrl, setFloorPlanUrl] = useState(initialFloorPlanUrl);
+  const [showFloorPlan, setShowFloorPlan] = useState(false);
   const [activeCategory, setActiveCategory] = useState<MediaCategory>(
     (initialPanoramas || []).length > 0 ? "PANORAMA" : "REAL",
   );
@@ -105,9 +106,12 @@ export function MediaManager({
   }, [initialFloorPlanUrl]);
 
   const primaryImage = images.find((image) => image.isPrimary) ?? images.find((image) => image.category === "REAL") ?? images[0] ?? null;
-  const activeTitle = activePanorama?.label ?? primaryImage?.altText ?? "Sin medios todavía";
+  const activeTitle = showFloorPlan && floorPlanUrl
+    ? "Plano tecnico"
+    : activePanorama?.label ?? primaryImage?.altText ?? "Sin medios todavía";
 
   function handleUploaded(payload: UploadedMediaPayload) {
+    setShowFloorPlan(false);
     const temporaryId = `temp-${Date.now()}`;
     const image: PropertyImageItem = {
       id: temporaryId,
@@ -145,6 +149,7 @@ export function MediaManager({
   }
 
   function handleMediaDeleted(deletedImageIds: string[], deletedPanoramaIds: string[]) {
+    setShowFloorPlan(false);
     const deletedPanoramaUrls = panoramas
       .filter((panorama) => deletedPanoramaIds.includes(panorama.id))
       .map((panorama) => panorama.url);
@@ -175,11 +180,41 @@ export function MediaManager({
     router.refresh();
   }
 
+  function handleFloorPlanUpdated(url: string | null) {
+    setFloorPlanUrl(url);
+    setShowFloorPlan(Boolean(url));
+  }
+
+  const floorPlanIsPdf = Boolean(floorPlanUrl?.toLowerCase().split(/[?#]/)[0]?.endsWith(".pdf"));
+
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-[#0A0A12] shadow-soft">
       <div className="flex min-h-[calc(100vh-8rem)] flex-col lg:flex-row">
         <div id="property-media-viewer" className="relative min-h-[520px] flex-1 bg-[#0A0A12] lg:min-h-0">
-          {activePanorama && orderedPanoramas.length > 0 ? (
+          {showFloorPlan && floorPlanUrl ? (
+            <div className="relative h-full min-h-[520px] w-full bg-white lg:min-h-0">
+              {floorPlanIsPdf ? (
+                <object
+                  data={`${floorPlanUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                  type="application/pdf"
+                  className="h-full min-h-[520px] w-full bg-white lg:min-h-0"
+                >
+                  <div className="flex h-full min-h-[520px] flex-col items-center justify-center gap-3 p-6 text-center text-slate-600">
+                    <p className="text-sm font-semibold">No se pudo previsualizar el PDF.</p>
+                    <a href={floorPlanUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-600 hover:underline">
+                      Abrir plano en nueva pestaña
+                    </a>
+                  </div>
+                </object>
+              ) : (
+                <img
+                  src={floorPlanUrl}
+                  alt="Plano técnico de la propiedad"
+                  className="h-full min-h-[520px] w-full object-contain lg:min-h-0"
+                />
+              )}
+            </div>
+          ) : activePanorama && orderedPanoramas.length > 0 ? (
             <>
               <PanoramaViewer
                 scenes={orderedPanoramas.map(p => ({
@@ -239,7 +274,7 @@ export function MediaManager({
           <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-3 border-t border-white/[0.08] bg-black/45 px-4 py-3 text-white backdrop-blur-md">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white/90">{activeTitle}</p>
-              {activePanorama?.direction && (
+              {!showFloorPlan && activePanorama?.direction && (
                 <p className="mt-0.5 flex items-center gap-1 text-xs text-white/50">
                   <Compass className="h-3 w-3" />
                   Dirección {activePanorama.direction === "CENTER" ? "sin dirección específica" : activePanorama.direction}
@@ -277,14 +312,18 @@ export function MediaManager({
           floorPlanUrl={floorPlanUrl}
           activeCategory={activeCategory}
           activePanoramaId={activePanorama?.id ?? null}
-          onCategoryChange={setActiveCategory}
+          onCategoryChange={(category) => {
+            setShowFloorPlan(false);
+            setActiveCategory(category);
+          }}
           onPanoramaSelect={(panoramaId) => {
+            setShowFloorPlan(false);
             setActivePanoramaId(panoramaId);
             setActiveCategory("PANORAMA");
           }}
           onMediaUploaded={handleUploaded}
           onMediaDeleted={handleMediaDeleted}
-          onFloorPlanUpdated={setFloorPlanUrl}
+          onFloorPlanUpdated={handleFloorPlanUpdated}
           onSaveChanges={handleSaveChanges}
           isEditingHotspot={isEditingHotspot}
           onStartEditHotspot={(panoramaId) => {

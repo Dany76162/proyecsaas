@@ -260,9 +260,45 @@ export default async function PublicPortalPropertiesPage({
     });
   }
 
+  // Query developments for the portal
+  let developments: any[] = [];
+  try {
+    const rawDevelopments = await prisma.development.findMany({
+      where: {
+        status: "ACTIVE",
+        publicVisible: true,
+      },
+      include: {
+        DevelopmentLot: {
+          select: {
+            id: true,
+            status: true,
+            priceCents: true,
+            currency: true,
+          }
+        },
+        Organization: {
+          select: {
+            name: true,
+            slug: true,
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    developments = rawDevelopments.map(dev => ({
+      ...dev,
+      lots: dev.DevelopmentLot,
+      organization: dev.Organization,
+    }));
+  } catch (error) {
+    console.error("Error querying developments for public portal:", error);
+  }
+
   // ── Vertical filter sidebar — mobile + fallback ───────────────────────────
   const filtersSidebar = (
-    <aside className="lg:col-span-1">
+    <aside className="lg:col-span-1" key="filters-sidebar">
       <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
           <span className="inline-flex items-center gap-1.5 font-bold text-slate-950 text-sm">
@@ -382,7 +418,7 @@ export default async function PublicPortalPropertiesPage({
 
   // ── Horizontal filter bar — desktop map/hybrid/list modes ─────────────────
   const filtersBar = (
-    <form method="GET" action="/propiedades" className="w-full">
+    <form method="GET" action="/propiedades" className="w-full" key="filters-bar">
       <div className="flex flex-wrap items-end gap-x-3 gap-y-2.5">
         {/* Ubicación */}
         <div className="flex flex-col min-w-[140px] flex-1">
@@ -533,6 +569,7 @@ export default async function PublicPortalPropertiesPage({
           filtersSidebar={filtersSidebar}
           filtersBar={filtersBar}
           activeOrgs={activeOrgs}
+          developments={developments}
         />
       </main>
     </div>

@@ -51,6 +51,7 @@ type PublicMapWrapperProps = {
   filtersSidebar: React.ReactNode;
   filtersBar: React.ReactNode;
   activeOrgs?: Array<{ name: string; slug: string }>;
+  developments?: any[];
 };
 
 type DesktopViewMode = "list" | "hybrid" | "map";
@@ -554,7 +555,7 @@ const MAP_EMBEDDED = "relative w-full h-full bg-slate-50 overflow-hidden";
 const CONTENT_H = "h-[calc(100vh-310px)] min-h-[480px]";
 
 // ── Wrapper ──────────────────────────────────────────────────────────────────
-export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersBar, activeOrgs = [] }: PublicMapWrapperProps) {
+export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersBar, activeOrgs = [], developments = [] }: PublicMapWrapperProps) {
   const [viewMode, setViewMode] = useState<DesktopViewMode>("hybrid");
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -774,6 +775,51 @@ export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersB
               {moreFiltersBtn}
             </div>
           </div>
+          {/* Desarrollos Interactivos Grid */}
+          {developments.length > 0 && (
+            <div className="mb-8 border-b border-slate-100 pb-8">
+              <h3 className="text-base font-black text-slate-900 mb-4 flex items-center gap-1.5">
+                <Compass className="h-5 w-5 text-blue-600 animate-spin-slow" /> Desarrollos & Loteos Interactivos
+              </h3>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                {developments.map((dev) => {
+                  const total = dev.lots.length;
+                  const available = dev.lots.filter((l: any) => l.status === "AVAILABLE").length;
+                  return (
+                    <Link
+                      key={dev.id}
+                      href={`/cat/${dev.organization.slug}/developments/${dev.id}`}
+                      className="group overflow-hidden rounded-3xl border border-blue-500/10 bg-[#0f172a] text-white p-5 shadow-soft hover:shadow-md transition-all hover:border-blue-500/30 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start gap-2 mb-3">
+                          <span className="rounded-full bg-blue-600 px-2.5 py-1 text-[8px] font-black uppercase tracking-wider text-white">
+                            Masterplan Activo
+                          </span>
+                          <span className="text-[10px] text-emerald-400 font-extrabold">
+                            {available} / {total} libres
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm text-white group-hover:text-blue-300 transition-colors line-clamp-1">
+                          {dev.name}
+                        </h4>
+                        {dev.description && (
+                          <p className="text-[11px] text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                            {dev.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="border-t border-slate-800/80 pt-3 mt-4 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-550 font-bold">{dev.organization.name}</span>
+                        <span className="text-blue-400 font-extrabold hover:underline">Ver Lotes ➔</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Full-width grid */}
           {count > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
@@ -800,6 +846,38 @@ export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersB
               <p className="shrink-0 text-xs font-semibold text-slate-500 px-0.5">
                 <strong className="text-slate-900">{count}</strong> propiedades encontradas
               </p>
+              
+              {/* Developments in Hybrid Sidebar */}
+              {developments.map((dev) => {
+                const total = dev.lots.length;
+                const available = dev.lots.filter((l: any) => l.status === "AVAILABLE").length;
+                return (
+                  <Link
+                    key={dev.id}
+                    href={`/cat/${dev.organization.slug}/developments/${dev.id}`}
+                    className="group flex flex-col justify-between overflow-hidden rounded-2xl border-2 border-blue-500/10 bg-[#0f172a] text-white p-4 shrink-0 transition-all hover:border-blue-500/30"
+                  >
+                    <div>
+                      <div className="flex justify-between items-center gap-2 mb-2">
+                        <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[8px] font-black uppercase text-white">
+                          Masterplan
+                        </span>
+                        <span className="text-[10px] text-emerald-450 font-bold">
+                          {available} / {total} libres
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-xs text-white group-hover:text-blue-300 transition-colors line-clamp-1">
+                        {dev.name}
+                      </h4>
+                    </div>
+                    <div className="flex items-center justify-between text-[9px] text-slate-500 mt-2.5 pt-2.5 border-t border-slate-800">
+                      <span>{dev.organization.name}</span>
+                      <span className="text-blue-400 font-bold">Ver Lotes ➔</span>
+                    </div>
+                  </Link>
+                );
+              })}
+
               {count > 0
                 ? properties.map((p) => <MediumCard key={p.id} prop={p} />)
                 : <EmptyPanel />}

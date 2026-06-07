@@ -406,7 +406,7 @@ export function MediaPanel({
         <input
           ref={floorPlanInputRef}
           type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+          accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf,image/vnd.dxf,application/dxf,.dxf"
           className="hidden"
           onChange={handleFloorPlanChange}
         />

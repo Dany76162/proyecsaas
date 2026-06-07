@@ -18,6 +18,23 @@ type PanoramaViewerProps = {
   onCoordsSelected?: (pitch: number, yaw: number) => void
 }
 
+function getPanoramaSourceUrl(url: string) {
+  if (!url || url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url
+  }
+
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol === 'https:' && parsed.hostname.endsWith('.r2.dev')) {
+      return `/api/storage/view?url=${encodeURIComponent(url)}`
+    }
+  } catch {
+    return url
+  }
+
+  return url
+}
+
 export function PanoramaViewer({ 
   scenes, 
   className = "h-full w-full bg-black",
@@ -31,6 +48,10 @@ export function PanoramaViewer({
   const [sceneTypes, setSceneTypes] = useState<Record<number, 'equirectangular' | 'cylindrical'>>({})
 
   const safeScenes = scenes || []
+  const viewerScenes = safeScenes.map((scene) => ({
+    ...scene,
+    sourceUrl: getPanoramaSourceUrl(scene.url),
+  }))
 
   useEffect(() => {
     setActiveSceneIndex(0)
@@ -44,7 +65,7 @@ export function PanoramaViewer({
     const detectTypes = async () => {
       const types: Record<number, 'equirectangular' | 'cylindrical'> = {}
       await Promise.all(
-        safeScenes.map((scene, i) => {
+        viewerScenes.map((scene, i) => {
           return new Promise<void>((resolve) => {
             const img = new Image()
             img.onload = () => {
@@ -58,7 +79,7 @@ export function PanoramaViewer({
               types[i] = 'equirectangular'
               resolve()
             }
-            img.src = scene.url
+            img.src = scene.sourceUrl
           })
         })
       )
@@ -85,8 +106,8 @@ export function PanoramaViewer({
   }
 
   useEffect(() => {
-    const isTypesLoaded = safeScenes.length === 0 || Object.keys(sceneTypes).length === safeScenes.length
-    if (!containerRef.current || safeScenes.length === 0 || !isTypesLoaded) return
+    const isTypesLoaded = viewerScenes.length === 0 || Object.keys(sceneTypes).length === viewerScenes.length
+    if (!containerRef.current || viewerScenes.length === 0 || !isTypesLoaded) return
 
     // Limpiar instancia anterior
     if (viewerRef.current) {
@@ -161,11 +182,11 @@ export function PanoramaViewer({
       if (!containerRef.current) return
 
       try {
-        if (safeScenes.length === 1) {
+        if (viewerScenes.length === 1) {
           // @ts-ignore
           viewerRef.current = window.pannellum.viewer(containerRef.current, {
             type: sceneTypes[0] || 'equirectangular',
-            panorama: safeScenes[0].url,
+            panorama: viewerScenes[0].sourceUrl,
             autoLoad: true,
             hfov: 100,
             showControls: true,
@@ -174,7 +195,7 @@ export function PanoramaViewer({
           })
         } else {
           const scenesConfig: Record<string, any> = {}
-          safeScenes.forEach((scene, i) => {
+          viewerScenes.forEach((scene, i) => {
             const hotSpots = []
 
             // Hotspot hacia la escena siguiente (en el piso, usando pitch/yaw guardados o por defecto)
@@ -205,7 +226,7 @@ export function PanoramaViewer({
 
             scenesConfig[`scene-${i}`] = {
               type: sceneTypes[i] || 'equirectangular',
-              panorama: scene.url,
+              panorama: scene.sourceUrl,
               title: scene.label,
               autoLoad: true,
               hotSpots,
