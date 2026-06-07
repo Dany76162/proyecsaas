@@ -100,7 +100,7 @@ export async function getOrgAiAudit(orgId: string): Promise<OrgAuditData> {
 
   // Derived Values
   const wa = orgInfo.whatsappChannels[0];
-  const ai = orgInfo.aiAgents;
+  const ai = orgInfo.aiAgents[0] ?? null;
   const sub = orgInfo.subscription;
   
   let daysLeft = null;
