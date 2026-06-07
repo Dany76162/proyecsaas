@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import { BillingMode, SubscriptionStatus } from "@prisma/client";
 
@@ -168,6 +168,46 @@ export async function processMPPaymentWebhook(
   });
 
   if (!record) {
+    // Check if it corresponds to a DevelopmentReservation
+    const reservation = await prisma.developmentReservation.findUnique({
+      where: { id: externalReference },
+      include: { DevelopmentLot: true },
+    });
+
+    if (reservation) {
+      if (reservation.status === "ACTIVE") {
+        return { outcome: "skipped", reason: "reservation-already-active" };
+      }
+
+      await prisma.$transaction([
+        prisma.developmentReservation.update({
+          where: { id: reservation.id },
+          data: {
+            status: "ACTIVE",
+            approvedAt: new Date(),
+          },
+        }),
+        prisma.developmentLot.update({
+          where: { id: reservation.lotId },
+          data: {
+            status: "RESERVED",
+          },
+        }),
+        prisma.developmentLotHistory.create({
+          data: {
+            id: `his_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            lotId: reservation.lotId,
+            organizationId: reservation.organizationId,
+            previousStatus: "AVAILABLE",
+            newStatus: "RESERVED",
+            reason: "Pago de reserva online confirmado vía Mercado Pago",
+          },
+        }),
+      ]);
+
+      return { outcome: "processed", organizationId: reservation.organizationId };
+    }
+
     console.warn(
       JSON.stringify({
         scope: "mp-webhook",
