@@ -72,8 +72,9 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
           },
         },
         _count: {
-          select: { memberships: true, leads: true, properties: true, aiAgents: true },
+          select: { memberships: true, leads: true, properties: true },
         },
+        aiAgents: { select: { id: true } },
         memberships: {
           take: 1,
           select: {
@@ -154,7 +155,7 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
           }
         : null,
       maxAiAgents: org.maxAiAgents,
-      aiAgentCount: org._count.aiAgents,
+      aiAgentCount: org.aiAgents ? 1 : 0,
       agentQuotaNote: org.agentQuotaNote ?? null,
       commercialStatus: commercialState.effectiveStatus ?? "LEGACY",
       commercialStatusLabel: commercialState.summary,

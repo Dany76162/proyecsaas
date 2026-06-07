@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import { prisma } from "@/server/db/prisma";
 import { ACTIVATION_EVENTS, type ActivationEvent } from "@/server/activation/events";
@@ -159,13 +159,7 @@ export async function getPlatformActivationSnapshot(): Promise<PlatformActivatio
             },
           },
           aiAgents: {
-            where: {
-              status: {
-                in: ["ACTIVE", "PAUSED", "DRAFT"],
-              },
-            },
             select: { id: true },
-            take: 1,
           },
           whatsappChannels: {
             where: { status: "ACTIVE" },
@@ -253,7 +247,7 @@ export async function getPlatformActivationSnapshot(): Promise<PlatformActivatio
       const setupReady =
         Boolean(org.name.trim() && org.city?.trim()) &&
         org._count.properties > 0 &&
-        org.aiAgents.length > 0 &&
+        Boolean(org.aiAgents) &&
         org.whatsappChannels.length > 0;
 
       const activation = getActivationStage({

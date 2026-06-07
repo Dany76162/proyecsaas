@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import crypto from "node:crypto";
 import { MembershipRole, Prisma } from "@prisma/client";
@@ -227,7 +227,6 @@ export async function deleteOrganizationPermanentlyAction(orgSlug: string): Prom
             automations: true,
             whatsappChannels: true,
             billingRecords: true,
-            aiAgents: true,
           },
         },
         subscription: {
