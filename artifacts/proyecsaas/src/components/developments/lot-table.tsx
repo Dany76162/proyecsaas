@@ -1,11 +1,12 @@
 import * as React from "react";
-import { 
-  Search, 
-  SlidersHorizontal, 
-  Map, 
-  DollarSign, 
+import {
+  Search,
+  SlidersHorizontal,
+  Map,
+  DollarSign,
   Eye,
-  FileSpreadsheet
+  FileSpreadsheet,
+  LandPlot
 } from "lucide-react";
 import { LotStatus, LotStatusBadge } from "./lot-status-badge";
 import { Button } from "@/components/ui/button";
@@ -35,22 +36,8 @@ export interface LotTableProps {
   className?: string;
 }
 
-// Mock dataset if none provided
-const MOCK_LOTS: LotRow[] = [
-  { id: "1", number: "101", blockName: "Manzana A", surfaceM2: 450, priceUSD: 35000, status: "AVAILABLE" },
-  { id: "2", number: "102", blockName: "Manzana A", surfaceM2: 500, priceUSD: 39000, status: "AVAILABLE" },
-  { id: "3", number: "103", blockName: "Manzana A", surfaceM2: 480, priceUSD: 37500, status: "RESERVED" },
-  { id: "4", number: "104", blockName: "Manzana A", surfaceM2: 600, priceUSD: 48000, status: "SOLD" },
-  { id: "5", number: "201", blockName: "Manzana B", surfaceM2: 450, priceUSD: 36000, status: "AVAILABLE" },
-  { id: "6", number: "202", blockName: "Manzana B", surfaceM2: 450, priceUSD: 36000, status: "BLOCKED" },
-  { id: "7", number: "203", blockName: "Manzana B", surfaceM2: 550, priceUSD: 42000, status: "AVAILABLE" },
-  { id: "8", number: "204", blockName: "Manzana B", surfaceM2: 720, priceUSD: 59000, status: "SOLD" },
-  { id: "9", number: "301", blockName: "Manzana C", surfaceM2: 400, priceUSD: 32000, status: "AVAILABLE" },
-  { id: "10", number: "302", blockName: "Manzana C", surfaceM2: 400, priceUSD: 32000, status: "RESERVED" },
-];
-
 export function LotTable({
-  initialLots = MOCK_LOTS,
+  initialLots = [],
   onSelectLot,
   className,
 }: LotTableProps) {
@@ -183,7 +170,17 @@ export function LotTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLots.length > 0 ? (
+                      {initialLots.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <LandPlot className="h-8 w-8 text-slate-200" />
+                      <p className="text-sm font-semibold text-slate-400">Todavía no hay lotes cargados para este desarrollo.</p>
+                      <p className="text-xs text-slate-400">Cargá o sincronizá el plano para generar el inventario.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredLots.length > 0 ? (
                 filteredLots.map((lot) => {
                   const formattedPrice = new Intl.NumberFormat("es-AR", {
                     style: "currency",
@@ -192,8 +189,8 @@ export function LotTable({
                   }).format(lot.priceUSD);
 
                   return (
-                    <TableRow 
-                      key={lot.id} 
+                    <TableRow
+                      key={lot.id}
                       className="border-slate-50 hover:bg-slate-50/50 transition-colors group cursor-pointer"
                       onClick={() => onSelectLot?.(lot.id)}
                     >

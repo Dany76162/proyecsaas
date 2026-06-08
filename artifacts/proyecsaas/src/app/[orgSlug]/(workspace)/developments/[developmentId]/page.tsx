@@ -17,12 +17,12 @@ interface PageProps {
 export default async function DevelopmentDetailPage({ params, searchParams }: PageProps) {
   const { orgSlug, developmentId } = await params;
   const resolvedSearchParams = await searchParams;
-  await requireOrganizationMembership(orgSlug);
+  const { membership } = await requireOrganizationMembership(orgSlug);
 
   const activeTab = resolvedSearchParams.tab || "info";
 
-  const developmentRaw = await prisma.development.findUnique({
-    where: { id: developmentId },
+  const developmentRaw = await prisma.development.findFirst({
+    where: { id: developmentId, organizationId: membership.organization.id },
     include: {
       DevelopmentLot: {
         orderBy: { lotNumber: "asc" },

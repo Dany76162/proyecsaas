@@ -35,7 +35,7 @@ export function PostPreview({ platform, content, hashtags = [], title, className
         {/* Media Placeholder */}
         <div className="aspect-square w-full bg-slate-100 flex flex-col items-center justify-center gap-2 text-slate-300 border-y border-slate-50">
           <Camera className="h-10 w-10 opacity-20" />
-          <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">Visual Placeholder</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">Vista previa visual</span>
         </div>
 
         {/* Actions */}

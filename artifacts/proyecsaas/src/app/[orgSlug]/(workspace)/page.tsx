@@ -379,7 +379,7 @@ export default async function OrganizationHomePage({
                     </p>
                   </div>
                   <div className="text-right">
-                    <StatusBadge label="Online" tone="success" />
+                    <StatusBadge label="Activo" tone="neutral" />
                   </div>
                 </div>
               ))}
