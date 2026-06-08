@@ -1,29 +1,33 @@
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 
-export type LotStatus = "AVAILABLE" | "RESERVED" | "SOLD" | "BLOCKED";
+export type LotStatus = "AVAILABLE" | "RESERVED" | "RESERVED_PENDING" | "SOLD" | "BLOCKED";
 
 export interface LotStatusBadgeProps {
   status: LotStatus;
   className?: string;
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; variant: "success" | "warning" | "danger" | "neutral" }> = {
   AVAILABLE: {
     label: "Disponible",
-    variant: "success" as const,
+    variant: "success",
   },
   RESERVED: {
     label: "Reservado",
-    variant: "warning" as const,
+    variant: "warning",
+  },
+  RESERVED_PENDING: {
+    label: "Reservado",
+    variant: "warning",
   },
   SOLD: {
     label: "Vendido",
-    variant: "danger" as const,
+    variant: "danger",
   },
   BLOCKED: {
     label: "Bloqueado",
-    variant: "neutral" as const,
+    variant: "neutral",
   },
 };
 

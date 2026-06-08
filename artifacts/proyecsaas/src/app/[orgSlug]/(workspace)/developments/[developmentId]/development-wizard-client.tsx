@@ -520,7 +520,7 @@ export default function DevelopmentWizardClient({
               <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
                 {[
                   { label: "Disponible", val: disponibles, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                  { label: "Reserva Pendiente", val: reservadas, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
+                  { label: "Reservado", val: reservadas, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
                   { label: "Vendido", val: vendidas, icon: DollarSign, color: "text-rose-500", bg: "bg-rose-500/10" },
                   { label: "Bloqueado", val: bloqueados, icon: Ban, color: "text-slate-500", bg: "bg-slate-100" },
                 ].map((s, idx) => (
@@ -534,6 +534,57 @@ export default function DevelopmentWizardClient({
                     <p className="text-2xl font-black text-slate-900 dark:text-white">{s.val}</p>
                   </div>
                 ))}
+              </div>
+
+              {/* Reservas — estado vacío o resumen */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="h-4 w-4 text-amber-500" />
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">Estado de Reservas</h3>
+                  {reservadas > 0 && (
+                    <span className="ml-auto rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                      {reservadas} pendiente{reservadas !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                {reservadas === 0 && vendidas === 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                      Todavía no hay reservas registradas.
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
+                      Cuando un interesado reserve un lote desde la ficha pública, aparecerá acá con su estado de pago y seguimiento.
+                    </p>
+                    {development.publicVisible && development.status === "ACTIVE" && (
+                      <Link
+                        href={`/cat/${orgSlug}/developments/${development.id}`}
+                        target="_blank"
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                      >
+                        <Globe className="h-3.5 w-3.5" />
+                        Ver ficha pública del desarrollo
+                      </Link>
+                    )}
+                    {(!development.publicVisible || development.status !== "ACTIVE") && (
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">
+                        Activá el desarrollo y marcalo como visible para habilitar la reserva desde la ficha pública.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {reservadas > 0 && (
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{reservadas}</span> lote{reservadas !== 1 ? "s" : ""} con reserva pendiente de confirmación de pago.
+                      </p>
+                    )}
+                    {vendidas > 0 && (
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        <span className="font-bold text-rose-600 dark:text-rose-400">{vendidas}</span> lote{vendidas !== 1 ? "s" : ""} vendido{vendidas !== 1 ? "s" : ""} con reserva confirmada.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

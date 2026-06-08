@@ -18,8 +18,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, string> = {
   DISPONIBLE: "Disponible",
-  RESERVADA: "Reservada",
-  VENDIDA: "Vendida",
+  RESERVADA: "Reservado",
+  VENDIDA: "Vendido",
   BLOQUEADO: "Bloqueado",
   SUSPENDIDO: "Suspendido",
 };
@@ -471,7 +471,7 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
           <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
             <tr className="border-b border-slate-200 dark:border-slate-700 bg-inherit">
               {(activeTab === "comercial"
-                ? ["Lote", "Estado", "Precio (USD)", "Superficie", "Frente (m)", "Fondo (m)", "Observaciones"]
+                ? ["Lote", "Estado", "Precio", "Superficie", "Frente (m)", "Fondo (m)", "Observaciones"]
                 : activeTab === "estructura"
                 ? ["Lote", "Tipo", "Etapa", "Manzana", "Etiquetas"]
                 : ["Lote", "Manzana", "Superficie", "Precio Lote", "Precio / m²", "Cliente", "Vendedor", "Ficha PDF"]

@@ -104,15 +104,16 @@ export async function POST(
     }
 
     // 3. Create a DevelopmentReservation
-    // Fixed reservation seña/deposit of $10,000 ARS (1000000 cents)
-    const depositCents = 1000000;
+    // Monto transitorio hasta habilitar configuración por desarrollo.
+    // TODO (futuro): leer depositCents desde Development.depositCents cuando se agregue el campo.
+    const DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS = 1_000_000; // $10.000 ARS
     const reservation = await prisma.developmentReservation.create({
       data: {
         lotId: id,
         organizationId,
         leadId: lead.id,
         status: "PENDING_APPROVAL",
-        depositCents,
+        depositCents: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS,
         notes: "Reserva en vivo iniciada por el cliente",
       },
     });
@@ -141,7 +142,7 @@ export async function POST(
 
     const preference = await createMercadoPagoPreference({
       title: `Reserva Lote ${lot.lotNumber} - ${lot.development.name}`,
-      amountARS: depositCents / 100,
+      amountARS: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS / 100,
       externalReference: reservation.id,
       payerEmail: email,
       backUrls: {

@@ -27,6 +27,7 @@ export interface LotRow {
   blockName: string;
   surfaceM2: number;
   priceUSD: number;
+  currency?: string;
   status: LotStatus;
 }
 
@@ -164,7 +165,7 @@ export function LotTable({
                 <TableHead className="font-semibold text-slate-500 text-xs py-3 w-[15%]">Lote</TableHead>
                 <TableHead className="font-semibold text-slate-500 text-xs py-3 w-[20%]">Manzana</TableHead>
                 <TableHead className="font-semibold text-slate-500 text-xs py-3 w-[20%] text-right">Superficie</TableHead>
-                <TableHead className="font-semibold text-slate-500 text-xs py-3 w-[20%] text-right">Precio (USD)</TableHead>
+                <TableHead className="font-semibold text-slate-500 text-xs py-3 w-[20%] text-right">Precio</TableHead>
                 <TableHead className="font-semibold text-slate-500 text-xs py-3 w-[15%] text-center">Estado</TableHead>
                 <TableHead className="w-[10%]"></TableHead>
               </TableRow>
@@ -184,7 +185,7 @@ export function LotTable({
                 filteredLots.map((lot) => {
                   const formattedPrice = new Intl.NumberFormat("es-AR", {
                     style: "currency",
-                    currency: "USD",
+                    currency: lot.currency || "USD",
                     maximumFractionDigits: 0,
                   }).format(lot.priceUSD);
 
@@ -243,7 +244,7 @@ export function LotTable({
             <span>Filtrados: <strong>{filteredLots.length} lotes</strong></span>
           </div>
           <div>
-            <span>* Todos los precios en dólares estadounidenses</span>
+            <span>* Los precios se muestran en la moneda configurada por lote</span>
           </div>
         </div>
       </div>

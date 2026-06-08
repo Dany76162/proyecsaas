@@ -22,6 +22,7 @@ export interface LotDetail {
   status: LotStatus;
   surfaceM2: number;
   priceUSD: number;
+  currency?: string;
   orientation?: string;
   features?: string[];
   notes?: string;
@@ -57,7 +58,7 @@ export function LotDetailPanel({
 
   const formattedPrice = new Intl.NumberFormat("es-AR", {
     style: "currency",
-    currency: "USD",
+    currency: lot.currency || "USD",
     maximumFractionDigits: 0,
   }).format(lot.priceUSD);
 
