@@ -20,6 +20,8 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   /^\/api\/webhooks\//,
   /^\/api\/whatsapp\/webhook(\/|$)/,
   /^\/api\/properties\/sync-from-source/,
+  // Reserva de lotes desde catálogo público — compradores externos sin sesión
+  /^\/api\/developments\/lots\/[^/]+\/reserve$/,
   /^\/[^/]+\/catalog(\/|$)/,
   /^\/cat(\/|$)/,
   /^\/google.*\.html$/,
