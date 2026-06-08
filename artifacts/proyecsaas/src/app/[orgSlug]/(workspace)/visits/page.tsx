@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calendar, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight, Users } from "lucide-react";
 
 
 import { MetricCard } from "@/components/workspace/metric-card";
@@ -105,7 +105,22 @@ export default async function VisitsPage({
               Gestioná tu calendario de visitas y confirmá citas agendadas por la IA o el equipo.
             </p>
           </div>
+          <div className="shrink-0">
+            <Link
+              href={`/${orgSlug}/leads`}
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-700"
+            >
+              <Users className="h-4 w-4" />
+              Programar visita desde un prospecto
+            </Link>
+          </div>
         </div>
+      </section>
+
+      <section className="rounded-[1.75rem] border border-amber-100 bg-amber-50/40 px-5 py-4">
+        <p className="text-xs font-semibold text-amber-700">
+          Las visitas se programan desde la ficha de cada prospecto para mantener el historial comercial conectado. Ingresá a un prospecto y usá la sección "Agendar visita" para registrar la cita.
+        </p>
       </section>
 
       {successMessage ? (

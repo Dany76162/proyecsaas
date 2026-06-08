@@ -736,28 +736,17 @@ export function ContinuousScannerModal({
 
   const handleFinish = async () => {
     let frames = scannedFramesRef.current;
-    console.log("handleFinish called, total frames:", frames.length);
 
     // Subsamplear frames si excedemos el límite óptimo para procesamiento del backend
     frames = subsampleFrames(frames, 30);
-    console.log("Subsampled frames count for stitching:", frames.length);
-    console.log("propertyId:", propertyId);
-    console.log("STITCH_URL:", process.env.NEXT_PUBLIC_STITCH_SERVICE_URL);
 
     if (frames.length === 0) return;
 
     setModalStep("PROCESSING");
     setError(null);
     try {
-      console.log("Calling stitchWithService...");
       const file = await stitchWithService(frames, propertyId);
-      console.log("Stitch result:", file.name, file.size);
-
-      console.log("Starting Cloudinary upload...");
-      const url = await uploadToPropertyMedia(file, "PANORAMA", orgSlug, propertyId, (pct) => {
-        console.log("upload pct:", pct);
-      });
-      console.log("Upload URL:", url);
+      const url = await uploadToPropertyMedia(file, "PANORAMA", orgSlug, propertyId, () => {});
 
       const finalTitle = selectedAmbient === "Otro" ? (customAmbient.trim() || "Otro") : selectedAmbient;
 
