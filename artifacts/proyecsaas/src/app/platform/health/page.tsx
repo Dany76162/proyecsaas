@@ -64,6 +64,14 @@ export default async function PlatformHealthPage() {
   const encryptionConfigured = !!process.env.WHATSAPP_TOKEN_ENCRYPTION_KEY;
   const waContact = waContactSetting?.value?.trim() || process.env.WHATSAPP_PLATFORM_PHONE_DISPLAY?.trim() || null;
 
+  // Storage / R2 — variables requeridas para imágenes, PDFs, planos y panoramas
+  const storageKeyId = !!(process.env.STORAGE_ACCESS_KEY_ID ?? process.env.STORAGE_ACCESS_KEY);
+  const storageSecret = !!(process.env.STORAGE_SECRET_ACCESS_KEY ?? process.env.STORAGE_SECRET_KEY);
+  const storageBucket = !!(process.env.STORAGE_BUCKET_NAME ?? process.env.STORAGE_BUCKET);
+  const storageEndpoint = !!(process.env.STORAGE_ENDPOINT);
+  const storagePublicUrl = !!(process.env.STORAGE_PUBLIC_URL);
+  const storageConfigured = storageKeyId && storageSecret && storageBucket && storageEndpoint && storagePublicUrl;
+
   type AlertLevel = "error" | "warning";
   const alerts: { level: AlertLevel; message: string }[] = [];
 
@@ -83,6 +91,9 @@ export default async function PlatformHealthPage() {
 
   if (!openAiConfigured)
     alerts.push({ level: "warning", message: "Motor IA no configurado — API Key de OpenAI ausente." });
+
+  if (!storageConfigured)
+    alerts.push({ level: "warning", message: "Almacenamiento multimedia (R2/S3) no configurado — imágenes, PDFs y panoramas pueden no funcionar." });
 
   if (pendingBilling > 0)
     alerts.push({ level: "warning", message: `${pendingBilling} cobro${pendingBilling !== 1 ? "s" : ""} pendiente${pendingBilling !== 1 ? "s" : ""} de confirmación.` });
@@ -105,6 +116,10 @@ export default async function PlatformHealthPage() {
     "qa-sandbox-ai-reset":          { label: "Sandbox IA reiniciada",  color: "text-slate-500 bg-slate-50 border-slate-200" },
     "qa-sandbox-ai-sim-lead-0":     { label: "Simulación Lead QA",     color: "text-slate-500 bg-slate-50 border-slate-200" },
     "qa-sandbox-ai-sim-repeated-message": { label: "Simulación Repetida QA", color: "text-slate-500 bg-slate-50 border-slate-200" },
+    "subscription.payment_registered": { label: "Pago registrado",      color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+    "subscription.lifetime_granted":   { label: "Lifetime concedida",   color: "text-amber-700 bg-amber-50 border-amber-200" },
+    "subscription.ai_toggled":         { label: "IA alternada",         color: "text-violet-600 bg-violet-50 border-violet-200" },
+    "subscription.config_updated":     { label: "Config comercial",     color: "text-blue-600 bg-blue-50 border-blue-200" },
   };
  
   const integrations = [
@@ -127,6 +142,19 @@ export default async function PlatformHealthPage() {
       label: "Contacto WhatsApp de plataforma",
       detail: waContact ? `+${waContact}` : "Falta configurar número central de WhatsApp",
       ok: !!waContact,
+    },
+    {
+      label: "Almacenamiento multimedia (R2/S3)",
+      detail: storageConfigured
+        ? "Configurado — imágenes, PDFs, planos y panoramas operativos"
+        : `Sin configurar — faltan: ${[
+            !storageKeyId && "clave de acceso",
+            !storageSecret && "clave secreta",
+            !storageBucket && "nombre del bucket",
+            !storageEndpoint && "endpoint",
+            !storagePublicUrl && "URL pública",
+          ].filter(Boolean).join(", ")}`,
+      ok: storageConfigured,
     },
   ];
 

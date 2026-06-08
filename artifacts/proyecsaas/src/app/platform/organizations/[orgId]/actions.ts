@@ -3,6 +3,7 @@
 import { prisma } from "@/server/db/prisma";
 import { requirePlatformAdmin } from "@/server/auth/access";
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/server/audit/log";
 
 export type OrgAuditData = {
   org: {
@@ -170,7 +171,7 @@ export async function getOrgAiAudit(orgId: string): Promise<OrgAuditData> {
 
 // 💵 Action: Registrar Pago Recibido
 export async function registerPaymentAction(orgId: string) {
-  await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin();
 
   const sub = await prisma.subscription.findUnique({
     where: { organizationId: orgId }
@@ -185,27 +186,26 @@ export async function registerPaymentAction(orgId: string) {
     data: {
       paidCycles: newCycles,
       currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Extiende vigencia por 30 días
-      status: "ACTIVE" // Asegura CRM activo al pagar
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      status: "ACTIVE"
     }
   });
 
-  console.log(JSON.stringify({
-    scope: "audit",
-    event: "register-payment",
-    orgId,
-    previousCycles: sub.paidCycles,
-    newCycles,
-    operator: "Superadmin",
-    timestamp: new Date().toISOString()
-  }));
+  await logAudit({
+    event: "subscription.payment_registered",
+    actorId: actor.id,
+    actorEmail: actor.email,
+    entityType: "Organization",
+    entityId: orgId,
+    metadata: { previousCycles: sub.paidCycles, newCycles },
+  });
 
   revalidatePath(`/platform/organizations/${orgId}`);
 }
 
 // 🏆 Action: Otorgar Licencia Lifetime
 export async function grantLifetimeAction(orgId: string) {
-  await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin();
 
   const sub = await prisma.subscription.findUnique({
     where: { organizationId: orgId }
@@ -217,24 +217,25 @@ export async function grantLifetimeAction(orgId: string) {
     where: { organizationId: orgId },
     data: {
       lifetimeGrantedAt: new Date(),
-      status: "ACTIVE" // CRM queda activo de por vida
+      status: "ACTIVE"
     }
   });
 
-  console.log(JSON.stringify({
-    scope: "audit",
-    event: "grant-lifetime",
-    orgId,
-    operator: "Superadmin",
-    timestamp: new Date().toISOString()
-  }));
+  await logAudit({
+    event: "subscription.lifetime_granted",
+    actorId: actor.id,
+    actorEmail: actor.email,
+    entityType: "Organization",
+    entityId: orgId,
+    metadata: { paidCyclesAtGrant: sub.paidCycles },
+  });
 
   revalidatePath(`/platform/organizations/${orgId}`);
 }
 
 // 🤖 Action: Alternar Estado IA (Pausar / Reactivar / Deshabilitar)
 export async function toggleAiStatusAction(orgId: string, status: "ACTIVE" | "PAUSED" | "DISABLED") {
-  await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin();
 
   if (!["ACTIVE", "PAUSED", "DISABLED"].includes(status)) {
     throw new Error("Estado de IA no válido");
@@ -245,14 +246,14 @@ export async function toggleAiStatusAction(orgId: string, status: "ACTIVE" | "PA
     data: { aiStatus: status }
   });
 
-  console.log(JSON.stringify({
-    scope: "audit",
-    event: "toggle-ai-status",
-    orgId,
-    status,
-    operator: "Superadmin",
-    timestamp: new Date().toISOString()
-  }));
+  await logAudit({
+    event: "subscription.ai_toggled",
+    actorId: actor.id,
+    actorEmail: actor.email,
+    entityType: "Organization",
+    entityId: orgId,
+    metadata: { newAiStatus: status },
+  });
 
   revalidatePath(`/platform/organizations/${orgId}`);
 }
@@ -269,7 +270,7 @@ export async function updateCommercialConfigAction(
     planLabel?: string;
   }
 ) {
-  await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin();
 
   // 1. Validación de Plan
   if (data.planCode !== null && !["FOUNDER", "BASE", "PRO", "ENTERPRISE", "CUSTOM"].includes(data.planCode)) {
@@ -324,14 +325,14 @@ export async function updateCommercialConfigAction(
     }
   });
 
-  console.log(JSON.stringify({
-    scope: "audit",
-    event: "update-commercial-config",
-    orgId,
-    updateData: { ...updateSubData, planLabel: data.planLabel },
-    operator: "Superadmin",
-    timestamp: new Date().toISOString()
-  }));
+  await logAudit({
+    event: "subscription.config_updated",
+    actorId: actor.id,
+    actorEmail: actor.email,
+    entityType: "Organization",
+    entityId: orgId,
+    metadata: { ...updateSubData, planLabel: data.planLabel },
+  });
 
   revalidatePath(`/platform/organizations/${orgId}`);
 }

@@ -7,6 +7,7 @@ export type AuditEvent =
   | "billing.cancelled"
   | "billing.mp_link_generated"
   | "billing.status_changed"
+  | "billing.archived"
   | "org.reactivated"
   | "org.restored"
   | "org.trashed"
@@ -16,7 +17,10 @@ export type AuditEvent =
   | "admin.access_granted"
   | "admin.access_revoked"
   | "subscription.updated_manual"
-  | "billing.archived"
+  | "subscription.payment_registered"
+  | "subscription.lifetime_granted"
+  | "subscription.ai_toggled"
+  | "subscription.config_updated"
   | "user.deleted_completely"
   | "user.password_reset";
 

@@ -59,6 +59,9 @@ export default function MasterManualPage() {
           <p className="text-slate-500 mt-1 font-medium">
             Documentación superior de arquitectura, procesos, gobernanza y doctrina técnica/comercial.
           </p>
+          <p className="text-xs text-slate-400 mt-1 font-semibold">
+            Última actualización: 08/06/2026 · Superadmin auditado para preventa premium
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Button 
@@ -121,7 +124,9 @@ export default function MasterManualPage() {
                 <li><strong>Integración con Meta:</strong> Totalmente implementada y lista a nivel código; la activación de mensajería productiva de WhatsApp y webhooks en vivo depende actualmente del proceso de revisión y verificación de negocio de Meta Developers.</li>
                 <li><strong>Worker de Railway / BullMQ:</strong> La arquitectura de tareas en segundo plano está completamente estructurada. Se encuentra condicionada externamente al reinicio del worker para restaurar su señal de vida (Heartbeat) en Railway.</li>
                 <li><strong>Atención a Clientes y Captación:</strong> Finalizados por código, a la espera de la liberación de los webhooks de WhatsApp por parte del proveedor externo.</li>
-                <li><strong>Salud del Sistema:</strong> Monitoreo real corregido y alineado sin uso de valores dummy, interactuando de forma nativa y directa con los servicios de OpenAI.</li>
+                <li><strong>Salud del Sistema:</strong> Monitoreo real corregido y alineado sin uso de valores dummy, interactuando de forma nativa y directa con los servicios de OpenAI. Se incluye observabilidad de almacenamiento multimedia (R2/S3).</li>
+                <li><strong>Tour Virtual 360°:</strong> Arquitectura implementada y estabilizada. Pendiente de integración productiva completa en rama de desarrollo; no está habilitado en producción en esta versión.</li>
+                <li><strong>Importación CSV de Prospectos y Webhooks de AgentOS:</strong> Módulos planificados en hoja de ruta interna. No disponibles en la versión actual del panel.</li>
               </ul>
             </div>
           </div>

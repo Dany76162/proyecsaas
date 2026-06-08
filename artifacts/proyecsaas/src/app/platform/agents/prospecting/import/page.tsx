@@ -27,11 +27,11 @@ export default function ImportProspectsPage() {
           <p className="text-sm text-slate-500 mb-8 max-w-sm">
             Asegúrate de que el archivo tenga las columnas: companyName, email, website, phone, country.
           </p>
-          <Button disabled className="h-12 px-10 bg-slate-900 font-bold opacity-50 cursor-not-allowed">
-            Próximamente en Fase 2
+          <Button disabled className="h-12 px-10 bg-slate-900 font-bold opacity-40 cursor-not-allowed">
+            Módulo en planificación
           </Button>
           <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Función en desarrollo
+            Incluido en hoja de ruta interna
           </p>
         </Card>
 

@@ -47,10 +47,10 @@ export default async function AgentIntegrationsPage() {
           </div>
         </AppCard>
 
-        {/* Placeholders for future integrations */}
-        <AppCard className="opacity-60 border-slate-200 bg-slate-50/50">
+        {/* Integraciones en hoja de ruta */}
+        <AppCard className="opacity-50 border-slate-200 bg-slate-50/30 cursor-default">
           <div className="p-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-200 text-slate-400 mb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-300 mb-4">
               <MessageSquare className="h-6 w-6" />
             </div>
             <h3 className="text-xl font-bold text-slate-400">WhatsApp Cloud</h3>
@@ -58,22 +58,28 @@ export default async function AgentIntegrationsPage() {
               Integración nativa con la API de WhatsApp para envío de mensajes transaccionales.
             </p>
             <div className="mt-6">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Próximamente</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <ShieldCheck className="h-3 w-3" />
+                Hoja de ruta
+              </span>
             </div>
           </div>
         </AppCard>
 
-        <AppCard className="opacity-60 border-slate-200 bg-slate-50/50">
+        <AppCard className="opacity-50 border-slate-200 bg-slate-50/30 cursor-default">
           <div className="p-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-200 text-slate-400 mb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-300 mb-4">
               <Zap className="h-6 w-6" />
             </div>
             <h3 className="text-xl font-bold text-slate-400">Webhooks</h3>
             <p className="mt-2 text-sm text-slate-400">
-              Dispara eventos externos cuando AgentOS completa una tarea o requiere atención.
+              Dispara eventos externos cuando AgentOS completa una tarea o requiere atención humana.
             </p>
             <div className="mt-6">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Próximamente</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <ShieldCheck className="h-3 w-3" />
+                Hoja de ruta
+              </span>
             </div>
           </div>
         </AppCard>
