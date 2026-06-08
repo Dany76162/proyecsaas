@@ -1,6 +1,18 @@
 import { NextResponse } from "next/server";
+import { MembershipRole } from "@prisma/client";
+
+import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
-import { getSessionUser } from "@/server/auth/session";
+
+const STATUS_UI_TO_DB: Record<string, string> = {
+  DISPONIBLE: "AVAILABLE",
+  BLOQUEADO: "BLOCKED",
+  RESERVADA: "RESERVED",
+  RESERVADO: "RESERVED",
+  VENDIDA: "SOLD",
+  VENDIDO: "SOLD",
+  SUSPENDIDO: "BLOCKED",
+};
 
 export async function PUT(
   req: Request,
@@ -10,45 +22,41 @@ export async function PUT(
     const { id } = await params;
     const { status } = await req.json();
 
-    const STATUS_UI_TO_DB: Record<string, string> = {
-      DISPONIBLE: "AVAILABLE",
-      BLOQUEADO: "BLOCKED",
-      RESERVADA: "RESERVED",
-      RESERVADO: "RESERVED",
-      VENDIDA: "SOLD",
-      VENDIDO: "SOLD",
-      SUSPENDIDO: "BLOCKED",
-    };
-
     const dbStatus = STATUS_UI_TO_DB[status] || status;
 
-    const user = await getSessionUser();
-    if (!user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
-    const lotRaw = await prisma.developmentLot.findUnique({
+    // Step 1: Fetch only the org slug — no sensitive fields — to validate membership first.
+    const lotCheck = await prisma.developmentLot.findUnique({
       where: { id },
-      include: { Development: true },
+      select: {
+        status: true,
+        organizationId: true,
+        Development: {
+          select: { Organization: { select: { slug: true } } },
+        },
+      },
     });
-    if (!lotRaw) {
+
+    if (!lotCheck) {
       return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
     }
-    const lot = {
-      ...lotRaw,
-      development: lotRaw.Development,
-    };
 
-    const oldStatus = lot.status;
+    // Step 2: Enforce tenant membership. The user must belong to the org that owns this lot.
+    const { user, membership } = await requireOrganizationMembership(
+      lotCheck.Development.Organization.slug,
+    );
+    assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+    // Step 3: Update using compound filter to prevent cross-tenant writes.
+    const oldStatus = lotCheck.status;
     await prisma.$transaction([
       prisma.developmentLot.update({
-        where: { id },
+        where: { id, organizationId: membership.organization.id },
         data: { status: dbStatus as any },
       }),
       prisma.developmentLotHistory.create({
         data: {
           lotId: id,
-          organizationId: lot.organizationId,
+          organizationId: membership.organization.id,
           userId: user.id,
           previousStatus: oldStatus,
           newStatus: dbStatus as any,

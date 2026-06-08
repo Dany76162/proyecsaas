@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { MembershipRole } from "@prisma/client";
+
+import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 
 export async function GET(
@@ -7,7 +10,21 @@ export async function GET(
 ) {
   try {
     const { developmentId } = await params;
-    
+
+    // Step 1: Fetch only org slug to validate membership before reading any data.
+    const devCheck = await prisma.development.findUnique({
+      where: { id: developmentId },
+      select: { Organization: { select: { slug: true } } },
+    });
+
+    if (!devCheck) {
+      return NextResponse.json({ success: false, error: "Desarrollo no encontrado" }, { status: 404 });
+    }
+
+    // Step 2: Enforce tenant membership.
+    await requireOrganizationMembership(devCheck.Organization.slug);
+
+    // Step 3: Membership confirmed — now fetch images.
     const items = await prisma.developmentMapImage.findMany({
       where: { developmentId },
       orderBy: { orden: "asc" },
@@ -47,6 +64,22 @@ export async function POST(
 ) {
   try {
     const { developmentId } = await params;
+
+    // Step 1: Fetch only org slug to validate membership before writing.
+    const devCheck = await prisma.development.findUnique({
+      where: { id: developmentId },
+      select: { Organization: { select: { slug: true } } },
+    });
+
+    if (!devCheck) {
+      return NextResponse.json({ success: false, error: "Desarrollo no encontrado" }, { status: 404 });
+    }
+
+    // Step 2: Enforce tenant membership + minimum role for write operations.
+    const { membership } = await requireOrganizationMembership(devCheck.Organization.slug);
+    assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+    // Step 3: Membership confirmed — parse body and create image.
     const body = await req.json();
 
     const { url, tipo, titulo, lat, lng, unidadId, altitudM, imageHeading, overlayMode, planCornerAdjustments, planCornersAbsolute } = body;
