@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { requirePlatformAdmin } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 
 function statusChip(usedAt: Date | null, expiresAt: Date) {
@@ -10,6 +11,8 @@ function statusChip(usedAt: Date | null, expiresAt: Date) {
 }
 
 export default async function PlatformOnboardingPage() {
+  await requirePlatformAdmin();
+
   const invites = await prisma.inviteToken.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,

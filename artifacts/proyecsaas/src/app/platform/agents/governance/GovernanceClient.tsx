@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { AppCard } from "@/components/ui/app-card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -32,8 +33,8 @@ export default function GovernanceClient({ initialOverview }: { initialOverview:
       setOverview(prev => prev.map(a => 
         a.agentId === agentId ? { ...a, policy: { ...a.policy, isPaused: !currentPaused }, isBlocked: !currentPaused } : a
       ));
-    } catch (err: any) {
-      alert(err.message);
+    } catch {
+      toast.error("No se pudo actualizar la configuración de gobernanza.");
     } finally {
       setIsUpdating(null);
     }

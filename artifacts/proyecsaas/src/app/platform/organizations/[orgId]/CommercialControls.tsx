@@ -44,6 +44,7 @@ export default function CommercialControls({
   const [showEditModal, setShowEditModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showConfirmAiReactivate, setShowConfirmAiReactivate] = useState(false);
+  const [showConfirmLifetime, setShowConfirmLifetime] = useState(false);
 
   // Form states for customization
   const [planCode, setPlanCode] = useState<string>(initialData.planCode || "FOUNDER");
@@ -65,6 +66,11 @@ export default function CommercialControls({
   };
 
   const handleGrantLifetime = () => {
+    setShowConfirmLifetime(true);
+  };
+
+  const executeGrantLifetime = () => {
+    setShowConfirmLifetime(false);
     setErrorMsg(null);
     startTransition(async () => {
       try {
@@ -125,6 +131,50 @@ export default function CommercialControls({
         <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl flex gap-3 items-center text-rose-800 text-sm font-semibold">
           <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
           <p>{errorMsg}</p>
+        </div>
+      )}
+
+      {showConfirmLifetime && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-200/60 bg-white p-6 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-amber-50 border border-amber-100">
+                <ShieldCheck className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Conceder Licencia Vitalicia</h2>
+                <p className="text-xs text-slate-500">Acción comercial sensible e irreversible</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-amber-800">
+                Conceder licencia vitalicia es una acción comercial sensible. Confirmá solo si la organización completó las condiciones pactadas.
+              </p>
+              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                Esta acción es <strong>irreversible</strong>: el cliente obtendrá acceso permanente sin requerir pagos adicionales de suscripción.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmLifetime(false)}
+                className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={executeGrantLifetime}
+                className="rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-amber-600 shadow-sm disabled:opacity-50"
+              >
+                {isPending ? <Loader2 className="inline w-4 h-4 animate-spin mr-1" /> : null}
+                Sí, conceder licencia vitalicia
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

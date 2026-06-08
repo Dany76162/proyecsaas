@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { 
   ExternalLink, 
   Plus, 
@@ -110,6 +111,9 @@ export function BillingTable({
   const [suggestedMsg, setSuggestedMsg] = useState<string | null>(null);
   const [suggestingId, setSuggestingId] = useState<string | null>(null);
 
+  // Archive confirm state
+  const [archiveConfirmId, setArchiveConfirmId] = useState<string | null>(null);
+
   const filteredRecords = useMemo(() => {
     let base = records;
     const q = search.trim().toLowerCase();
@@ -141,7 +145,7 @@ export function BillingTable({
       if (res.success) {
         router.refresh();
       } else {
-        alert(res.message);
+        toast.error("No se pudo generar el link de pago. Verificá la configuración de Mercado Pago.");
       }
     });
   };
@@ -188,10 +192,11 @@ export function BillingTable({
     });
   };
 
-  const handleArchive = (recordId: string) => {
-    if (!confirm("¿Seguro que querés archivar este cobro? Dejará de aparecer en la lista activa.")) return;
+  const handleArchiveConfirmed = (recordId: string) => {
+    setArchiveConfirmId(null);
     startTransition(async () => {
       await archiveBillingRecordAction(recordId);
+      toast.success("Cobro archivado correctamente.");
       router.refresh();
     });
   };
@@ -203,7 +208,7 @@ export function BillingTable({
       if (res.success) {
         setSuggestedMsg(res.data.message);
       } else {
-        alert(res.message);
+        toast.error("No se pudo generar el mensaje de cobranza. Intentá nuevamente.");
         setSuggestingId(null);
       }
     });
@@ -435,21 +440,35 @@ export function BillingTable({
                             <Settings2 className="h-4 w-4" />
                           </Button>
                           {r.status === "PAID" ? (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="h-8 w-8 p-0"
                               onClick={() => setReceiptRecord(r)}
                               title="Ver Recibo"
                             >
                               <Receipt className="h-4 w-4" />
                             </Button>
+                          ) : archiveConfirmId === r.id ? (
+                            <div className="flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1">
+                              <span className="text-[10px] font-bold text-amber-800">¿Archivar?</span>
+                              <button
+                                type="button"
+                                onClick={() => setArchiveConfirmId(null)}
+                                className="text-[10px] font-bold text-slate-500 hover:text-slate-700 transition px-1"
+                              >No</button>
+                              <button
+                                type="button"
+                                onClick={() => handleArchiveConfirmed(r.id)}
+                                className="rounded bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-amber-700 transition"
+                              >Sí</button>
+                            </div>
                           ) : (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="h-8 w-8 p-0 text-amber-600 hover:bg-amber-50"
-                              onClick={() => handleArchive(r.id)}
+                              onClick={() => setArchiveConfirmId(r.id)}
                               title="Archivar"
                             >
                               <Archive className="h-4 w-4" />
@@ -562,11 +581,12 @@ export function BillingTable({
             </div>
 
             <div className="mt-8 flex items-center gap-3">
-              <Button 
+              <Button
                 onClick={() => {
-                  navigator.clipboard.writeText(suggestedMsg);
-                  alert("Mensaje copiado al portapapeles.");
-                }} 
+                  navigator.clipboard.writeText(suggestedMsg!).then(() => {
+                    toast.success("Mensaje copiado al portapapeles.");
+                  });
+                }}
                 className="flex-1 h-12 font-bold"
               >
                 <Copy className="mr-2 h-4 w-4" />
