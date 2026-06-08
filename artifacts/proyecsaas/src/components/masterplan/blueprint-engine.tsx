@@ -9,6 +9,7 @@ import {
     Search, X, Check, LayoutList, HelpCircle, ChevronDown, ChevronUp, Grid3x3, Move
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useMasterplanStore } from "@/lib/masterplan-store";
 import PlanGalleryPicker, { type PlanGalleryItem } from "@/components/plan-gallery/plan-gallery-picker";
 import {
@@ -507,7 +508,7 @@ export default function BlueprintEngine({ proyectoId, orgSlug }: BlueprintEngine
             setViewMode("blueprint");
             setShowPlanGallery(false);
         } catch {
-            alert("No se pudo abrir este plano de la galeria.");
+            toast.error("No se pudo abrir este plano de la galería.");
         }
     }, []);
 
@@ -793,8 +794,8 @@ export default function BlueprintEngine({ proyectoId, orgSlug }: BlueprintEngine
             }
 
             throw new Error("Formato no soportado para este flujo");
-        } catch (error: any) {
-            alert(`No se pudo procesar el plano: ${error.message || "Error inesperado"}`);
+        } catch {
+            toast.error("No se pudo procesar el plano. Verificá el formato del archivo e intentá nuevamente.");
             resetBlueprintState();
             return;
         } finally {
@@ -857,14 +858,18 @@ export default function BlueprintEngine({ proyectoId, orgSlug }: BlueprintEngine
 
             if (res.ok) {
                 const data = await readJsonResponse(res);
-                alert(`${data.message || "Plano guardado con exito."}\n${data.created ?? 0} unidades creadas, ${data.updated ?? 0} actualizadas.`);
+                const created = data.created ?? 0;
+                const updated = data.updated ?? 0;
+                toast.success(
+                    `${data.message || "Plano sincronizado con éxito."} — ${created} unidades creadas, ${updated} actualizadas.`
+                );
                 return;
             }
 
             const err = await readJsonResponse(res).catch(() => ({}));
             throw new Error(err.error || "Error del servidor");
-        } catch (e: any) {
-            alert(`Error al sincronizar: ${e.message}`);
+        } catch {
+            toast.error("No se pudo sincronizar el plano. Intentá nuevamente.");
             return;
         } finally {
             setProcessing(false);

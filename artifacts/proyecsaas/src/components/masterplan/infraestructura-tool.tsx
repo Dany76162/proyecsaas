@@ -93,6 +93,7 @@ export default function InfraestructuraTool({ proyectoId, map, isOpen, onOpenCha
   const [isSaving, setIsSaving] = useState(false);
   // Selected item (detail panel)
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   // Layer visibility per category
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(
     new Set(Object.keys(CATEGORIAS_INFRA))
@@ -415,7 +416,6 @@ export default function InfraestructuraTool({ proyectoId, map, isOpen, onOpenCha
 
   // ─── Delete ───────────────────────────────────────────────────────────────────
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este elemento?")) return;
     try {
       await fetch(`/api/infraestructura/${id}`, { method: "DELETE" });
       setItems((prev) => prev.filter((it) => it.id !== id));
@@ -878,12 +878,26 @@ export default function InfraestructuraTool({ proyectoId, map, isOpen, onOpenCha
                     >
                       {selectedItem.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     </button>
-                    <button
-                      onClick={() => handleDelete(selectedItem.id)}
-                      className="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold rounded-xl transition-colors border border-rose-500/20"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {deleteConfirmId === selectedItem.id ? (
+                      <div className="flex items-center gap-1 rounded-xl border border-rose-500/30 bg-rose-500/10 px-2 py-1.5">
+                        <span className="text-[10px] font-bold text-rose-400">¿Eliminar?</span>
+                        <button
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="text-[10px] font-bold text-slate-400 hover:text-slate-200 transition px-1"
+                        >No</button>
+                        <button
+                          onClick={() => { setDeleteConfirmId(null); void handleDelete(selectedItem.id); }}
+                          className="rounded-lg bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-rose-700 transition"
+                        >Sí</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirmId(selectedItem.id)}
+                        className="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold rounded-xl transition-colors border border-rose-500/20"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

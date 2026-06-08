@@ -83,6 +83,7 @@ export default function ImagenesMapaTool({
 
   // Gallery navigation
   const [selectedCategory, setSelectedCategory] = useState<ImagenMapaCategoria | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Leaflet refs
   const markersRef = useRef<Map<string, any>>(new Map());
@@ -350,7 +351,6 @@ export default function ImagenesMapaTool({
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar esta imagen del mapa?")) return;
     try {
       const res = await fetch(`/api/imagenes-mapa/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar");
@@ -738,13 +738,27 @@ export default function ImagenesMapaTool({
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
-                                className="p-1.5 rounded-lg bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition-colors"
-                                title="Eliminar"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              {deleteConfirmId === item.id ? (
+                                <div className="flex items-center gap-1 rounded-lg bg-red-900/60 border border-red-500/30 px-1.5 py-1">
+                                  <span className="text-[10px] font-bold text-red-300">¿Eliminar?</span>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-200 transition px-1"
+                                  >No</button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); void handleDelete(item.id); }}
+                                    className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 transition"
+                                  >Sí</button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(item.id); }}
+                                  className="p-1.5 rounded-lg bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition-colors"
+                                  title="Eliminar"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         );

@@ -170,6 +170,7 @@ export default function MasterplanMap({
     // Save plan position state
     const [isSavingPlan, setIsSavingPlan] = useState(false);
     const [planSaved, setPlanSaved] = useState(false);
+    const [showDeleteOverlayConfirm, setShowDeleteOverlayConfirm] = useState(false);
 
     // Active tool panel (mutually exclusive)
     const [activePanel, setActivePanel] = useState<"infraestructura" | "imagenes" | null>(null);
@@ -1062,11 +1063,8 @@ export default function MasterplanMap({
     }, [proyectoId, overlayConfig]);
 
     // Delete overlay configuration from database
-    const handleDeleteOverlay = useCallback(async () => {
-        if (!window.confirm("¿Eliminar la posición del plano en el mapa? Esto no borra el plano ni las unidades; solo elimina la georreferenciación guardada.")) {
-            return;
-        }
-
+    const executeDeleteOverlay = useCallback(async () => {
+        setShowDeleteOverlayConfirm(false);
         try {
             const res = await fetch(`/api/developments/${proyectoId}/overlay`, {
                 method: "POST",
@@ -1088,6 +1086,10 @@ export default function MasterplanMap({
             console.error("Delete overlay failed:", error);
         }
     }, [proyectoId]);
+
+    const handleDeleteOverlay = useCallback(() => {
+        setShowDeleteOverlayConfirm(true);
+    }, []);
 
     // Load masterplan SVG from paso 3 as overlay image
     const handleLoadPlanOverlay = useCallback(async () => {
@@ -1734,6 +1736,34 @@ export default function MasterplanMap({
                     cursor: pointer;
                 }
             `}</style>
+
+            {/* Confirm: eliminar georreferenciación del plano */}
+            {showDeleteOverlayConfirm && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200">
+                        <h3 className="text-base font-bold text-white mb-2">Eliminar georreferenciación</h3>
+                        <p className="text-sm text-slate-400 leading-relaxed">
+                            ¿Eliminar la posición del plano en el mapa? Esto no borra el plano ni las unidades; solo elimina la georreferenciación guardada.
+                        </p>
+                        <div className="mt-5 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteOverlayConfirm(false)}
+                                className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => void executeDeleteOverlay()}
+                                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700"
+                            >
+                                Sí, eliminar posición
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

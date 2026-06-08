@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { inviteUserAction } from "@/modules/users/actions";
 
 export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
@@ -35,8 +36,9 @@ export function InviteUserDialog({ orgSlug }: { orgSlug: string }) {
 
   const handleCopy = () => {
     if (!inviteUrl) return;
-    navigator.clipboard.writeText(inviteUrl);
-    alert("¡Enlace de invitación copiado al portapapeles!");
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      toast.success("Enlace de invitación copiado al portapapeles.");
+    });
   };
 
   return (
