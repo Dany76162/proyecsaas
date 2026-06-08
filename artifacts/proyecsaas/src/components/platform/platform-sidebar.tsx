@@ -23,6 +23,7 @@ import {
   Link2,
   Briefcase,
   ClipboardCheck,
+  LandPlot,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -44,7 +45,8 @@ const PLATFORM_NAV = [
   { name: "Salud del sistema", href: "/platform/health", icon: ActivitySquare },
   { name: "Manual Vivo", href: "/platform/manual-operativo", icon: BookOpen },
   { name: "Manual Maestro", href: "/platform/master-manual", icon: BookOpen },
-  { name: "Comercial", href: "/platform/billing", icon: CreditCard },
+  { name: "Comercial", href: "/platform/billing", icon: CreditCard, exact: true },
+  { name: "Cobros de reservas", href: "/platform/billing/reservations", icon: LandPlot },
   { name: "Modelo de Negocio", href: "/platform/business-model", icon: Briefcase },
   { name: "QA Operativo", href: "/platform/qa", icon: ClipboardCheck },
   { name: "Configuración", href: "/platform/settings", icon: Settings },
