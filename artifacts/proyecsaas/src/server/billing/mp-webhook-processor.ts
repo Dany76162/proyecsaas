@@ -23,6 +23,9 @@ type MPPaymentAPIResponse = {
   id: number;
   status: string;
   external_reference: string | null;
+  // Payment amount fields — present on approved payments.
+  transaction_amount?: number;
+  currency_id?: string;
 };
 
 export type WebhookOutcome =
@@ -185,11 +188,46 @@ export async function processMPPaymentWebhook(
     });
 
     if (reservation) {
-      // ── Idempotency: only process reservations that are still awaiting payment ──
+      // ── Strong idempotency (Fase 2): check mpPaymentId first ──────────────────
+      // mpPaymentId is stored when this webhook successfully processes a payment.
+      // If the same paymentId arrives again, skip cleanly (duplicate webhook from MP).
+      // If a DIFFERENT paymentId is stored, something is wrong — log and skip safely.
+      //
+      // "as any" cast is temporary: mpPaymentId exists in DB but not in generated Prisma
+      // types because prisma generate is blocked by a locked query engine DLL on Windows.
+      // Run `npx prisma generate` once the dev server is stopped to restore full types.
+      const existingMpPaymentId = (reservation as any).mpPaymentId as string | null | undefined;
+
+      if (existingMpPaymentId === paymentId) {
+        console.log(
+          JSON.stringify({
+            scope: "mp-webhook",
+            event: "reservation-already-processed",
+            reason: "mpPaymentId-matches",
+            reservationId: reservation.id,
+            paymentId,
+          }),
+        );
+        return { outcome: "skipped", reason: "reservation-already-processed" };
+      }
+
+      if (existingMpPaymentId != null && existingMpPaymentId !== paymentId) {
+        console.error(
+          JSON.stringify({
+            scope: "mp-webhook",
+            event: "reservation-payment-id-conflict",
+            reason: "different-mpPaymentId-already-stored",
+            reservationId: reservation.id,
+          }),
+        );
+        return { outcome: "error", reason: "reservation-payment-id-conflict" };
+      }
+
+      // ── Status idempotency: only process reservations awaiting payment ──
       // - ACTIVE / SOLD: already processed, skip cleanly.
       // - CANCELLED: do NOT reactivate via a late webhook — lot may have been re-sold.
       // - Only PENDING_APPROVAL is safe to confirm.
-      if (reservation.status !== "PENDING_APPROVAL") {
+      if (reservation.status !== "PENDING_APPROVAL" || reservation.approvedAt != null) {
         console.log(
           JSON.stringify({
             scope: "mp-webhook",
@@ -231,13 +269,26 @@ export async function processMPPaymentWebhook(
       // Capture the actual current status before the transaction changes it
       const previousLotStatus = lot.status;
 
+      // Derive gross amount from MP payment response (convert ARS to centavos).
+      // Falls back to the reservation's depositCents if transaction_amount is absent.
+      const confirmedGrossCents =
+        payment.transaction_amount != null
+          ? Math.round(payment.transaction_amount * 100)
+          : (reservation.depositCents ?? null);
+
       await prisma.$transaction([
         prisma.developmentReservation.update({
           where: { id: reservation.id },
+          // "as any" is temporary — see mpPaymentId note above.
           data: {
             status: "ACTIVE",
             approvedAt: new Date(),
-          },
+            mpPaymentId: paymentId,
+            mpCurrency: payment.currency_id ?? "ARS",
+            grossAmountCents: confirmedGrossCents,
+            // Settlement starts as PENDING: Raíces Pilot received funds, transfer to developer pending.
+            settlementStatus: "PENDING",
+          } as any,
         }),
         prisma.developmentLot.update({
           where: { id: reservation.lotId },
@@ -265,6 +316,8 @@ export async function processMPPaymentWebhook(
           paymentId,
           lotId: reservation.lotId,
           organizationId: reservation.organizationId,
+          grossAmountCents: confirmedGrossCents,
+          mpCurrency: payment.currency_id ?? "ARS",
           source: "mercadopago",
         },
       });

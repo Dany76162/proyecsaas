@@ -1,5 +1,6 @@
 export * from "./lot-status-badge";
 export * from "./reservation-status-badge";
+export * from "./settlement-status-badge";
 export * from "./development-card";
 export * from "./masterplan-toolbar";
 export * from "./masterplan-empty-state";

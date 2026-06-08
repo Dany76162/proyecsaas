@@ -1514,6 +1514,33 @@ model DevelopmentReservation {
   cancelReason   String?
   createdAt      DateTime                     @default(now())
   updatedAt      DateTime                     @updatedAt
+
+  // ── Mercado Pago payment tracking (Fase 2) ──────────────────────────────────
+  // mpPaymentId: used for strong idempotency — stored when MP webhook confirms payment.
+  mpPaymentId    String?
+  // mpPreferenceId: stored at preference creation time (reserve/route.ts).
+  mpPreferenceId String?
+  // mpCurrency: currency in which MP charged (always "ARS" for now).
+  mpCurrency     String?
+  // grossAmountCents: actual amount charged by MP (in centavos).
+  grossAmountCents Int?
+  // commissionCents: Raíces Pilot fee. Zero until commercial policy is configured per development.
+  commissionCents  Int?
+  // netAmountCents: amount to settle to the developer (gross - commission).
+  netAmountCents   Int?
+
+  // ── Liquidation tracking (Fase 2) ───────────────────────────────────────────
+  // settlementStatus tracks whether Raíces Pilot has transferred funds to the developer.
+  settlementStatus    ReservationSettlementStatus? @default(PENDING)
+  settledAt           DateTime?
+  // settlementReference: wire transfer reference, CBU/CVU, or receipt number.
+  settlementReference String?
+  settlementNotes     String?
+  // settledById: Superadmin user ID who registered the settlement.
+  // Stored as a plain field (no relation) to avoid conflict with the unnamed
+  // User relation on agentId. Full relation will be added in Fase 3.
+  settledById         String?
+
   User           User?                        @relation(fields: [agentId], references: [id])
   Lead           Lead?                        @relation(fields: [leadId, organizationId], references: [id, organizationId])
   DevelopmentLot DevelopmentLot               @relation(fields: [lotId], references: [id], onDelete: Cascade)
@@ -1521,6 +1548,10 @@ model DevelopmentReservation {
   @@index([leadId])
   @@index([lotId])
   @@index([organizationId, status])
+  @@index([mpPaymentId])
+  @@index([mpPreferenceId])
+  @@index([settlementStatus])
+  @@index([organizationId, settlementStatus])
 }
 
 enum DevelopmentLotStatus {
@@ -1544,4 +1575,15 @@ enum DevelopmentStatus {
   SOLD_OUT
   PAUSED
   CANCELLED
+}
+
+// Tracks whether Raíces Pilot has transferred (settled) the reservation funds
+// to the developer. Set to PENDING when MP payment is confirmed.
+// Updated manually by Superadmin in Fase 3 liquidation panel.
+enum ReservationSettlementStatus {
+  PENDING    // Payment received by Raíces Pilot — settlement to developer pending
+  IN_REVIEW  // Under internal review before transfer
+  SETTLED    // Funds transferred to developer
+  HELD       // Transfer on hold (dispute, refund, or compliance check)
+  REFUNDED   // Refunded to the buyer
 }
