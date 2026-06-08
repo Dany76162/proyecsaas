@@ -4,6 +4,18 @@ import { createMercadoPagoPreference } from "@/server/billing/mercadopago";
 import { LeadStatus, DevelopmentLotStatus } from "@prisma/client";
 
 // POST /api/developments/lots/[id]/reserve
+//
+// Flow (centralized Raíces Pilot payment model):
+//   1. Validate lot availability and public visibility.
+//   2. Find or create Lead.
+//   3. Create DevelopmentReservation (PENDING_APPROVAL) — lot still AVAILABLE.
+//   4. Attempt Mercado Pago preference creation.
+//      → On failure: cancel reservation, lot stays AVAILABLE, return 503.
+//      → On success: lock lot to RESERVED_PENDING, create history, notify workspace.
+//   5. Return checkoutUrl to client.
+//
+// Payment for reservations goes to the centralized Raíces Pilot Mercado Pago account.
+// Inmobiliarias/desarrolladoras do NOT connect their own MP accounts.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -20,7 +32,17 @@ export async function POST(
       );
     }
 
-    // 1. Get the lot and check availability
+    // Guard: fail fast if the app URL is not configured — back_urls would be invalid.
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+    if (!appUrl) {
+      console.error("[reserve] NEXT_PUBLIC_APP_URL is not configured — cannot build Mercado Pago back_urls");
+      return NextResponse.json(
+        { error: "Error de configuración del servidor. Por favor, intentá más tarde." },
+        { status: 500 }
+      );
+    }
+
+    // 1. Get the lot and validate availability
     const lotRaw = await prisma.developmentLot.findUnique({
       where: { id },
       include: {
@@ -62,7 +84,7 @@ export async function POST(
       );
     }
 
-    // Anti-spam: verificar si ya existe una reserva pendiente para el mismo lote con el mismo email
+    // Anti-spam: bloquear doble reserva del mismo email para el mismo lote
     const existingReservation = await prisma.developmentReservation.findFirst({
       where: {
         lotId: id,
@@ -103,10 +125,13 @@ export async function POST(
       });
     }
 
-    // 3. Create a DevelopmentReservation
-    // Monto transitorio hasta habilitar configuración por desarrollo.
-    // TODO (futuro): leer depositCents desde Development.depositCents cuando se agregue el campo.
+    // 3. Create DevelopmentReservation — lot is still AVAILABLE at this point.
+    //    expiresAt gives the client a 48-hour window to complete the payment.
+    //    TODO (Fase 2): trigger a cleanup job to release expired PENDING_APPROVAL reservations.
+    // Monto de seña transitorio. TODO (Fase 2): leer desde Development.depositCents cuando se agregue el campo.
     const DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS = 1_000_000; // $10.000 ARS
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
     const reservation = await prisma.developmentReservation.create({
       data: {
         lotId: id,
@@ -114,16 +139,58 @@ export async function POST(
         leadId: lead.id,
         status: "PENDING_APPROVAL",
         depositCents: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS,
+        expiresAt,
         notes: "Reserva en vivo iniciada por el cliente",
       },
     });
 
-    // 4. Update lot status to RESERVED_PENDING to lock it temporarily (give "security" to client)
+    // 4. Attempt Mercado Pago preference BEFORE locking the lot.
+    //    If MP fails for any reason (network, token, API error), the lot stays AVAILABLE
+    //    and the reservation is cancelled — no permanent inventory corruption.
+    const backSuccessUrl = `${appUrl}/cat/${lot.development.organization.slug}/developments/${lot.developmentId}?reserved=true&lot=${lot.lotNumber}`;
+
+    let preference: { checkoutUrl: string; preferenceId: string };
+    try {
+      preference = await createMercadoPagoPreference({
+        title: `Reserva Lote ${lot.lotNumber} - ${lot.development.name}`,
+        amountARS: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS / 100,
+        externalReference: reservation.id,
+        payerEmail: email,
+        backUrls: {
+          success: backSuccessUrl,
+          failure: backSuccessUrl,
+          pending: backSuccessUrl,
+        },
+      });
+    } catch (mpError: any) {
+      // MP failed — cancel the reservation so the lot remains AVAILABLE for other buyers.
+      await prisma.developmentReservation
+        .update({
+          where: { id: reservation.id },
+          data: {
+            status: "CANCELLED",
+            cancelReason: "Error al generar preferencia de Mercado Pago",
+            cancelledAt: new Date(),
+          },
+        })
+        .catch((cancelErr) =>
+          console.error("[reserve] Could not cancel reservation after MP failure:", cancelErr)
+        );
+
+      console.error(
+        "[reserve] Mercado Pago preference failed — reservation cancelled, lot remains AVAILABLE:",
+        mpError?.message
+      );
+      return NextResponse.json(
+        { error: "No se pudo inicializar el proceso de pago. Por favor, intentá nuevamente en unos minutos." },
+        { status: 503 }
+      );
+    }
+
+    // 5. MP succeeded — now lock the lot as RESERVED_PENDING
     await prisma.developmentLot.update({
       where: { id },
-      data: {
-        status: DevelopmentLotStatus.RESERVED_PENDING,
-      },
+      data: { status: DevelopmentLotStatus.RESERVED_PENDING },
     });
 
     await prisma.developmentLotHistory.create({
@@ -136,21 +203,22 @@ export async function POST(
       },
     });
 
-    // 5. Generate Mercado Pago preference URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:25195";
-    const backSuccessUrl = `${appUrl}/cat/${lot.development.organization.slug}/developments/${lot.developmentId}?reserved=true&lot=${lot.lotNumber}`;
-
-    const preference = await createMercadoPagoPreference({
-      title: `Reserva Lote ${lot.lotNumber} - ${lot.development.name}`,
-      amountARS: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS / 100,
-      externalReference: reservation.id,
-      payerEmail: email,
-      backUrls: {
-        success: backSuccessUrl,
-        failure: backSuccessUrl,
-        pending: backSuccessUrl,
-      },
-    });
+    // 6. Notify workspace — non-blocking, must never fail the response.
+    try {
+      await prisma.notification.create({
+        data: {
+          organizationId,
+          type: "OPERATOR_ACTION_REQUIRED",
+          title: `Nueva solicitud de reserva: Lote ${lot.lotNumber}`,
+          body: `${nombre} solicitó reservar el Lote ${lot.lotNumber} en ${lot.development.name}. Aguardando confirmación de pago.`,
+          link: `/${lot.development.organization.slug}/developments/${lot.developmentId}`,
+          entityType: "developmentReservation",
+          entityId: reservation.id,
+        },
+      });
+    } catch (notifError) {
+      console.error("[reserve] Workspace notification failed (non-blocking):", notifError);
+    }
 
     return NextResponse.json({
       success: true,

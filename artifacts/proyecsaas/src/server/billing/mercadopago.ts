@@ -60,6 +60,9 @@ export async function createMercadoPagoPreference(
       pending: input.backUrls?.pending ?? `${appUrl}/platform/billing`,
     },
     auto_return: "approved",
+    // Registers the webhook endpoint per-preference so MP knows where to notify.
+    // Without this field, MP only uses the global webhook URL configured in the dashboard.
+    notification_url: `${appUrl}/api/webhooks/mercadopago`,
   };
 
   const response = await fetch("https://api.mercadopago.com/checkout/preferences", {

@@ -22,7 +22,8 @@ export type AuditEvent =
   | "subscription.ai_toggled"
   | "subscription.config_updated"
   | "user.deleted_completely"
-  | "user.password_reset";
+  | "user.password_reset"
+  | "reservation.payment_confirmed";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "neutral" | "success" | "warning" | "danger" | "info" | "brand" | "outline";

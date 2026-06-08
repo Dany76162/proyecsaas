@@ -168,16 +168,68 @@ export async function processMPPaymentWebhook(
   });
 
   if (!record) {
-    // Check if it corresponds to a DevelopmentReservation
+    // Check if it corresponds to a DevelopmentReservation (centralized Raíces Pilot payment model)
     const reservation = await prisma.developmentReservation.findUnique({
       where: { id: externalReference },
-      include: { DevelopmentLot: true },
+      include: {
+        DevelopmentLot: {
+          include: {
+            Development: {
+              include: {
+                Organization: { select: { slug: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (reservation) {
-      if (reservation.status === "ACTIVE") {
-        return { outcome: "skipped", reason: "reservation-already-active" };
+      // ── Idempotency: only process reservations that are still awaiting payment ──
+      // - ACTIVE / SOLD: already processed, skip cleanly.
+      // - CANCELLED: do NOT reactivate via a late webhook — lot may have been re-sold.
+      // - Only PENDING_APPROVAL is safe to confirm.
+      if (reservation.status !== "PENDING_APPROVAL") {
+        console.log(
+          JSON.stringify({
+            scope: "mp-webhook",
+            event: "reservation-skipped",
+            reason: `status-not-pending-approval:${reservation.status}`,
+            reservationId: reservation.id,
+          }),
+        );
+        return { outcome: "skipped", reason: `reservation-status-not-pending:${reservation.status}` };
       }
+
+      const lot = reservation.DevelopmentLot;
+
+      // ── Cross-tenant guard ──
+      if (!lot || lot.organizationId !== reservation.organizationId) {
+        console.error(
+          JSON.stringify({
+            scope: "mp-webhook",
+            event: "reservation-org-mismatch",
+            reservationId: reservation.id,
+          }),
+        );
+        return { outcome: "error", reason: "reservation-lot-org-mismatch" };
+      }
+
+      // ── Integrity guard: don't overwrite a lot that moved to SOLD ──
+      if (lot.status === "SOLD") {
+        console.warn(
+          JSON.stringify({
+            scope: "mp-webhook",
+            event: "reservation-lot-already-sold",
+            reservationId: reservation.id,
+            lotId: lot.id,
+          }),
+        );
+        return { outcome: "skipped", reason: "lot-already-sold" };
+      }
+
+      // Capture the actual current status before the transaction changes it
+      const previousLotStatus = lot.status;
 
       await prisma.$transaction([
         prisma.developmentReservation.update({
@@ -189,21 +241,58 @@ export async function processMPPaymentWebhook(
         }),
         prisma.developmentLot.update({
           where: { id: reservation.lotId },
-          data: {
-            status: "RESERVED",
-          },
+          data: { status: "RESERVED" },
         }),
         prisma.developmentLotHistory.create({
           data: {
             id: `his_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
             lotId: reservation.lotId,
             organizationId: reservation.organizationId,
-            previousStatus: "AVAILABLE",
+            previousStatus: previousLotStatus, // real status (RESERVED_PENDING), not hardcoded AVAILABLE
             newStatus: "RESERVED",
             reason: "Pago de reserva online confirmado vía Mercado Pago",
           },
         }),
       ]);
+
+      // Audit log for payment traceability
+      await logAudit({
+        event: "reservation.payment_confirmed",
+        entityType: "DevelopmentReservation",
+        entityId: reservation.id,
+        entityName: reservation.lotId,
+        metadata: {
+          paymentId,
+          lotId: reservation.lotId,
+          organizationId: reservation.organizationId,
+          source: "mercadopago",
+        },
+      });
+
+      // Notify workspace — non-blocking
+      try {
+        const orgSlug = lot.Development?.Organization?.slug;
+        await prisma.notification.create({
+          data: {
+            organizationId: reservation.organizationId,
+            type: "OPERATOR_ACTION_REQUIRED",
+            title: `Pago de reserva confirmado: Lote ${lot.lotNumber}`,
+            body: `Se confirmó el pago de seña vía Mercado Pago para el Lote ${lot.lotNumber}. La reserva está activa.`,
+            link: orgSlug ? `/${orgSlug}/developments/${lot.developmentId}` : undefined,
+            entityType: "developmentReservation",
+            entityId: reservation.id,
+          },
+        });
+      } catch (notifError) {
+        console.error(
+          JSON.stringify({
+            scope: "mp-webhook",
+            event: "notification-failed",
+            reservationId: reservation.id,
+            error: notifError instanceof Error ? notifError.message : "unknown",
+          }),
+        );
+      }
 
       return { outcome: "processed", organizationId: reservation.organizationId };
     }

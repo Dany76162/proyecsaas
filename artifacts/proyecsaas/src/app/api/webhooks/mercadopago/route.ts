@@ -8,6 +8,13 @@ import {
 
 export const runtime = "nodejs";
 
+// GET /api/webhooks/mercadopago
+// Mercado Pago performs a GET verification request when registering or validating
+// a webhook endpoint from the developer dashboard. This handler satisfies that check.
+export async function GET() {
+  return NextResponse.json({ ok: true, service: "mercadopago-webhook" });
+}
+
 function validateMPSignature(request: NextRequest): boolean {
   const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
 
