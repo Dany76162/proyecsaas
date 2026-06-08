@@ -4,12 +4,13 @@ import { notFound, redirect } from "next/navigation";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { requireOrganizationMembership } from "@/server/auth/access";
 import { getAgentDetail, getAvailableChannels } from "@/modules/agents/service";
-import { updateAgent, deleteAgent } from "@/modules/agents/actions";
+import { updateAgent } from "@/modules/agents/actions";
 import { STATUS_LABELS, TONE_LABELS } from "@/modules/agents/types";
 import { prisma } from "@/server/db/prisma";
 import { AgentForm } from "../agent-form";
 import { ToggleAgentButton } from "../toggle-agent-button";
 import { AgentTestChat } from "./agent-test-chat";
+import { DeleteAgentButton } from "./delete-agent-button";
 
 export default async function AgentDetailPage({
   params,
@@ -66,12 +67,6 @@ export default async function AgentDetailPage({
     if (result.success) {
       redirect(`/${orgSlug}/agents/${agentId}`);
     }
-  }
-
-  async function handleDelete(formData: FormData) {
-    "use server";
-    await deleteAgent(orgSlug, agentId);
-    redirect(`/${orgSlug}/agents`);
   }
 
   const statusTone =
@@ -140,19 +135,11 @@ export default async function AgentDetailPage({
               agentId={agentId}
               currentStatus={agent.status}
             />
-            <form action={handleDelete}>
-              <button
-                type="submit"
-                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
-                onClick={(e) => {
-                  if (!confirm(`¿Eliminar el agente "${agent.name}"? Esta acción no se puede deshacer.`)) {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                Eliminar
-              </button>
-            </form>
+            <DeleteAgentButton
+              orgSlug={orgSlug}
+              agentId={agentId}
+              agentName={agent.name}
+            />
           </div>
         </div>
 

@@ -25,16 +25,12 @@ function getDeterministicOffset(id: string): { offsetLat: number; offsetLng: num
 
 // Build standard Prisma filters from URL search params
 function buildFilters(searchParams: URLSearchParams) {
-  const debug = searchParams.get("debug") === "true";
   const filters: any = {
     publicVisible: true,
     status: "AVAILABLE",
+    latitude: { not: null },
+    longitude: { not: null },
   };
-
-  if (!debug) {
-    filters.latitude = { not: null };
-    filters.longitude = { not: null };
-  }
 
   // Operation Type
   const operation = searchParams.get("operation");
@@ -121,44 +117,9 @@ function buildFilters(searchParams: URLSearchParams) {
   return filters;
 }
 
-import { Prisma } from "@prisma/client";
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const diag = searchParams.get("diag") === "true";
-    if (diag) {
-      try {
-        const columns = await prisma.$queryRaw`
-          SELECT column_name, data_type 
-          FROM information_schema.columns 
-          WHERE table_name = 'Property'
-        `;
-        
-        let updateResult: any = null;
-        let updateErrorMsg: string | null = null;
-        try {
-          updateResult = await prisma.property.update({
-            where: { id: "cmpgw3f2o0001qi1rgiafn4br" },
-            select: { id: true, latitude: true, longitude: true },
-            data: {
-              latitude: new Prisma.Decimal("-34.850967"),
-              longitude: new Prisma.Decimal("-58.691528"),
-            }
-          });
-        } catch (err: any) {
-          updateErrorMsg = err.message || String(err);
-        }
-
-        return NextResponse.json({
-          columns,
-          updateResult,
-          updateErrorMsg
-        });
-      } catch (err: any) {
-        return NextResponse.json({ error: err.message || String(err) });
-      }
-    }
 
     const filters = buildFilters(searchParams);
 

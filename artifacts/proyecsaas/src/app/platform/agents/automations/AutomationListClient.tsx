@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Zap, Clock, Play, Pause, ChevronRight, Activity, Calendar, Bot, Target, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -17,9 +18,9 @@ export default function AutomationListClient({ initialAutomations }: { initialAu
     try {
       setRunning(id);
       await runAutomationNowAction(id);
-      alert("Tarea generada correctamente");
+      toast.success("Tarea generada correctamente");
     } catch (err) {
-      alert("Error al ejecutar automatización");
+      toast.error("Error al ejecutar automatización");
     } finally {
       setRunning(null);
     }
@@ -29,9 +30,9 @@ export default function AutomationListClient({ initialAutomations }: { initialAu
     try {
       await toggleAutomationAction(id, active);
       setAutomations(prev => prev.map(a => a.id === id ? { ...a, isActive: active, status: active ? "ACTIVE" : "PAUSED" } : a));
-      alert(active ? "Automatización activada" : "Automatización pausada");
+      toast.success(active ? "Automatización activada" : "Automatización pausada");
     } catch (err) {
-      alert("Error al cambiar estado");
+      toast.error("Error al cambiar estado");
     }
   }
 
@@ -53,9 +54,9 @@ export default function AutomationListClient({ initialAutomations }: { initialAu
   const handleRunDue = async () => {
     try {
       const results = await runDueAutomationsAction();
-      alert(`Scheduler finalizado: ${results.processed} automatizaciones procesadas, ${results.tasksCreated} tareas creadas.`);
+      toast.success(`Scheduler: ${results.processed} automatizaciones procesadas, ${results.tasksCreated} tareas creadas.`);
     } catch (err) {
-      alert("Error al ejecutar scheduler");
+      toast.error("Error al ejecutar scheduler");
     }
   };
 

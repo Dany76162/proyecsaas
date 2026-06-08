@@ -17,6 +17,7 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
   const fetchQr = useCallback(async () => {
     setLoading(true);
@@ -58,7 +59,7 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
   }, [status, qrCode, orgSlug]);
 
   async function handleDisconnect() {
-    if (!confirm("¿Estás seguro de desconectar tu número?")) return;
+    setShowDisconnectConfirm(false);
     setLoading(true);
     try {
       await disconnectEvolutionAction(orgSlug);
@@ -86,13 +87,28 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
               <p className="text-xs text-emerald-700">Tu número personal está vinculado y la IA está activa.</p>
             </div>
           </div>
-          <button
-            onClick={handleDisconnect}
-            disabled={loading}
-            className="rounded-xl bg-white border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition shadow-sm"
-          >
-            {loading ? "Procesando..." : "Desconectar número"}
-          </button>
+          {!showDisconnectConfirm ? (
+            <button
+              onClick={() => setShowDisconnectConfirm(true)}
+              disabled={loading}
+              className="rounded-xl bg-white border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition shadow-sm"
+            >
+              {loading ? "Procesando..." : "Desconectar número"}
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">
+              <span className="text-xs font-semibold text-rose-700">¿Confirmar desconexión?</span>
+              <button
+                onClick={() => setShowDisconnectConfirm(false)}
+                className="text-xs font-bold text-slate-500 hover:text-slate-700 transition"
+              >Cancelar</button>
+              <button
+                onClick={handleDisconnect}
+                disabled={loading}
+                className="rounded-lg bg-rose-600 px-2 py-1 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
+              >Sí, desconectar</button>
+            </div>
+          )}
         </div>
       </div>
     );

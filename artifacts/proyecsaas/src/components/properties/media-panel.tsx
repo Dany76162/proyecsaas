@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -260,21 +261,21 @@ export function MediaPanel({
   }
 
   function handleDeleteImage(image: PropertyImageItem) {
-    if (!window.confirm("Eliminar esta imagen?")) return;
     const panorama = findPanoramaForImage(image);
     deleteMedia([image.id], panorama ? [panorama.id] : []);
+    toast.success("Imagen eliminada.");
   }
 
   function handleDeletePanorama(panorama: PropertyPanoramaItem) {
-    if (!window.confirm("Eliminar esta escena 360?")) return;
     deleteMedia([], [panorama.id]);
+    toast.success("Escena 360° eliminada.");
   }
 
   function handleDeleteSelected() {
     if (selectedCount === 0) return;
-    const plural = selectedCount === 1 ? "" : "s";
-    if (!window.confirm(`Eliminar ${selectedCount} medio${plural} seleccionado${plural}?`)) return;
     deleteMedia(selectedImageIds, selectedPanoramaIds);
+    const plural = selectedCount === 1 ? "" : "s";
+    toast.success(`${selectedCount} medio${plural} eliminado${plural}.`);
   }
 
   function toggleConnection(panoramaId: string) {
@@ -417,12 +418,7 @@ export function MediaPanel({
         {activeCategory === "PANORAMA" && (
           <Button
             type="button"
-            onClick={() => {
-              const proceed = window.confirm(
-                "Captura asistida experimental. Para calidad profesional, te recomendamos subir imágenes de una cámara 360° real (Insta360, GoPro, Ricoh Theta, etc.). ¿Querés continuar con la captura asistida experimental?"
-              );
-              if (proceed) setIsCameraOpen(true);
-            }}
+            onClick={() => setIsCameraOpen(true)}
             className="mt-2 w-full gap-2 bg-brand-600 hover:bg-brand-700"
           >
             <Camera className="h-4 w-4" />

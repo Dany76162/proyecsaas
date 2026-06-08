@@ -29,7 +29,11 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
   };
 
   const dev = lot.development;
-  const themeColor = dev.themeColor || "#0D9488";
+  // Validar que themeColor sea un hex seguro (#RGB o #RRGGBB) para prevenir inyección CSS
+  const rawThemeColor = dev.themeColor ?? "";
+  const themeColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(rawThemeColor)
+    ? rawThemeColor
+    : "#0D9488";
   
   // Format numbers securely
   const formatNum = (num: number | null | undefined) => (num != null ? num.toLocaleString() : "—");

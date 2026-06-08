@@ -44,10 +44,36 @@ export async function POST(
       },
     };
 
+    // Validaciones de acceso público: el desarrollo debe ser visible, activo y la org activa
+    if (!lot.development.publicVisible) {
+      return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
+    }
+    if (lot.development.status !== "ACTIVE") {
+      return NextResponse.json({ error: "El desarrollo no está disponible." }, { status: 400 });
+    }
+    if (!lot.development.organization.isActive) {
+      return NextResponse.json({ error: "El desarrollo no está disponible." }, { status: 400 });
+    }
+
     if (lot.status !== DevelopmentLotStatus.AVAILABLE) {
       return NextResponse.json(
         { error: "El lote ya no está disponible para reserva." },
         { status: 400 }
+      );
+    }
+
+    // Anti-spam: verificar si ya existe una reserva pendiente para el mismo lote con el mismo email
+    const existingReservation = await prisma.developmentReservation.findFirst({
+      where: {
+        lotId: id,
+        Lead: { email },
+        status: { in: ["PENDING_APPROVAL", "ACTIVE"] },
+      },
+    });
+    if (existingReservation) {
+      return NextResponse.json(
+        { error: "Ya existe una reserva pendiente para este lote con ese email." },
+        { status: 409 }
       );
     }
 

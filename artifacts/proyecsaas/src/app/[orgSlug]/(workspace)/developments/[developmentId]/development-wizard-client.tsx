@@ -22,6 +22,7 @@ import dynamicImport from "next/dynamic";
 import { deleteDevelopmentAction, updateDevelopmentAction } from "@/modules/developments/actions";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const BlueprintEngine = dynamicImport(
   () => import("@/components/masterplan/blueprint-engine"),
@@ -100,6 +101,7 @@ export default function DevelopmentWizardClient({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialActiveTab);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lotCountText, setLotCountText] = useState<string>("");
 
@@ -136,20 +138,20 @@ export default function DevelopmentWizardClient({
       const res = await updateDevelopmentAction(orgSlug, data);
       if (res.success) {
         if (!silent) {
-          alert("Desarrollo guardado correctamente.");
+          toast.success("Desarrollo guardado correctamente.");
         }
         router.refresh();
         return true;
       } else {
         if (!silent) {
-          alert(res.message || "Error al guardar el desarrollo.");
+          toast.error(res.message || "Error al guardar el desarrollo.");
         }
         return false;
       }
     } catch (error) {
       console.error(error);
       if (!silent) {
-        alert("Error de conexión al guardar el desarrollo.");
+        toast.error("Error de conexión al guardar el desarrollo.");
       }
       return false;
     } finally {
@@ -179,25 +181,18 @@ export default function DevelopmentWizardClient({
   };
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        "¿Estás seguro de que querés eliminar este desarrollo? Esta acción es irreversible y borrará todos los lotes y configuraciones asociadas."
-      )
-    ) {
-      return;
-    }
     setIsDeleting(true);
     try {
       const res = await deleteDevelopmentAction(orgSlug, { developmentId: development.id });
       if (res.success) {
         window.location.href = `/${orgSlug}/developments`;
       } else {
-        alert(res.message || "Error al eliminar el desarrollo.");
+        toast.error(res.message || "Error al eliminar el desarrollo.");
+        setIsDeleting(false);
       }
     } catch (error) {
       console.error(error);
-      alert("Error de conexión al eliminar el desarrollo.");
-    } finally {
+      toast.error("Error de conexión al eliminar el desarrollo.");
       setIsDeleting(false);
     }
   };
@@ -482,15 +477,41 @@ export default function DevelopmentWizardClient({
                   <p className="text-[10px] text-slate-400 mb-3">
                     Eliminar el desarrollo borrará permanentemente todo su historial, lotes cargados y plano georreferenciado.
                   </p>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition disabled:opacity-50 text-xs font-semibold"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    {isDeleting ? "Eliminando..." : "Eliminar desarrollo"}
-                  </button>
+                  {!showDeleteConfirm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      disabled={isDeleting}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition disabled:opacity-50 text-xs font-semibold"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Eliminar desarrollo
+                    </button>
+                  ) : (
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-3 space-y-2">
+                      <p className="text-xs font-bold text-red-700">
+                        ¿Confirmar eliminación? Esta acción es irreversible.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowDeleteConfirm(false)}
+                          disabled={isDeleting}
+                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          disabled={isDeleting}
+                          className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               </form>
@@ -636,10 +657,10 @@ const ImageUploader = ({ label, name, defaultValue, projectId, isPdfAccept = fal
       if (data.success) {
         setUrl(data.url);
       } else {
-        alert(data.error);
+        toast.error(data.error || "No se pudo subir el archivo.");
       }
     } catch(err) {
-      alert("Error uploading image");
+      toast.error("Error de conexión al subir el archivo.");
     } finally {
       setUploading(false);
     }

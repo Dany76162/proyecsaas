@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMasterplanStore, MasterplanUnit } from "@/lib/masterplan-store";
 import { getProjectBlueprintData, autoNumberManzanas } from "@/lib/actions/unidades";
@@ -32,23 +33,24 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
   const { units, setUnits, updateUnitState } = useMasterplanStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isAutoGrouping, setIsAutoGrouping] = useState(false);
+  const [showAutoManzanaConfirm, setShowAutoManzanaConfirm] = useState(false);
 
   const handleAutoManzana = async () => {
-    if (!confirm("¿Estás seguro de que quieres auto-numerar las manzanas? Se agruparán automáticamente por cercanía física.")) return;
+    setShowAutoManzanaConfirm(false);
     setIsAutoGrouping(true);
     try {
       const res = await autoNumberManzanas(proyectoId);
       if (res.success) {
-        alert(`¡Completado! Se detectaron y asignaron ${res.count} manzanas automáticamente (MZA1, MZA2, etc.).`);
+        toast.success(`Completado: ${res.count} manzanas asignadas automáticamente (MZA1, MZA2, etc.).`);
         const reloadRes = await getProjectBlueprintData(proyectoId);
         if (reloadRes.success && reloadRes.data) {
           setUnits(reloadRes.data as any);
         }
       } else {
-        alert(res?.error || "Ocurrió un error al agrupar.");
+        toast.error(res?.error || "Ocurrió un error al agrupar.");
       }
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setIsAutoGrouping(false);
     }
@@ -427,9 +429,9 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
           )}
 
           <div className="ml-auto flex items-center gap-3">
-            {units.length > 0 && (
+            {units.length > 0 && !showAutoManzanaConfirm && (
               <button
-                onClick={handleAutoManzana}
+                onClick={() => setShowAutoManzanaConfirm(true)}
                 disabled={isAutoGrouping}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 disabled:opacity-60 transition-colors"
                 title="Agrupa los lotes de forma automática en manzanas según cercanía física"
@@ -437,6 +439,20 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
                 <Grid3x3 className="w-3.5 h-3.5" />
                 {isAutoGrouping ? "Agrupando..." : "Autonumerar Manzanas"}
               </button>
+            )}
+            {showAutoManzanaConfirm && (
+              <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5">
+                <span className="text-xs font-semibold text-indigo-700">¿Confirmar autonumeración de manzanas?</span>
+                <button
+                  onClick={() => setShowAutoManzanaConfirm(false)}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-700 transition"
+                >Cancelar</button>
+                <button
+                  onClick={handleAutoManzana}
+                  disabled={isAutoGrouping}
+                  className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+                >Confirmar</button>
+              </div>
             )}
             <button
               onClick={handleExportCSV}

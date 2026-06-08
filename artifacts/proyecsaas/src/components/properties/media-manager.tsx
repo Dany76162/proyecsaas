@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Compass, Expand, ImageOff, Smartphone, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -68,11 +69,11 @@ export function MediaManager({
         setIsEditingHotspot(false);
         router.refresh();
       } else {
-        alert(result.message ?? "No se pudo guardar la posición del hotspot.");
+        toast.error(result.message ?? "No se pudo guardar la posición del hotspot.");
       }
     } catch (error) {
       console.error(error);
-      alert("Error al intentar guardar el hotspot.");
+      toast.error("Error al intentar guardar el hotspot.");
     } finally {
       setIsSavingHotspot(false);
     }
