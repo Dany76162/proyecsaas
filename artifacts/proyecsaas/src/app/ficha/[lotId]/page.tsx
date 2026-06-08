@@ -6,8 +6,11 @@ import { MapPin, Phone, Globe, CheckCircle2, Ruler, Maximize } from "lucide-reac
 export default async function FichaLotePage({ params }: { params: Promise<{ lotId: string }> }) {
   const { lotId } = await params;
 
-  const lotRaw = await prisma.developmentLot.findUnique({
-    where: { id: lotId },
+  const lotRaw = await prisma.developmentLot.findFirst({
+    where: {
+      id: lotId,
+      Development: { publicVisible: true, status: "ACTIVE" },
+    },
     include: {
       Development: {
         include: { Organization: true }
