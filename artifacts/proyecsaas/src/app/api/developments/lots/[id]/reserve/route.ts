@@ -190,9 +190,6 @@ export async function POST(
     // 5. MP succeeded — persist payment tracking fields on the reservation.
     //    commissionCents = 0 and netAmountCents = grossAmountCents until commercial
     //    policy is configured per development (Fase 3).
-    //    "as any" is temporary: new fields exist in DB but not yet in generated Prisma
-    //    types because prisma generate is blocked by a locked query engine DLL.
-    //    Run `npx prisma generate` once the dev server is stopped to restore full types.
     await prisma.developmentReservation.update({
       where: { id: reservation.id },
       data: {
@@ -201,7 +198,7 @@ export async function POST(
         grossAmountCents: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS,
         commissionCents: 0,
         netAmountCents: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS,
-      } as any,
+      },
     });
 
     // 6. Lock the lot as RESERVED_PENDING

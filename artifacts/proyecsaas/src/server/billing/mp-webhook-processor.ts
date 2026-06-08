@@ -192,11 +192,7 @@ export async function processMPPaymentWebhook(
       // mpPaymentId is stored when this webhook successfully processes a payment.
       // If the same paymentId arrives again, skip cleanly (duplicate webhook from MP).
       // If a DIFFERENT paymentId is stored, something is wrong — log and skip safely.
-      //
-      // "as any" cast is temporary: mpPaymentId exists in DB but not in generated Prisma
-      // types because prisma generate is blocked by a locked query engine DLL on Windows.
-      // Run `npx prisma generate` once the dev server is stopped to restore full types.
-      const existingMpPaymentId = (reservation as any).mpPaymentId as string | null | undefined;
+      const existingMpPaymentId = reservation.mpPaymentId;
 
       if (existingMpPaymentId === paymentId) {
         console.log(
@@ -279,7 +275,6 @@ export async function processMPPaymentWebhook(
       await prisma.$transaction([
         prisma.developmentReservation.update({
           where: { id: reservation.id },
-          // "as any" is temporary — see mpPaymentId note above.
           data: {
             status: "ACTIVE",
             approvedAt: new Date(),
@@ -288,7 +283,7 @@ export async function processMPPaymentWebhook(
             grossAmountCents: confirmedGrossCents,
             // Settlement starts as PENDING: Raíces Pilot received funds, transfer to developer pending.
             settlementStatus: "PENDING",
-          } as any,
+          },
         }),
         prisma.developmentLot.update({
           where: { id: reservation.lotId },
