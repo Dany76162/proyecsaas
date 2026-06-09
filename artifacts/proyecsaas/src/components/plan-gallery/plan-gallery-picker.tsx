@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { ImageIcon, Upload, Trash2, Check, Loader2, X } from "lucide-react";
+import { ImageIcon, Upload, Trash2, Check, Loader2, X, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -11,6 +11,8 @@ export interface PlanGalleryItem {
     imageUrl: string;
     tipo: "render" | "croquis" | "subdivision" | "catastral" | "otro" | "mensura" | "comercial" | "dxf";
     uploadedAt: string;
+    /** If true, this item is injected from the development's brochurePlanUrl and cannot be deleted here. */
+    readOnly?: boolean;
 }
 
 interface PlanGalleryPickerProps {
@@ -143,17 +145,24 @@ export default function PlanGalleryPicker({
                             onClick={() => onSelect(item)}
                         >
                             <div className="aspect-video bg-slate-800 relative">
-                                <img
-                                    src={item.imageUrl}
-                                    alt={item.nombre}
-                                    className="w-full h-full object-cover"
-                                />
+                                {/\.pdf$/i.test(item.imageUrl) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-400">
+                                        <FileText className="w-8 h-8" />
+                                        <span className="text-[10px] font-medium">PDF</span>
+                                    </div>
+                                ) : (
+                                    <img
+                                        src={item.imageUrl}
+                                        alt={item.nombre}
+                                        className="w-full h-full object-cover"
+                                    />
+                                )}
                                 {selectedId === item.id && (
                                     <div className="absolute inset-0 bg-indigo-500/20 flex items-center justify-center">
                                         <Check className="w-8 h-8 text-white drop-shadow" />
                                     </div>
                                 )}
-                                {allowDelete && (
+                                {allowDelete && !item.readOnly && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
                                         className="absolute top-1 right-1 p-1 bg-black/60 rounded-lg text-rose-400 hover:text-rose-300 opacity-0 group-hover:opacity-100 transition-opacity"
