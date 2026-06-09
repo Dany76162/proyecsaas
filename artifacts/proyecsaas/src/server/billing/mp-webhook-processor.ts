@@ -235,6 +235,25 @@ export async function processMPPaymentWebhook(
         return { outcome: "skipped", reason: `reservation-status-not-pending:${reservation.status}` };
       }
 
+      // ── Late payment guard ──
+      // If the buyer pays AFTER the 15-min payment window, do NOT activate automatically.
+      // Activating a stale reservation risks double-selling (the lot may already be under a
+      // new RESERVED_PENDING reservation from another buyer).
+      // Log for manual review — the payment refund process must be handled separately.
+      if (reservation.expiresAt && reservation.expiresAt < new Date()) {
+        console.warn(
+          JSON.stringify({
+            scope: "mp-webhook",
+            event: "reservation-late-payment",
+            reason: "payment-arrived-after-expiry",
+            reservationId: reservation.id,
+            expiresAt: reservation.expiresAt,
+            paymentId,
+          }),
+        );
+        return { outcome: "skipped", reason: "reservation-expired-late-payment" };
+      }
+
       const lot = reservation.DevelopmentLot;
 
       // ── Cross-tenant guard ──

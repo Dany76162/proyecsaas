@@ -9,6 +9,7 @@ import { getUnidadHistorial } from "@/lib/actions/unidades";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+// Used only for the change-state buttons in admin mode (UI values only).
 const STATUS_COLORS: Record<string, string> = {
     DISPONIBLE: "#10b981",
     BLOQUEADO: "#94a3b8",
@@ -22,6 +23,25 @@ const STATUS_LABELS: Record<string, string> = {
     BLOQUEADO: "Bloqueado",
     RESERVADA: "Reservada",
     VENDIDA: "Vendida",
+    SUSPENDIDO: "Suspendido",
+};
+
+// Used for the status badge in the header — covers both UI values and raw DB statuses.
+const STATUS_DISPLAY_COLORS: Record<string, string> = {
+    DISPONIBLE: "#10b981", AVAILABLE: "#10b981",
+    BLOQUEADO: "#94a3b8", BLOCKED: "#94a3b8",
+    RESERVADA: "#f59e0b", RESERVED: "#f59e0b",
+    RESERVED_PENDING: "#f97316", // orange — distinct from confirmed RESERVADA
+    VENDIDA: "#ef4444", SOLD: "#ef4444",
+    SUSPENDIDO: "#64748b",
+};
+
+const STATUS_DISPLAY_LABELS: Record<string, string> = {
+    DISPONIBLE: "Disponible", AVAILABLE: "Disponible",
+    BLOQUEADO: "Bloqueado", BLOCKED: "Bloqueado",
+    RESERVADA: "Reservada", RESERVED: "Reservada",
+    RESERVED_PENDING: "Reserva pendiente",
+    VENDIDA: "Vendida", SOLD: "Vendida",
     SUSPENDIDO: "Suspendido",
 };
 
@@ -141,7 +161,7 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                 <div className="flex items-center gap-3">
                     <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm"
-                        style={{ backgroundColor: STATUS_COLORS[unit.estado] || "#94a3b8" }}
+                        style={{ backgroundColor: STATUS_DISPLAY_COLORS[unit.estado] || "#94a3b8" }}
                     >
                         {modo === "admin" && internalId != null ? `#${internalId}` : (unit.numero.split("-")[1] || unit.numero)}
                     </div>
@@ -149,9 +169,9 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                         <h3 className="font-bold text-slate-800 dark:text-white">Lote {unit.numero}</h3>
                         <span
                             className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase"
-                            style={{ backgroundColor: `${STATUS_COLORS[unit.estado] || "#94a3b8"}15`, color: STATUS_COLORS[unit.estado] || "#94a3b8" }}
+                            style={{ backgroundColor: `${STATUS_DISPLAY_COLORS[unit.estado] || "#94a3b8"}15`, color: STATUS_DISPLAY_COLORS[unit.estado] || "#94a3b8" }}
                         >
-                            {STATUS_LABELS[unit.estado] || unit.estado}
+                            {STATUS_DISPLAY_LABELS[unit.estado] || unit.estado}
                         </span>
                     </div>
                 </div>
@@ -219,6 +239,20 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                 {/* Actions */}
                 {canEdit ? (
                     <div className="space-y-2.5">
+                        {/* RESERVED_PENDING banner — only in admin mode */}
+                        {unit.estado === "RESERVED_PENDING" && (
+                            <div className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-3 space-y-1">
+                                <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Reserva pendiente de pago</p>
+                                {unit.reservationExpiresAt && (
+                                    <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                                        Vence: {format(new Date(unit.reservationExpiresAt), "dd/MM/yyyy HH:mm", { locale: es })}
+                                    </p>
+                                )}
+                                <p className="text-[10px] text-amber-500/80 dark:text-amber-500/60 leading-relaxed">
+                                    Se liberará automáticamente cuando venza la ventana de pago (15 min). No confundir con Reservada definitiva.
+                                </p>
+                            </div>
+                        )}
                         <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             {isChangingEstado ? "Actualizando..." : "Cambiar Estado"}
                         </h4>
@@ -280,7 +314,7 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                                                 Reserva en Vivo con Seña
                                             </h5>
                                             <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed">
-                                                Asegurá este lote realizando el pago de una seña de reserva mediante Mercado Pago. El lote quedará reservado temporalmente a tu nombre para tu tranquilidad hasta que realices la visita.
+                                                El lote se bloqueará temporalmente durante <strong>15 minutos</strong> mientras completás el pago de la seña. Si el pago no se confirma dentro de ese plazo, el lote volverá a estar disponible.
                                             </p>
                                             <div className="flex items-center justify-between bg-white/60 dark:bg-emerald-900/20 rounded-lg px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800">
                                                 <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">Seña de reserva</span>

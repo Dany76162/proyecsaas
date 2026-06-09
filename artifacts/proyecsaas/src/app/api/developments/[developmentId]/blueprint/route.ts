@@ -47,6 +47,12 @@ export async function GET(
             centerY: true,
             frontMeters: true,
             backMeters: true,
+            DevelopmentReservation: {
+              where: { status: "PENDING_APPROVAL" },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: { expiresAt: true },
+            },
           },
           orderBy: { lotNumber: "asc" },
         },
@@ -69,6 +75,8 @@ export async function GET(
         path: lot.pathData,
         center: { x: lot.centerX, y: lot.centerY },
       }),
+      // Present only for RESERVED_PENDING lots: expiry of the pending payment window.
+      reservationExpiresAt: lot.DevelopmentReservation[0]?.expiresAt?.toISOString() ?? null,
     }));
 
     const blueprintMeta = extractBlueprintMeta(developmentRaw.masterplanSVG);

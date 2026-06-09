@@ -95,7 +95,55 @@ export async function POST(
       return NextResponse.json({ error: "El desarrollo no está disponible." }, { status: 400 });
     }
 
-    if (lot.status !== DevelopmentLotStatus.AVAILABLE) {
+    // Step 0: Defensive cleanup — release expired RESERVED_PENDING reservations for this lot.
+    // This lets a new buyer reserve a lot whose 15-min payment window has already expired,
+    // without requiring a background worker (TODO: add BullMQ/cron worker for scale).
+    const now = new Date();
+    let effectiveLotStatus = lot.status;
+
+    if (lot.status === DevelopmentLotStatus.RESERVED_PENDING) {
+      try {
+        const expiredReservation = await prisma.developmentReservation.findFirst({
+          where: {
+            lotId: id,
+            status: "PENDING_APPROVAL",
+            expiresAt: { lt: now },
+          },
+          select: { id: true },
+        });
+
+        if (expiredReservation) {
+          await prisma.$transaction([
+            prisma.developmentReservation.updateMany({
+              where: { lotId: id, status: "PENDING_APPROVAL", expiresAt: { lt: now } },
+              data: { status: "CANCELLED", cancelReason: "Ventana de pago vencida (15 min)", cancelledAt: now },
+            }),
+            prisma.developmentLot.updateMany({
+              where: { id, status: DevelopmentLotStatus.RESERVED_PENDING },
+              data: { status: DevelopmentLotStatus.AVAILABLE },
+            }),
+            prisma.developmentLotHistory.create({
+              data: {
+                lotId: id,
+                organizationId: lot.organizationId,
+                previousStatus: DevelopmentLotStatus.RESERVED_PENDING,
+                newStatus: DevelopmentLotStatus.AVAILABLE,
+                reason: "Reserva expirada — ventana de pago de 15 min vencida",
+              },
+            }),
+          ]);
+
+          effectiveLotStatus = DevelopmentLotStatus.AVAILABLE;
+          console.log(`[reserve] Released expired reservation ${expiredReservation.id} for lot ${id}`);
+        }
+      } catch (cleanupErr) {
+        // Non-fatal: if cleanup fails (concurrent cleanup by another request), log and continue.
+        // The status check below will block if the lot is still unavailable.
+        console.warn("[reserve] Cleanup of expired reservation failed (likely concurrent):", cleanupErr instanceof Error ? cleanupErr.message : cleanupErr);
+      }
+    }
+
+    if (effectiveLotStatus !== DevelopmentLotStatus.AVAILABLE) {
       return NextResponse.json(
         { error: "El lote ya no está disponible para reserva." },
         { status: 400 }
@@ -171,7 +219,10 @@ export async function POST(
     }
 
     // 3. Create DevelopmentReservation — lot is still AVAILABLE at this point.
-    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    // 15-minute payment window: if the buyer doesn't complete the MP checkout in time,
+    // the next reserve attempt will release this reservation and the lot returns to AVAILABLE.
+    // TODO: add a BullMQ/cron job that runs every 5 min to release all expired lots at scale.
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     const reservation = await prisma.developmentReservation.create({
       data: {

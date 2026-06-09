@@ -13,7 +13,9 @@ export interface MasterplanUnit {
     orientacion: string | null;
     precio: number | null;
     moneda: string;
-    estado: "DISPONIBLE" | "BLOQUEADO" | "RESERVADA" | "VENDIDA" | "SUSPENDIDO";
+    /** UI-mapped values (public) or raw DB values (admin blueprint). */
+    estado: "DISPONIBLE" | "BLOQUEADO" | "RESERVADA" | "RESERVADA_PENDIENTE" | "VENDIDA" | "SUSPENDIDO"
+        | "AVAILABLE" | "BLOCKED" | "RESERVED" | "RESERVED_PENDING" | "SOLD";
     etapaId?: string;
     etapaNombre?: string;
     manzanaId?: string;
@@ -32,6 +34,8 @@ export interface MasterplanUnit {
     reservationCurrency?: string | null;
     /** Seña de reserva en unidad menor (centavos para ARS/USD, unidades enteras para CLP/PYG). */
     reservationAmountCents?: number | null;
+    /** ISO string del vencimiento de la reserva PENDING_APPROVAL. Solo presente en lotes RESERVED_PENDING. */
+    reservationExpiresAt?: string | null;
 }
 
 export interface MasterplanLayer {
