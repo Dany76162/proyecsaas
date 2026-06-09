@@ -3,10 +3,10 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getOpenAIClient, createAgentLog, getActiveAgentByType, inferPlatform, formatOpenAIPrompt, parseMarketingResponse, OPENAI_MODEL } from "@/modules/agents/service";
+import { getOpenAIClient, createAgentLog, getActiveAgentByType, inferPlatform, formatOpenAIPrompt, parseMarketingResponse, OPENAI_MODEL, generateOperativeDiagnosis, getDirectorAgentStatus } from "@/modules/agents/service";
 import { prisma } from "@/server/db/prisma";
 import { assertMinimumRole, requireOrganizationMembership, requirePlatformAdmin } from "@/server/auth/access";
-import { ApprovalStatus, AgentType, AgentLogLevel, TaskStatus, RunStatus, DraftStatus, MembershipRole, GoalType, GoalStatus } from "@prisma/client";
+import { ApprovalStatus, AgentType, AgentAutonomyLevel, AgentLogLevel, TaskStatus, RunStatus, DraftStatus, MembershipRole, GoalType, GoalStatus } from "@prisma/client";
 import type { ContentPlatform, AgentPriority } from "@prisma/client";
 import { createAgentGoal, suggestTasksForGoal } from "./goals-service";
 import { createAgentAutomation, runAgentAutomationNow, toggleAutomationStatus, runDueAgentAutomations } from "./automations-service";
@@ -532,7 +532,7 @@ export async function scheduleContentDraftAction(draftId: string, data: { date: 
 
 export async function updateCalendarStatusAction(draftId: string, status: ContentCalendarStatus) {
   await requirePlatformAdmin();
-  
+
   await prisma.contentDraft.update({
     where: { id: draftId },
     data: { calendarStatus: status }
@@ -540,5 +540,161 @@ export async function updateCalendarStatusAction(draftId: string, status: Conten
 
   revalidatePath("/platform/agents/calendar");
   return { success: true };
+}
+
+// ─── Director Operativo IA — Fase 4A ─────────────────────────────────────────
+
+export async function activateDirectorAgentAction(): Promise<{
+  success: boolean;
+  message: string;
+  agentId?: string;
+  alreadyExisted?: boolean;
+}> {
+  const sessionUser = await requirePlatformAdmin();
+
+  const existing = await prisma.agent.findFirst({
+    where: { type: AgentType.ORCHESTRATOR, scope: "PLATFORM", organizationId: null },
+    include: { governance: true },
+  });
+
+  if (existing) {
+    // Ensure governance policy exists
+    if (!existing.governance) {
+      await prisma.agentGovernancePolicy.create({
+        data: {
+          agentId: existing.id,
+          scope: "PLATFORM",
+          autonomyLevel: AgentAutonomyLevel.REQUIRE_APPROVAL,
+          maxTasksPerDay: 10,
+          maxRunsPerDay: 50,
+          isPaused: false,
+        },
+      });
+    }
+    revalidatePath("/platform/agents");
+    return {
+      success: true,
+      message: "El Director Operativo IA ya está activo en el sistema.",
+      agentId: existing.id,
+      alreadyExisted: true,
+    };
+  }
+
+  const agent = await prisma.agent.create({
+    data: {
+      scope: "PLATFORM",
+      organizationId: null,
+      name: "Director Operativo IA",
+      type: AgentType.ORCHESTRATOR,
+      isActive: true,
+      config: { version: "4A" },
+    },
+  });
+
+  await prisma.agentGovernancePolicy.create({
+    data: {
+      agentId: agent.id,
+      scope: "PLATFORM",
+      autonomyLevel: AgentAutonomyLevel.REQUIRE_APPROVAL,
+      maxTasksPerDay: 10,
+      maxRunsPerDay: 50,
+      isPaused: false,
+    },
+  });
+
+  await createAgentLog({
+    level: AgentLogLevel.INFO,
+    message: "Director Operativo IA activado (Fase 4A)",
+    metadata: { agentId: agent.id, autonomyLevel: "REQUIRE_APPROVAL", activatedBy: sessionUser.id },
+  });
+
+  // Bypass strict AuditEvent type — "agent.director_activated" is a platform-internal event
+  await prisma.auditLog
+    .create({
+      data: {
+        event: "agent.director_activated",
+        actorId: sessionUser.id,
+        actorEmail: sessionUser.email,
+        entityType: "Agent",
+        entityId: agent.id,
+        entityName: "Director Operativo IA",
+        metadata: { type: "ORCHESTRATOR", scope: "PLATFORM", autonomyLevel: "REQUIRE_APPROVAL" },
+      },
+    })
+    .catch(() => {});
+
+  revalidatePath("/platform/agents");
+  return {
+    success: true,
+    message: "Director Operativo IA activado correctamente en modo SUPERVISADO.",
+    agentId: agent.id,
+    alreadyExisted: false,
+  };
+}
+
+export async function requestOperativeDiagnosisAction(): Promise<{
+  success: boolean;
+  diagnosis?: string;
+  error?: string;
+  isQuotaError?: boolean;
+  agentId?: string;
+}> {
+  const sessionUser = await requirePlatformAdmin();
+
+  const status = await getDirectorAgentStatus();
+
+  if (!status.exists || !status.isActive) {
+    return {
+      success: false,
+      error: "El Director Operativo IA no está activo. Actívalo primero desde este panel.",
+    };
+  }
+
+  const result = await generateOperativeDiagnosis();
+
+  if (result.success && result.diagnosis) {
+    await createAgentLog({
+      level: AgentLogLevel.INFO,
+      message: "Diagnóstico operativo generado",
+      metadata: {
+        agentId: status.agentId,
+        requestedBy: sessionUser.id,
+        type: "OPERATIVE_DIAGNOSIS",
+        diagnosisLength: result.diagnosis.length,
+      },
+    });
+
+    await prisma.auditLog
+      .create({
+        data: {
+          event: "agent.director_diagnosis_requested",
+          actorId: sessionUser.id,
+          actorEmail: sessionUser.email,
+          entityType: "Agent",
+          entityId: status.agentId ?? "",
+          entityName: "Director Operativo IA",
+          metadata: { type: "OPERATIVE_DIAGNOSIS" },
+        },
+      })
+      .catch(() => {});
+  } else {
+    await createAgentLog({
+      level: AgentLogLevel.ERROR,
+      message: `Error al generar diagnóstico operativo: ${result.error ?? "desconocido"}`,
+      metadata: {
+        agentId: status.agentId,
+        requestedBy: sessionUser.id,
+        isQuotaError: result.isQuotaError ?? false,
+      },
+    });
+  }
+
+  return {
+    success: result.success,
+    diagnosis: result.diagnosis,
+    error: result.error,
+    isQuotaError: result.isQuotaError,
+    agentId: status.agentId,
+  };
 }
 

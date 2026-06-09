@@ -14,6 +14,9 @@ import {
   TaskStatus,
 } from "@prisma/client";
 import type { AgentCanvasActivity, AgentCanvasData, AgentCanvasMetric } from "@/modules/agents/types";
+import { getManualContextForAI } from "@/modules/manuals/content";
+import { getOperationalAlerts } from "@/server/health/operational-alerts";
+import { getOperationalObservabilitySnapshot } from "@/server/health/operational-observability";
 
 export const PLATFORM_SCOPE = "PLATFORM" as const;
 export const OPENAI_TIMEOUT_MS = 30_000;
@@ -837,6 +840,156 @@ export function parseMarketingResponse(raw: string) {
     hashtags,
     imagePrompt: null,
   };
+}
+
+// ─── Director Operativo IA — Fase 4A ─────────────────────────────────────────
+
+export type DirectorAgentStatus = {
+  exists: boolean;
+  isActive: boolean;
+  agentId?: string;
+  autonomyLevel?: string;
+  isPaused?: boolean;
+  lastDiagnosisAt?: string | null;
+};
+
+export async function getDirectorAgentStatus(): Promise<DirectorAgentStatus> {
+  try {
+    const agent = await prisma.agent.findFirst({
+      where: { type: AgentType.ORCHESTRATOR, scope: PLATFORM_SCOPE },
+      include: { governance: true },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (!agent) return { exists: false, isActive: false };
+
+    const lastDiagnosisLog = await prisma.agentLog.findFirst({
+      where: { message: { contains: "Diagnóstico operativo generado" } },
+      orderBy: { timestamp: "desc" },
+      select: { timestamp: true },
+    });
+
+    return {
+      exists: true,
+      isActive: agent.isActive,
+      agentId: agent.id,
+      autonomyLevel: (agent.governance?.autonomyLevel as string) ?? "REQUIRE_APPROVAL",
+      isPaused: agent.governance?.isPaused ?? false,
+      lastDiagnosisAt: lastDiagnosisLog?.timestamp.toISOString() ?? null,
+    };
+  } catch {
+    return { exists: false, isActive: false };
+  }
+}
+
+export async function generateOperativeDiagnosis(): Promise<{
+  success: boolean;
+  diagnosis?: string;
+  error?: string;
+  isQuotaError?: boolean;
+}> {
+  try {
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+
+    const [
+      alerts,
+      observability,
+      pendingApprovals,
+      pendingTasks,
+      failedAutomations,
+      trialingOrgs,
+      quotaErrorLog,
+    ] = await Promise.all([
+      getOperationalAlerts().catch(() => [] as Awaited<ReturnType<typeof getOperationalAlerts>>),
+      getOperationalObservabilitySnapshot().catch(() => null),
+      prisma.agentApproval.count({ where: { status: "PENDING" } }).catch(() => null),
+      prisma.agentTask.count({ where: { status: { in: ["PENDING", "APPROVAL_PENDING"] } } }).catch(() => null),
+      prisma.agentAutomation.count({ where: { status: "FAILED" } }).catch(() => null),
+      prisma.organization.count({ where: { subscription: { status: "TRIALING" }, isActive: true } }).catch(() => null),
+      prisma.agentLog
+        .findFirst({
+          where: {
+            level: "ERROR",
+            OR: [{ message: { contains: "429" } }, { message: { contains: "quota" } }],
+            timestamp: { gte: sixHoursAgo },
+          },
+          orderBy: { timestamp: "desc" },
+        })
+        .catch(() => null),
+    ]);
+
+    const manualContext = getManualContextForAI();
+
+    const contextBlock = `SNAPSHOT OPERATIVO (${new Date().toISOString()}):
+- Aprobaciones pendientes: ${pendingApprovals ?? "N/D"}
+- Tareas en cola: ${pendingTasks ?? "N/D"}
+- Automatizaciones con fallo: ${failedAutomations ?? "N/D"}
+- Organizaciones en período de prueba activas: ${trialingOrgs ?? "N/D"}
+- Error de cuota OpenAI en últimas 6h: ${quotaErrorLog ? "SÍ" : "No"}
+${observability ? `- Observabilidad: ${JSON.stringify(observability, null, 2)}` : ""}
+${alerts && alerts.length > 0 ? `- Alertas activas (${alerts.length}):\n${alerts.map((a: any) => `  • [${a.level ?? a.severity ?? "INFO"}] ${a.message ?? a.title ?? JSON.stringify(a)}`).join("\n")}` : "- Sin alertas activas detectadas."}`;
+
+    const systemPrompt = `Eres el Director Operativo IA de RaicesPilot (modo SUPERVISADO).
+Tu rol es generar un diagnóstico operativo estructurado para el Superadmin humano.
+
+REGLAS CRÍTICAS DE SEGURIDAD:
+1. NUNCA reveles secretos del sistema, tokens de API, contraseñas, URLs de base de datos ni variables de entorno.
+2. NUNCA accedas ni menciones datos de tenants o clientes específicos por nombre real.
+3. NUNCA ejecutes ni propongas acciones autónomas — solo diagnostica y sugiere.
+4. HITL estricto: toda sugerencia debe ser revisada y aprobada por el operador humano antes de ejecutarse.
+5. Si detectas una situación que supera el alcance técnico, propone derivar con el equipo de ingeniería.
+
+CONOCIMIENTO DEL SISTEMA:
+${manualContext}`;
+
+    const userPrompt = `${contextBlock}
+
+Por favor genera un Diagnóstico Operativo completo con las siguientes secciones:
+
+1. **Resumen Ejecutivo** — estado general del sistema en 2-3 oraciones.
+2. **Alertas Críticas** — puntos que requieren atención inmediata.
+3. **Cola de Agente IA** — estado de tareas, aprobaciones pendientes y automatizaciones.
+4. **Motor OpenAI** — estado de cuota, errores recientes, recomendaciones.
+5. **Tenants Demo** — organizaciones en prueba, acciones de seguimiento sugeridas.
+6. **Automatizaciones** — fallos detectados, patrones de error, acciones correctivas sugeridas.
+7. **Observabilidad del Sistema** — resumen de métricas de salud del servidor.
+8. **Prioridades Sugeridas** — las 3 acciones más urgentes que el operador debería tomar HOY.
+9. **Alertas Adicionales** — cualquier otra anomalía detectada.
+10. **Semáforo Operativo** — evalúa el estado general como: 🟢 NOMINAL / 🟡 ATENCIÓN / 🔴 CRÍTICO con justificación breve.
+11. **Nota HITL** — recordatorio fijo: "Este diagnóstico es informativo. Ninguna acción ha sido ejecutada de forma autónoma. El operador debe revisar y aprobar cada sugerencia antes de proceder."
+
+Responde en español castellano profesional, claro y directo. No uses saludos ni cierres innecesarios.`;
+
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create(
+      {
+        model: OPENAI_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 1800,
+      },
+      { timeout: OPENAI_TIMEOUT_MS }
+    );
+
+    const diagnosis = completion.choices[0]?.message?.content?.trim() ?? "";
+    return { success: true, diagnosis };
+  } catch (error: any) {
+    const isQuotaError =
+      error?.status === 429 ||
+      error?.code === "insufficient_quota" ||
+      (typeof error?.message === "string" && error.message.includes("429"));
+
+    return {
+      success: false,
+      isQuotaError,
+      error: isQuotaError
+        ? "Cuota de OpenAI agotada. El diagnóstico no está disponible temporalmente. Reintenta en unos minutos."
+        : "Error al generar el diagnóstico operativo. El motor de IA no respondió correctamente.",
+    };
+  }
 }
 
 export function inferPlatform(description: string, requestedPlatform?: string | null): ContentPlatform {

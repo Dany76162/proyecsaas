@@ -15,11 +15,15 @@ import {
   Share2,
   Rocket
 } from "lucide-react";
-import { getAgentDashboardSummary } from "@/modules/agents/service";
+import { getAgentDashboardSummary, getDirectorAgentStatus } from "@/modules/agents/service";
 import { cn } from "@/lib/utils";
+import DirectorPanelClient from "./DirectorPanelClient";
 
 export default async function PlatformAgentsPage() {
-  const summary = await getAgentDashboardSummary();
+  const [summary, directorStatus] = await Promise.all([
+    getAgentDashboardSummary(),
+    getDirectorAgentStatus(),
+  ]);
 
   const metrics = [
     { label: "Objetivos Activos", value: summary.activeGoals, icon: Target, color: "text-brand-600 bg-brand-50" },
@@ -59,6 +63,9 @@ export default async function PlatformAgentsPage() {
           </Link>
         </div>
       </div>
+
+      {/* ── Director Operativo IA — Fase 4A ── */}
+      <DirectorPanelClient initialStatus={directorStatus} />
 
       {summary.hasOpenAIQuotaError && (
         <div className="flex items-center gap-4 rounded-[2rem] border border-red-200 bg-red-50/50 p-6 animate-pulse">
