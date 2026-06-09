@@ -813,6 +813,8 @@ export default function BlueprintEngine({ proyectoId, orgSlug }: BlueprintEngine
         resetBlueprintState();
         setViewMode("analysis");
         setLoadedFromDB(false);
+        setAnchorPoints([]);
+        setIsAnchorClosed(false);
         setTooltip({ visible: false, lot: "", area: "", x: 0, y: 0 });
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
