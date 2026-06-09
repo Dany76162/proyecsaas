@@ -57,6 +57,8 @@ export interface PublicOverlayConfig {
     bounds: [[number, number], [number, number]] | null;
     corners: [[number, number], [number, number], [number, number], [number, number]] | null;
     rotation: number;
+    /** SVG viewBox del masterplan — debe coincidir exactamente con el usado en admin para que la proyección sea idéntica. */
+    svgViewBox?: { x: number; y: number; w: number; h: number } | null;
 }
 
 interface MasterplanMapProps {
@@ -437,6 +439,12 @@ export default function MasterplanMap({
                     rotation: initialOverlayConfig.rotation ?? 0,
                     opacity: 0.8,
                 });
+                // Use the exact same SVG viewBox that admin uses for geo-projection.
+                // Without this, the fallback (computed from lot paths) yields a different
+                // coordinate space and polygons appear displaced.
+                if (initialOverlayConfig.svgViewBox) {
+                    setSvgProjectionViewBox(initialOverlayConfig.svgViewBox);
+                }
                 // Leave hasAutoFitContentRef.current = false so drawPolygons auto-fits to lots
             }
             setIsLoadingOverlay(false);

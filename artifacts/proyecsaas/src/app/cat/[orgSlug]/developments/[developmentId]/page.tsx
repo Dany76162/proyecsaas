@@ -206,9 +206,28 @@ export default async function PublicDevelopmentDetailPage({
     return { bounds: null, corners: null };
   }
 
+  // Extract SVG viewBox with regex (server-safe: no DOMParser).
+  // Admin uses this exact viewBox from the blueprint API to normalize SVG coordinates.
+  // Public must use the same value or the geo-projection will be displaced.
+  function extractSvgViewBoxServer(svgString: string | null): { x: number; y: number; w: number; h: number } | null {
+    if (!svgString) return null;
+    const m = svgString.match(/\bviewBox=["']([^"']+)["']/);
+    if (!m) return null;
+    const parts = m[1].trim().split(/[\s,]+/).map(Number);
+    if (parts.length !== 4 || parts.some((v) => !isFinite(v))) return null;
+    const [x, y, w, h] = parts;
+    if (w <= 0 || h <= 0) return null;
+    return { x, y, w, h };
+  }
+
   const { bounds: overlayBounds, corners: overlayCorners } = parsePublicOverlayBounds(development.overlayBounds);
   const publicOverlayConfig = overlayBounds
-    ? { bounds: overlayBounds, corners: overlayCorners, rotation: development.overlayRotation ?? 0 }
+    ? {
+        bounds: overlayBounds,
+        corners: overlayCorners,
+        rotation: development.overlayRotation ?? 0,
+        svgViewBox: extractSvgViewBoxServer(development.masterplanSVG),
+      }
     : null;
 
   return (
