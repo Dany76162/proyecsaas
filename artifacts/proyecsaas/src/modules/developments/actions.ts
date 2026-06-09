@@ -15,7 +15,7 @@ import {
   reservationActionSchema,
 } from "./schemas";
 
-export function getStageNumber(etapaNombre: string | null | undefined): number | null {
+function getStageNumber(etapaNombre: string | null | undefined): number | null {
   if (!etapaNombre) return null;
   const matchDigit = etapaNombre.match(/[1-5]/);
   if (matchDigit) return parseInt(matchDigit[0], 10);

@@ -124,7 +124,7 @@ export async function POST(
     }
     if (!depositCents || depositCents <= 0) {
       return NextResponse.json(
-        { error: "Este desarrollo no tiene configurado el monto de seña para esta etapa. Por favor, contactá al vendedor." },
+        { error: "Configurá la seña de reserva de la etapa antes de habilitar reservas." },
         { status: 400 }
       );
     }

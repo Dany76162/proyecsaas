@@ -260,34 +260,41 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                     <div className="flex flex-col gap-3.5">
                         {unit.estado === "DISPONIBLE" && (
                             <>
-                                {!showReserveForm ? (
-                                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-3.5 space-y-2">
-                                        <h5 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                                            <CreditCard className="w-3.5 h-3.5 text-emerald-500" />
-                                            Reserva en Vivo con Seña
-                                        </h5>
-                                        <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed">
-                                            Asegurá este lote realizando el pago de una seña de reserva mediante Mercado Pago. El lote quedará reservado temporalmente a tu nombre para tu tranquilidad hasta que realices la visita.
-                                        </p>
-                                        {unit.reservationAmountCents && unit.reservationCurrency && (() => {
-                                            const noDecimal = new Set(["CLP", "PYG"]);
-                                            const cur = unit.reservationCurrency.toUpperCase();
-                                            const amount = noDecimal.has(cur) ? unit.reservationAmountCents : unit.reservationAmountCents / 100;
-                                            return (
-                                                <div className="flex items-center justify-between bg-white/60 dark:bg-emerald-900/20 rounded-lg px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800">
-                                                    <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">Seña</span>
-                                                    <span className="text-xs font-black text-emerald-800 dark:text-emerald-200">{cur} {amount.toLocaleString("es-AR")}</span>
-                                                </div>
-                                            );
-                                        })()}
-                                        <button
-                                            onClick={() => setShowReserveForm(true)}
-                                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition duration-300 shadow-md shadow-emerald-600/10"
-                                        >
-                                            Iniciar Reserva Online
-                                        </button>
-                                    </div>
-                                ) : (
+                                {!showReserveForm ? (() => {
+                                    const hasSeña = unit.reservationAmountCents && unit.reservationAmountCents > 0 && unit.reservationCurrency;
+                                    if (!hasSeña) {
+                                        return (
+                                            <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3.5 text-center space-y-1">
+                                                <p className="text-xs font-bold text-slate-600 dark:text-slate-300">Disponible</p>
+                                                <p className="text-[10px] text-slate-400 leading-relaxed">Reserva sujeta a configuración. Contactá al vendedor para coordinar la seña.</p>
+                                            </div>
+                                        );
+                                    }
+                                    const noDecimal = new Set(["CLP", "PYG"]);
+                                    const cur = unit.reservationCurrency!.toUpperCase();
+                                    const amount = noDecimal.has(cur) ? unit.reservationAmountCents! : unit.reservationAmountCents! / 100;
+                                    return (
+                                        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-3.5 space-y-2">
+                                            <h5 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                                                <CreditCard className="w-3.5 h-3.5 text-emerald-500" />
+                                                Reserva en Vivo con Seña
+                                            </h5>
+                                            <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed">
+                                                Asegurá este lote realizando el pago de una seña de reserva mediante Mercado Pago. El lote quedará reservado temporalmente a tu nombre para tu tranquilidad hasta que realices la visita.
+                                            </p>
+                                            <div className="flex items-center justify-between bg-white/60 dark:bg-emerald-900/20 rounded-lg px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800">
+                                                <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">Seña de reserva</span>
+                                                <span className="text-xs font-black text-emerald-800 dark:text-emerald-200">{cur} {amount.toLocaleString("es-AR")}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setShowReserveForm(true)}
+                                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition duration-300 shadow-md shadow-emerald-600/10"
+                                            >
+                                                Iniciar Reserva Online
+                                            </button>
+                                        </div>
+                                    );
+                                })() : (
                                     <form onSubmit={handleReserveSubmit} className="bg-slate-50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/50 rounded-xl p-3.5 space-y-2.5">
                                         <h5 className="text-xs font-bold text-slate-700 dark:text-white">Formulario de Reserva</h5>
                                         

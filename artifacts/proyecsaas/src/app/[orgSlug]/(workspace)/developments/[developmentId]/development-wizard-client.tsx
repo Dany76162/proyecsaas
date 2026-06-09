@@ -133,11 +133,25 @@ export default function DevelopmentWizardClient({
       pricePerSqmEtapa4: formData.get("pricePerSqmEtapa4") ? (parseFloat(formData.get("pricePerSqmEtapa4") as string) || null) : null,
       pricePerSqmEtapa5: formData.get("pricePerSqmEtapa5") ? (parseFloat(formData.get("pricePerSqmEtapa5") as string) || null) : null,
       reservationCurrency: (formData.get("reservationCurrency") as string) || null,
-      reservationAmountStage1Cents: formData.get("reservationAmountStage1Cents") ? (parseInt(formData.get("reservationAmountStage1Cents") as string, 10) || null) : null,
-      reservationAmountStage2Cents: formData.get("reservationAmountStage2Cents") ? (parseInt(formData.get("reservationAmountStage2Cents") as string, 10) || null) : null,
-      reservationAmountStage3Cents: formData.get("reservationAmountStage3Cents") ? (parseInt(formData.get("reservationAmountStage3Cents") as string, 10) || null) : null,
-      reservationAmountStage4Cents: formData.get("reservationAmountStage4Cents") ? (parseInt(formData.get("reservationAmountStage4Cents") as string, 10) || null) : null,
-      reservationAmountStage5Cents: formData.get("reservationAmountStage5Cents") ? (parseInt(formData.get("reservationAmountStage5Cents") as string, 10) || null) : null,
+      ...(() => {
+        // User enters major-unit amounts (e.g. 10000 for $10.000 ARS).
+        // We store in the minor unit ("cents"): ×100 for most currencies, ×1 for CLP/PYG.
+        const cur = (formData.get("reservationCurrency") as string) || "";
+        const noDecimal = new Set(["CLP", "PYG"]);
+        const multiplier = noDecimal.has(cur.toUpperCase()) ? 1 : 100;
+        const toCents = (raw: FormDataEntryValue | null): number | null => {
+          const n = parseInt(raw as string, 10);
+          if (!Number.isFinite(n) || n <= 0) return null;
+          return n * multiplier;
+        };
+        return {
+          reservationAmountStage1Cents: toCents(formData.get("reservationAmountStage1Cents")),
+          reservationAmountStage2Cents: toCents(formData.get("reservationAmountStage2Cents")),
+          reservationAmountStage3Cents: toCents(formData.get("reservationAmountStage3Cents")),
+          reservationAmountStage4Cents: toCents(formData.get("reservationAmountStage4Cents")),
+          reservationAmountStage5Cents: toCents(formData.get("reservationAmountStage5Cents")),
+        };
+      })(),
     };
     
     try {
@@ -361,7 +375,11 @@ export default function DevelopmentWizardClient({
 
                 <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4">
                   <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-1">Seña de Reserva por Etapa</h3>
-                  <p className="text-[10px] text-slate-400 mb-3">Monto que el cliente pagará al reservar un lote. Para ARS/USD/UYU/etc. ingresá el valor en <strong>centavos</strong> (ej: $10.000 ARS → 1000000). Para CLP/PYG ingresá el valor entero directamente.</p>
+                  <p className="text-[10px] text-slate-400 mb-3">
+                    Ingresá el monto que el cliente pagará al reservar un lote, en el valor normal de la moneda elegida
+                    (ej: 10000 para $10.000 ARS, 500 para USD 500).
+                    Si dejás 0 o vacío la etapa, <strong>no se podrán generar reservas</strong> para esos lotes hasta que cargues un monto mayor a 0.
+                  </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
                     <div>
                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Moneda</label>
@@ -385,21 +403,36 @@ export default function DevelopmentWizardClient({
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                    {[1, 2, 3, 4, 5].map((stageNum) => (
-                      <div key={stageNum}>
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Etapa {stageNum}</label>
-                        <input
-                          type="number"
-                          step="1"
-                          min="0"
-                          name={`reservationAmountStage${stageNum}Cents`}
-                          defaultValue={(development as any)[`reservationAmountStage${stageNum}Cents`] || ""}
-                          placeholder="Ej: 1000000"
-                          className="w-full text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500"
-                        />
-                      </div>
-                    ))}
+                    {[1, 2, 3, 4, 5].map((stageNum) => {
+                      // Convert DB "cents" to major unit for display.
+                      // CLP/PYG have no decimal places — store as-is.
+                      const rawCents = (development as any)[`reservationAmountStage${stageNum}Cents`] as number | null | undefined;
+                      const dbCurrency = ((development as any).reservationCurrency as string | null) || "";
+                      const noDecimalCurrencies = new Set(["CLP", "PYG"]);
+                      const displayValue = rawCents && rawCents > 0
+                        ? (noDecimalCurrencies.has(dbCurrency.toUpperCase()) ? rawCents : rawCents / 100)
+                        : "";
+                      return (
+                        <div key={stageNum}>
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Etapa {stageNum}</label>
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            name={`reservationAmountStage${stageNum}Cents`}
+                            defaultValue={displayValue}
+                            placeholder="0"
+                            className="w-full text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500"
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
+                  {!(development as any).reservationCurrency && (
+                    <p className="text-[10px] text-amber-500 dark:text-amber-400 mt-2">
+                      Sin moneda configurada — no se generarán reservas hasta que elijas una moneda y cargues montos.
+                    </p>
+                  )}
                 </div>
 
                 <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4">
