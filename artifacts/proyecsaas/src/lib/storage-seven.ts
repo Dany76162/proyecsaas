@@ -8,12 +8,12 @@
  *   STORAGE_TYPE=s3        → uses S3-compatible API (REQUIRED for production)
  *   STORAGE_TYPE=local     → uses local filesystem (DEV ONLY — will THROW in production)
  *
- *   For S3:
- *     STORAGE_BUCKET=my-bucket
- *     STORAGE_REGION=us-east-1
+ *   For S3/R2:
+ *     STORAGE_BUCKET_NAME=my-bucket
+ *     STORAGE_REGION=auto (or us-east-1 for AWS)
  *     STORAGE_ENDPOINT=https://xxx.r2.cloudflarestorage.com (optional, for R2/MinIO)
- *     STORAGE_ACCESS_KEY=...
- *     STORAGE_SECRET_KEY=...
+ *     STORAGE_ACCESS_KEY_ID=...
+ *     STORAGE_SECRET_ACCESS_KEY=...
  *     STORAGE_PUBLIC_URL=https://cdn.example.com (public base URL for the bucket)
  */
 
@@ -86,16 +86,16 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
 // ─── S3-Compatible Upload (AWS S3, Cloudflare R2, MinIO, etc.) ───
 
 async function uploadToS3(options: UploadOptions): Promise<UploadResult> {
-    const bucket = process.env.STORAGE_BUCKET;
-    const region = process.env.STORAGE_REGION || "us-east-1";
+    const bucket = process.env.STORAGE_BUCKET_NAME;
+    const region = process.env.STORAGE_REGION || "auto";
     const endpoint = process.env.STORAGE_ENDPOINT;
-    const accessKeyId = process.env.STORAGE_ACCESS_KEY;
-    const secretAccessKey = process.env.STORAGE_SECRET_KEY;
+    const accessKeyId = process.env.STORAGE_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.STORAGE_SECRET_ACCESS_KEY;
     const publicUrl = process.env.STORAGE_PUBLIC_URL;
 
     if (!bucket || !accessKeyId || !secretAccessKey) {
         throw new Error(
-            "S3 storage no configurado. Configure las variables: S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY."
+            "S3 storage no configurado. Configure las variables: STORAGE_BUCKET_NAME, STORAGE_ACCESS_KEY_ID, STORAGE_SECRET_ACCESS_KEY."
         );
     }
 
@@ -109,7 +109,6 @@ async function uploadToS3(options: UploadOptions): Promise<UploadResult> {
             accessKeyId,
             secretAccessKey,
         },
-        forcePathStyle: !!endpoint, // Required for R2/MinIO path-style access
     });
 
     const key = `${options.folder}/${sanitizeFilename(options.filename)}`;
@@ -120,7 +119,6 @@ async function uploadToS3(options: UploadOptions): Promise<UploadResult> {
             Key: key,
             Body: options.buffer,
             ContentType: options.contentType,
-            CacheControl: "public, max-age=31536000, immutable",
         })
     );
 
@@ -177,11 +175,11 @@ export async function deleteFile(key: string): Promise<void> {
     const storageType = process.env.STORAGE_TYPE || (process.env.NODE_ENV === "production" ? "s3" : "local");
 
     if (storageType === "s3") {
-        const bucket = process.env.STORAGE_BUCKET;
-        const region = process.env.STORAGE_REGION || "us-east-1";
+        const bucket = process.env.STORAGE_BUCKET_NAME;
+        const region = process.env.STORAGE_REGION || "auto";
         const endpoint = process.env.STORAGE_ENDPOINT;
-        const accessKeyId = process.env.STORAGE_ACCESS_KEY;
-        const secretAccessKey = process.env.STORAGE_SECRET_KEY;
+        const accessKeyId = process.env.STORAGE_ACCESS_KEY_ID;
+        const secretAccessKey = process.env.STORAGE_SECRET_ACCESS_KEY;
 
         if (!bucket || !accessKeyId || !secretAccessKey) return;
 
@@ -191,7 +189,6 @@ export async function deleteFile(key: string): Promise<void> {
             region,
             ...(endpoint ? { endpoint } : {}),
             credentials: { accessKeyId, secretAccessKey },
-            forcePathStyle: !!endpoint,
         });
 
         await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
