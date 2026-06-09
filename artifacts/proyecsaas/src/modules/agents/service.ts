@@ -730,12 +730,14 @@ export async function getAgentsForOrg(orgId: string) {
 export async function getAgentStatsForOrg(orgId: string) {
   const agents = await prisma.aiAgent.findMany({
     where: { organizationId: orgId },
-    select: { status: true },
+    select: { status: true, whatsappChannelId: true },
   });
 
   return {
     total: agents.length,
     active: agents.filter((a) => a.status === "ACTIVE").length,
+    operational: agents.filter((a) => a.status === "ACTIVE" && !!a.whatsappChannelId).length,
+    pendingWhatsApp: agents.filter((a) => a.status === "ACTIVE" && !a.whatsappChannelId).length,
     paused: agents.filter((a) => a.status === "PAUSED").length,
     draft: agents.filter((a) => a.status === "DRAFT").length,
   };

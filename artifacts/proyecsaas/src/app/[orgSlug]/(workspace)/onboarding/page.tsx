@@ -61,7 +61,7 @@ function buildOnboardingSteps(
       key: "agente",
       title: "Activá tu agente IA",
       description:
-        "Configurá cómo se presenta el asistente, qué zonas y tipos de propiedades maneja, y activalo. A partir de ahí responde solo.",
+        "Creá el agente, asignale el número de WhatsApp conectado y activalo. El paso se considera completo cuando el agente tiene un canal de WhatsApp asignado y puede responder consultas.",
       href: `/${orgSlug}/agents`,
       cta: "Configurar agente",
       serverStatus: (status.agentReady ? "completed" : "pending") as "completed" | "pending",

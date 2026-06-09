@@ -142,11 +142,11 @@ export function AgentForm({
 
         <div className="mt-5 space-y-4">
           {/* Option: no channel */}
-          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 p-4 hover:border-slate-300 transition">
-            <input type="radio" name="whatsappChannelId" value="" defaultChecked={!agent?.whatsappChannelId} className="h-4 w-4 accent-brand-500" />
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/40 p-4 hover:border-amber-300 transition">
+            <input type="radio" name="whatsappChannelId" value="" defaultChecked={!agent?.whatsappChannelId} className="mt-0.5 h-4 w-4 accent-brand-500 shrink-0" />
             <div>
               <p className="text-sm font-medium text-slate-700">Sin número por ahora</p>
-              <p className="text-xs text-slate-400">El agente quedará preparado. Podés asignarle un número cuando esté conectado.</p>
+              <p className="text-xs text-slate-500 mt-0.5">El agente quedará creado pero <strong>no responderá mensajes de WhatsApp</strong> hasta que le asignes un número.</p>
             </div>
           </label>
 

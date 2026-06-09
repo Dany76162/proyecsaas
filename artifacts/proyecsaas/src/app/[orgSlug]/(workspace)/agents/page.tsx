@@ -85,9 +85,15 @@ export default async function AgentsPage({
             <p className="text-xs text-slate-500">Total</p>
           </div>
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center">
-            <p className="text-2xl font-bold text-emerald-800">{stats.active}</p>
-            <p className="text-xs text-emerald-600">Activos</p>
+            <p className="text-2xl font-bold text-emerald-800">{stats.operational}</p>
+            <p className="text-xs text-emerald-600">Operativos</p>
           </div>
+          {stats.pendingWhatsApp > 0 && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-center">
+              <p className="text-2xl font-bold text-amber-800">{stats.pendingWhatsApp}</p>
+              <p className="text-xs text-amber-600">Pendientes de WhatsApp</p>
+            </div>
+          )}
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-center">
             <p className="text-2xl font-bold text-amber-800">{stats.paused}</p>
             <p className="text-xs text-amber-600">Pausados</p>
@@ -181,8 +187,8 @@ export default async function AgentsPage({
         stepKey="agents"
         stepNumber={4}
         title="Activá tu agente IA"
-        description="Configurá el agente, asignále el número de WhatsApp que conectaste y activalo. ¡Listo para atender las 24hs!"
-        nextLabel="Finalizar configuración"
+        description="Creá el agente y asignale un número de WhatsApp para que pueda responder consultas. El paso se completa cuando el agente tiene canal asignado."
+        nextLabel="Ver progreso de configuración"
         nextRoute={`/${orgSlug}/onboarding`}
       />
     </>
@@ -198,17 +204,22 @@ function AgentCard({
   orgSlug: string;
   isManager: boolean;
 }) {
+  const isOperational = agent.status === "ACTIVE" && !!agent.whatsappChannelId;
+  const isPendingWhatsApp = agent.status === "ACTIVE" && !agent.whatsappChannelId;
+
   return (
     <article className="flex flex-col gap-4 rounded-[1.75rem] border bg-white p-6 shadow-soft">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <div
             className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg font-bold ${
-              agent.status === "ACTIVE"
+              isOperational
                 ? "bg-emerald-100 text-emerald-700"
-                : agent.status === "PAUSED"
+                : isPendingWhatsApp
                   ? "bg-amber-100 text-amber-700"
-                  : "bg-slate-100 text-slate-500"
+                  : agent.status === "PAUSED"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-slate-100 text-slate-500"
             }`}
           >
             🤖
@@ -221,10 +232,19 @@ function AgentCard({
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-1.5">
-          <AgentStatusBadge status={agent.status} />
+          {isOperational && <StatusBadge label="Activo" tone="success" />}
+          {isPendingWhatsApp && <StatusBadge label="Sin configurar" tone="warning" />}
+          {agent.status === "PAUSED" && <StatusBadge label={STATUS_LABELS["PAUSED"]} tone="warning" />}
+          {agent.status === "DRAFT" && <StatusBadge label={STATUS_LABELS["DRAFT"]} tone="neutral" />}
           {agent.is24x7 && <StatusBadge label="24/7" tone="info" />}
         </div>
       </div>
+
+      {isPendingWhatsApp && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 leading-relaxed">
+          El agente está creado pero no responderá mensajes hasta que se le asigne un número de WhatsApp.
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
@@ -238,8 +258,11 @@ function AgentCard({
           {agent.whatsappChannelId ? (
             <p className="mt-0.5 text-sm font-medium text-emerald-700">✓ Asignado</p>
           ) : (
-            <Link href={`/${orgSlug}/settings/integrations/whatsapp`} className="mt-0.5 text-sm font-medium text-amber-600 hover:underline">
-              Sin número →
+            <Link
+              href={`/${orgSlug}/settings/integrations/whatsapp`}
+              className="mt-0.5 text-sm font-medium text-amber-600 hover:underline"
+            >
+              Asignar WhatsApp →
             </Link>
           )}
         </div>

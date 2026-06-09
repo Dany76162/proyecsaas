@@ -157,7 +157,7 @@ export async function getSetupChecklistStatus(
       deletedAt: true,
       _count: { select: { properties: true } },
       aiAgents: {
-        select: { id: true, status: true },
+        select: { id: true, status: true, whatsappChannelId: true },
       },
       whatsappChannels: {
         where: { status: "ACTIVE" },
@@ -195,7 +195,11 @@ export async function getSetupChecklistStatus(
 
   const profileComplete = Boolean(org.name?.trim() && org.city?.trim());
   const propertiesLoaded = org._count.properties > 0;
-  const agentConfigured = Boolean(org.aiAgents[0] && ["ACTIVE", "PAUSED", "DRAFT"].includes(org.aiAgents[0].status));
+  const agentConfigured = Boolean(
+    org.aiAgents[0] &&
+    org.aiAgents[0].status === "ACTIVE" &&
+    org.aiAgents[0].whatsappChannelId,
+  );
   const whatsappConnected = org.whatsappChannels.length > 0;
 
   const panoramasCount = await prisma.propertyPanorama.count({
