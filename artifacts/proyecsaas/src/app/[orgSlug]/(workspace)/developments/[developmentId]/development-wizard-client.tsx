@@ -604,7 +604,7 @@ export default function DevelopmentWizardClient({
                   { label: "Disponible", val: disponibles, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
                   { label: "Reservado", val: reservadas, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
                   { label: "Vendido", val: vendidas, icon: DollarSign, color: "text-rose-500", bg: "bg-rose-500/10" },
-                  { label: "Bloqueado", val: bloqueados, icon: Ban, color: "text-slate-500", bg: "bg-slate-100" },
+                  { label: "Bloqueado", val: bloqueados, icon: Ban, color: "text-yellow-700", bg: "bg-yellow-100" },
                 ].map((s, idx) => (
                   <div key={idx} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
                     <div className="flex items-center gap-2 mb-1">

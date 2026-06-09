@@ -12,7 +12,7 @@ import { es } from "date-fns/locale";
 // Used only for the change-state buttons in admin mode (UI values only).
 const STATUS_COLORS: Record<string, string> = {
     DISPONIBLE: "#10b981",
-    BLOQUEADO: "#94a3b8",
+    BLOQUEADO: "#facc15",
     RESERVADA: "#f59e0b",
     VENDIDA: "#ef4444",
     SUSPENDIDO: "#64748b",
@@ -29,7 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
 // Used for the status badge in the header — covers both UI values and raw DB statuses.
 const STATUS_DISPLAY_COLORS: Record<string, string> = {
     DISPONIBLE: "#10b981", AVAILABLE: "#10b981",
-    BLOQUEADO: "#94a3b8", BLOCKED: "#94a3b8",
+    BLOQUEADO: "#facc15", BLOCKED: "#facc15",
     RESERVADA: "#f59e0b", RESERVED: "#f59e0b",
     RESERVED_PENDING: "#f97316", // orange — distinct from confirmed RESERVADA
     VENDIDA: "#ef4444", SOLD: "#ef4444",

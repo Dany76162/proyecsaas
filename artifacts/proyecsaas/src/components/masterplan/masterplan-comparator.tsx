@@ -7,7 +7,7 @@ import { MasterplanUnit } from "@/lib/masterplan-store";
 
 const STATUS_COLORS: Record<string, string> = {
     DISPONIBLE: "#10b981",
-    BLOQUEADO: "#f59e0b",
+    BLOQUEADO: "#facc15",
     RESERVADO: "#f97316",
     VENDIDO: "#ef4444",
 };

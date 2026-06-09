@@ -7,7 +7,7 @@ import { useMasterplanStore, selectUnits } from "@/lib/masterplan-store";
 
 const STATUS_CONFIG: { key: string; label: string; color: string }[] = [
     { key: "DISPONIBLE", label: "Disponible", color: "#10b981" },
-    { key: "BLOQUEADO", label: "Bloqueado", color: "#94a3b8" },
+    { key: "BLOQUEADO", label: "Bloqueado", color: "#facc15" },
     { key: "RESERVADA", label: "Reservada", color: "#f59e0b" },
     { key: "VENDIDA", label: "Vendida", color: "#ef4444" },
     { key: "SUSPENDIDA", label: "Suspendida", color: "#64748b" },
