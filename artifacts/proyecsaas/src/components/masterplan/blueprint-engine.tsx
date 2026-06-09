@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 import {
     Upload, FileCode, Layers, RefreshCw,
@@ -88,8 +89,11 @@ function ZoomControls({ onFullscreen, isFullscreen }: { onFullscreen: () => void
 }
 
 export default function BlueprintEngine({ proyectoId, orgSlug }: BlueprintEngineProps) {
+    const router = useRouter();
     const [file, setFile] = useState<File | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [stats, setStats] = useState<{ pathsFound: number; labeled: number } | null>(null);
     const [svgContent, setSvgContent] = useState<string | null>(null);
     const [extractedPaths, setExtractedPaths] = useState<ExtractedPath[]>([]);
@@ -814,6 +818,26 @@ export default function BlueprintEngine({ proyectoId, orgSlug }: BlueprintEngine
         return;
     };
 
+    const handleDeleteBlueprint = async () => {
+        setIsDeleting(true);
+        try {
+            const res = await fetch(`/api/developments/${proyectoId}/blueprint`, { method: "DELETE" });
+            const data = await readJsonResponse(res);
+            if (!res.ok) {
+                toast.error(data?.error || "No se pudo eliminar el plano.");
+                return;
+            }
+            handleClear();
+            toast.success("Plano eliminado correctamente.");
+            router.refresh();
+        } catch {
+            toast.error("Error de conexión al eliminar el plano.");
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+        }
+    };
+
     const handleSync = async () => {
         if (!svgContent) return;
         setProcessing(true);
@@ -1130,7 +1154,7 @@ export default function BlueprintEngine({ proyectoId, orgSlug }: BlueprintEngine
 
                     {/* Upload / Clear */}
                     {svgContent ? (
-                        <button onClick={handleClear} className="cursor-pointer bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5">
+                        <button onClick={() => setShowDeleteConfirm(true)} className="cursor-pointer bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5">
                             <Trash2 className="w-3 h-3" />Eliminar
                         </button>
                     ) : (
@@ -1454,6 +1478,45 @@ export default function BlueprintEngine({ proyectoId, orgSlug }: BlueprintEngine
                 .blueprint-render.blueprint-mode-raw polygon { fill: none !important; stroke: #1e293b !important; }
                 .blueprint-render.blueprint-mode-raw text { fill: #334155 !important; }
             `}</style>
+
+        {/* Confirmation modal — delete blueprint */}
+        {showDeleteConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 flex flex-col gap-4">
+                    <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex-shrink-0 bg-red-100 dark:bg-red-500/10 rounded-full p-2">
+                            <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Eliminar plano del proyecto</h3>
+                            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                Se eliminarán el plano SVG y todos los lotes detectados. Los pasos Masterplan y Mapa Interactivo volverán a estar incompletos.
+                            </p>
+                            <p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
+                                Esta acción no se puede deshacer.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                        <button
+                            onClick={() => setShowDeleteConfirm(false)}
+                            disabled={isDeleting}
+                            className="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleDeleteBlueprint}
+                            disabled={isDeleting}
+                            className="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                            {isDeleting ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                            {isDeleting ? "Eliminando…" : "Eliminar plano"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 }
