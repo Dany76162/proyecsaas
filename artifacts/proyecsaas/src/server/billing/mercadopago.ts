@@ -6,7 +6,10 @@
 
 export type MPPreferenceInput = {
   title: string;
-  amountARS: number; // amount in full ARS (not cents)
+  /** Amount in the major unit of `currency` (e.g. full ARS, full USD). Not cents. */
+  amount: number;
+  /** ISO 4217 currency code understood by Mercado Pago (ARS, USD, UYU, CLP, MXN, COP, PEN, BRL…). */
+  currency: string;
   externalReference: string; // billing record ID — used to correlate with DB
   payerEmail?: string;
   backUrls?: {
@@ -48,8 +51,8 @@ export async function createMercadoPagoPreference(
       {
         title: input.title,
         quantity: 1,
-        unit_price: input.amountARS,
-        currency_id: "ARS",
+        unit_price: input.amount,
+        currency_id: input.currency,
       },
     ],
     payer: input.payerEmail ? { email: input.payerEmail } : undefined,

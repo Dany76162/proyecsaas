@@ -20,6 +20,12 @@ export const createDevelopmentSchema = z.object({
   pricePerSqmEtapa3: z.number().optional().nullable(),
   pricePerSqmEtapa4: z.number().optional().nullable(),
   pricePerSqmEtapa5: z.number().optional().nullable(),
+  reservationCurrency: z.string().max(10).optional().nullable(),
+  reservationAmountStage1Cents: z.number().int().nonnegative().optional().nullable(),
+  reservationAmountStage2Cents: z.number().int().nonnegative().optional().nullable(),
+  reservationAmountStage3Cents: z.number().int().nonnegative().optional().nullable(),
+  reservationAmountStage4Cents: z.number().int().nonnegative().optional().nullable(),
+  reservationAmountStage5Cents: z.number().int().nonnegative().optional().nullable(),
 });
 
 export const updateDevelopmentSchema = createDevelopmentSchema.partial().extend({

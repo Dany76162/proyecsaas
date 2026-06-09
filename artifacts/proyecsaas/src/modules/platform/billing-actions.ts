@@ -279,8 +279,9 @@ export async function generateMPPaymentLinkAction(recordId: string): Promise<Act
     }
 
     const { preferenceId, checkoutUrl } = await createMercadoPagoPreference({
-      title: `${record.organization.name} â€” ${record.description}`,
-      amountARS: record.amountCents / 100,
+      title: `${record.organization.name} - ${record.description}`,
+      amount: record.amountCents / 100,
+      currency: "ARS",
       externalReference: record.id,
     });
 

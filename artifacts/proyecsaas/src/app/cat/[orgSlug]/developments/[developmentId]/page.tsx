@@ -127,6 +127,28 @@ export default async function PublicDevelopmentDetailPage({
     SOLD: "VENDIDA",
   };
 
+  // Resolve stage number for reservation amount lookup
+  function getStageNumber(etapaNombre: string | null | undefined): number | null {
+    if (!etapaNombre) return null;
+    const matchDigit = etapaNombre.match(/[1-5]/);
+    if (matchDigit) return parseInt(matchDigit[0], 10);
+    const clean = etapaNombre.toUpperCase();
+    if (/\bV\b/.test(clean)) return 5;
+    if (/\bIV\b/.test(clean)) return 4;
+    if (/\bIII\b/.test(clean)) return 3;
+    if (/\bII\b/.test(clean)) return 2;
+    if (/\bI\b/.test(clean)) return 1;
+    return null;
+  }
+
+  const stageAmountCentsMap: Record<number, number | null | undefined> = {
+    1: development.reservationAmountStage1Cents,
+    2: development.reservationAmountStage2Cents,
+    3: development.reservationAmountStage3Cents,
+    4: development.reservationAmountStage4Cents,
+    5: development.reservationAmountStage5Cents,
+  };
+
   const mappedUnits = development.lots.map((lot) => ({
     id: lot.id,
     numero: lot.lotNumber,
@@ -151,6 +173,11 @@ export default async function PublicDevelopmentDetailPage({
         nombre: lot.etapaNombre || "Sin etapa",
       },
     },
+    reservationCurrency: development.reservationCurrency ?? null,
+    reservationAmountCents: (() => {
+      const stage = getStageNumber(lot.etapaNombre);
+      return stage != null ? (stageAmountCentsMap[stage] ?? null) : null;
+    })(),
   }));
 
   const hasMap = !!development.overlayBounds;

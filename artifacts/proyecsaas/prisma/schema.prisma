@@ -1413,6 +1413,15 @@ model Development {
   pricePerSqmEtapa4   Float?
   pricePerSqmEtapa5   Float?
 
+  // Seña de reserva por etapa — en la unidad menor de reservationCurrency.
+  // Para monedas sin decimales (CLP, PYG), representa unidades enteras (no centavos).
+  reservationCurrency          String?
+  reservationAmountStage1Cents Int?
+  reservationAmountStage2Cents Int?
+  reservationAmountStage3Cents Int?
+  reservationAmountStage4Cents Int?
+  reservationAmountStage5Cents Int?
+
   Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   DevelopmentLot       DevelopmentLot[]
   DevelopmentMapImage  DevelopmentMapImage[]

@@ -16,6 +16,24 @@ import { LeadStatus, DevelopmentLotStatus } from "@prisma/client";
 //
 // Payment for reservations goes to the centralized Raíces Pilot Mercado Pago account.
 // Inmobiliarias/desarrolladoras do NOT connect their own MP accounts.
+
+// Currencies without decimal places — unit_price is passed as-is (no /100).
+const NO_DECIMAL_CURRENCIES = new Set(["CLP", "PYG"]);
+
+/** Resolve stage number (1-5) from a free-form stage name. */
+function getStageNumber(etapaNombre: string | null | undefined): number | null {
+  if (!etapaNombre) return null;
+  const matchDigit = etapaNombre.match(/[1-5]/);
+  if (matchDigit) return parseInt(matchDigit[0], 10);
+  const clean = etapaNombre.toUpperCase();
+  if (/\bV\b/.test(clean)) return 5;
+  if (/\bIV\b/.test(clean)) return 4;
+  if (/\bIII\b/.test(clean)) return 3;
+  if (/\bII\b/.test(clean)) return 2;
+  if (/\bI\b/.test(clean)) return 1;
+  return null;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -84,6 +102,33 @@ export async function POST(
       );
     }
 
+    // Resolve reservation config from Development
+    const dev = lot.development;
+    const reservationCurrency = dev.reservationCurrency;
+
+    const stageNumber = getStageNumber(lot.etapaNombre);
+    const stageAmountCentsMap: Record<number, number | null | undefined> = {
+      1: dev.reservationAmountStage1Cents,
+      2: dev.reservationAmountStage2Cents,
+      3: dev.reservationAmountStage3Cents,
+      4: dev.reservationAmountStage4Cents,
+      5: dev.reservationAmountStage5Cents,
+    };
+    const depositCents = stageNumber != null ? stageAmountCentsMap[stageNumber] : null;
+
+    if (!reservationCurrency) {
+      return NextResponse.json(
+        { error: "Este desarrollo no tiene configurada la moneda de reserva. Por favor, contactá al vendedor." },
+        { status: 400 }
+      );
+    }
+    if (!depositCents || depositCents <= 0) {
+      return NextResponse.json(
+        { error: "Este desarrollo no tiene configurado el monto de seña para esta etapa. Por favor, contactá al vendedor." },
+        { status: 400 }
+      );
+    }
+
     // Anti-spam: bloquear doble reserva del mismo email para el mismo lote
     const existingReservation = await prisma.developmentReservation.findFirst({
       where: {
@@ -126,10 +171,6 @@ export async function POST(
     }
 
     // 3. Create DevelopmentReservation — lot is still AVAILABLE at this point.
-    //    expiresAt gives the client a 48-hour window to complete the payment.
-    //    TODO (Fase 2): trigger a cleanup job to release expired PENDING_APPROVAL reservations.
-    // Monto de seña transitorio. TODO (Fase 2): leer desde Development.depositCents cuando se agregue el campo.
-    const DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS = 1_000_000; // $10.000 ARS
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
     const reservation = await prisma.developmentReservation.create({
@@ -138,7 +179,7 @@ export async function POST(
         organizationId,
         leadId: lead.id,
         status: "PENDING_APPROVAL",
-        depositCents: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS,
+        depositCents,
         expiresAt,
         notes: "Reserva en vivo iniciada por el cliente",
       },
@@ -149,11 +190,17 @@ export async function POST(
     //    and the reservation is cancelled — no permanent inventory corruption.
     const backSuccessUrl = `${appUrl}/cat/${lot.development.organization.slug}/developments/${lot.developmentId}?reserved=true&lot=${lot.lotNumber}`;
 
+    // Convert "cents" to major unit for MP.
+    // For CLP/PYG (no decimals), the stored value IS the full amount — no division.
+    const divisor = NO_DECIMAL_CURRENCIES.has(reservationCurrency.toUpperCase()) ? 1 : 100;
+    const mpAmount = depositCents / divisor;
+
     let preference: { checkoutUrl: string; preferenceId: string };
     try {
       preference = await createMercadoPagoPreference({
         title: `Reserva Lote ${lot.lotNumber} - ${lot.development.name}`,
-        amountARS: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS / 100,
+        amount: mpAmount,
+        currency: reservationCurrency.toUpperCase(),
         externalReference: reservation.id,
         payerEmail: email,
         backUrls: {
@@ -188,16 +235,14 @@ export async function POST(
     }
 
     // 5. MP succeeded — persist payment tracking fields on the reservation.
-    //    commissionCents = 0 and netAmountCents = grossAmountCents until commercial
-    //    policy is configured per development (Fase 3).
     await prisma.developmentReservation.update({
       where: { id: reservation.id },
       data: {
         mpPreferenceId: preference.preferenceId,
-        mpCurrency: "ARS",
-        grossAmountCents: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS,
+        mpCurrency: reservationCurrency.toUpperCase(),
+        grossAmountCents: depositCents,
         commissionCents: 0,
-        netAmountCents: DEFAULT_LOT_RESERVATION_DEPOSIT_CENTS,
+        netAmountCents: depositCents,
       },
     });
 

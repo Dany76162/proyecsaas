@@ -29,6 +29,9 @@ export interface MasterplanUnit {
     observaciones?: string | null;
     clientName?: string | null;
     sellerName?: string | null;
+    reservationCurrency?: string | null;
+    /** Seña de reserva en unidad menor (centavos para ARS/USD, unidades enteras para CLP/PYG). */
+    reservationAmountCents?: number | null;
 }
 
 export interface MasterplanLayer {

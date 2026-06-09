@@ -39,6 +39,33 @@ export async function PATCH(
       if (Number.isFinite(v)) data.mapZoom = v;
     }
 
+    const ALLOWED_CURRENCIES = new Set([
+      "ARS", "USD", "UYU", "CLP", "MXN", "COP", "PEN", "PYG", "BOB", "BRL",
+    ]);
+
+    if ("reservationCurrency" in body) {
+      if (body.reservationCurrency === null || body.reservationCurrency === "") {
+        data.reservationCurrency = null;
+      } else if (
+        typeof body.reservationCurrency === "string" &&
+        ALLOWED_CURRENCIES.has(body.reservationCurrency.toUpperCase())
+      ) {
+        data.reservationCurrency = body.reservationCurrency.toUpperCase();
+      }
+    }
+
+    for (let stage = 1; stage <= 5; stage++) {
+      const key = `reservationAmountStage${stage}Cents`;
+      if (key in body) {
+        if (body[key] === null) {
+          data[key] = null;
+        } else {
+          const v = parseInt(body[key], 10);
+          if (Number.isFinite(v) && v >= 0) data[key] = v;
+        }
+      }
+    }
+
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "Sin campos válidos para actualizar" }, { status: 400 });
     }

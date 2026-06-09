@@ -196,6 +196,25 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                         </p>
                     </div>
                 )}
+                {/* Seña de reserva */}
+                {(() => {
+                    const noDecimal = new Set(["CLP", "PYG"]);
+                    const cur = unit.reservationCurrency ?? null;
+                    const raw = unit.reservationAmountCents ?? null;
+                    if (!cur || !raw) return null;
+                    const amount = noDecimal.has(cur.toUpperCase()) ? raw : raw / 100;
+                    return (
+                        <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                                <CreditCard className="w-3 h-3 text-emerald-500" />
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400">Seña de reserva</span>
+                            </div>
+                            <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                                {cur.toUpperCase()} {amount.toLocaleString("es-AR")}
+                            </p>
+                        </div>
+                    );
+                })()}
 
                 {/* Actions */}
                 {canEdit ? (
@@ -250,6 +269,17 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                                         <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed">
                                             Asegurá este lote realizando el pago de una seña de reserva mediante Mercado Pago. El lote quedará reservado temporalmente a tu nombre para tu tranquilidad hasta que realices la visita.
                                         </p>
+                                        {unit.reservationAmountCents && unit.reservationCurrency && (() => {
+                                            const noDecimal = new Set(["CLP", "PYG"]);
+                                            const cur = unit.reservationCurrency.toUpperCase();
+                                            const amount = noDecimal.has(cur) ? unit.reservationAmountCents : unit.reservationAmountCents / 100;
+                                            return (
+                                                <div className="flex items-center justify-between bg-white/60 dark:bg-emerald-900/20 rounded-lg px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800">
+                                                    <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">Seña</span>
+                                                    <span className="text-xs font-black text-emerald-800 dark:text-emerald-200">{cur} {amount.toLocaleString("es-AR")}</span>
+                                                </div>
+                                            );
+                                        })()}
                                         <button
                                             onClick={() => setShowReserveForm(true)}
                                             className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition duration-300 shadow-md shadow-emerald-600/10"

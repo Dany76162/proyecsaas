@@ -132,6 +132,12 @@ export default function DevelopmentWizardClient({
       pricePerSqmEtapa3: formData.get("pricePerSqmEtapa3") ? (parseFloat(formData.get("pricePerSqmEtapa3") as string) || null) : null,
       pricePerSqmEtapa4: formData.get("pricePerSqmEtapa4") ? (parseFloat(formData.get("pricePerSqmEtapa4") as string) || null) : null,
       pricePerSqmEtapa5: formData.get("pricePerSqmEtapa5") ? (parseFloat(formData.get("pricePerSqmEtapa5") as string) || null) : null,
+      reservationCurrency: (formData.get("reservationCurrency") as string) || null,
+      reservationAmountStage1Cents: formData.get("reservationAmountStage1Cents") ? (parseInt(formData.get("reservationAmountStage1Cents") as string, 10) || null) : null,
+      reservationAmountStage2Cents: formData.get("reservationAmountStage2Cents") ? (parseInt(formData.get("reservationAmountStage2Cents") as string, 10) || null) : null,
+      reservationAmountStage3Cents: formData.get("reservationAmountStage3Cents") ? (parseInt(formData.get("reservationAmountStage3Cents") as string, 10) || null) : null,
+      reservationAmountStage4Cents: formData.get("reservationAmountStage4Cents") ? (parseInt(formData.get("reservationAmountStage4Cents") as string, 10) || null) : null,
+      reservationAmountStage5Cents: formData.get("reservationAmountStage5Cents") ? (parseInt(formData.get("reservationAmountStage5Cents") as string, 10) || null) : null,
     };
     
     try {
@@ -346,6 +352,49 @@ export default function DevelopmentWizardClient({
                           name={`pricePerSqmEtapa${stageNum}`}
                           defaultValue={(development as any)[`pricePerSqmEtapa${stageNum}`] || ""}
                           placeholder="Ej: 150"
+                          className="w-full text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-1">Seña de Reserva por Etapa</h3>
+                  <p className="text-[10px] text-slate-400 mb-3">Monto que el cliente pagará al reservar un lote. Para ARS/USD/UYU/etc. ingresá el valor en <strong>centavos</strong> (ej: $10.000 ARS → 1000000). Para CLP/PYG ingresá el valor entero directamente.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Moneda</label>
+                      <select
+                        name="reservationCurrency"
+                        defaultValue={(development as any).reservationCurrency || ""}
+                        className="w-full text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500"
+                      >
+                        <option value="">Sin configurar</option>
+                        <option value="ARS">ARS — Peso Argentino</option>
+                        <option value="USD">USD — Dólar</option>
+                        <option value="UYU">UYU — Peso Uruguayo</option>
+                        <option value="CLP">CLP — Peso Chileno</option>
+                        <option value="MXN">MXN — Peso Mexicano</option>
+                        <option value="COP">COP — Peso Colombiano</option>
+                        <option value="PEN">PEN — Sol Peruano</option>
+                        <option value="PYG">PYG — Guaraní</option>
+                        <option value="BOB">BOB — Boliviano</option>
+                        <option value="BRL">BRL — Real Brasileño</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    {[1, 2, 3, 4, 5].map((stageNum) => (
+                      <div key={stageNum}>
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Etapa {stageNum}</label>
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          name={`reservationAmountStage${stageNum}Cents`}
+                          defaultValue={(development as any)[`reservationAmountStage${stageNum}Cents`] || ""}
+                          placeholder="Ej: 1000000"
                           className="w-full text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500"
                         />
                       </div>
