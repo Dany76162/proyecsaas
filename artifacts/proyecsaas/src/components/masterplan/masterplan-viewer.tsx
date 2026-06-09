@@ -71,6 +71,58 @@ const STATUS_LABELS: Record<string, string> = {
     SUSPENDIDO: "Suspendido",
 };
 
+// ─── Division line types ───
+type DivisionPoint = { x: number; y: number };
+type DivisionLine = { a: DivisionPoint; b: DivisionPoint };
+
+// Extract lot centroid (path bounding-box midpoint fallback)
+function getLotCentroid(u: MasterplanUnit): DivisionPoint | null {
+    let cx = u.cx;
+    let cy = u.cy;
+    if (cx == null || cy == null) {
+        let path = u.path;
+        if (!path && (u as any).coordenadasMasterplan) {
+            try { const c = JSON.parse((u as any).coordenadasMasterplan); path = c.path; } catch {}
+        }
+        if (path) {
+            const nums = path.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
+            if (nums) {
+                let mnX = Infinity, mxX = -Infinity, mnY = Infinity, mxY = -Infinity;
+                for (let i = 0; i + 1 < nums.length; i += 2) {
+                    const x = parseFloat(nums[i]), y = parseFloat(nums[i + 1]);
+                    if (!isNaN(x) && !isNaN(y)) {
+                        if (x < mnX) mnX = x; if (x > mxX) mxX = x;
+                        if (y < mnY) mnY = y; if (y > mxY) mxY = y;
+                    }
+                }
+                if (mnX !== Infinity) { cx = (mnX + mxX) / 2; cy = (mnY + mxY) / 2; }
+            }
+        }
+    }
+    if (cx == null || cy == null) return null;
+    return { x: cx, y: cy };
+}
+
+// Normalize line direction so cross products are consistent
+// Guarantees the line always points "rightward or downward"
+function normalizeLine(a: DivisionPoint, b: DivisionPoint): [DivisionPoint, DivisionPoint] {
+    if (b.x < a.x || (b.x === a.x && b.y < a.y)) return [b, a];
+    return [a, b];
+}
+
+// Compute zone index for a lot given N division lines.
+// With N lines there are N+1 zones (0 … N).
+// Zone = number of lines where the lot is on the "positive" (left-of-normalized) side.
+function computeLotZone(cx: number, cy: number, lines: DivisionLine[]): number {
+    let zone = 0;
+    for (const line of lines) {
+        const [A, B] = normalizeLine(line.a, line.b);
+        const cross = (B.x - A.x) * (cy - A.y) - (B.y - A.y) * (cx - A.x);
+        if (cross > 0) zone++;
+    }
+    return zone;
+}
+
 // ─── Tooltip component ───
 interface TooltipData {
     x: number;
@@ -306,14 +358,16 @@ export default function MasterplanViewer({
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
     const [showLayers, setShowLayers] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    // ─── Stage division state ───────────────────────────────────────
     const [isDividingStages, setIsDividingStages] = useState(false);
-    const [divisionStart, setDivisionStart] = useState<{ x: number; y: number } | null>(null);
-    const [divisionEnd, setDivisionEnd] = useState<{ x: number; y: number } | null>(null);
-    const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-    const [stageAName, setStageAName] = useState("Etapa 1");
-    const [stageBName, setStageBName] = useState("Etapa 2");
+    const [divisionLines, setDivisionLines] = useState<DivisionLine[]>([]);
+    const [drawingPointA, setDrawingPointA] = useState<DivisionPoint | null>(null);
+    const [mousePos, setMousePos] = useState<DivisionPoint | null>(null);
+    const [stageCount, setStageCount] = useState(2); // 2–5 stages
+    const [stageNames, setStageNames] = useState<string[]>(["Etapa 1", "Etapa 2"]);
     const [savingDivision, setSavingDivision] = useState(false);
     const [targetStageFilter, setTargetStageFilter] = useState<string>("all");
+    // ────────────────────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<"status" | "stage">("status");
 
     const existingStages = useMemo(() => {
@@ -350,151 +404,77 @@ export default function MasterplanViewer({
 
     const handleCancelDivision = useCallback(() => {
         setIsDividingStages(false);
-        setDivisionStart(null);
-        setDivisionEnd(null);
+        setDivisionLines([]);
+        setDrawingPointA(null);
         setMousePos(null);
-        setStageAName("Etapa 1");
-        setStageBName("Etapa 2");
+        setStageCount(2);
+        setStageNames(["Etapa 1", "Etapa 2"]);
         setSavingDivision(false);
         setTargetStageFilter("all");
     }, []);
 
-    const getHighlightColor = useCallback((unit: MasterplanUnit) => {
-        if (!isDividingStages || !divisionStart) return undefined;
+    const getHighlightColor = useCallback((unit: MasterplanUnit): string | undefined => {
+        if (!isDividingStages) return undefined;
         if (!matchesFilter(unit.etapaNombre, targetStageFilter)) return undefined;
-        const Ax = divisionStart.x;
-        const Ay = divisionStart.y;
-        const target = divisionEnd || mousePos;
-        if (!target) return undefined;
-        const Bx = target.x;
-        const By = target.y;
 
-        // Get centroid
-        let Cx = unit.cx;
-        let Cy = unit.cy;
-        if (Cx == null || Cy == null) {
-            let path = unit.path;
-            if (!path && (unit as any).coordenadasMasterplan) {
-                try {
-                    const coords = JSON.parse((unit as any).coordenadasMasterplan);
-                    path = coords.path;
-                } catch {}
-            }
-            if (path) {
-                const nums = path.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
-                if (nums) {
-                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                    for (let i = 0; i + 1 < nums.length; i += 2) {
-                        const x = parseFloat(nums[i]), y = parseFloat(nums[i + 1]);
-                        if (!isNaN(x) && !isNaN(y)) {
-                            if (x < minX) minX = x;
-                            if (x > maxX) maxX = x;
-                            if (y < minY) minY = y;
-                            if (y > maxY) maxY = y;
-                        }
-                    }
-                    if (minX !== Infinity) {
-                        Cx = (minX + maxX) / 2;
-                        Cy = (minY + maxY) / 2;
-                    }
-                }
-            }
-        }
-        if (Cx == null || Cy == null) return undefined;
+        // Build the effective line set: committed lines + active preview line
+        const allLines: DivisionLine[] = [
+            ...divisionLines,
+            ...(drawingPointA && mousePos ? [{ a: drawingPointA, b: mousePos }] : []),
+        ];
+        if (allLines.length === 0) return undefined;
 
-        const crossProduct = (Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax);
-        return crossProduct > 0 ? "#8b5cf6" : "#06b6d4"; // Purple-500 and Cyan-500
-    }, [isDividingStages, divisionStart, divisionEnd, mousePos]);
+        const centroid = getLotCentroid(unit);
+        if (!centroid) return undefined;
 
-    const handleConfirmDivision = async (sideACount: number, sideBCount: number) => {
-        if (!divisionStart || !divisionEnd) return;
+        const zone = computeLotZone(centroid.x, centroid.y, allLines);
+        return ETAPA_PALETTE[zone % ETAPA_PALETTE.length] ?? "#94a3b8";
+    }, [isDividingStages, divisionLines, drawingPointA, mousePos, targetStageFilter, matchesFilter]);
+
+    const handleConfirmDivision = async () => {
+        const neededLines = stageCount - 1;
+        if (divisionLines.length < neededLines) return;
         setSavingDivision(true);
         try {
-            const sideALotIds: string[] = [];
-            const sideBLotIds: string[] = [];
-            
-            const Ax = divisionStart.x;
-            const Ay = divisionStart.y;
-            const Bx = divisionEnd.x;
-            const By = divisionEnd.y;
-            
+            const activeLines = divisionLines.slice(0, neededLines);
+            // Group lots by zone index
+            const zoneGroups: Record<number, string[]> = {};
             units.forEach(u => {
                 if (!matchesFilter(u.etapaNombre, targetStageFilter)) return;
-                let Cx = u.cx;
-                let Cy = u.cy;
-                if (Cx == null || Cy == null) {
-                    let path = u.path;
-                    if (!path && (u as any).coordenadasMasterplan) {
-                        try {
-                            const coords = JSON.parse((u as any).coordenadasMasterplan);
-                            path = coords.path;
-                        } catch {}
-                    }
-                    if (path) {
-                        const nums = path.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
-                        if (nums) {
-                            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                            for (let i = 0; i + 1 < nums.length; i += 2) {
-                                const x = parseFloat(nums[i]), y = parseFloat(nums[i + 1]);
-                                if (!isNaN(x) && !isNaN(y)) {
-                                    if (x < minX) minX = x;
-                                    if (x > maxX) maxX = x;
-                                    if (y < minY) minY = y;
-                                    if (y > maxY) maxY = y;
-                                }
-                            }
-                            if (minX !== Infinity) {
-                                Cx = (minX + maxX) / 2;
-                                Cy = (minY + maxY) / 2;
-                            }
-                        }
-                    }
-                }
-                if (Cx != null && Cy != null) {
-                    const cross = (Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax);
-                    if (cross > 0) sideALotIds.push(u.id);
-                    else sideBLotIds.push(u.id);
-                }
+                const centroid = getLotCentroid(u);
+                if (!centroid) return;
+                const zone = computeLotZone(centroid.x, centroid.y, activeLines);
+                if (!zoneGroups[zone]) zoneGroups[zone] = [];
+                zoneGroups[zone].push(u.id);
+            });
+
+            const divisions = Object.entries(zoneGroups).map(([zoneStr, lotIds]) => {
+                const zone = parseInt(zoneStr);
+                const stageName = stageNames[zone]?.trim() || `Etapa ${zone + 1}`;
+                return { stageName, lotIds };
             });
 
             const res = await fetch("/api/developments/lots/divide-stages", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    developmentId: proyectoId,
-                    divisions: [
-                        { stageName: stageAName, lotIds: sideALotIds },
-                        { stageName: stageBName, lotIds: sideBLotIds },
-                    ]
-                })
+                body: JSON.stringify({ developmentId: proyectoId, divisions }),
             });
-            
+
             if (res.ok) {
                 const updatedUnits = units.map(u => {
+                    const centroid = getLotCentroid(u);
+                    if (!centroid || !matchesFilter(u.etapaNombre, targetStageFilter)) return u;
+                    const zone = computeLotZone(centroid.x, centroid.y, activeLines);
+                    const stageName = stageNames[zone]?.trim() || `Etapa ${zone + 1}`;
                     const anyU = u as any;
-                    if (sideALotIds.includes(u.id)) {
-                        return {
-                            ...u,
-                            etapaNombre: stageAName,
-                            manzana: {
-                                ...anyU.manzana,
-                                etapa: { ...anyU.manzana?.etapa, nombre: stageAName }
-                            }
-                        };
-                    } else if (sideBLotIds.includes(u.id)) {
-                        return {
-                            ...u,
-                            etapaNombre: stageBName,
-                            manzana: {
-                                ...anyU.manzana,
-                                etapa: { ...anyU.manzana?.etapa, nombre: stageBName }
-                            }
-                        };
-                    }
-                    return u;
+                    return {
+                        ...u,
+                        etapaNombre: stageName,
+                        manzana: { ...anyU.manzana, etapa: { ...anyU.manzana?.etapa, nombre: stageName } },
+                    };
                 });
                 setUnits(updatedUnits as any);
-                toast.success("División guardada exitosamente");
+                toast.success(`División en ${stageCount} etapas guardada exitosamente`);
                 handleCancelDivision();
             } else {
                 toast.error("Error al guardar la división de etapas");
@@ -515,6 +495,8 @@ export default function MasterplanViewer({
 
     const handleSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
         if (!isDividingStages) return;
+        const maxLines = stageCount - 1;
+        if (divisionLines.length >= maxLines && !drawingPointA) return; // all lines placed
         const svg = e.currentTarget;
         const pt = svg.createSVGPoint();
         pt.x = e.clientX;
@@ -522,15 +504,20 @@ export default function MasterplanViewer({
         const svgPoint = pt.matrixTransform(svg.getScreenCTM()?.inverse());
         if (!svgPoint) return;
 
-        if (!divisionStart) {
-            setDivisionStart({ x: svgPoint.x, y: svgPoint.y });
-        } else if (!divisionEnd) {
-            setDivisionEnd({ x: svgPoint.x, y: svgPoint.y });
+        if (!drawingPointA) {
+            // First click → fix point A
+            setDrawingPointA({ x: svgPoint.x, y: svgPoint.y });
+        } else {
+            // Second click → complete line, add to list
+            const newLine: DivisionLine = { a: drawingPointA, b: { x: svgPoint.x, y: svgPoint.y } };
+            setDivisionLines(prev => [...prev, newLine]);
+            setDrawingPointA(null);
+            setMousePos(null);
         }
-    }, [isDividingStages, divisionStart, divisionEnd]);
+    }, [isDividingStages, drawingPointA, divisionLines, stageCount]);
 
     const handleSvgMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
-        if (!isDividingStages || !divisionStart || divisionEnd) return;
+        if (!isDividingStages || !drawingPointA) return;
         const svg = e.currentTarget;
         const pt = svg.createSVGPoint();
         pt.x = e.clientX;
@@ -539,7 +526,7 @@ export default function MasterplanViewer({
         if (svgPoint) {
             setMousePos({ x: svgPoint.x, y: svgPoint.y });
         }
-    }, [isDividingStages, divisionStart, divisionEnd]);
+    }, [isDividingStages, drawingPointA]);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const zoomInRef = useRef<HTMLButtonElement>(null);
@@ -894,45 +881,42 @@ export default function MasterplanViewer({
                             />
                         ))}
 
-                        {/* Division line preview */}
-                        {isDividingStages && divisionStart && (divisionEnd || mousePos) && (() => {
-                            const end = divisionEnd || mousePos!;
-                            // Extend the line beyond the viewBox for a full-canvas cut feel
-                            const dx = end.x - divisionStart.x;
-                            const dy = end.y - divisionStart.y;
-                            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                        {/* Division lines — committed + active preview */}
+                        {isDividingStages && (() => {
                             const extend = Math.max(vbW, vbH) * 2;
-                            const x1 = divisionStart.x - (dx / len) * extend;
-                            const y1 = divisionStart.y - (dy / len) * extend;
-                            const x2 = divisionStart.x + (dx / len) * (len + extend);
-                            const y2 = divisionStart.y + (dy / len) * (len + extend);
+                            const renderLine = (pa: DivisionPoint, pb: DivisionPoint, key: string | number, color: string) => {
+                                const dx = pb.x - pa.x, dy = pb.y - pa.y;
+                                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                                const x1 = pa.x - (dx / len) * extend;
+                                const y1 = pa.y - (dy / len) * extend;
+                                const x2 = pa.x + (dx / len) * (len + extend);
+                                const y2 = pa.y + (dy / len) * (len + extend);
+                                return (
+                                    <g key={key}>
+                                        <line x1={x1} y1={y1} x2={x2} y2={y2}
+                                            stroke={`${color}40`} strokeWidth={globalFontSize * 1.8}
+                                            vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+                                        <line x1={x1} y1={y1} x2={x2} y2={y2}
+                                            stroke={color} strokeWidth={globalFontSize * 0.6}
+                                            strokeDasharray={`${globalFontSize * 2} ${globalFontSize * 1}`}
+                                            vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+                                        <circle cx={pa.x} cy={pa.y} r={globalFontSize * 1.2}
+                                            fill={color} stroke="white" strokeWidth={globalFontSize * 0.25}
+                                            vectorEffect="non-scaling-stroke" />
+                                        <circle cx={pb.x} cy={pb.y} r={globalFontSize * 1.2}
+                                            fill={color} stroke="white" strokeWidth={globalFontSize * 0.25}
+                                            vectorEffect="non-scaling-stroke" />
+                                    </g>
+                                );
+                            };
                             return (
                                 <>
-                                    {/* Glow / shadow */}
-                                    <line x1={x1} y1={y1} x2={x2} y2={y2}
-                                        stroke="rgba(251,146,60,0.35)" strokeWidth={globalFontSize * 1.8}
-                                        vectorEffect="non-scaling-stroke"
-                                        strokeLinecap="round"
-                                    />
-                                    {/* Main dashed line */}
-                                    <line x1={x1} y1={y1} x2={x2} y2={y2}
-                                        stroke="#f97316"
-                                        strokeWidth={globalFontSize * 0.6}
-                                        strokeDasharray={`${globalFontSize * 2} ${globalFontSize * 1}`}
-                                        vectorEffect="non-scaling-stroke"
-                                        strokeLinecap="round"
-                                    />
-                                    {/* Anchor point A */}
-                                    <circle cx={divisionStart.x} cy={divisionStart.y} r={globalFontSize * 1.2}
-                                        fill="#f97316" stroke="white" strokeWidth={globalFontSize * 0.25}
-                                        vectorEffect="non-scaling-stroke"
-                                    />
-                                    {/* Anchor point B (if set) */}
-                                    {divisionEnd && (
-                                        <circle cx={divisionEnd.x} cy={divisionEnd.y} r={globalFontSize * 1.2}
+                                    {divisionLines.map((line, i) => renderLine(line.a, line.b, i, "#f97316"))}
+                                    {drawingPointA && mousePos && renderLine(drawingPointA, mousePos, "preview", "#fb923c")}
+                                    {drawingPointA && !mousePos && (
+                                        <circle cx={drawingPointA.x} cy={drawingPointA.y} r={globalFontSize * 1.2}
                                             fill="#f97316" stroke="white" strokeWidth={globalFontSize * 0.25}
-                                            vectorEffect="non-scaling-stroke"
-                                        />
+                                            vectorEffect="non-scaling-stroke" />
                                     )}
                                 </>
                             );
@@ -948,7 +932,7 @@ export default function MasterplanViewer({
 
             {/* ─── Stage Division Instruction Banner ─────────────────────────── */}
             <AnimatePresence>
-                {isDividingStages && !divisionEnd && (
+                {isDividingStages && divisionLines.length < stageCount - 1 && (
                     <motion.div
                         initial={{ y: -40, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -956,52 +940,42 @@ export default function MasterplanViewer({
                         className="absolute top-14 left-1/2 -translate-x-1/2 z-30 px-5 py-2.5 rounded-xl bg-orange-500/95 text-white text-xs font-bold shadow-xl backdrop-blur-sm flex items-center gap-2 pointer-events-none"
                     >
                         <Scissors className="w-3.5 h-3.5 shrink-0" />
-                        {!divisionStart
-                            ? "Clic para fijar el Punto A de la línea de corte"
-                            : "Clic para fijar el Punto B y completar la línea"}
+                        {!drawingPointA
+                            ? `Clic para fijar el Punto A — línea ${divisionLines.length + 1} de ${stageCount - 1}`
+                            : `Clic para completar la línea ${divisionLines.length + 1} de ${stageCount - 1}`}
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* ─── Stage Division Confirmation Panel ─────────────────────────── */}
+            {/* ─── Stage Division Panel ───────────────────────────────────────── */}
             <AnimatePresence>
-                {isDividingStages && divisionEnd && (() => {
-                    const Ax = divisionStart!.x, Ay = divisionStart!.y;
-                    const Bx = divisionEnd.x, By = divisionEnd.y;
-                    let sideA = 0, sideB = 0;
-                    units.forEach(u => {
-                        if (!matchesFilter(u.etapaNombre, targetStageFilter)) return;
-                        let Cx = u.cx, Cy = u.cy;
-                        if (Cx == null || Cy == null) {
-                            let path = u.path;
-                            if (!path && (u as any).coordenadasMasterplan) {
-                                try { const c = JSON.parse((u as any).coordenadasMasterplan); path = c.path; } catch {}
-                            }
-                            if (path) {
-                                const nums = path.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
-                                if (nums) {
-                                    let mnX = Infinity, mxX = -Infinity, mnY = Infinity, mxY = -Infinity;
-                                    for (let i = 0; i + 1 < nums.length; i += 2) {
-                                        const x = parseFloat(nums[i]), y = parseFloat(nums[i + 1]);
-                                        if (!isNaN(x) && !isNaN(y)) { if (x < mnX) mnX = x; if (x > mxX) mxX = x; if (y < mnY) mnY = y; if (y > mxY) mxY = y; }
-                                    }
-                                    if (mnX !== Infinity) { Cx = (mnX + mxX) / 2; Cy = (mnY + mxY) / 2; }
-                                }
-                            }
-                        }
-                        if (Cx != null && Cy != null) {
-                            const cross = (Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax);
-                            if (cross > 0) sideA++; else sideB++;
-                        }
-                    });
+                {isDividingStages && (() => {
+                    const neededLines = stageCount - 1;
+                    const linesReady = divisionLines.length >= neededLines;
+
+                    // Compute lot count per zone (only when all lines are drawn)
+                    const zoneCounts: Record<number, number> = {};
+                    if (linesReady) {
+                        const activeLines = divisionLines.slice(0, neededLines);
+                        units.forEach(u => {
+                            if (!matchesFilter(u.etapaNombre, targetStageFilter)) return;
+                            const centroid = getLotCentroid(u);
+                            if (!centroid) return;
+                            const zone = computeLotZone(centroid.x, centroid.y, activeLines);
+                            zoneCounts[zone] = (zoneCounts[zone] || 0) + 1;
+                        });
+                    }
+
+                    const allNamesValid = stageNames.slice(0, stageCount).every(n => n.trim().length > 0);
+
                     return (
                         <motion.div
                             key="division-panel"
-                            initial={{ x: 320, opacity: 0 }}
+                            initial={{ x: 340, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: 320, opacity: 0 }}
+                            exit={{ x: 340, opacity: 0 }}
                             transition={{ type: "spring", damping: 25, stiffness: 260 }}
-                            className="absolute top-14 right-4 z-30 w-[280px] bg-white/97 dark:bg-slate-900/97 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+                            className="absolute top-14 right-4 z-30 w-[300px] bg-white/97 dark:bg-slate-900/97 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
                         >
                             {/* Header */}
                             <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3 flex items-center justify-between">
@@ -1015,90 +989,138 @@ export default function MasterplanViewer({
                             </div>
 
                             <div className="p-4 space-y-4">
-                                {/* Stage Selection Filter Dropdown */}
+                                {/* Stage count selector */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1.5">
+                                        ¿Cuántas etapas?
+                                    </label>
+                                    <div className="flex gap-1.5">
+                                        {[2, 3, 4, 5].map(n => (
+                                            <button
+                                                key={n}
+                                                onClick={() => {
+                                                    setStageCount(n);
+                                                    setDivisionLines([]);
+                                                    setDrawingPointA(null);
+                                                    setMousePos(null);
+                                                    setStageNames(Array.from({ length: n }, (_, i) => `Etapa ${i + 1}`));
+                                                }}
+                                                className={cn(
+                                                    "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all border",
+                                                    stageCount === n
+                                                        ? "bg-orange-500 text-white border-orange-500 shadow"
+                                                        : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-orange-300"
+                                                )}
+                                            >
+                                                {n}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-1">
+                                        Necesitás {neededLines} línea{neededLines !== 1 ? "s" : ""} de corte
+                                    </p>
+                                </div>
+
+                                {/* Lines progress */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1.5">
+                                        Líneas dibujadas
+                                    </label>
+                                    <div className="flex gap-1.5">
+                                        {Array.from({ length: neededLines }, (_, i) => (
+                                            <div
+                                                key={i}
+                                                className={cn(
+                                                    "flex-1 h-2 rounded-full transition-all",
+                                                    i < divisionLines.length
+                                                        ? "bg-orange-500"
+                                                        : "bg-slate-200 dark:bg-slate-700"
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                    <p className={cn(
+                                        "text-[10px] mt-1 font-semibold",
+                                        linesReady ? "text-emerald-600" : "text-slate-400"
+                                    )}>
+                                        {linesReady
+                                            ? "Listo para confirmar"
+                                            : `Dibujá ${neededLines - divisionLines.length} línea${neededLines - divisionLines.length !== 1 ? "s" : ""} más en el plano`}
+                                    </p>
+                                </div>
+
+                                {/* Filter selector */}
                                 {(existingStages.length > 0 || hasUnassignedLots) && (
                                     <div>
                                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">
-                                            Aplicar división a:
+                                            Aplicar a:
                                         </label>
                                         <select
                                             value={targetStageFilter}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                setTargetStageFilter(val);
-                                                if (val === "all" || val === "unassigned") {
-                                                    const next1 = getNextStageName(existingStages);
-                                                    setStageAName(existingStages.length > 0 ? existingStages[0] : "Etapa 1");
-                                                    setStageBName(next1);
-                                                } else {
-                                                    setStageAName(val);
-                                                    const nextStage = getNextStageName(existingStages);
-                                                    setStageBName(nextStage);
-                                                }
-                                            }}
+                                            onChange={(e) => setTargetStageFilter(e.target.value)}
                                             className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
                                         >
                                             <option value="all">Todo el mapa</option>
-                                            {hasUnassignedLots && (
-                                                <option value="unassigned">Lotes sin etapa asignada</option>
-                                            )}
-                                            {existingStages.map(stage => (
-                                                <option key={stage} value={stage}>{stage}</option>
-                                            ))}
+                                            {hasUnassignedLots && <option value="unassigned">Sin etapa asignada</option>}
+                                            {existingStages.map(s => <option key={s} value={s}>{s}</option>)}
                                         </select>
                                     </div>
                                 )}
 
-                                {/* Side A */}
+                                {/* Stage name inputs */}
                                 <div>
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                        <div className="w-3 h-3 rounded-full bg-violet-500" />
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Lado izquierdo</span>
-                                        <span className="ml-auto text-xs text-slate-400">{sideA} lotes</span>
+                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2">
+                                        Nombre de cada etapa
+                                    </label>
+                                    <div className="space-y-2">
+                                        {Array.from({ length: stageCount }, (_, i) => (
+                                            <div key={i} className="flex items-center gap-2">
+                                                <div
+                                                    className="w-3 h-3 rounded-full shrink-0"
+                                                    style={{ backgroundColor: ETAPA_PALETTE[i % ETAPA_PALETTE.length] }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={stageNames[i] ?? `Etapa ${i + 1}`}
+                                                    onChange={(e) => {
+                                                        const updated = [...stageNames];
+                                                        updated[i] = e.target.value;
+                                                        setStageNames(updated);
+                                                    }}
+                                                    placeholder={`Etapa ${i + 1}`}
+                                                    className="flex-1 min-w-0 px-2 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                                />
+                                                {linesReady && (
+                                                    <span className="text-[10px] text-slate-400 shrink-0 w-14 text-right">
+                                                        {zoneCounts[i] ?? 0} lotes
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
-                                    <input
-                                        id="input-etapa-a"
-                                        type="text"
-                                        value={stageAName}
-                                        onChange={(e) => setStageAName(e.target.value)}
-                                        placeholder="Nombre de etapa..."
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-violet-200 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/20 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-400"
-                                    />
-                                </div>
-
-                                {/* Side B */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                        <div className="w-3 h-3 rounded-full bg-cyan-500" />
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Lado derecho</span>
-                                        <span className="ml-auto text-xs text-slate-400">{sideB} lotes</span>
-                                    </div>
-                                    <input
-                                        id="input-etapa-b"
-                                        type="text"
-                                        value={stageBName}
-                                        onChange={(e) => setStageBName(e.target.value)}
-                                        placeholder="Nombre de etapa..."
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-cyan-200 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                    />
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex gap-2 pt-1">
-                                    <button
-                                        id="btn-nueva-linea"
-                                        onClick={() => { setDivisionEnd(null); setMousePos(null); }}
-                                        className="flex-1 px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-                                    >
-                                        Nueva línea
-                                    </button>
+                                <div className="space-y-2 pt-1">
+                                    {divisionLines.length > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                setDivisionLines(prev => prev.slice(0, -1));
+                                                setDrawingPointA(null);
+                                                setMousePos(null);
+                                            }}
+                                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                                        >
+                                            Eliminar última línea
+                                        </button>
+                                    )}
                                     <button
                                         id="btn-confirmar-division"
-                                        onClick={() => handleConfirmDivision(sideA, sideB)}
-                                        disabled={savingDivision || !stageAName.trim() || !stageBName.trim()}
-                                        className="flex-1 px-3 py-2 text-xs font-bold rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                                        onClick={handleConfirmDivision}
+                                        disabled={savingDivision || !linesReady || !allNamesValid}
+                                        className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                                     >
-                                        {savingDivision ? "Guardando..." : "Confirmar"}
+                                        {savingDivision ? "Guardando..." : `Confirmar división en ${stageCount} etapas`}
                                     </button>
                                 </div>
                             </div>
