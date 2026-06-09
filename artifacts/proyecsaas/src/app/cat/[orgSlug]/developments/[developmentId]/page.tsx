@@ -62,7 +62,7 @@ export default async function PublicDevelopmentDetailPage({
 }) {
   const { orgSlug, developmentId } = await params;
 
-  const developmentRaw = await prisma.development.findFirst({
+  const developmentRaw = await (prisma as any).development.findFirst({
     where: {
       id: developmentId,
       Organization: { slug: orgSlug },
@@ -70,6 +70,10 @@ export default async function PublicDevelopmentDetailPage({
     include: {
       DevelopmentLot: {
         orderBy: { lotNumber: "asc" },
+      },
+      DevelopmentDrawableLayer: {
+        where: { visible: true },
+        orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
       },
     },
   });
@@ -86,6 +90,23 @@ export default async function PublicDevelopmentDetailPage({
     ...developmentRaw,
     lots: developmentRaw.DevelopmentLot,
   };
+
+  const drawableLayers = developmentRaw.DevelopmentDrawableLayer.map((layer: any) => ({
+    id: layer.id,
+    developmentId: layer.developmentId,
+    nombre: layer.nombre,
+    tipo: layer.tipo as any,
+    orden: layer.orden,
+    visible: layer.visible,
+    bloqueada: layer.bloqueada,
+    geometria: layer.geometria,
+    colorRelleno: layer.colorRelleno,
+    colorBorde: layer.colorBorde,
+    opacidad: layer.opacidad,
+    grosorBorde: layer.grosorBorde,
+    creadoEn: layer.creadoEn.toISOString(),
+    actualizadoEn: layer.actualizadoEn.toISOString(),
+  }));
 
   const organization = await prisma.organization.findUnique({
     where: { slug: orgSlug },
@@ -149,7 +170,7 @@ export default async function PublicDevelopmentDetailPage({
     5: development.reservationAmountStage5Cents,
   };
 
-  const mappedUnits = development.lots.map((lot) => ({
+  const mappedUnits = development.lots.map((lot: any) => ({
     id: lot.id,
     numero: lot.lotNumber,
     superficie: lot.areaSqm,
@@ -421,6 +442,7 @@ export default async function PublicDevelopmentDetailPage({
           hasTour360={hasTour360}
           slug={development.id}
           initialOverlayConfig={publicOverlayConfig}
+          initialDrawableLayers={drawableLayers}
         />
       </main>
     </div>

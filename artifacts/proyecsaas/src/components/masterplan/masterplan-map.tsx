@@ -17,6 +17,7 @@ import MasterplanSidePanel from "./masterplan-side-panel";
 import MasterplanFilters from "./masterplan-filters";
 import MasterplanComparator from "./masterplan-comparator";
 import OverlayEditor, { OverlayConfig } from "./overlay-editor";
+import LayersPanel from "./layers-panel";
 // Fase futura: Tour 360 desacoplado del commit inicial de Desarrollos.
 // import Tour360Viewer from "./tour360-viewer";
 // const InfraestructuraTool = dynamic(() => import("./infraestructura-tool"), { ssr: false });
@@ -24,6 +25,7 @@ import OverlayEditor, { OverlayConfig } from "./overlay-editor";
 import { getProjectBlueprintData } from "@/lib/actions/unidades";
 import { BlueprintEmbeddedMeta } from "@/lib/blueprint-utils";
 import PlanGalleryPicker, { type PlanGalleryItem } from "@/components/plan-gallery/plan-gallery-picker";
+import type { DevelopmentDrawableLayerDto } from "@/types/development-layers";
 
 // ─── Status colors ───
 const STATUS_COLORS: Record<string, string> = {
@@ -73,6 +75,7 @@ interface MasterplanMapProps {
     tours360?: Tour360Marker[];
     /** Public mode only: overlay geo-transform passed from the server-rendered page (avoids auth-gated API call). */
     initialOverlayConfig?: PublicOverlayConfig | null;
+    initialDrawableLayers?: DevelopmentDrawableLayerDto[];
 }
 
 type OverlayCorners = [[number, number], [number, number], [number, number], [number, number]];
@@ -132,6 +135,7 @@ export default function MasterplanMap({
     mapZoom = 15,
     tours360 = [],
     initialOverlayConfig = null,
+    initialDrawableLayers = [],
 }: MasterplanMapProps) {
     const {
         units, setUnits,
@@ -219,6 +223,16 @@ export default function MasterplanMap({
     const [showNumbers, setShowNumbers] = useState(false);
     const showNumbersRef = useRef(false);
 
+    // Drawable project layers
+    const [drawableLayers, setDrawableLayers] = useState<DevelopmentDrawableLayerDto[]>(initialDrawableLayers);
+    const [showLayersPanel, setShowLayersPanel] = useState(false);
+    const [activeDrawableLayerId, setActiveDrawableLayerId] = useState<string | null>(null);
+    const [drawingLayerId, setDrawingLayerId] = useState<string | null>(null);
+    const [drawingPoints, setDrawingPoints] = useState<[number, number][]>([]);
+    const [isSavingDrawing, setIsSavingDrawing] = useState(false);
+    const drawableLayerRefs = useRef<Map<string, any>>(new Map());
+    const drawingPreviewRef = useRef<any | null>(null);
+
     useEffect(() => {
         showNumbersRef.current = showNumbers;
         if (!leafletMapRef.current) return;
@@ -238,8 +252,17 @@ export default function MasterplanMap({
         contentBoundsRef.current = null;
         setSelectedUnitId(null);
         setHoveredUnitId(null);
+        setActiveDrawableLayerId(null);
+        setDrawingLayerId(null);
+        setDrawingPoints([]);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [proyectoId]);
+
+    useEffect(() => {
+        if (modo === "public") {
+            setDrawableLayers(initialDrawableLayers);
+        }
+    }, [initialDrawableLayers, modo]);
 
     const readJsonResponse = useCallback(async (response: Response) => {
         const raw = await response.text();
@@ -267,6 +290,87 @@ export default function MasterplanMap({
     useEffect(() => {
         loadPlanGallery();
     }, [loadPlanGallery]);
+
+    const loadDrawableLayers = useCallback(async () => {
+        if (modo !== "admin") return;
+        try {
+            const response = await fetch(`/api/developments/${proyectoId}/layers`);
+            const data = await readJsonResponse(response);
+            if (response.ok && Array.isArray(data.layers)) {
+                setDrawableLayers(data.layers);
+            }
+        } catch (error) {
+            console.error("No se pudieron cargar las capas del proyecto:", error);
+        }
+    }, [modo, proyectoId, readJsonResponse]);
+
+    useEffect(() => {
+        loadDrawableLayers();
+    }, [loadDrawableLayers]);
+
+    const updateDrawableLayerLocal = useCallback((layer: DevelopmentDrawableLayerDto) => {
+        setDrawableLayers((current) => {
+            const exists = current.some((item) => item.id === layer.id);
+            const next = exists
+                ? current.map((item) => (item.id === layer.id ? layer : item))
+                : [...current, layer];
+            return next.sort((a, b) => a.orden - b.orden);
+        });
+    }, []);
+
+    const createDrawableLayer = useCallback(async (payload: {
+        nombre: string;
+        tipo: DevelopmentDrawableLayerDto["tipo"];
+        colorRelleno: string;
+        colorBorde: string;
+        opacidad: number;
+    }) => {
+        const response = await fetch(`/api/developments/${proyectoId}/layers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await readJsonResponse(response);
+        if (!response.ok) {
+            throw new Error(data.error || "No se pudo crear la capa.");
+        }
+        if (data.layer) {
+            updateDrawableLayerLocal(data.layer);
+            setActiveDrawableLayerId(data.layer.id);
+        }
+    }, [proyectoId, readJsonResponse, updateDrawableLayerLocal]);
+
+    const updateDrawableLayer = useCallback(async (
+        layerId: string,
+        payload: Partial<DevelopmentDrawableLayerDto>,
+    ) => {
+        const response = await fetch(`/api/developments/${proyectoId}/layers`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: layerId, ...payload }),
+        });
+        const data = await readJsonResponse(response);
+        if (!response.ok) {
+            throw new Error(data.error || "No se pudo actualizar la capa.");
+        }
+        if (data.layer) updateDrawableLayerLocal(data.layer);
+    }, [proyectoId, readJsonResponse, updateDrawableLayerLocal]);
+
+    const deleteDrawableLayer = useCallback(async (layerId: string) => {
+        const response = await fetch(`/api/developments/${proyectoId}/layers?layerId=${encodeURIComponent(layerId)}`, {
+            method: "DELETE",
+        });
+        const data = await readJsonResponse(response);
+        if (!response.ok) {
+            throw new Error(data.error || "No se pudo eliminar la capa.");
+        }
+        setDrawableLayers((current) => current.filter((layer) => layer.id !== layerId));
+        if (activeDrawableLayerId === layerId) setActiveDrawableLayerId(null);
+        if (drawingLayerId === layerId) {
+            setDrawingLayerId(null);
+            setDrawingPoints([]);
+        }
+    }, [activeDrawableLayerId, drawingLayerId, proyectoId, readJsonResponse]);
 
     const extractSvgViewBox = useCallback((svgString: string | null | undefined) => {
         if (!svgString || typeof window === "undefined") return null;
@@ -589,6 +693,11 @@ export default function MasterplanMap({
 
                 const map = (L as any).map(mapRef.current, mapOptions);
 
+                map.createPane("drawablePane");
+                map.getPane("drawablePane")!.style.zIndex = "425";
+                map.createPane("lotPane");
+                map.getPane("lotPane")!.style.zIndex = "460";
+
                 // Listen for rotation changes to update UI
                 map.on("rotate", () => {
                     setMapRotation((map as any).getBearing());
@@ -719,6 +828,128 @@ export default function MasterplanMap({
         return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
     }, [svgProjectionViewBox, units]);
 
+    const activeDrawableLayer = useMemo(
+        () => drawableLayers.find((layer) => layer.id === activeDrawableLayerId) ?? null,
+        [activeDrawableLayerId, drawableLayers],
+    );
+
+    const canDrawDrawableLayers = modo === "admin" && canEdit && !!overlayConfig?.bounds;
+    const drawableLayerDisabledReason =
+        modo === "admin" && !overlayConfig?.bounds
+            ? "Primero ajustá el plano sobre el mapa para poder dibujar capas geográficas."
+            : null;
+
+    // Render drawable GeoJSON layers below lots.
+    useEffect(() => {
+        if (!isMapReady || !leafletMapRef.current) return;
+
+        const renderLayers = async () => {
+            const L = (await import("leaflet")).default;
+            const map = leafletMapRef.current!;
+
+            drawableLayerRefs.current.forEach((layer) => map.removeLayer(layer));
+            drawableLayerRefs.current.clear();
+
+            drawableLayers
+                .filter((layer) => layer.visible && layer.geometria)
+                .sort((a, b) => a.orden - b.orden)
+                .forEach((layer) => {
+                    const geometry = layer.geometria as any;
+                    if (!geometry?.type || !Array.isArray(geometry.coordinates)) return;
+
+                    const isLine = geometry.type === "LineString" || geometry.type === "MultiLineString";
+                    const geoJsonLayer = L.geoJSON(
+                        { type: "Feature", properties: { id: layer.id }, geometry } as any,
+                        {
+                            pane: "drawablePane",
+                            style: {
+                                color: layer.colorBorde ?? "#16a34a",
+                                weight: layer.grosorBorde ?? (isLine ? 6 : 2),
+                                opacity: 0.95,
+                                fillColor: layer.colorRelleno ?? "#22c55e",
+                                fillOpacity: isLine ? 0 : layer.opacidad ?? 0.35,
+                                lineCap: "round",
+                                lineJoin: "round",
+                            },
+                        },
+                    );
+
+                    geoJsonLayer.addTo(map);
+                    drawableLayerRefs.current.set(layer.id, geoJsonLayer);
+                });
+        };
+
+        renderLayers();
+
+        return () => {
+            const map = leafletMapRef.current;
+            if (!map) return;
+            drawableLayerRefs.current.forEach((layer) => map.removeLayer(layer));
+            drawableLayerRefs.current.clear();
+        };
+    }, [drawableLayers, isMapReady]);
+
+    useEffect(() => {
+        if (!isMapReady || !leafletMapRef.current || !drawingLayerId) return;
+
+        const map = leafletMapRef.current;
+        const handleClick = (event: any) => {
+            setDrawingPoints((current) => [...current, [event.latlng.lat, event.latlng.lng]]);
+        };
+
+        map.on("click", handleClick);
+        map.getContainer().style.cursor = "crosshair";
+
+        return () => {
+            map.off("click", handleClick);
+            map.getContainer().style.cursor = "";
+        };
+    }, [drawingLayerId, isMapReady]);
+
+    useEffect(() => {
+        if (!isMapReady || !leafletMapRef.current) return;
+
+        const updatePreview = async () => {
+            const L = (await import("leaflet")).default;
+            const map = leafletMapRef.current!;
+
+            if (drawingPreviewRef.current) {
+                map.removeLayer(drawingPreviewRef.current);
+                drawingPreviewRef.current = null;
+            }
+
+            if (!drawingLayerId || drawingPoints.length === 0) return;
+
+            const layer = drawableLayers.find((item) => item.id === drawingLayerId);
+            const isLine = layer?.tipo === "CALLE";
+            const style = {
+                pane: "drawablePane",
+                color: layer?.colorBorde ?? "#16a34a",
+                fillColor: layer?.colorRelleno ?? "#22c55e",
+                fillOpacity: isLine ? 0 : layer?.opacidad ?? 0.35,
+                weight: layer?.grosorBorde ?? (isLine ? 6 : 2),
+                dashArray: "6 6",
+                lineCap: "round",
+                lineJoin: "round",
+            };
+
+            drawingPreviewRef.current =
+                isLine || drawingPoints.length < 3
+                    ? L.polyline(drawingPoints, style as any).addTo(map)
+                    : L.polygon(drawingPoints, style as any).addTo(map);
+        };
+
+        updatePreview();
+
+        return () => {
+            const map = leafletMapRef.current;
+            if (map && drawingPreviewRef.current) {
+                map.removeLayer(drawingPreviewRef.current);
+                drawingPreviewRef.current = null;
+            }
+        };
+    }, [drawableLayers, drawingLayerId, drawingPoints, isMapReady]);
+
     // Draw lot polygons on map
     useEffect(() => {
         if (!isMapReady || !leafletMapRef.current || units.length === 0) return;
@@ -808,6 +1039,7 @@ export default function MasterplanMap({
                 const isSelected = selectedUnitId === unit.id;
 
                 const polygon = L.polygon(coords, {
+                    pane: "lotPane",
                     color: isSelected ? "#ffffff" : color,
                     fillColor: color,
                     fillOpacity: isFiltered ? 0.5 : 0.1,
@@ -1139,6 +1371,48 @@ export default function MasterplanMap({
         setShowDeleteOverlayConfirm(true);
     }, []);
 
+    const startDrawingLayer = useCallback((layerId: string) => {
+        if (!canDrawDrawableLayers) {
+            setShowLayersPanel(true);
+            return;
+        }
+        setActiveDrawableLayerId(layerId);
+        setDrawingLayerId(layerId);
+        setDrawingPoints([]);
+    }, [canDrawDrawableLayers]);
+
+    const cancelDrawingLayer = useCallback(() => {
+        setDrawingLayerId(null);
+        setDrawingPoints([]);
+    }, []);
+
+    const finishDrawingLayer = useCallback(async () => {
+        const layer = drawableLayers.find((item) => item.id === drawingLayerId);
+        if (!layer) return;
+
+        const isLine = layer.tipo === "CALLE";
+        const minimumPoints = isLine ? 2 : 3;
+        if (drawingPoints.length < minimumPoints) return;
+
+        const coordinates = isLine
+            ? drawingPoints.map(([lat, lng]) => [lng, lat])
+            : [[...drawingPoints.map(([lat, lng]) => [lng, lat]), [drawingPoints[0][1], drawingPoints[0][0]]]];
+
+        const geometria = {
+            type: isLine ? "LineString" : "Polygon",
+            coordinates,
+        };
+
+        setIsSavingDrawing(true);
+        try {
+            await updateDrawableLayer(layer.id, { geometria });
+            setDrawingLayerId(null);
+            setDrawingPoints([]);
+        } finally {
+            setIsSavingDrawing(false);
+        }
+    }, [drawableLayers, drawingLayerId, drawingPoints, updateDrawableLayer]);
+
     // Load masterplan SVG from paso 3 as overlay image
     const handleLoadPlanOverlay = useCallback(async () => {
         if (!leafletMapRef.current) return;
@@ -1452,6 +1726,45 @@ export default function MasterplanMap({
                             </button>
                         )}
 
+                        <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />
+
+                        <button
+                            onClick={() => setShowLayersPanel((value) => !value)}
+                            title="Capas del Proyecto"
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap",
+                                showLayersPanel
+                                    ? "bg-brand-500 text-white border-brand-400"
+                                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
+                            )}
+                        >
+                            <LayersIcon className="w-3.5 h-3.5" />
+                            Capas del Proyecto
+                        </button>
+
+                        {drawingLayerId && (
+                            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1">
+                                <span className="text-[11px] font-bold text-emerald-200">
+                                    {activeDrawableLayer?.tipo === "CALLE" ? "Dibujando línea" : "Dibujando polígono"} · {drawingPoints.length} punto{drawingPoints.length !== 1 ? "s" : ""}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={finishDrawingLayer}
+                                    disabled={isSavingDrawing || drawingPoints.length < (activeDrawableLayer?.tipo === "CALLE" ? 2 : 3)}
+                                    className="rounded-md bg-emerald-500 px-2 py-1 text-[11px] font-black text-white transition hover:bg-emerald-600 disabled:opacity-50"
+                                >
+                                    {isSavingDrawing ? "Guardando..." : "Finalizar dibujo"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={cancelDrawingLayer}
+                                    className="rounded-md border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-200 transition hover:bg-slate-800"
+                                >
+                                    Cancelar dibujo
+                                </button>
+                            </div>
+                        )}
+
                         {/* Fase futura: InfraestructuraTool e ImagenesMapaTool desacoplados del commit inicial de Desarrollos. */}
                         {/* {isMapReady && leafletMapRef.current && (
                             <>
@@ -1653,6 +1966,32 @@ export default function MasterplanMap({
                             className="absolute top-14 left-3 bottom-4 z-[1000] w-[260px]"
                         >
                             <MasterplanFilters onClose={() => setShowFilters(false)} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {modo === "admin" && showLayersPanel && (
+                        <motion.div
+                            initial={{ x: 340, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: 340, opacity: 0 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            className="absolute right-3 top-14 bottom-4 z-[1000] w-[min(360px,calc(100vw-2rem))]"
+                        >
+                            <LayersPanel
+                                layers={drawableLayers}
+                                activeLayerId={activeDrawableLayerId}
+                                drawingLayerId={drawingLayerId}
+                                canDraw={canDrawDrawableLayers}
+                                disabledReason={drawableLayerDisabledReason}
+                                onClose={() => setShowLayersPanel(false)}
+                                onCreate={createDrawableLayer}
+                                onUpdate={updateDrawableLayer}
+                                onDelete={deleteDrawableLayer}
+                                onSelect={setActiveDrawableLayerId}
+                                onStartDraw={startDrawingLayer}
+                            />
                         </motion.div>
                     )}
                 </AnimatePresence>

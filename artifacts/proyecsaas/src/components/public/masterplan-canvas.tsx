@@ -6,6 +6,7 @@ import { Camera, Globe, LayoutTemplate, MapPin } from "lucide-react";
 import Link from "next/link";
 import type { MasterplanUnit } from "@/lib/masterplan-store";
 import type { PublicOverlayConfig } from "@/components/masterplan/masterplan-map";
+import type { DevelopmentDrawableLayerDto } from "@/types/development-layers";
 
 const MasterplanViewer = dynamic(
     () => import("@/components/masterplan/masterplan-viewer"),
@@ -47,6 +48,7 @@ export interface MasterplanCanvasProps {
     slug: string;
     /** Geo-transform config for polygon rendering (from server-rendered page, avoids auth-gated API). */
     initialOverlayConfig?: PublicOverlayConfig | null;
+    initialDrawableLayers?: DevelopmentDrawableLayerDto[];
 }
 
 export default function MasterplanCanvas({
@@ -60,6 +62,7 @@ export default function MasterplanCanvas({
     hasTour360,
     slug,
     initialOverlayConfig,
+    initialDrawableLayers = [],
 }: MasterplanCanvasProps) {
     const [view, setView] = useState<"plano" | "mapa">("plano");
 
@@ -164,6 +167,7 @@ export default function MasterplanCanvas({
                             centerLng={mapCenterLng ?? undefined}
                             mapZoom={mapZoom ?? undefined}
                             initialOverlayConfig={initialOverlayConfig}
+                            initialDrawableLayers={initialDrawableLayers}
                         />
                     )}
                 </div>

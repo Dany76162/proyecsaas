@@ -141,11 +141,7 @@ export const useMasterplanStore = create<MasterplanState>((set) => ({
     setShowFilters: (show: boolean) => set({ showFilters: show }),
 
     // Layers
-    layers: [
-        { id: "servicios", label: "Servicios", icon: "⚡", visible: true, color: "#3b82f6" },
-        { id: "amenities", label: "Amenities", icon: "🏊", visible: true, color: "#8b5cf6" },
-        { id: "accesos", label: "Accesos", icon: "🚗", visible: true, color: "#f59e0b" },
-    ],
+    layers: [],
     toggleLayer: (id: string) =>
         set((state) => ({
             layers: state.layers.map((l) =>
