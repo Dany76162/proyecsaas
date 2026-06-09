@@ -44,6 +44,58 @@ const STATUS_LABELS: Record<string, string> = {
     SUSPENDIDO: "Suspendido",
 };
 
+function getLotMapVisualStyle({
+    zoom,
+    isFiltered,
+    isSelected,
+    isMobile,
+    color,
+}: {
+    zoom: number;
+    isFiltered: boolean;
+    isSelected: boolean;
+    isMobile: boolean;
+    color: string;
+}) {
+    if (isSelected) {
+        return {
+            color: "#ffffff",
+            fillColor: color,
+            fillOpacity: 0.55,
+            opacity: 0.95,
+            weight: isMobile ? 1.4 : 1.8,
+        };
+    }
+
+    if (zoom < 16) {
+        return {
+            color,
+            fillColor: color,
+            fillOpacity: isFiltered ? (isMobile ? 0.3 : 0.34) : 0.08,
+            opacity: isMobile ? 0.18 : 0.24,
+            weight: isMobile ? 0.25 : 0.35,
+        };
+    }
+
+    if (zoom < 18) {
+        return {
+            color,
+            fillColor: color,
+            fillOpacity: isFiltered ? (isMobile ? 0.38 : 0.42) : 0.1,
+            opacity: isMobile ? 0.32 : 0.42,
+            weight: isMobile ? 0.42 : 0.55,
+        };
+    }
+
+    return {
+        color,
+        fillColor: color,
+        fillOpacity: isFiltered ? 0.5 : 0.12,
+        opacity: isMobile ? 0.55 : 0.7,
+        weight: isMobile ? 0.65 : 0.8,
+    };
+}
+
 export interface Tour360Marker {
     tourId: string;
     nombre: string;
@@ -237,7 +289,7 @@ export default function MasterplanMap({
         showNumbersRef.current = showNumbers;
         if (!leafletMapRef.current) return;
         const z = leafletMapRef.current.getZoom();
-        const MIN_LABEL_ZOOM = 17;
+        const MIN_LABEL_ZOOM = (mapRef.current?.clientWidth ?? window.innerWidth) < 640 ? 18 : 17;
         polygonsRef.current.forEach((layer, key) => {
             if (key.startsWith("label-")) {
                 layer.setOpacity(showNumbers && z >= MIN_LABEL_ZOOM ? 1 : 0);
@@ -324,6 +376,7 @@ export default function MasterplanMap({
         colorRelleno: string;
         colorBorde: string;
         opacidad: number;
+        grosorBorde: number;
     }) => {
         const response = await fetch(`/api/developments/${proyectoId}/layers`, {
             method: "POST",
@@ -761,9 +814,10 @@ export default function MasterplanMap({
                 const MIN_LABEL_ZOOM = 17;
                 map.on("zoomend", () => {
                     const z = map.getZoom();
+                    const labelZoom = (mapRef.current?.clientWidth ?? window.innerWidth) < 640 ? 18 : MIN_LABEL_ZOOM;
                     polygonsRef.current.forEach((layer, key) => {
                         if (key.startsWith("label-")) {
-                            layer.setOpacity(showNumbersRef.current && z >= MIN_LABEL_ZOOM ? 1 : 0);
+                            layer.setOpacity(showNumbersRef.current && z >= labelZoom ? 1 : 0);
                         }
                     });
                 });
@@ -839,6 +893,48 @@ export default function MasterplanMap({
             ? "Primero ajustá el plano sobre el mapa para poder dibujar capas geográficas."
             : null;
 
+    const updateLotVisualStyles = useCallback(() => {
+        const map = leafletMapRef.current;
+        if (!map) return;
+
+        const zoom = map.getZoom();
+        const isMobile = (mapRef.current?.clientWidth ?? window.innerWidth) < 640;
+        const labelZoom = isMobile ? 18 : 17;
+
+        units.forEach((unit) => {
+            const polygon = polygonsRef.current.get(unit.id);
+            if (!polygon) return;
+
+            const color = STATUS_COLORS[unit.estado] || "#94a3b8";
+            polygon.setStyle(getLotMapVisualStyle({
+                zoom,
+                isFiltered: filteredIds.has(unit.id),
+                isSelected: selectedUnitId === unit.id,
+                isMobile,
+                color,
+            }));
+
+            const label = polygonsRef.current.get(`label-${unit.id}`);
+            if (label) {
+                label.setOpacity(showNumbersRef.current && zoom >= labelZoom ? 1 : 0);
+            }
+        });
+    }, [filteredIds, selectedUnitId, units]);
+
+    useEffect(() => {
+        const map = leafletMapRef.current;
+        if (!isMapReady || !map) return;
+
+        updateLotVisualStyles();
+        map.on("zoomend", updateLotVisualStyles);
+        map.on("resize", updateLotVisualStyles);
+
+        return () => {
+            map.off("zoomend", updateLotVisualStyles);
+            map.off("resize", updateLotVisualStyles);
+        };
+    }, [isMapReady, updateLotVisualStyles]);
+
     // Render drawable GeoJSON layers below lots.
     useEffect(() => {
         if (!isMapReady || !leafletMapRef.current) return;
@@ -863,10 +959,10 @@ export default function MasterplanMap({
                         {
                             pane: "drawablePane",
                             style: {
-                                color: layer.colorBorde ?? "#16a34a",
-                                weight: layer.grosorBorde ?? (isLine ? 6 : 2),
-                                opacity: 0.95,
-                                fillColor: layer.colorRelleno ?? "#22c55e",
+                                color: layer.colorBorde ?? (isLine ? "#1e293b" : "#16a34a"),
+                                weight: layer.grosorBorde ?? (isLine ? 8 : 2),
+                                opacity: 0.9,
+                                fillColor: layer.colorRelleno ?? (isLine ? "#475569" : "#22c55e"),
                                 fillOpacity: isLine ? 0 : layer.opacidad ?? 0.35,
                                 lineCap: "round",
                                 lineJoin: "round",
@@ -924,10 +1020,10 @@ export default function MasterplanMap({
             const isLine = layer?.tipo === "CALLE";
             const style = {
                 pane: "drawablePane",
-                color: layer?.colorBorde ?? "#16a34a",
-                fillColor: layer?.colorRelleno ?? "#22c55e",
+                color: layer?.colorBorde ?? (isLine ? "#1e293b" : "#16a34a"),
+                fillColor: layer?.colorRelleno ?? (isLine ? "#475569" : "#22c55e"),
                 fillOpacity: isLine ? 0 : layer?.opacidad ?? 0.35,
-                weight: layer?.grosorBorde ?? (isLine ? 6 : 2),
+                weight: layer?.grosorBorde ?? (isLine ? 8 : 2),
                 dashArray: "6 6",
                 lineCap: "round",
                 lineJoin: "round",
@@ -972,10 +1068,14 @@ export default function MasterplanMap({
                 if (!polygon) return;
                 const color = STATUS_COLORS[unit.estado] || "#94a3b8";
                 const isSelected = selectedUnitId === unit.id;
-                polygon.setStyle({
-                    color: isSelected ? "#ffffff" : color,
-                    fillColor: color,
-                });
+                const map = leafletMapRef.current;
+                polygon.setStyle(getLotMapVisualStyle({
+                    zoom: map?.getZoom?.() ?? 16,
+                    isFiltered: filteredIds.has(unit.id),
+                    isSelected,
+                    isMobile: (mapRef.current?.clientWidth ?? window.innerWidth) < 640,
+                    color,
+                }));
             });
             prevUnitsRef.current = units;
             if (anyEstadoChanged) return; // styles patched — skip full redraw
@@ -1037,13 +1137,18 @@ export default function MasterplanMap({
                 const isFiltered = filteredIds.has(unit.id);
                 const color = STATUS_COLORS[unit.estado] || "#94a3b8";
                 const isSelected = selectedUnitId === unit.id;
+                const zoom = map.getZoom();
+                const isMobile = (mapRef.current?.clientWidth ?? window.innerWidth) < 640;
 
                 const polygon = L.polygon(coords, {
                     pane: "lotPane",
-                    color: isSelected ? "#ffffff" : color,
-                    fillColor: color,
-                    fillOpacity: isFiltered ? 0.5 : 0.1,
-                    weight: isSelected ? 2.2 : 0.8,
+                    ...getLotMapVisualStyle({
+                        zoom,
+                        isFiltered,
+                        isSelected,
+                        isMobile,
+                        color,
+                    }),
                     className: "lot-polygon",
                 });
                 contentBounds.extend(polygon.getBounds());
@@ -1135,7 +1240,7 @@ export default function MasterplanMap({
                     });
                     label.addTo(map);
                     // Hide label at low zoom — only show when individual lots are readable
-                    label.setOpacity(showNumbersRef.current && map.getZoom() >= 17 ? 1 : 0);
+                    label.setOpacity(showNumbersRef.current && map.getZoom() >= (isMobile ? 18 : 17) ? 1 : 0);
                     polygonsRef.current.set(`label-${unit.id}`, label);
                 }
             });
@@ -2146,8 +2251,8 @@ export default function MasterplanMap({
                     cursor: pointer;
                 }
                 .lot-polygon:hover {
-                    fill-opacity: 0.7 !important;
-                    stroke-width: 2 !important;
+                    fill-opacity: 0.62 !important;
+                    stroke-width: 1.2 !important;
                 }
                 .leaflet-container {
                     font-family: Inter, system-ui, sans-serif;
