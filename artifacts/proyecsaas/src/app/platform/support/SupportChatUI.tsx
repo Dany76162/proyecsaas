@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import { Search, Send, User, Clock, Check, MoreVertical, ArrowLeft } from "lucide-react";
+import { Search, Send, User, Clock, Check, MoreVertical, ArrowLeft, Sparkles, Loader2 } from "lucide-react";
+import { generateSupportDraft } from "./actions/support-actions";
 import { formatRelativeTime } from "@/components/platform/platform-ui";
 import { cn } from "@/lib/utils";
 import type { getSupportConversations, getSupportMessages } from "./actions/support-actions";
@@ -28,6 +29,27 @@ export default function SupportChatUI({
   const [isFetchingMsgs, setIsFetchingMsgs] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
+
+  const handleSuggestAI = async () => {
+    if (!activeId || isGenerating) return;
+    setIsGenerating(true);
+    setDraftError(null);
+    try {
+      const result = await generateSupportDraft(activeId);
+      if (result.success && result.draft) {
+        setInputText(result.draft);
+      } else {
+        setDraftError(result.error ?? "No se pudo generar la sugerencia.");
+      }
+    } catch (e) {
+      setDraftError("Ocurrió un error inesperado al conectar con el motor de IA.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // Fetch messages when active conversation changes
   useEffect(() => {
@@ -227,8 +249,37 @@ export default function SupportChatUI({
             </div>
 
             {/* Input de Mensaje */}
-            <footer className="p-6 border-t border-slate-100 bg-white shrink-0">
+            <footer className="p-6 border-t border-slate-100 bg-white shrink-0 space-y-4">
+              {draftError && (
+                <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 animate-in fade-in duration-300">
+                  <div className="flex items-center gap-2">
+                    <span className="font-black uppercase tracking-wider bg-amber-100 px-2 py-0.5 rounded-md text-[9px]">Aviso</span>
+                    <span className="font-bold">{draftError}</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setDraftError(null)}
+                    className="text-amber-500 hover:text-amber-700 font-black px-2 py-1 text-sm leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
               <form onSubmit={handleSendMessage} className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleSuggestAI}
+                  disabled={isGenerating || isPending || !activeId}
+                  className="flex h-14 px-5 shrink-0 items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50/50 text-indigo-700 shadow-sm hover:bg-indigo-100/60 transition-all active:scale-95 disabled:opacity-50"
+                  title="Sugerir respuesta con IA"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+                  ) : (
+                    <Sparkles className="h-5 w-5 text-indigo-600" />
+                  )}
+                  <span className="hidden md:inline text-xs font-bold uppercase tracking-wider">Sugerir con IA</span>
+                </button>
                 <input 
                   type="text" 
                   value={inputText}
@@ -237,7 +288,7 @@ export default function SupportChatUI({
                   className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-medium outline-none focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all"
                 />
                 <button 
-                  disabled={!inputText.trim() || isPending}
+                  disabled={!inputText.trim() || isPending || isGenerating}
                   className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale"
                 >
                   <Send className={cn("h-6 w-6", isPending && "animate-pulse")} />

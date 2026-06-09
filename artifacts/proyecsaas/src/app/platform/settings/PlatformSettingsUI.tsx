@@ -185,6 +185,9 @@ function DelegatedAdminSection({
 }) {
   const [admins, setAdmins] = useState(initial);
   const [email, setEmail] = useState("");
+  const [reason, setReason] = useState("");
+  const [riskChecked, setRiskChecked] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -193,16 +196,59 @@ function DelegatedAdminSection({
     setTimeout(() => setMessage(null), 4000);
   };
 
+  const validateReason = (text: string) => {
+    const clean = text.trim();
+    if (!clean) return "El motivo es obligatorio.";
+    if (clean.length < 20) return `El motivo debe tener al menos 20 caracteres (llevas ${clean.length}).`;
+    
+    const normalized = clean.toLowerCase();
+    const blockedTerms = ["ok", "test", "prueba", "admin", "cambio", "asdf"];
+    const matchesBlocked = blockedTerms.some(term => {
+      if (normalized.includes(term)) {
+        const remaining = normalized.replace(new RegExp(term, "g"), "").trim();
+        return remaining.length === 0 || remaining.length < 5;
+      }
+      return false;
+    });
+
+    const hasRepeatedLetters = /([a-z0-9])\1{4,}/i.test(normalized);
+    const uniqueCharCount = new Set(normalized.replace(/[^a-z0-9]/g, "")).size;
+
+    if (matchesBlocked || hasRepeatedLetters || uniqueCharCount < 5) {
+      return "El motivo ingresado es demasiado genérico o repetitivo. Escribe una justificación real.";
+    }
+    return null;
+  };
+
+  const handleInitiateGrant = () => {
+    if (!email.trim()) {
+      showMessage("error", "El email es obligatorio.");
+      return;
+    }
+    const errorMsg = validateReason(reason);
+    if (errorMsg) {
+      showMessage("error", errorMsg);
+      return;
+    }
+    if (!riskChecked) {
+      showMessage("error", "Debes aceptar la advertencia de riesgos para continuar.");
+      return;
+    }
+    setShowConfirmModal(true);
+  };
+
   const handleGrant = () => {
-    if (!email.trim()) return;
+    if (!email.trim() || !reason.trim() || !riskChecked) return;
+    setShowConfirmModal(false);
     startTransition(async () => {
-      const result = await grantAdminAccess(email.trim());
+      const result = await grantAdminAccess(email.trim(), reason.trim());
       if (result.success) {
+        const grantedEmail = email.trim();
         setEmail("");
+        setReason("");
+        setRiskChecked(false);
         showMessage("success", "Acceso otorgado correctamente");
-        // Refresh list â€” page revalidation will update on next navigation
-        // For immediate UI update, we optimistically add a placeholder
-        setAdmins((prev) => [...prev, { id: "_pending", fullName: email, email }]);
+        setAdmins((prev) => [...prev, { id: "_pending", fullName: grantedEmail, email: grantedEmail }]);
       } else {
         showMessage("error", result.error ?? "Error al otorgar acceso");
       }
@@ -232,24 +278,74 @@ function DelegatedAdminSection({
         </p>
       </div>
 
-      {/* Grant access input */}
-      <div className="flex gap-3">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email del usuario a designar"
-          onKeyDown={(e) => e.key === "Enter" && handleGrant()}
-          className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
-        />
-        <button
-          onClick={handleGrant}
-          disabled={isPending || !email.trim()}
-          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-40 disabled:grayscale"
-        >
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-          Designar
-        </button>
+      {/* Advertencia roja visible */}
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 space-y-3">
+        <div className="flex items-center gap-2 text-red-800">
+          <XCircle className="h-5 w-5 shrink-0 animate-pulse" />
+          <span className="text-xs font-black uppercase tracking-wider">ADVERTENCIA CRÍTICA DE SEGURIDAD</span>
+        </div>
+        <p className="text-[11px] leading-relaxed text-red-700 font-bold">
+          Otorgar el rol de Platform Admin concede acceso absoluto al sistema. El usuario designado podrá ver y editar datos de todas las inmobiliarias, modificar precios comerciales, revocar integraciones y acceder a configuraciones críticas. Asegúrate de verificar exhaustivamente la identidad del destinatario.
+        </p>
+      </div>
+
+      {/* Inputs */}
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">Email del destinatario</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Ej: admin@raicespilot.com"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">Motivo justificativo de la designación</label>
+            <span className={cn(
+              "text-[9px] font-black tracking-tighter px-1.5 py-0.5 rounded",
+              reason.trim().length >= 20 ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
+            )}>
+              {reason.trim().length} / 20+
+            </span>
+          </div>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Escribe aquí una explicación detallada del motivo por el cual estás delegando este acceso superadmin..."
+            rows={3}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all outline-none resize-none"
+          />
+        </div>
+
+        {/* Checkbox obligatorio */}
+        <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={riskChecked}
+            onChange={(e) => setRiskChecked(e.target.checked)}
+            className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+          />
+          <div className="text-[11px] leading-snug font-bold text-slate-600">
+            Confirmo que he validado la identidad del usuario y asumo la responsabilidad por delegar estos privilegios.
+          </div>
+        </label>
+
+        {/* Designar button */}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleInitiateGrant}
+            disabled={isPending || !email.trim() || !reason.trim() || !riskChecked}
+            className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-xs font-black uppercase tracking-widest text-white hover:bg-red-700 shadow-md shadow-red-100 transition-all active:scale-95 disabled:opacity-40 disabled:grayscale"
+          >
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+            Conceder Privilegios
+          </button>
+        </div>
       </div>
 
       {message && (
@@ -302,6 +398,42 @@ function DelegatedAdminSection({
         </div>
       ) : (
         <p className="text-xs text-slate-400 italic">Sin administradores delegados actualmente.</p>
+      )}
+
+      {/* Modal de doble confirmación visual */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div className="space-y-2 text-slate-800">
+              <h4 className="text-lg font-black text-slate-950 uppercase tracking-tight">¿Confirmar delegación superadmin?</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Estás a punto de convertir a <span className="font-extrabold text-slate-850">{email}</span> en Administrador de la Plataforma.
+              </p>
+              <div className="rounded-xl bg-slate-50 p-4 border border-slate-100 text-[11px] font-bold text-slate-600 italic break-words">
+                "{reason}"
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleGrant}
+                className="flex-1 rounded-xl bg-red-600 py-3 text-xs font-black uppercase tracking-widest text-white hover:bg-red-700 transition active:scale-95"
+              >
+                Sí, conceder
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
