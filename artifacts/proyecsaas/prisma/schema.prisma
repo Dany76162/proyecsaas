@@ -1425,9 +1425,30 @@ model Development {
   Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   DevelopmentLot       DevelopmentLot[]
   DevelopmentMapImage  DevelopmentMapImage[]
+  DevelopmentDrawableLayer DevelopmentDrawableLayer[]
 
   @@index([organizationId, publicVisible])
   @@index([organizationId, status])
+}
+
+model DevelopmentDrawableLayer {
+  id           String      @id @default(cuid())
+  developmentId String
+  nombre       String
+  tipo         String
+  orden        Int         @default(0)
+  visible      Boolean     @default(true)
+  bloqueada    Boolean     @default(false)
+  geometria    Json?
+  colorRelleno String?     @default("#22c55e")
+  colorBorde   String?     @default("#16a34a")
+  opacidad     Float?      @default(0.35)
+  grosorBorde  Float?      @default(2)
+  creadoEn     DateTime    @default(now())
+  actualizadoEn DateTime   @updatedAt
+  Development  Development @relation(fields: [developmentId], references: [id], onDelete: Cascade)
+
+  @@index([developmentId, orden])
 }
 
 model DevelopmentLot {
