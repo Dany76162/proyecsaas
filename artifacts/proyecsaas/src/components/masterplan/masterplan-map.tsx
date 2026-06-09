@@ -201,6 +201,14 @@ export default function MasterplanMap({
     const filteredUnits = useFilteredUnits();
     const filteredIds = useMemo(() => new Set(filteredUnits.map((u) => u.id)), [filteredUnits]);
 
+    // ─── Refs para updateLotVisualStyles estable (evita cascade re-render) ───
+    const filteredIdsRef = useRef<Set<string>>(filteredIds);
+    filteredIdsRef.current = filteredIds;
+    const selectedUnitIdStyleRef = useRef<string | null>(selectedUnitId);
+    selectedUnitIdStyleRef.current = selectedUnitId;
+    const unitsStyleRef = useRef<typeof units>(units);
+    unitsStyleRef.current = units;
+
     const [blueprintLoaded, setBlueprintLoaded] = useState(false);
     const [hasSavedBlueprint, setHasSavedBlueprint] = useState(false);
     const [blueprintMeta, setBlueprintMeta] = useState<BlueprintEmbeddedMeta | null>(null);
@@ -751,9 +759,11 @@ export default function MasterplanMap({
                 map.createPane("lotPane");
                 map.getPane("lotPane")!.style.zIndex = "460";
 
-                // Listen for rotation changes to update UI
+                // Listen for rotation changes to update UI.
+                // Throttleado a 1° para evitar re-renders continuos durante la animación.
                 map.on("rotate", () => {
-                    setMapRotation((map as any).getBearing());
+                    const bearing = Math.round((map as any).getBearing() * 10) / 10;
+                    setMapRotation((prev) => (Math.abs(prev - bearing) >= 1 ? bearing : prev));
                 });
 
                 // Manual Alt + Drag rotation handler for PC (mobile feel)
@@ -887,12 +897,16 @@ export default function MasterplanMap({
         [activeDrawableLayerId, drawableLayers],
     );
 
-    const canDrawDrawableLayers = modo === "admin" && canEdit && !!overlayConfig?.bounds;
+    // Dibujar capas usa clics directos de Leaflet (event.latlng) — no necesita overlay calibrado.
+    // Solo requiere que el mapa esté listo y el usuario tenga permisos de edición.
+    const canDrawDrawableLayers = modo === "admin" && canEdit && isMapReady;
     const drawableLayerDisabledReason =
-        modo === "admin" && !overlayConfig?.bounds
-            ? "Primero ajustá el plano sobre el mapa para poder dibujar capas geográficas."
+        modo === "admin" && canEdit && !isMapReady
+            ? "Esperando a que el mapa esté listo."
             : null;
 
+    // Lee de refs — identidad estable: el useEffect de zoomend/resize nunca se re-registra
+    // por cambios de filtro/selección, eliminando la cascada de re-renders masivos.
     const updateLotVisualStyles = useCallback(() => {
         const map = leafletMapRef.current;
         if (!map) return;
@@ -901,15 +915,15 @@ export default function MasterplanMap({
         const isMobile = (mapRef.current?.clientWidth ?? window.innerWidth) < 640;
         const labelZoom = isMobile ? 18 : 17;
 
-        units.forEach((unit) => {
+        unitsStyleRef.current.forEach((unit) => {
             const polygon = polygonsRef.current.get(unit.id);
             if (!polygon) return;
 
             const color = STATUS_COLORS[unit.estado] || "#94a3b8";
             polygon.setStyle(getLotMapVisualStyle({
                 zoom,
-                isFiltered: filteredIds.has(unit.id),
-                isSelected: selectedUnitId === unit.id,
+                isFiltered: filteredIdsRef.current.has(unit.id),
+                isSelected: selectedUnitIdStyleRef.current === unit.id,
                 isMobile,
                 color,
             }));
@@ -919,7 +933,8 @@ export default function MasterplanMap({
                 label.setOpacity(showNumbersRef.current && zoom >= labelZoom ? 1 : 0);
             }
         });
-    }, [filteredIds, selectedUnitId, units]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const map = leafletMapRef.current;
@@ -934,6 +949,13 @@ export default function MasterplanMap({
             map.off("resize", updateLotVisualStyles);
         };
     }, [isMapReady, updateLotVisualStyles]);
+
+    // Re-aplicar estilos cuando filtro o selección cambian de verdad (no por cada render).
+    // updateLotVisualStyles ya es estable, por eso este efecto solo corre cuando
+    // filteredIds o selectedUnitId cambian en el store.
+    useEffect(() => {
+        if (isMapReady) updateLotVisualStyles();
+    }, [isMapReady, filteredIds, selectedUnitId, updateLotVisualStyles]);
 
     // Render drawable GeoJSON layers below lots.
     useEffect(() => {

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useMemo } from "react";
 
 // ─── Types ───
 export interface MasterplanUnit {
@@ -162,7 +163,9 @@ export function useFilteredUnits(): MasterplanUnit[] {
     const units = useMasterplanStore(selectUnits);
     const filters = useMasterplanStore(selectFilters);
 
-    return units.filter((u) => {
+    // useMemo estabiliza la referencia del array: solo cambia cuando units o filters
+    // realmente cambian en el store, evitando la cascada de re-renders en el mapa.
+    return useMemo(() => units.filter((u) => {
         if (filters.estado.length > 0 && !filters.estado.includes(u.estado)) return false;
         if (filters.tipo.length > 0 && !filters.tipo.includes(u.tipo)) return false;
         if (filters.precioMin != null && (u.precio || 0) < filters.precioMin) return false;
@@ -171,5 +174,5 @@ export function useFilteredUnits(): MasterplanUnit[] {
         if (filters.superficieMax != null && (u.superficie || 0) > filters.superficieMax) return false;
         if (filters.soloEsquina && !u.esEsquina) return false;
         return true;
-    });
+    }), [units, filters]);
 }
