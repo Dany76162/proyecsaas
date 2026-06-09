@@ -159,7 +159,7 @@ export default async function PlatformAgentsPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
                <Rocket className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Readiness</h3>
+            <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Preparación</h3>
             <p className="text-xs leading-relaxed text-slate-500 font-medium">
               Checklist crítico pre-deploy y validación técnica.
             </p>

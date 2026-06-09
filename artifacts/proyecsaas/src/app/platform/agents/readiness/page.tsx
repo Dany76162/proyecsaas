@@ -34,9 +34,9 @@ export default async function ProductionReadinessPage() {
   ];
 
   const flags = [
-    { name: "Meta Read-Only", active: metaConfig?.flags.readonly, risk: "LOW", desc: "Permite listar páginas sin publicar." },
-    { name: "Meta Publishing", active: metaConfig?.flags.publishing, risk: "MEDIUM", desc: "Habilita botón de publicación manual." },
-    { name: "Scheduled Publishing", active: metaConfig?.flags.scheduled, risk: "HIGH", desc: "Ejecución automática de agenda." },
+    { name: "Meta solo lectura", active: metaConfig?.flags.readonly, risk: "BAJO", desc: "Permite listar páginas sin publicar." },
+    { name: "Publicación en Meta", active: metaConfig?.flags.publishing, risk: "MEDIO", desc: "Habilita botón de publicación manual." },
+    { name: "Publicación programada", active: metaConfig?.flags.scheduled, risk: "ALTO", desc: "Ejecución automática de agenda de contenido." },
   ];
 
   const allCriticalEnvVarsPresent = envVars.filter(v => v.critical).every(v => v.present);
@@ -50,7 +50,7 @@ export default async function ProductionReadinessPage() {
             <Rocket className="h-8 w-8" />
           </div>
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-950">Centro de Readiness</h1>
+            <h1 className="text-3xl font-black tracking-tight text-slate-950">Centro de Preparación Operativa</h1>
             <p className="text-slate-500">Checklist crítico pre-deploy para garantizar la estabilidad en producción.</p>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default async function ProductionReadinessPage() {
           <section className="space-y-4">
             <h2 className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
               <Database className="h-5 w-5 text-slate-400" />
-              Estado de Infraestructura (Local Check)
+              Estado de Infraestructura (Validación local)
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
                <StatusCard 
@@ -132,12 +132,19 @@ export default async function ProductionReadinessPage() {
                  desc="Tokens protegidos en DB." 
                  tone="success" 
                />
-               <StatusCard 
-                 icon={Cpu} 
-                 title="Build Status" 
-                 status="OPTIMIZADO" 
-                 desc="Bundle de producción generado." 
-                 tone="success" 
+               <StatusCard
+                 icon={Cpu}
+                 title="Estado de compilación"
+                 status="OPTIMIZADO"
+                 desc="Bundle de producción generado."
+                 tone="success"
+               />
+               <StatusCard
+                 icon={ShieldCheck}
+                 title="Director Operativo IA"
+                 status="SUPERVISADO"
+                 desc="Modo HITL activo. Genera diagnósticos bajo demanda, sin acciones autónomas."
+                 tone="success"
                />
             </div>
           </section>
@@ -158,8 +165,8 @@ export default async function ProductionReadinessPage() {
                       <span className="text-xs font-bold text-slate-300">{flag.name}</span>
                       <span className={cn(
                         "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
-                        flag.risk === "HIGH" ? "bg-red-500/20 text-red-400" : 
-                        flag.risk === "MEDIUM" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"
+                        flag.risk === "ALTO" ? "bg-red-500/20 text-red-400" :
+                        flag.risk === "MEDIO" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"
                       )}>
                         RIESGO {flag.risk}
                       </span>
@@ -179,7 +186,7 @@ export default async function ProductionReadinessPage() {
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex gap-3">
                   <Info className="h-5 w-5 text-amber-500 shrink-0" />
                   <p className="text-[10px] text-amber-200/80 leading-relaxed">
-                    <strong>Recomendación:</strong> Mantener "Meta Publishing" y "Scheduled" en <span className="text-white font-bold">false</span> durante el primer deploy a producción hasta completar QA manual.
+                    <strong>Recomendación:</strong> Mantener "Publicación en Meta" y "Publicación programada" en <span className="text-white font-bold">false</span> durante demo/preventa, hasta completar QA manual de extremo a extremo. No implica que estén rotas — es una política de seguridad operativa deliberada.
                   </p>
                 </div>
               </div>
@@ -189,14 +196,14 @@ export default async function ProductionReadinessPage() {
           {/* Deployment Plan Summary */}
           <AppCard className="border-slate-200">
              <div className="p-6">
-               <h3 className="text-lg font-black text-slate-900 mb-4">Plan de Deploy Único</h3>
+               <h3 className="text-lg font-black text-slate-900 mb-4">Plan de Deploy</h3>
                <div className="space-y-4">
                  {[
-                   "1. Configurar variables en Railway.",
-                   "2. npx prisma migrate deploy",
-                   "3. Merge agentos-3-final a main.",
-                   "4. git push origin main",
-                   "5. Validar logs de Railway."
+                   "1. Configurar variables de entorno en Railway.",
+                   "2. Ejecutar migraciones solo cuando existan cambios de schema.",
+                   "3. Validar TypeScript y compilación local.",
+                   "4. Confirmar main sincronizada y push a origin/main.",
+                   "5. Validar deploy Railway, logs y smoke test HTTP."
                  ].map((step, i) => (
                    <div key={i} className="flex items-center gap-3 text-xs text-slate-600 font-medium">
                      <ChevronRight className="h-4 w-4 text-slate-300" />

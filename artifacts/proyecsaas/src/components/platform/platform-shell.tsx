@@ -51,8 +51,8 @@ export function PlatformShell({
               {sessionUser.fullName}
             </span>
             <span className="hidden sm:block text-slate-300">Â·</span>
-            <span className="hidden sm:block text-sm text-slate-500 font-medium truncate max-w-[200px]">
-              {sessionUser.email}
+            <span className="hidden sm:block text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Superadmin
             </span>
             {/* Mobile: name only */}
             <span className="block sm:hidden text-sm font-semibold text-slate-900 truncate max-w-[130px]">
