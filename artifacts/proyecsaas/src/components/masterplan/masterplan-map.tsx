@@ -30,7 +30,7 @@ import type { DevelopmentDrawableLayerDto } from "@/types/development-layers";
 // ─── Status colors ───
 const STATUS_COLORS: Record<string, string> = {
     DISPONIBLE: "#10b981",
-    BLOQUEADO: "#94a3b8",
+    BLOQUEADO: "#facc15",
     RESERVADA: "#f59e0b",
     VENDIDA: "#ef4444",
     SUSPENDIDO: "#64748b",

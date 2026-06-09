@@ -60,14 +60,14 @@ const ESTADO_CONFIG: Record<LotEstado, { label: string; color: string; bg: strin
     DISPONIBLE: { label: "Disponible", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/30" },
     RESERVADO:  { label: "Reservado",  color: "text-amber-600 dark:text-amber-400",   bg: "bg-amber-500/10 border-amber-500/30"   },
     VENDIDO:    { label: "Vendido",    color: "text-red-600 dark:text-red-400",        bg: "bg-red-500/10 border-red-500/30"       },
-    BLOQUEADO:  { label: "Bloqueado",  color: "text-slate-500",                        bg: "bg-slate-500/10 border-slate-500/30"   },
+    BLOQUEADO:  { label: "Bloqueado",  color: "text-yellow-700",                       bg: "bg-yellow-400/10 border-yellow-400/30" },
 };
 
 const ESTADO_FILL: Record<LotEstado, string> = {
     DISPONIBLE: "rgba(16,185,129,0.08)",
     RESERVADO:  "rgba(245,158,11,0.22)",
     VENDIDO:    "rgba(239,68,68,0.22)",
-    BLOQUEADO:  "rgba(100,116,139,0.18)",
+    BLOQUEADO:  "rgba(250,204,21,0.25)",
 };
 
 const ESTADO_CYCLE: LotEstado[] = ["DISPONIBLE", "RESERVADO", "VENDIDO", "BLOQUEADO"];
