@@ -98,10 +98,17 @@ const Tooltip = memo(function Tooltip({ data }: { data: TooltipData | null }) {
                     </span>
                 </div>
                 <div className="space-y-0.5 text-xs text-slate-300">
-                    {unit.superficie && <p>Superficie: <span className="text-white font-medium">{unit.superficie} m²</span></p>}
-                    {unit.precio && (
-                        <p>Precio: <span className="text-white font-medium">${unit.precio.toLocaleString()} {unit.moneda}</span></p>
+                    {unit.superficie && (
+                        <p>Superficie: <span className="text-white font-medium">{unit.superficie} m²</span></p>
                     )}
+                    <p>
+                        Precio:{" "}
+                        <span className="text-white font-medium">
+                            {unit.precio
+                                ? `${unit.moneda ?? "USD"} ${unit.precio.toLocaleString("es-AR")}`
+                                : "Consultar precio"}
+                        </span>
+                    </p>
                     {unit.esEsquina && <p className="text-amber-400 font-medium">★ Esquina</p>}
                 </div>
             </div>
