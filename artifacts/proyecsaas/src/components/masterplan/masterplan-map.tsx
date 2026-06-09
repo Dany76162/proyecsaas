@@ -165,6 +165,8 @@ export default function MasterplanMap({
     const [manualLng, setManualLng] = useState<string>("");
     const [isSavingLocation, setIsSavingLocation] = useState(false);
     const [locationSaved, setLocationSaved] = useState(false);
+    const [locationSaveError, setLocationSaveError] = useState(false);
+    const [coordFeedback, setCoordFeedback] = useState<string | null>(null);
     const locationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Save plan position state
@@ -989,6 +991,8 @@ export default function MasterplanMap({
     const saveMapLocation = useCallback(async () => {
         if (!leafletMapRef.current) return;
         setIsSavingLocation(true);
+        setLocationSaved(false);
+        setLocationSaveError(false);
         try {
             const center = leafletMapRef.current.getCenter();
             const zoom = leafletMapRef.current.getZoom();
@@ -999,9 +1003,18 @@ export default function MasterplanMap({
             });
             if (res.ok) {
                 setLocationSaved(true);
+                // Reflect current center in the manual inputs so the link to Google Maps updates
+                setManualLat(center.lat.toFixed(6));
+                setManualLng(center.lng.toFixed(6));
                 setTimeout(() => setLocationSaved(false), 3000);
+            } else {
+                setLocationSaveError(true);
+                setTimeout(() => setLocationSaveError(false), 3000);
             }
-        } catch { /* silent */ } finally {
+        } catch {
+            setLocationSaveError(true);
+            setTimeout(() => setLocationSaveError(false), 3000);
+        } finally {
             setIsSavingLocation(false);
         }
     }, [proyectoId]);
@@ -1136,6 +1149,7 @@ export default function MasterplanMap({
                                     Ubicación del proyecto
                                 </button>
                             ) : (
+                                <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     {/* Search input with dropdown */}
                                     <div className="relative">
@@ -1184,34 +1198,66 @@ export default function MasterplanMap({
                                         onClick={() => {
                                             const lat = parseFloat(manualLat);
                                             const lng = parseFloat(manualLng);
-                                            if (!isNaN(lat) && !isNaN(lng)) flyToLocation(lat, lng);
+                                            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                                                flyToLocation(lat, lng);
+                                                setCoordFeedback(null);
+                                            } else {
+                                                setCoordFeedback("Cargá latitud y longitud antes de centrar el mapa.");
+                                                setTimeout(() => setCoordFeedback(null), 3500);
+                                            }
                                         }}
                                         title="Ir a coordenadas"
                                         className="p-1.5 bg-slate-700 hover:bg-brand-500 text-slate-300 hover:text-white rounded-lg transition-colors flex-shrink-0"
                                     >
                                         <Crosshair className="w-3.5 h-3.5" />
                                     </button>
+                                    {/* Google Maps link — only when valid coords */}
+                                    {Number.isFinite(parseFloat(manualLat)) && Number.isFinite(parseFloat(manualLng)) && (
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${parseFloat(manualLat).toFixed(6)},${parseFloat(manualLng).toFixed(6)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="Abrir en Google Maps"
+                                            className="p-1.5 bg-slate-700 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-lg transition-colors flex-shrink-0"
+                                        >
+                                            <MapPin className="w-3.5 h-3.5" />
+                                        </a>
+                                    )}
                                     {/* Save location */}
                                     <button
                                         onClick={saveMapLocation}
                                         disabled={isSavingLocation}
-                                        className="flex items-center gap-1 px-2.5 py-1.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
+                                        className={cn(
+                                            "flex items-center gap-1 px-2.5 py-1.5 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap flex-shrink-0",
+                                            locationSaveError
+                                                ? "bg-red-600 hover:bg-red-700"
+                                                : "bg-brand-500 hover:bg-brand-600"
+                                        )}
                                     >
                                         {isSavingLocation ? (
                                             <div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                         ) : locationSaved ? (
                                             <><Check className="w-3 h-3" />Guardado</>
+                                        ) : locationSaveError ? (
+                                            <><MapIcon className="w-3 h-3" />Error</>
                                         ) : (
                                             <><MapIcon className="w-3 h-3" />Guardar</>
                                         )}
                                     </button>
                                     {/* Close */}
                                     <button
-                                        onClick={() => { setShowLocationPanel(false); setLocationResults([]); setLocationQuery(""); }}
+                                        onClick={() => { setShowLocationPanel(false); setLocationResults([]); setLocationQuery(""); setCoordFeedback(null); }}
                                         className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors flex-shrink-0"
                                     >
                                         <X className="w-3.5 h-3.5" />
                                     </button>
+                                </div>
+                                {/* Inline coord feedback */}
+                                {coordFeedback && (
+                                    <div className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-medium">
+                                        {coordFeedback}
+                                    </div>
+                                )}
                                 </div>
                             )}
                         </div>

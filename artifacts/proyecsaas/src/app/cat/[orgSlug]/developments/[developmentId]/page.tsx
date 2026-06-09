@@ -14,6 +14,7 @@ import {
 
 import { prisma } from "@/server/db/prisma";
 import MasterplanCanvas from "@/components/public/masterplan-canvas";
+import LocationShareButton from "@/components/public/location-share-button";
 
 export async function generateMetadata({
   params,
@@ -236,6 +237,12 @@ export default async function PublicDevelopmentDetailPage({
                     <Navigation2 className="h-3.5 w-3.5" />
                     Cómo llegar
                   </a>
+                )}
+                {mapsUrl && (
+                  <LocationShareButton
+                    url={mapsUrl}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white transition bg-slate-700/60 border border-slate-600/50 px-3 py-1.5 rounded-full"
+                  />
                 )}
               </div>
             </div>

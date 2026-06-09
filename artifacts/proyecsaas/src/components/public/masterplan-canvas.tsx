@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Camera, Globe, LayoutTemplate } from "lucide-react";
+import { Camera, Globe, LayoutTemplate, MapPin } from "lucide-react";
 import Link from "next/link";
 import type { MasterplanUnit } from "@/lib/masterplan-store";
 
@@ -58,6 +58,24 @@ export default function MasterplanCanvas({
     slug,
 }: MasterplanCanvasProps) {
     const [view, setView] = useState<"plano" | "mapa">("plano");
+
+    const hasContent = planAsset || units.length > 0 || hasMap;
+
+    if (!hasContent) {
+        return (
+            <div className="overflow-hidden rounded-3xl border border-border bg-slate-950 shadow-lg">
+                <div className="flex h-64 w-full flex-col items-center justify-center gap-4 text-center px-6">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800 text-slate-500">
+                        <MapPin className="h-7 w-7" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-bold text-slate-300">El mapa interactivo estará disponible próximamente.</p>
+                        <p className="mt-1 text-xs text-slate-500">En cuanto esté listo podrás explorar la disponibilidad de lotes en tiempo real.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-5">
