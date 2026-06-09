@@ -34,22 +34,51 @@ export async function GET(
 
     await requireOrganizationMembership(devCheck.Organization.slug);
 
-    const records = await prisma.developmentMapImage.findMany({
-      where: {
-        developmentId,
-        tipo: { startsWith: GALLERY_PREFIX },
-      },
-      orderBy: { orden: "asc" },
-      select: { id: true, titulo: true, url: true, tipo: true, createdAt: true },
-    });
+    const [records, dev] = await Promise.all([
+      prisma.developmentMapImage.findMany({
+        where: {
+          developmentId,
+          tipo: { startsWith: GALLERY_PREFIX },
+        },
+        orderBy: { orden: "asc" },
+        select: { id: true, titulo: true, url: true, tipo: true, createdAt: true },
+      }),
+      prisma.development.findUnique({
+        where: { id: developmentId },
+        select: { brochurePlanUrl: true },
+      }),
+    ]);
 
-    const items = records.map((r) => ({
+    type GalleryResponseItem = {
+      id: string;
+      nombre: string;
+      imageUrl: string;
+      tipo: GalleryTipo;
+      uploadedAt: string;
+      readOnly?: boolean;
+    };
+
+    const items: GalleryResponseItem[] = records.map((r) => ({
       id: r.id,
       nombre: r.titulo || "Plano",
       imageUrl: r.url,
       tipo: r.tipo.replace(GALLERY_PREFIX, "") as GalleryTipo,
       uploadedAt: r.createdAt.toISOString(),
     }));
+
+    // Inject brochurePlanUrl from Información General as a read-only synthetic item.
+    // It is stored separately on the Development model (not in DevelopmentMapImage),
+    // so we surface it here without duplicating storage.
+    if (dev?.brochurePlanUrl) {
+      items.unshift({
+        id: "brochure-plan",
+        nombre: "Plano base",
+        imageUrl: dev.brochurePlanUrl,
+        tipo: "otro",
+        uploadedAt: new Date(0).toISOString(),
+        readOnly: true,
+      });
+    }
 
     return NextResponse.json({ success: true, items });
   } catch (error: any) {
