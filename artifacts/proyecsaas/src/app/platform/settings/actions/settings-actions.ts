@@ -79,7 +79,7 @@ export async function getDelegatedAdmins() {
   }
 }
 
-export async function grantAdminAccess(email: string) {
+export async function grantAdminAccess(email: string, reason: string) {
   await requirePlatformAdmin();
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -90,6 +90,32 @@ export async function grantAdminAccess(email: string) {
 
   if (user.isPlatformAdmin) {
     return { success: false, error: "Este usuario ya es administrador" };
+  }
+
+  // VALIDACIÓN DE SEGURIDAD DEL MOTIVO
+  const cleanReason = reason ? reason.trim() : "";
+  if (!cleanReason) {
+    return { success: false, error: "El motivo de la designación es obligatorio." };
+  }
+  if (cleanReason.length < 20) {
+    return { success: false, error: "El motivo debe tener al menos 20 caracteres para justificar la auditoría." };
+  }
+
+  const normalized = cleanReason.toLowerCase();
+  const blockedTerms = ["ok", "test", "prueba", "admin", "cambio", "asdf"];
+  const matchesBlocked = blockedTerms.some(term => {
+    if (normalized.includes(term)) {
+      const remaining = normalized.replace(new RegExp(term, "g"), "").trim();
+      return remaining.length === 0 || remaining.length < 5;
+    }
+    return false;
+  });
+
+  const hasRepeatedLetters = /([a-z0-9])\1{4,}/i.test(normalized);
+  const uniqueCharCount = new Set(normalized.replace(/[^a-z0-9]/g, "")).size;
+
+  if (matchesBlocked || hasRepeatedLetters || uniqueCharCount < 5) {
+    return { success: false, error: "El motivo ingresado es demasiado genérico o carece de sentido explicativo real." };
   }
 
   const actor = await requirePlatformAdmin();
@@ -108,6 +134,7 @@ export async function grantAdminAccess(email: string) {
     entityType: "User",
     entityId: user.id,
     entityName: user.email,
+    metadata: { reason: cleanReason },
   });
 
   return { success: true };
