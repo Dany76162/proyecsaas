@@ -701,7 +701,8 @@ export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersB
       {/* ── Mobile header bar ── */}
       <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100">
         <span className="text-xs text-slate-500">
-          <strong className="text-slate-900">{count}</strong> propiedades
+          <strong className="text-slate-900">{count + developments.length}</strong>{" "}
+          {count + developments.length === 1 ? "resultado" : "resultados"}
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -742,9 +743,49 @@ export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersB
 
         {mobileView === "list" ? (
           <div className="px-4 pt-3 space-y-3">
-            {count > 0
-              ? properties.map((p) => <MediumCard key={p.id} prop={p} />)
-              : <EmptyFull />}
+            {developments.length === 0 && count === 0 ? (
+              <EmptyFull />
+            ) : (
+              <>
+                {/* Desarrollos — misma card oscura que desktop */}
+                {developments.map((dev) => {
+                  const total = dev.lots.length;
+                  const available = dev.lots.filter((l: any) => l.status === "AVAILABLE").length;
+                  return (
+                    <Link
+                      key={dev.id}
+                      href={`/cat/${dev.organization.slug}/developments/${dev.id}`}
+                      className="group flex flex-col justify-between overflow-hidden rounded-2xl border-2 border-blue-500/10 bg-[#0f172a] text-white p-4 transition-all active:scale-[0.98] hover:border-blue-500/30"
+                    >
+                      <div>
+                        <div className="flex justify-between items-center gap-2 mb-2">
+                          <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
+                            Masterplan Activo
+                          </span>
+                          <span className="text-[10px] text-emerald-400 font-extrabold">
+                            {available} / {total} libres
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm text-white group-hover:text-blue-300 transition-colors line-clamp-1">
+                          {dev.name}
+                        </h4>
+                        {dev.description && (
+                          <p className="text-[11px] text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                            {dev.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 mt-3 pt-3 border-t border-slate-800">
+                        <span>{dev.organization.name}</span>
+                        <span className="text-blue-400 font-bold">Ver Lotes ➔</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+                {/* Propiedades */}
+                {properties.map((p) => <MediumCard key={p.id} prop={p} />)}
+              </>
+            )}
           </div>
         ) : (
           <div className="relative mx-4 mt-3 h-[calc(100vh-160px)] min-h-[450px] rounded-3xl overflow-hidden border border-slate-200 shadow-soft">
