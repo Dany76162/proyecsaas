@@ -43,7 +43,7 @@ export default async function ProductionReadinessPage() {
   const totalReadiness = Math.round((envVars.filter(v => v.present).length / envVars.length) * 100);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-12">
+    <div className="p-6 max-w-[1600px] mx-auto space-y-12">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="h-14 w-14 flex items-center justify-center rounded-2xl bg-slate-900 text-white shadow-xl">
@@ -63,8 +63,8 @@ export default async function ProductionReadinessPage() {
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_440px]">
+        <div className="space-y-8">
           {/* Environment Variables */}
           <section className="space-y-4">
             <h2 className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
@@ -110,7 +110,7 @@ export default async function ProductionReadinessPage() {
               <Database className="h-5 w-5 text-slate-400" />
               Estado de Infraestructura (Validación local)
             </h2>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                <StatusCard 
                  icon={ShieldCheck} 
                  title="Prisma Schema" 
