@@ -53,6 +53,12 @@ export interface Tour360Marker {
     defaultSceneOverlay?: Record<string, number> | null;
 }
 
+export interface PublicOverlayConfig {
+    bounds: [[number, number], [number, number]] | null;
+    corners: [[number, number], [number, number], [number, number], [number, number]] | null;
+    rotation: number;
+}
+
 interface MasterplanMapProps {
     proyectoId: string;
     modo: "admin" | "public";
@@ -63,6 +69,8 @@ interface MasterplanMapProps {
     centerLng?: number;
     mapZoom?: number;
     tours360?: Tour360Marker[];
+    /** Public mode only: overlay geo-transform passed from the server-rendered page (avoids auth-gated API call). */
+    initialOverlayConfig?: PublicOverlayConfig | null;
 }
 
 type OverlayCorners = [[number, number], [number, number], [number, number], [number, number]];
@@ -121,6 +129,7 @@ export default function MasterplanMap({
     centerLng = -58.3816,
     mapZoom = 15,
     tours360 = [],
+    initialOverlayConfig = null,
 }: MasterplanMapProps) {
     const {
         units, setUnits,
@@ -415,8 +424,25 @@ export default function MasterplanMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialUnits, loadSavedBlueprintOverlay, proyectoId, setUnits, units.length]);
 
-    // Load saved overlay config from API
+    // Load saved overlay config from API (admin) or from server-passed prop (public).
+    // The overlay API requires auth — in public mode we use the prop provided by the
+    // server-rendered page instead of calling the auth-gated endpoint.
     useEffect(() => {
+        if (modo === "public") {
+            if (initialOverlayConfig?.bounds) {
+                setOverlayConfig({
+                    imageUrl: null,
+                    bounds: initialOverlayConfig.bounds,
+                    corners: initialOverlayConfig.corners ?? null,
+                    rotation: initialOverlayConfig.rotation ?? 0,
+                    opacity: 0.8,
+                });
+                // Leave hasAutoFitContentRef.current = false so drawPolygons auto-fits to lots
+            }
+            setIsLoadingOverlay(false);
+            return;
+        }
+
         const loadOverlay = async () => {
             setIsLoadingOverlay(true);
             try {
@@ -449,7 +475,8 @@ export default function MasterplanMap({
             }
         };
         loadOverlay();
-    }, [proyectoId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [proyectoId, modo]);
 
     // Note: the overlay IMAGE is not auto-loaded on mount.
     // overlayConfig.bounds is used for polygon geo-transformation.

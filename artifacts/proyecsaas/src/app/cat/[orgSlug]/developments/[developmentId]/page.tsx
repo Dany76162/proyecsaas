@@ -183,6 +183,34 @@ export default async function PublicDevelopmentDetailPage({
   const hasMap = !!development.overlayBounds;
   const hasTour360 = false;
 
+  // Parse overlay geo-transform for public polygon rendering.
+  // The overlay API requires auth — read directly from DB here and pass as a prop
+  // so MasterplanMap can draw polygons without calling the auth-gated endpoint.
+  type LatLngTuple = [number, number];
+  function parsePublicOverlayBounds(raw: string | null) {
+    if (!raw) return { bounds: null, corners: null };
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length === 2 && Array.isArray(parsed[0])) {
+        return { bounds: parsed as [LatLngTuple, LatLngTuple], corners: null };
+      }
+      if (parsed && typeof parsed === "object") {
+        return {
+          bounds: Array.isArray(parsed.bounds) ? (parsed.bounds as [LatLngTuple, LatLngTuple]) : null,
+          corners: Array.isArray(parsed.corners)
+            ? (parsed.corners as [LatLngTuple, LatLngTuple, LatLngTuple, LatLngTuple])
+            : null,
+        };
+      }
+    } catch {}
+    return { bounds: null, corners: null };
+  }
+
+  const { bounds: overlayBounds, corners: overlayCorners } = parsePublicOverlayBounds(development.overlayBounds);
+  const publicOverlayConfig = overlayBounds
+    ? { bounds: overlayBounds, corners: overlayCorners, rotation: development.overlayRotation ?? 0 }
+    : null;
+
   return (
     <div className="min-h-screen bg-slate-50/50 text-slate-900 font-sans antialiased">
       {/* Header */}
@@ -373,6 +401,7 @@ export default async function PublicDevelopmentDetailPage({
           hasMap={hasMap}
           hasTour360={hasTour360}
           slug={development.id}
+          initialOverlayConfig={publicOverlayConfig}
         />
       </main>
     </div>
