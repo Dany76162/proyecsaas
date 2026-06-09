@@ -125,7 +125,9 @@ export default function MasterManualPage() {
                 <li><strong>Worker de Railway / BullMQ:</strong> La arquitectura de tareas en segundo plano está completamente estructurada. Se encuentra condicionada externamente al reinicio del worker para restaurar su señal de vida (Heartbeat) en Railway.</li>
                 <li><strong>Atención a Clientes y Captación:</strong> Finalizados por código, a la espera de la liberación de los webhooks de WhatsApp por parte del proveedor externo.</li>
                 <li><strong>Salud del Sistema:</strong> Monitoreo real corregido y alineado sin uso de valores dummy, interactuando de forma nativa y directa con los servicios de OpenAI. Se incluye observabilidad de almacenamiento multimedia (R2/S3).</li>
-                <li><strong>Tour Virtual 360°:</strong> Arquitectura implementada y estabilizada. Pendiente de integración productiva completa en rama de desarrollo; no está habilitado en producción en esta versión.</li>
+                <li><strong>Tour Virtual 360°:</strong> Completamente implementado, estabilizado y habilitado en producción desde la versión 3.1. Permite cargar videos panorámicos e imágenes 360° desde el panel de propiedades y mostrarlos en el catálogo público.</li>
+                <li><strong>Soporte IA con Supervisión Humana (HITL):</strong> El panel de Atención a Clientes incorpora un botón "Sugerir con IA" que genera un borrador de respuesta contextual basado en el historial de la conversación y el manual operativo. El borrador es editable y el operador humano debe enviarlo manualmente — la IA nunca envía de forma autónoma.</li>
+                <li><strong>Delegación de Administradores con Auditoría:</strong> El panel de Configuración permite designar administradores adicionales con validación estricta de motivos (mínimo 20 caracteres, sin términos genéricos) y registro de auditoría inmutable en cada acción.</li>
                 <li><strong>Importación CSV de Prospectos y Webhooks de AgentOS:</strong> Módulos planificados en hoja de ruta interna. No disponibles en la versión actual del panel.</li>
               </ul>
             </div>
@@ -374,6 +376,70 @@ export default function MasterManualPage() {
             <li><strong>Exclusión en el Carrusel Público:</strong> Para resguardar la reputación estética y la solidez institucional de Raíces Pilot en sus canales de venta masiva, en ningún caso se listarán tenants que se encuentren en estado <code>TRIALING</code> o demostraciones inactivas dentro del carrusel corporativo o página pública del producto.</li>
             <li><strong>Gestión Asistida de Cobranzas:</strong> Ante escenarios de pago vencido (<code>PAST_DUE</code>), la IA puede emplear la acción estructurada <code>suggestBillingMessageAction</code> (Acción sugerida de cobranza asistida) para redactar y sugerir comunicaciones cordiales de recordatorio a los administradores del tenant, adjuntando el enlace directo y seguro de pago.</li>
           </ul>
+
+          {/* 10. MÓDULO DESARROLLOS */}
+          <h2 id="desarrollos">10. Módulo Desarrollos: Loteos y Proyectos Inmobiliarios</h2>
+          <p>
+            Raíces Pilot incluye un módulo nativo de gestión de proyectos de loteo y desarrollos inmobiliarios, completamente implementado y operativo en producción. Cada tenant puede crear y administrar sus propios desarrollos con masterplan interactivo, reservas online con pago confirmado y galería de documentos comerciales.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 not-prose mb-8 print:avoid-break">
+            <div className="border border-slate-200 p-5 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <Map className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Masterplan Interactivo</span>
+              </div>
+              <p className="text-xs font-semibold text-slate-800 mb-1">SVG/DXF con lotes georreferenciados</p>
+              <p className="text-xs text-slate-600">El masterplan es un plano vectorial (SVG o DXF) que el tenant sube desde su panel. El sistema parsea automáticamente los polígonos de los lotes y genera el canvas interactivo. Un segundo tab de mapa satelital permite superponer el plano sobre Google Maps con controles de posición, escala y rotación.</p>
+            </div>
+            <div className="border border-slate-200 p-5 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <Globe className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Ficha Pública del Desarrollo</span>
+              </div>
+              <p className="text-xs font-semibold text-slate-800 mb-1">Catálogo accesible sin login</p>
+              <p className="text-xs text-slate-600">Disponible en <code>/cat/{"{orgSlug}"}/developments/{"{id}"}</code>. Visible únicamente cuando el desarrollo tiene estado <strong>ACTIVE</strong> y <code>publicVisible = true</code>, y el tenant está activo. Muestra el masterplan con estados de lotes en tiempo real, datos de contacto y botón de reserva.</p>
+            </div>
+            <div className="border border-slate-200 p-5 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <List className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Galería de Planos</span>
+              </div>
+              <p className="text-xs font-semibold text-slate-800 mb-1">Documentos comerciales separados del plano procesado</p>
+              <p className="text-xs text-slate-600">La galería admite renders, croquis, subdivisión, catastral, mensura, comercial y DXF (hasta 15 MB por archivo). Es independiente del plano principal de la ficha (<code>brochurePlanUrl</code>) y del masterplan SVG procesado — son tres capas diferenciadas de documentación.</p>
+            </div>
+            <div className="border border-slate-200 p-5 rounded-xl bg-slate-50/50">
+              <div className="flex items-center gap-2 mb-2 text-brand-700">
+                <ShieldAlert className="h-4 w-4" />
+                <span className="font-bold uppercase text-[11px] tracking-wider">Estados de Lote</span>
+              </div>
+              <p className="text-xs font-semibold text-slate-800 mb-1">Ciclo de vida controlado</p>
+              <p className="text-xs text-slate-600"><strong>AVAILABLE</strong> → <strong>RESERVED_PENDING</strong> (ventana MP activa, 15 min) → <strong>RESERVED</strong> (pago confirmado por webhook) → <strong>SOLD</strong> (cierre definitivo). También existe <strong>BLOCKED</strong> para bloqueo administrativo. El pasaje RESERVED → SOLD requiere intervención comercial manual del tenant; no es automático.</p>
+            </div>
+          </div>
+
+          <h3>Reserva Online de Lotes — Ventana de Pago y Moneda Configurable</h3>
+          <p>
+            El flujo de reserva está diseñado para capturar la intención de compra de forma inmediata sin comprometer la venta definitiva antes de que exista un pago real confirmado:
+          </p>
+          <ol>
+            <li>El comprador completa nombre, email y teléfono en la ficha pública del desarrollo.</li>
+            <li>El sistema valida que el lote esté disponible y que no existan reservas pendientes expiradas (las limpia automáticamente pasados los 15 minutos).</li>
+            <li>Se crea una preferencia de pago en Mercado Pago con el monto de seña correspondiente a la etapa del lote. Si la preferencia falla, el lote no se bloquea.</li>
+            <li>Solo después de crear exitosamente la preferencia MP, el lote pasa a <strong>RESERVED_PENDING</strong> con un <code>expiresAt</code> de 15 minutos.</li>
+            <li>El comprador es redirigido al checkout de MP. El pago confirmado por webhook cambia el estado a <strong>RESERVED</strong>.</li>
+          </ol>
+          <blockquote>
+            <strong>Regla crítica de moneda:</strong> La moneda de reserva (<code>reservationCurrency</code>) se configura por desarrollo, no por organización ni hardcodeada a ARS. El sistema admite: ARS, USD, UYU, CLP, MXN, COP, PEN, PYG, BOB, BRL. Una moneda inválida o ausente provocará error al crear la preferencia de MP. El monto de seña es configurable por etapa (etapa 1 a 5) y se almacena en centavos/minor units.
+          </blockquote>
+          <blockquote>
+            <strong>La reserva no es venta definitiva:</strong> El estado RESERVED indica un pago de seña confirmado, no la escrituración ni la venta formal. El cierre comercial definitivo (SOLD) requiere intervención humana del equipo de la inmobiliaria.
+          </blockquote>
+
+          <h3>Protección de Integridad: Bloqueo de Eliminación del Plano</h3>
+          <p>
+            El sistema protege activamente la integridad de los datos de reserva: si cualquier lote del desarrollo tiene estado <strong>RESERVED_PENDING</strong>, <strong>RESERVED</strong> o <strong>SOLD</strong>, el intento de eliminar el masterplan es rechazado con HTTP 409. La eliminación del masterplan es una operación destructiva irreversible que borra todos los lotes, su historial y las reservas asociadas — siempre debe confirmarse explícitamente con la inmobiliaria antes de proceder.
+          </p>
 
         </article>
 

@@ -615,6 +615,117 @@ export default async function WorkspaceManualUsoPage({
 
         <div className="[break-inside:avoid] [page-break-inside:avoid]">
           <SectionCard
+            eyebrow="Módulo Desarrollos"
+            title="Cómo administrar Desarrollos, Loteos y Proyectos Inmobiliarios"
+            description="Si tu inmobiliaria comercializa terrenos o proyectos de loteo, podés crear un Desarrollo con plano interactivo, lotes disponibles y reserva online para compradores."
+          >
+            <div className="grid gap-6 lg:grid-cols-2 print:grid-cols-1">
+              <div className="space-y-4 text-sm leading-6 text-slate-600">
+                <p>
+                  Desde la sección <strong>Desarrollos</strong> del panel, podés crear y gestionar proyectos de loteo. Cada desarrollo tiene su propia ficha pública con un mapa interactivo donde los compradores ven los lotes disponibles en tiempo real.
+                </p>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="font-semibold text-slate-900">¿Qué podés cargar en un Desarrollo?</p>
+                  <ul className="space-y-2 list-disc pl-4 text-slate-600">
+                    <li><strong>Información general:</strong> nombre, descripción, dirección, teléfono de contacto y logo de la inmobiliaria o del proyecto.</li>
+                    <li><strong>Plano principal (Ficha):</strong> imagen o PDF del plano que aparece destacado en la ficha pública del desarrollo.</li>
+                    <li><strong>Masterplan:</strong> archivo SVG o DXF del plano vectorial. El sistema lo procesa automáticamente y genera el mapa interactivo con los lotes.</li>
+                    <li><strong>Galería de planos:</strong> renders, croquis, subdivisión, catastral, mensura y documentos comerciales adicionales (hasta 15 MB por archivo).</li>
+                    <li><strong>Mapa satelital:</strong> superponés el plano del desarrollo sobre Google Maps para mostrar la ubicación geográfica exacta.</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="font-semibold text-slate-900">Lotes: precios, etapas y estados</p>
+                  <ul className="space-y-2 list-disc pl-4 text-sm text-slate-600">
+                    <li>Cada lote tiene precio, superficie, etapa y datos adicionales (manzana, destino, medidas de frente/fondo).</li>
+                    <li>Los precios y la seña de reserva son configurables por etapa.</li>
+                    <li>La moneda se configura por desarrollo (no está fija en pesos): ARS, USD, UYU, CLP, MXN, entre otras.</li>
+                    <li>Los estados posibles son: <strong>Disponible, Reserva pendiente, Reservado, Vendido, Bloqueado.</strong></li>
+                  </ul>
+                </div>
+                <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="font-semibold text-brand-900">¿Cómo publicar el Desarrollo?</p>
+                  <p className="mt-1 text-sm text-brand-800 leading-relaxed">
+                    Para que el desarrollo sea visible en el catálogo público, el estado debe ser <strong>Activo</strong> y la opción <strong>Visible al público</strong> debe estar activada. Mientras esté en borrador, solo vos podés verlo desde el panel.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-2 print:grid-cols-1">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 [break-inside:avoid] [page-break-inside:avoid]">
+                <p className="font-semibold text-emerald-900 mb-2">Cómo funciona la reserva online</p>
+                <ol className="space-y-2 list-decimal pl-4 text-sm text-emerald-800">
+                  <li>El comprador hace clic en un lote disponible y completa nombre, email y teléfono.</li>
+                  <li>El sistema genera un link de pago de Mercado Pago por el monto de seña configurado.</li>
+                  <li>El lote queda bloqueado con una <strong>ventana de pago de 15 minutos</strong>. Si el tiempo vence sin pago, el lote vuelve a estar disponible automáticamente.</li>
+                  <li>Cuando el pago se confirma, el lote pasa a estado <strong>Reservado</strong> y recibís una notificación en el panel.</li>
+                  <li>La reserva <strong>no es venta definitiva</strong>: el cierre final y el cambio a <strong>Vendido</strong> requiere intervención del equipo comercial.</li>
+                </ol>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 [break-inside:avoid] [page-break-inside:avoid]">
+                <p className="font-semibold text-amber-900 mb-2">⚠️ No borres el plano si hay reservas activas</p>
+                <p className="text-sm text-amber-800 leading-relaxed mb-2">
+                  Si intentás eliminar el masterplan y hay lotes con reservas pendientes, confirmadas o ventas cerradas, el sistema bloqueará la operación automáticamente para proteger los datos.
+                </p>
+                <p className="text-sm text-amber-800 font-semibold">
+                  Si necesitás reemplazar el plano, contactá a soporte con el nombre del desarrollo y el estado de los lotes antes de proceder.
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="[break-inside:avoid] [page-break-inside:avoid]">
+          <SectionCard
+            eyebrow="Soporte técnico"
+            title="Cómo pedir ayuda y qué no compartir nunca"
+            description="Si algo no funciona como esperás, el equipo de soporte puede ayudarte. Pero hay información que jamás deberías compartir, ni siquiera con soporte."
+          >
+            <div className="grid gap-6 lg:grid-cols-2 print:grid-cols-1">
+              <div className="space-y-4 text-sm leading-6 text-slate-600">
+                <p>
+                  Para reportar un problema o pedir ayuda, escribí al canal de soporte oficial por WhatsApp con la mayor cantidad de contexto posible. Esto reduce el tiempo de resolución.
+                </p>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="font-semibold text-slate-900">¿Qué incluir en tu consulta de soporte?</p>
+                  <ul className="space-y-2 list-disc pl-4 text-slate-600">
+                    <li>Qué estabas intentando hacer cuando ocurrió el problema.</li>
+                    <li>Qué mensaje de error o comportamiento inesperado viste en pantalla.</li>
+                    <li>Si el problema ocurre siempre o solo a veces.</li>
+                    <li>El nombre de tu inmobiliaria y el nombre del usuario afectado.</li>
+                    <li>Una captura de pantalla si es posible (sin datos sensibles).</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-5 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="font-semibold text-red-900 mb-2">🚫 Información que NUNCA debes compartir</p>
+                  <p className="text-sm text-red-800 leading-relaxed mb-3">
+                    El equipo de soporte jamás necesitará estos datos para ayudarte. Si alguien los pide, es una señal de alerta:
+                  </p>
+                  <ul className="space-y-2 list-disc pl-4 text-sm text-red-800">
+                    <li>Tu contraseña de acceso a la plataforma.</li>
+                    <li>Tokens de API, claves de WhatsApp o credenciales de Meta.</li>
+                    <li>Datos bancarios, claves de Mercado Pago o accesos a Railway.</li>
+                    <li>Información personal de tus clientes o leads.</li>
+                  </ul>
+                </div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 [break-inside:avoid] [page-break-inside:avoid]">
+                  <p className="text-sm font-semibold text-emerald-900">Regla de oro</p>
+                  <p className="mt-1 text-sm text-emerald-800 leading-relaxed">
+                    Si dudás de si compartir algo, no lo hagas. Escribí la consulta sin ese dato y el equipo de soporte te indicará exactamente qué información necesita de forma segura.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="[break-inside:avoid] [page-break-inside:avoid]">
+          <SectionCard
             eyebrow="Objetivo"
             title="Lo importante al usar la plataforma"
             description="El objetivo no es solo responder mensajes: es convertir consultas en visitas y operaciones."

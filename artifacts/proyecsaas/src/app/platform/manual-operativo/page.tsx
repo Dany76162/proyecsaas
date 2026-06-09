@@ -33,6 +33,9 @@ const sections = [
   { id: "modulos-superadmin", label: "Funciones del panel" },
   { id: "troubleshooting", label: "Troubleshooting" },
   { id: "control-comercial", label: "Control Comercial" },
+  { id: "modulo-desarrollos", label: "Módulo Desarrollos" },
+  { id: "soporte-ia-hitl", label: "Soporte IA (HITL)" },
+  { id: "seguridad-delegacion", label: "Delegación & Auditoría" },
 ] as const;
 
 const operationalDependencies = [
@@ -226,7 +229,7 @@ const modules = [
     href: "/platform/support",
     icon: MessageSquare,
     description:
-      "Seguimiento de soporte, tickets y chat interactivo con cuentas activas desde el entorno administrativo central.",
+      "Chat de soporte con cuentas activas. Incluye generación de borradores con IA (HITL): el operador revisa y envía manualmente — la IA nunca envía de forma autónoma.",
   },
   {
     title: "Captación",
@@ -345,6 +348,23 @@ const troubleshooting = [
       "Validar que la redirección post-aceptación tenga cargado el parámetro de retorno 'next' de forma correcta.",
       "Comprobar en la base de datos que la acción guarde la fecha en `termsAcceptedAt` para el ID de usuario correspondiente.",
       "Confirmar que no haya bucles infinitos causados por validaciones duplicadas en `requireSessionUser`.",
+    ],
+  },
+  {
+    title: "Reserva de lote bloqueada o sin confirmar",
+    checks: [
+      "Si un lote quedó en RESERVED_PENDING sin pago, la ventana de 15 minutos lo libera automáticamente al próximo intento de reserva.",
+      "Si Mercado Pago falló al crear la preferencia, el lote nunca llegó a RESERVED_PENDING — verificar credenciales MP del tenant y logs del servidor.",
+      "Si el lote figura como RESERVED pero el cliente alega no haber pagado, revisar el historial de pago directamente en el panel de MP del tenant.",
+      "El campo `reservationCurrency` debe tener una moneda válida del whitelist (ARS, USD, UYU, CLP, MXN, COP, PEN, PYG, BOB, BRL) o la preferencia MP fallará.",
+    ],
+  },
+  {
+    title: "No se puede eliminar el masterplan/plano",
+    checks: [
+      "El sistema bloquea la eliminación si algún lote tiene estado RESERVED, RESERVED_PENDING o SOLD — responde 409.",
+      "Identificar los lotes bloqueantes desde el panel Desarrollos del tenant antes de solicitar la operación.",
+      "La eliminación del plano es destructiva: borra todos los lotes, historial y reservas asociados — confirmar explícitamente con la inmobiliaria.",
     ],
   },
 ] as const;
@@ -1036,6 +1056,176 @@ export default async function PlatformManualOperativoPage() {
                 <p className="mt-2 text-sm text-amber-900 leading-relaxed font-medium">
                   Para asegurar la calidad y estética de la marca en producción, en el carrusel comercial de la Landing Pública <strong>solo figurarán inmobiliarias con estado ACTIVE</strong> y abono real configurado que hayan pasado satisfactoriamente el onboarding. Cuentas en modo prueba (<code>TRIALING</code>) o demostraciones inactivas están estrictamente excluidas de la vista pública.
                 </p>
+              </div>
+            </section>
+
+            <section id="modulo-desarrollos" className="space-y-5 scroll-mt-24">
+              <SectionHeader
+                eyebrow="Módulo de Loteos y Proyectos"
+                title="Desarrollos: qué es y qué debe saber el Superadmin"
+                description="Cada tenant puede administrar proyectos de loteo con masterplan interactivo, reservas online y pago vía Mercado Pago. Esta sección describe lo que el Superadmin necesita conocer para dar soporte y diagnosticar incidentes."
+              />
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building2 className="h-4 w-4 text-violet-500" />
+                    <h3 className="text-sm font-bold text-slate-900">Estructura de un Desarrollo</h3>
+                  </div>
+                  <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-700">
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>Información general: nombre, dirección, contacto, logo.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>Masterplan SVG/DXF: plano vectorial con lotes georreferenciados.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>Galería de planos: renders, croquis, mensura, documentos comerciales.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>Mapa satelital interactivo con overlay del plano.</span></li>
+                  </ul>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="h-4 w-4 text-amber-500" />
+                    <h3 className="text-sm font-bold text-slate-900">Estados de Lote</h3>
+                  </div>
+                  <ul className="mt-2 space-y-2 text-xs leading-6 text-slate-700">
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-400" /><strong>AVAILABLE:</strong> disponible para reservar.</li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-400" /><strong>RESERVED_PENDING:</strong> ventana de pago abierta (15 min). Lote bloqueado durante el checkout de MP.</li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-400" /><strong>RESERVED:</strong> pago confirmado por webhook de MP.</li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-700" /><strong>SOLD:</strong> transacción completada.</li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-400" /><strong>BLOCKED:</strong> bloqueado administrativamente.</li>
+                  </ul>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="h-4 w-4 text-indigo-500" />
+                    <h3 className="text-sm font-bold text-slate-900">Reserva Online y Pago MP</h3>
+                  </div>
+                  <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-700">
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>La seña (monto de reserva) es configurable por etapa y por desarrollo.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>La moneda se configura por desarrollo (<code className="text-xs bg-slate-100 px-1 rounded">reservationCurrency</code>): ARS, USD, UYU, CLP, MXN, COP, PEN, PYG, BOB, BRL. No está hardcodeada a ARS.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>Si MP falla al crear la preferencia, el lote NO se bloquea.</span></li>
+                  </ul>
+                </article>
+
+                <article className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="h-4 w-4 text-amber-600" />
+                    <h3 className="text-sm font-bold text-amber-900">Bloqueo de eliminación del plano</h3>
+                  </div>
+                  <p className="text-xs leading-6 text-amber-800">El sistema rechaza (HTTP 409) la eliminación del masterplan si algún lote está en estado <strong>RESERVED_PENDING</strong>, <strong>RESERVED</strong> o <strong>SOLD</strong>. Es una protección de integridad de datos. La eliminación es permanente y borra todos los lotes, historial y reservas asociados.</p>
+                </article>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">Visibilidad pública del Desarrollo</p>
+                <p className="text-sm leading-6 text-slate-700">Un desarrollo es visible en el catálogo público (<code className="text-xs bg-slate-100 px-1 rounded">/cat/[orgSlug]/developments/[id]</code>) solo cuando su estado es <strong>ACTIVE</strong> y tiene <strong>publicVisible = true</strong>, y la organización del tenant tiene estado activo. Desarrollos en estado DRAFT, PAUSED, CANCELLED o SOLD_OUT no aparecen en el catálogo.</p>
+              </div>
+            </section>
+
+            <section id="soporte-ia-hitl" className="space-y-5 scroll-mt-24">
+              <SectionHeader
+                eyebrow="Soporte IA — Human-in-the-Loop"
+                title="Cómo funciona el borrador de respuesta con IA en el chat de soporte"
+                description="El panel de Atención a Clientes incorpora un asistente IA que sugiere respuestas pero nunca las envía de forma autónoma. El operador humano siempre tiene la última palabra."
+              />
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <article className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo-700">Paso 1</span>
+                    <h3 className="text-sm font-bold text-indigo-900">Seleccionar conversación</h3>
+                  </div>
+                  <p className="text-sm leading-6 text-indigo-800">El operador abre la conversación activa en la bandeja de Soporte. El botón <strong>"Sugerir con IA"</strong> (ícono de destellos) queda habilitado cuando hay una conversación seleccionada.</p>
+                </article>
+
+                <article className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo-700">Paso 2</span>
+                    <h3 className="text-sm font-bold text-indigo-900">Generación del borrador</h3>
+                  </div>
+                  <p className="text-sm leading-6 text-indigo-800">La IA analiza el historial reciente (últimos 20 mensajes), infiere el tipo de usuario (lead externo, demo, cliente activo o superadmin) y genera un borrador contextual basado en el manual operativo interno.</p>
+                </article>
+
+                <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">Paso 3 — HITL</span>
+                    <h3 className="text-sm font-bold text-emerald-900">Revisión y envío humano</h3>
+                  </div>
+                  <p className="text-sm leading-6 text-emerald-800">El borrador aparece en el campo de texto editable. El operador puede modificarlo libremente o descartarlo. Solo al presionar <strong>Enviar</strong> el mensaje sale hacia el cliente — la IA nunca envía por sí sola.</p>
+                </article>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <article className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm print:break-inside-avoid">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Wrench className="h-4 w-4 text-amber-500" />
+                    <h3 className="text-sm font-bold text-slate-900">Qué hace la IA al inferir el usuario</h3>
+                  </div>
+                  <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-700">
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-300" /><span>Busca el teléfono del participante en la tabla de usuarios del sistema.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-300" /><span>Si es miembro de una inmobiliaria, ajusta el tono y contexto para ese perfil (demo vs. cliente activo).</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-300" /><span>Si no encuentra el número, trata al interlocutor como lead externo o visitante anónimo.</span></li>
+                  </ul>
+                </article>
+
+                <article className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm print:break-inside-avoid">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="h-4 w-4 text-red-500" />
+                    <h3 className="text-sm font-bold text-slate-900">Reglas de seguridad del borrador IA</h3>
+                  </div>
+                  <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-700">
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-300" /><span>La IA tiene instrucción explícita de no revelar secretos, tokens, API keys ni variables de entorno.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-300" /><span>No puede comprometer descuentos ni cambios de plan sin confirmación del equipo directivo.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-300" /><span>Si la cuota de OpenAI se agota, el chat manual sigue disponible y el sistema informa al operador con un aviso claro.</span></li>
+                  </ul>
+                </article>
+              </div>
+            </section>
+
+            <section id="seguridad-delegacion" className="space-y-5 scroll-mt-24">
+              <SectionHeader
+                eyebrow="Gobernanza de acceso"
+                title="Delegación de Administradores y Reglas de Seguridad"
+                description="El acceso administrativo a la plataforma es una operación crítica e irreversible a corto plazo. Cada designación queda registrada en el log de auditoría con el motivo textual completo."
+              />
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    <h3 className="text-sm font-bold text-slate-900">Validaciones al designar un admin</h3>
+                  </div>
+                  <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-700">
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>El motivo de designación es obligatorio y debe tener al menos <strong>20 caracteres</strong> reales.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>Términos genéricos bloqueados: "ok", "test", "prueba", "admin", "cambio", "asdf".</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>El sistema rechaza motivos con caracteres repetidos o de muy poca variedad léxica.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-300" /><span>El botón de confirmación requiere marcar un checkbox de alerta roja antes de habilitarse.</span></li>
+                  </ul>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShieldCheck className="h-4 w-4 text-violet-500" />
+                    <h3 className="text-sm font-bold text-slate-900">Qué queda registrado en auditoría</h3>
+                  </div>
+                  <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-700">
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-300" /><span>Evento: <code className="text-xs bg-slate-100 px-1 rounded">admin.access_granted</code> con el actor, el email del nuevo admin y el motivo completo.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-300" /><span>Evento: <code className="text-xs bg-slate-100 px-1 rounded">admin.access_revoked</code> al revocar, con el actor y el email revocado.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-300" /><span>Ningún admin puede revocar su propio acceso desde el panel.</span></li>
+                  </ul>
+                </article>
+
+                <article className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm print:break-inside-avoid print:shadow-none">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wrench className="h-4 w-4 text-red-500" />
+                    <h3 className="text-sm font-bold text-red-900">Información que NUNCA debe compartirse</h3>
+                  </div>
+                  <ul className="mt-2 space-y-2 text-sm leading-6 text-red-800">
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-300" /><span>Variables de entorno: <code className="text-xs bg-red-100 px-1 rounded">DATABASE_URL</code>, <code className="text-xs bg-red-100 px-1 rounded">AUTH_SESSION_SECRET</code>, claves de cifrado.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-300" /><span>Tokens de API: OpenAI, Meta/WhatsApp, Mercado Pago, Railway.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-300" /><span>Datos de clientes de otras inmobiliarias ni configuraciones de tenants ajenos.</span></li>
+                    <li className="flex items-start gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-300" /><span>Credenciales de acceso, contraseñas o sesiones activas del equipo.</span></li>
+                  </ul>
+                </article>
               </div>
             </section>
 
