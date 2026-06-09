@@ -166,9 +166,15 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                 <div className="grid grid-cols-2 gap-2.5">
                     {[
                         { label: "Superficie", value: unit.superficie ? `${unit.superficie} m²` : "—", icon: Maximize2 },
-                        { label: "Precio", value: unit.precio ? formatCurrency(unit.precio, unit.moneda || "USD") : "—", icon: Bookmark },
-                        { label: "Etapa", value: unit.etapaNombre || "Fase 1", icon: MapPin },
-                        { label: "Manzana", value: unit.manzanaNombre || "Principal", icon: MapPin },
+                        {
+                            label: "Precio",
+                            value: unit.precio
+                                ? `${unit.moneda ?? "USD"} ${unit.precio.toLocaleString("es-AR")}`
+                                : "Consultar precio",
+                            icon: Bookmark,
+                        },
+                        { label: "Etapa", value: unit.etapaNombre || "Sin etapa", icon: MapPin },
+                        { label: "Manzana", value: unit.manzanaNombre || "Sin manzana", icon: MapPin },
                     ].map((s) => (
                         <div key={s.label} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                             <div className="flex items-center gap-1.5 mb-0.5">
@@ -179,6 +185,17 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                         </div>
                     ))}
                 </div>
+                {unit.precio != null && unit.superficie != null && unit.superficie > 0 && (
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                            <CreditCard className="w-3 h-3 text-slate-400" />
+                            <span className="text-[10px] text-slate-400">Precio por m²</span>
+                        </div>
+                        <p className="text-sm font-bold text-slate-700 dark:text-white">
+                            {unit.moneda ?? "USD"} {Math.round(unit.precio / unit.superficie).toLocaleString("es-AR")}/m²
+                        </p>
+                    </div>
+                )}
 
                 {/* Actions */}
                 {canEdit ? (

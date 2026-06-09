@@ -88,10 +88,10 @@ export async function GET(
       manzanaNombre: lot.manzana, // Flat field for UI
       manzana: {
         id: "default",
-        nombre: lot.manzana || "Principal",
+        nombre: lot.manzana || "",
         etapa: {
           id: "default",
-          nombre: lot.etapaNombre || "Fase 1",
+          nombre: lot.etapaNombre || "",
           proyecto: {
             id: lot.developmentId,
             nombre: lot.development.name,
@@ -99,7 +99,7 @@ export async function GET(
           },
         },
       },
-      etapaNombre: lot.etapaNombre || "Fase 1",
+      etapaNombre: lot.etapaNombre || undefined,
       historial: lot.history.map((h: any) => ({
         id: h.id,
         createdAt: h.createdAt.toISOString(),
@@ -209,13 +209,13 @@ export async function PUT(
       manzanaNombre: updated.manzana,
       manzana: {
         id: "default",
-        nombre: updated.manzana || "Principal",
+        nombre: updated.manzana || "",
         etapa: {
           id: "default",
-          nombre: updated.etapaNombre || "Fase 1",
+          nombre: updated.etapaNombre || "",
         },
       },
-      etapaNombre: updated.etapaNombre || "Fase 1",
+      etapaNombre: updated.etapaNombre || undefined,
     };
 
     return NextResponse.json(responseUnidad);

@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMasterplanStore, MasterplanUnit } from "@/lib/masterplan-store";
-import { getProjectBlueprintData, autoNumberManzanas } from "@/lib/actions/unidades";
+import { getProjectBlueprintData, autoNumberManzanas, renumberLots } from "@/lib/actions/unidades";
 import { Search, Tag, X, Check, Download, FileText, Grid3x3 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,6 +34,9 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
   const [isLoading, setIsLoading] = useState(false);
   const [isAutoGrouping, setIsAutoGrouping] = useState(false);
   const [showAutoManzanaConfirm, setShowAutoManzanaConfirm] = useState(false);
+  const [isRenumbering, setIsRenumbering] = useState(false);
+  const [showRenumberConfirm, setShowRenumberConfirm] = useState(false);
+  const [renumberDirection, setRenumberDirection] = useState<"back-to-front" | "front-to-back">("back-to-front");
 
   const handleAutoManzana = async () => {
     setShowAutoManzanaConfirm(false);
@@ -53,6 +56,27 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
       toast.error(`Error: ${err.message}`);
     } finally {
       setIsAutoGrouping(false);
+    }
+  };
+
+  const handleRenumber = async () => {
+    setShowRenumberConfirm(false);
+    setIsRenumbering(true);
+    try {
+      const res = await renumberLots(proyectoId, renumberDirection);
+      if (res.success) {
+        toast.success(`${res.count} lotes renumerados correctamente.`);
+        const reloadRes = await getProjectBlueprintData(proyectoId);
+        if (reloadRes.success && reloadRes.data) {
+          setUnits(reloadRes.data as any);
+        }
+      } else {
+        toast.error(res?.error || "Error al renumerar lotes.");
+      }
+    } catch (err: any) {
+      toast.error(`Error: ${err.message}`);
+    } finally {
+      setIsRenumbering(false);
     }
   };
 
@@ -452,6 +476,41 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
                   disabled={isAutoGrouping}
                   className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50"
                 >Confirmar</button>
+              </div>
+            )}
+
+            {/* Renumerar lotes */}
+            {units.length > 0 && !showRenumberConfirm && !showAutoManzanaConfirm && (
+              <button
+                onClick={() => setShowRenumberConfirm(true)}
+                disabled={isRenumbering}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 disabled:opacity-60 transition-colors"
+                title="Renumera los lotes en orden según su posición en el plano"
+              >
+                <Grid3x3 className="w-3.5 h-3.5" />
+                {isRenumbering ? "Renumerando..." : "Renumerar lotes"}
+              </button>
+            )}
+            {showRenumberConfirm && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5">
+                <span className="text-xs font-semibold text-amber-700">Dirección:</span>
+                <select
+                  value={renumberDirection}
+                  onChange={(e) => setRenumberDirection(e.target.value as any)}
+                  className="text-xs border border-amber-300 rounded-lg px-2 py-1 bg-white text-slate-700 focus:outline-none"
+                >
+                  <option value="back-to-front">Atrás → Adelante (números bajos al fondo)</option>
+                  <option value="front-to-back">Adelante → Atrás (números bajos al frente)</option>
+                </select>
+                <button
+                  onClick={() => setShowRenumberConfirm(false)}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-700 transition"
+                >Cancelar</button>
+                <button
+                  onClick={handleRenumber}
+                  disabled={isRenumbering}
+                  className="rounded-lg bg-amber-600 px-2 py-1 text-xs font-bold text-white transition hover:bg-amber-700 disabled:opacity-50"
+                >Renumerar</button>
               </div>
             )}
             <button

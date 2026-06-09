@@ -60,6 +60,9 @@ const STATUS_COLORS: Record<string, string> = {
     SUSPENDIDO: "#64748b",
 };
 
+// ─── Stage color palette (up to 5 etapas) ───
+const ETAPA_PALETTE = ["#3b82f6", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444"] as const;
+
 const STATUS_LABELS: Record<string, string> = {
     DISPONIBLE: "Disponible",
     BLOQUEADO: "Bloqueado",
@@ -311,6 +314,7 @@ export default function MasterplanViewer({
     const [stageBName, setStageBName] = useState("Etapa 2");
     const [savingDivision, setSavingDivision] = useState(false);
     const [targetStageFilter, setTargetStageFilter] = useState<string>("all");
+    const [viewMode, setViewMode] = useState<"status" | "stage">("status");
 
     const existingStages = useMemo(() => {
         const stages = new Set<string>();
@@ -502,6 +506,12 @@ export default function MasterplanViewer({
             setSavingDivision(false);
         }
     };
+
+    const getStageColor = useCallback((etapaNombre: string | null | undefined): string => {
+        if (!etapaNombre) return "#94a3b8";
+        const idx = existingStages.indexOf(etapaNombre);
+        return ETAPA_PALETTE[idx % ETAPA_PALETTE.length] ?? "#94a3b8";
+    }, [existingStages]);
 
     const handleSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
         if (!isDividingStages) return;
@@ -788,16 +798,51 @@ export default function MasterplanViewer({
                 </button>
             </div>
 
-            {/* Legend */}
-            <div className="absolute bottom-4 left-4 z-20 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2">
-                <div className="flex items-center gap-3">
-                    {Object.entries(STATUS_COLORS).map(([key, color]) => (
-                        <div key={key} className="flex items-center gap-1.5">
-                            <div className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
-                            <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 uppercase">{STATUS_LABELS[key]}</span>
+            {/* Legend + view toggle */}
+            <div className="absolute bottom-4 left-4 z-20 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2 space-y-2">
+                {/* Toggle */}
+                {modo === "admin" && existingStages.length > 0 && (
+                    <div className="flex items-center gap-1 text-[10px]">
+                        <button
+                            onClick={() => setViewMode("status")}
+                            className={`px-2 py-0.5 rounded font-bold transition ${viewMode === "status" ? "bg-slate-700 text-white" : "text-slate-500 hover:text-slate-700"}`}
+                        >
+                            Por estado
+                        </button>
+                        <button
+                            onClick={() => setViewMode("stage")}
+                            className={`px-2 py-0.5 rounded font-bold transition ${viewMode === "stage" ? "bg-slate-700 text-white" : "text-slate-500 hover:text-slate-700"}`}
+                        >
+                            Por etapa
+                        </button>
+                    </div>
+                )}
+                {/* Status legend */}
+                {viewMode === "status" && (
+                    <div className="flex items-center gap-3">
+                        {Object.entries(STATUS_COLORS).map(([key, color]) => (
+                            <div key={key} className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
+                                <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 uppercase">{STATUS_LABELS[key]}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {/* Stage legend */}
+                {viewMode === "stage" && (
+                    <div className="flex flex-wrap items-center gap-3">
+                        {existingStages.map((stage, idx) => (
+                            <div key={stage} className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded" style={{ backgroundColor: ETAPA_PALETTE[idx % ETAPA_PALETTE.length] }} />
+                                <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">{stage}</span>
+                            </div>
+                        ))}
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded bg-slate-400" />
+                            <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">Sin etapa</span>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                )}
             </div>
 
             {/* SVG Canvas with Zoom/Pan */}
@@ -842,7 +887,10 @@ export default function MasterplanViewer({
                                 onClick={() => { if (!isDividingStages) setSelectedUnitId(selectedUnitId === unit.id ? null : unit.id); }}
                                 onCompareToggle={(e) => { e.stopPropagation(); toggleComparison(unit.id); }}
                                 onTouchLongPress={() => toggleComparison(unit.id)}
-                                highlightColor={getHighlightColor(unit)}
+                                highlightColor={
+                                    getHighlightColor(unit) ??
+                                    (viewMode === "stage" ? getStageColor(unit.etapaNombre) : undefined)
+                                }
                             />
                         ))}
 

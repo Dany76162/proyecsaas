@@ -60,13 +60,13 @@ export async function getProjectBlueprintData(developmentId: string) {
       manzanaNombre: lot.manzana,
       manzana: {
         id: "default",
-        nombre: lot.manzana || "Principal",
+        nombre: lot.manzana || "",
         etapa: {
           id: "default",
-          nombre: lot.etapaNombre || "Fase 1",
+          nombre: lot.etapaNombre || "",
         },
       },
-      etapaNombre: lot.etapaNombre || "Fase 1",
+      etapaNombre: lot.etapaNombre || undefined,
     }));
 
     return { success: true, data: unidades };
@@ -147,7 +147,15 @@ function polygonDistance(polyA: ClusteringPoint, polyB: ClusteringPoint) {
   return minDistance;
 }
 
-export async function autoNumberManzanas(developmentId: string) {
+/**
+ * direction:
+ *  "default"        — Y ascendente (top→bottom en SVG = atrás→adelante cuando Y↓)
+ *  "back-to-front"  — Y descendente (high-Y primero = atrás en planos con Y↑, como DXF estándar)
+ */
+export async function autoNumberManzanas(
+  developmentId: string,
+  direction: "default" | "back-to-front" = "default",
+) {
   try {
     const lots = await prisma.developmentLot.findMany({
       where: { developmentId },
@@ -218,34 +226,27 @@ export async function autoNumberManzanas(developmentId: string) {
       clusters.push(cluster);
     }
 
-    // Sort clusters geographically: top-to-bottom, left-to-right
+    // Sort clusters geographically.
+    // "default"       → Y ascending  (top-to-bottom in SVG, left-to-right within row)
+    // "back-to-front" → Y descending (bottom-to-top in SVG — for DXFs where high Y = back)
     clusters.sort((a, b) => {
       const avgXa = a.reduce((sum, p) => sum + p.x, 0) / a.length;
       const avgYa = a.reduce((sum, p) => sum + p.y, 0) / a.length;
       const avgXb = b.reduce((sum, p) => sum + p.x, 0) / b.length;
       const avgYb = b.reduce((sum, p) => sum + p.y, 0) / b.length;
 
-      // Group rows within 80 units of height
       if (Math.abs(avgYa - avgYb) < 80) {
-        return avgXa - avgXb;
+        return avgXa - avgXb; // left to right within the same row
       }
-      return avgYa - avgYb;
+      return direction === "back-to-front" ? avgYb - avgYa : avgYa - avgYb;
     });
 
-    const updates: { id: string; manzana: string }[] = [];
-    clusters.forEach((cluster, idx) => {
-      const manzanaName = `MZA${idx + 1}`;
-      for (const p of cluster) {
-        updates.push({ id: p.id, manzana: manzanaName });
-      }
-    });
-
-    // Run direct updates
+    // Optimized: one updateMany per cluster instead of one update per lot
     await prisma.$transaction(
-      updates.map((u) =>
-        prisma.developmentLot.update({
-          where: { id: u.id },
-          data: { manzana: u.manzana },
+      clusters.map((cluster, idx) =>
+        prisma.developmentLot.updateMany({
+          where: { id: { in: cluster.map((p) => p.id) } },
+          data: { manzana: `MZA${idx + 1}` },
         })
       )
     );
@@ -254,5 +255,104 @@ export async function autoNumberManzanas(developmentId: string) {
   } catch (error: any) {
     console.error("Error in autoNumberManzanas:", error);
     return { success: false, error: error.message || "Error al auto-numerar manzanas" };
+  }
+}
+
+/**
+ * Renumera los lotes de un desarrollo según posición en el plano.
+ *
+ * direction:
+ *  "back-to-front"  — atrás (high Y en DXF estándar) obtiene números bajos. Default.
+ *  "front-to-back"  — adelante (low Y) obtiene números bajos.
+ *
+ * Usa un prefijo temporal para evitar colisiones de la restricción UNIQUE (developmentId, lotNumber).
+ */
+export async function renumberLots(
+  developmentId: string,
+  direction: "back-to-front" | "front-to-back" = "back-to-front",
+) {
+  try {
+    const membership = await (async () => {
+      const dev = await prisma.development.findUnique({
+        where: { id: developmentId },
+        select: { Organization: { select: { slug: true } } },
+      });
+      if (!dev) throw new Error("Desarrollo no encontrado");
+      return dev;
+    })();
+
+    const lots = await prisma.developmentLot.findMany({
+      where: { developmentId },
+      select: { id: true, centerX: true, centerY: true, pathData: true },
+    });
+
+    if (lots.length === 0) {
+      return { success: false, error: "No se encontraron lotes." };
+    }
+
+    type Located = { id: string; cx: number; cy: number };
+    const located: Located[] = [];
+    const noCoord: string[] = [];
+
+    for (const lot of lots) {
+      let cx = lot.centerX;
+      let cy = lot.centerY;
+      if ((cx == null || cy == null) && lot.pathData) {
+        const geom = getPathGeometry(lot.pathData);
+        if (geom) { cx = geom.cx; cy = geom.cy; }
+      }
+      if (cx != null && cy != null) {
+        located.push({ id: lot.id, cx, cy });
+      } else {
+        noCoord.push(lot.id);
+      }
+    }
+
+    // Sort by depth axis (Y) then horizontal axis (X)
+    located.sort((a, b) => {
+      const yDiff = direction === "back-to-front" ? b.cy - a.cy : a.cy - b.cy;
+      if (Math.abs(a.cy - b.cy) < 20) return a.cx - b.cx;
+      return yDiff;
+    });
+
+    // Two-pass update to avoid UNIQUE constraint violations during renumbering.
+    // Pass 1 — temporary unique names
+    const tmpPrefix = `TMP_${Date.now()}_`;
+    await prisma.$transaction([
+      ...located.map((lot, i) =>
+        prisma.developmentLot.update({
+          where: { id: lot.id },
+          data: { lotNumber: `${tmpPrefix}${i + 1}` },
+        })
+      ),
+      ...noCoord.map((id, i) =>
+        prisma.developmentLot.update({
+          where: { id },
+          data: { lotNumber: `${tmpPrefix}NC${i + 1}` },
+        })
+      ),
+    ]);
+
+    // Pass 2 — final sequential numbers
+    const noCoordStart = located.length + 1;
+    await prisma.$transaction([
+      ...located.map((lot, i) =>
+        prisma.developmentLot.update({
+          where: { id: lot.id },
+          data: { lotNumber: String(i + 1) },
+        })
+      ),
+      ...noCoord.map((id, i) =>
+        prisma.developmentLot.update({
+          where: { id },
+          data: { lotNumber: String(noCoordStart + i) },
+        })
+      ),
+    ]);
+
+    return { success: true, count: lots.length, withCoords: located.length, noCoords: noCoord.length };
+  } catch (error: any) {
+    console.error("Error in renumberLots:", error);
+    return { success: false, error: error.message || "Error al renumerar lotes" };
   }
 }

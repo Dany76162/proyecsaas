@@ -9,7 +9,7 @@ export interface PlanGalleryItem {
     id: string;
     nombre: string;
     imageUrl: string;
-    tipo: "render" | "croquis" | "subdivision" | "catastral" | "otro";
+    tipo: "render" | "croquis" | "subdivision" | "catastral" | "otro" | "mensura" | "comercial" | "dxf";
     uploadedAt: string;
 }
 
@@ -30,6 +30,9 @@ const TIPO_LABELS: Record<PlanGalleryItem["tipo"], string> = {
     croquis: "Croquis",
     subdivision: "Subdivisión",
     catastral: "Catastral",
+    mensura: "Mensura",
+    comercial: "Comercial",
+    dxf: "DXF técnico",
     otro: "Otro",
 };
 
