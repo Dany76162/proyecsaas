@@ -60,6 +60,12 @@ export default function VisualPlanCanvas({
     width: number;
     height: number;
   } | null>(null);
+  // Resize state
+  const [resizeInfo, setResizeInfo] = useState<
+    | { id: string; handle: 'tl' | 'tr' | 'bl' | 'br'; start: { x: number; y: number; width: number; height: number; clientX: number; clientY: number } }
+    | null
+  >(null);
+  const [tempResize, setTempResize] = useState<Record<string, { x: number; y: number; width: number; height: number }>>({});
 
   // ViewBox dimensions – keep in sync with canvas rendering
   const viewBox = "0 0 1000 800";
@@ -117,10 +123,57 @@ export default function VisualPlanCanvas({
 
   // While dragging – update temporary visual position
   const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    // If we are resizing, handle that first
+    if (resizeInfo) {
+      const { id, handle, start } = resizeInfo;
+      const deltaClientX = event.clientX - start.clientX;
+      const deltaClientY = event.clientY - start.clientY;
+      const svg = event.currentTarget;
+      const matrix = svg.getScreenCTM();
+      const scaleX = matrix?.a ?? 1;
+      const scaleY = matrix?.d ?? 1;
+      const deltaViewBoxX = deltaClientX / scaleX;
+      const deltaViewBoxY = deltaClientY / scaleY;
+      let newX = start.x;
+      let newY = start.y;
+      let newWidth = start.width;
+      let newHeight = start.height;
+      const minSize = 20;
+      switch (handle) {
+        case 'tl':
+          newX = Math.max(0, start.x + deltaViewBoxX);
+          newY = Math.max(0, start.y + deltaViewBoxY);
+          newWidth = Math.max(minSize, start.width - deltaViewBoxX);
+          newHeight = Math.max(minSize, start.height - deltaViewBoxY);
+          break;
+        case 'tr':
+          newY = Math.max(0, start.y + deltaViewBoxY);
+          newWidth = Math.max(minSize, start.width + deltaViewBoxX);
+          newHeight = Math.max(minSize, start.height - deltaViewBoxY);
+          break;
+        case 'bl':
+          newX = Math.max(0, start.x + deltaViewBoxX);
+          newWidth = Math.max(minSize, start.width - deltaViewBoxX);
+          newHeight = Math.max(minSize, start.height + deltaViewBoxY);
+          break;
+        case 'br':
+          newWidth = Math.max(minSize, start.width + deltaViewBoxX);
+          newHeight = Math.max(minSize, start.height + deltaViewBoxY);
+          break;
+      }
+      // Clamp to viewBox bounds
+      if (newX + newWidth > viewBoxWidth) newWidth = viewBoxWidth - newX;
+      if (newY + newHeight > viewBoxHeight) newHeight = viewBoxHeight - newY;
+      setTempResize((prev) => ({
+        ...prev,
+        [id]: { x: newX, y: newY, width: newWidth, height: newHeight },
+      }));
+      return;
+    }
+    // Existing drag handling
     if (!draggingId || !dragStart) return;
     const deltaClientX = event.clientX - dragStart.clientX;
     const deltaClientY = event.clientY - dragStart.clientY;
-    // Convert delta from client pixels to viewBox units using SVG matrix scaling
     const svg = event.currentTarget;
     const matrix = svg.getScreenCTM();
     const scaleX = matrix?.a ?? 1;
@@ -143,11 +196,30 @@ export default function VisualPlanCanvas({
 
   // Pointer up – finalize drag and persist via PATCH
   const handlePointerUp = (event: React.PointerEvent<SVGSVGElement>) => {
+    // If we were resizing, finalize and persist
+    if (resizeInfo) {
+      const { id } = resizeInfo;
+      const final = tempResize[id];
+      if (final) {
+        const updatePayload: UpdateDevelopmentVisualObjectInput = {
+          geometry: { x: final.x, y: final.y, width: final.width, height: final.height },
+          geometryKind: "RECT",
+          coordinateSpace: "PLAN_VIEWBOX",
+        };
+        onUpdateObject(id, updatePayload);
+      }
+      setResizeInfo(null);
+      setTempResize((prev) => {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      });
+      return;
+    }
+    // Existing drag finalization
     if (!draggingId || !dragStart) return;
     (event.target as SVGSVGElement).releasePointerCapture(event.pointerId);
     const deltaClientX = event.clientX - dragStart.clientX;
     const deltaClientY = event.clientY - dragStart.clientY;
-    // Convert delta using SVG matrix scaling
     const svg = event.currentTarget;
     const matrix = svg.getScreenCTM();
     const scaleX = matrix?.a ?? 1;
@@ -213,9 +285,12 @@ export default function VisualPlanCanvas({
           if (object.geometryKind === "RECT") {
             const geometry = getRectGeometry(object.geometry);
             if (!geometry) return null;
-            const temp = tempPositions[object.id];
-            const renderX = temp?.x ?? geometry.x;
-            const renderY = temp?.y ?? geometry.y;
+            const tempDrag = tempPositions[object.id];
+            const tempResizeObj = tempResize[object.id];
+            const renderX = tempResizeObj?.x ?? tempDrag?.x ?? geometry.x;
+            const renderY = tempResizeObj?.y ?? tempDrag?.y ?? geometry.y;
+            const renderWidth = tempResizeObj?.width ?? geometry.width;
+            const renderHeight = tempResizeObj?.height ?? geometry.height;
 
             return (
               <g
@@ -231,8 +306,8 @@ export default function VisualPlanCanvas({
                 <rect
                   x={renderX}
                   y={renderY}
-                  width={geometry.width}
-                  height={geometry.height}
+                  width={renderWidth}
+                  height={renderHeight}
                   rx="4"
                   fill={object.fillColor ?? "#22c55e"}
                   fillOpacity={object.opacity ?? 0.45}
@@ -244,9 +319,17 @@ export default function VisualPlanCanvas({
                   style={draggingId === object.id ? { cursor: "move" } : undefined}
                   onPointerDown={(e) => handlePointerDown(e, object)}
                 />
+                {selected && (
+                  <>
+                    <rect x={renderX - 4} y={renderY - 4} width={8} height={8} fill="#ffffff" stroke="#0000ff" strokeWidth={1} cursor="nwse-resize" onPointerDown={(e) => { e.stopPropagation(); setResizeInfo({ id: object.id, handle: 'tl', start: { x: renderX, y: renderY, width: renderWidth, height: renderHeight, clientX: e.clientX, clientY: e.clientY } }); (e.target as SVGRectElement).setPointerCapture(e.pointerId); }} />
+                    <rect x={renderX + renderWidth - 4} y={renderY - 4} width={8} height={8} fill="#ffffff" stroke="#0000ff" strokeWidth={1} cursor="nesw-resize" onPointerDown={(e) => { e.stopPropagation(); setResizeInfo({ id: object.id, handle: 'tr', start: { x: renderX, y: renderY, width: renderWidth, height: renderHeight, clientX: e.clientX, clientY: e.clientY } }); (e.target as SVGRectElement).setPointerCapture(e.pointerId); }} />
+                    <rect x={renderX - 4} y={renderY + renderHeight - 4} width={8} height={8} fill="#ffffff" stroke="#0000ff" strokeWidth={1} cursor="nesw-resize" onPointerDown={(e) => { e.stopPropagation(); setResizeInfo({ id: object.id, handle: 'bl', start: { x: renderX, y: renderY, width: renderWidth, height: renderHeight, clientX: e.clientX, clientY: e.clientY } }); (e.target as SVGRectElement).setPointerCapture(e.pointerId); }} />
+                    <rect x={renderX + renderWidth - 4} y={renderY + renderHeight - 4} width={8} height={8} fill="#ffffff" stroke="#0000ff" strokeWidth={1} cursor="nwse-resize" onPointerDown={(e) => { e.stopPropagation(); setResizeInfo({ id: object.id, handle: 'br', start: { x: renderX, y: renderY, width: renderWidth, height: renderHeight, clientX: e.clientX, clientY: e.clientY } }); (e.target as SVGRectElement).setPointerCapture(e.pointerId); }} />
+                  </>
+                )}
                 {(hovered || selected) && (
                   <text
-                    x={renderX + geometry.width / 2}
+                    x={renderX + renderWidth / 2}
                     y={renderY - 8}
                     textAnchor="middle"
                     className="pointer-events-none fill-white text-[13px] font-black"
