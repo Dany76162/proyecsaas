@@ -3,22 +3,38 @@
 /**
  * VisualProjectEditorShell — Paso 4 del wizard de Desarrollos.
  *
- * Contenedor con identidad visual propia para el Editor Visual del Proyecto.
- * En esta fase inicial reutiliza MasterplanMap variant="editor" como superficie
- * de edición. En Fase 2 se reemplazará por un editor Konva/SVG propio.
+ * Superficie de diseño visual del proyecto: calles, manzanas, áreas verdes,
+ * perímetro, etiquetas, amenities y etapas. El plano SVG es el protagonista.
+ *
+ * El ajuste geográfico (overlay sobre mapa real) queda en Paso 5 — Mapa Interactivo.
+ *
+ * Fase 1: muestra MasterplanViewer como canvas de referencia.
+ * Fase 2: se reemplazará por editor Konva/SVG con herramientas de dibujo.
  */
 
 import dynamic from "next/dynamic";
-import { AlertCircle, CheckCircle2, Clock, Layers, MapPin, PenLine, TreePine, Route, Tag } from "lucide-react";
+import {
+    AlertCircle,
+    CheckCircle2,
+    Clock,
+    Layers,
+    PenLine,
+    TreePine,
+    Route,
+    Tag,
+    MapPin,
+    ArrowRight,
+    LayoutTemplate,
+} from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const MasterplanMap = dynamic(() => import("@/components/masterplan/masterplan-map"), {
+const MasterplanViewer = dynamic(() => import("@/components/masterplan/masterplan-viewer"), {
     ssr: false,
     loading: () => (
         <div className="flex-1 flex items-center justify-center bg-slate-950 text-white gap-2">
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            <span className="text-sm font-semibold text-slate-400">Cargando editor visual...</span>
+            <span className="text-sm font-semibold text-slate-400">Cargando plano visual...</span>
         </div>
     ),
 });
@@ -31,12 +47,6 @@ interface Tool {
 }
 
 const TOOLS: Tool[] = [
-    {
-        label: "Ajustar Plano",
-        description: "Calibrá el plano sobre el satélite",
-        icon: MapPin,
-        status: "available",
-    },
     {
         label: "Capas del Proyecto",
         description: "Dibujá calles, áreas verdes y perímetro",
@@ -65,18 +75,14 @@ const TOOLS: Tool[] = [
 
 interface VisualProjectEditorShellProps {
     proyectoId: string;
+    step2Done: boolean;
     step3Done: boolean;
-    centerLat?: number;
-    centerLng?: number;
-    mapZoom?: number;
 }
 
 export default function VisualProjectEditorShell({
     proyectoId,
+    step2Done,
     step3Done,
-    centerLat,
-    centerLng,
-    mapZoom,
 }: VisualProjectEditorShellProps) {
     return (
         <div className="flex-1 flex flex-col h-full min-h-[640px] overflow-hidden gap-0">
@@ -92,7 +98,7 @@ export default function VisualProjectEditorShell({
                                 Editor Visual del Proyecto
                             </h2>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                                Construí las capas visuales del desarrollo: calles, áreas verdes, perímetro y accesos.
+                                Diseñá las capas visuales del desarrollo: calles, manzanas, áreas verdes, perímetro y amenities.
                             </p>
                         </div>
                     </div>
@@ -126,38 +132,68 @@ export default function VisualProjectEditorShell({
                     </div>
                 </div>
 
-                {/* Aviso fase inicial */}
-                <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400 dark:text-slate-500">
+                {/* Fase badge + aviso Step 5 */}
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono font-bold text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                         Fase 1
                     </span>
-                    Editor visual inicial: la superficie de edición usa el mapa actual. El editor avanzado estará disponible en la próxima fase.
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        Editor visual inicial: diseñá el plano del desarrollo. El editor avanzado con dibujo libre estará disponible en la próxima fase.
+                    </span>
+                    <Link
+                        href="?tab=mapa"
+                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-brand-500 hover:text-brand-600 transition-colors ml-auto shrink-0"
+                    >
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        Ajuste geográfico → Paso 5
+                        <ArrowRight className="w-3 h-3 shrink-0" />
+                    </Link>
                 </div>
             </div>
 
-            {/* Warning si no hay lotes */}
-            {!step3Done && (
+            {/* Warning si no hay plano */}
+            {!step2Done && (
                 <div className="shrink-0 flex items-center gap-2 mx-3 mt-2 px-3 py-2 bg-amber-500/5 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    Sincronizá los lotes en el{" "}
-                    <Link href="?tab=masterplan" className="underline font-bold">
-                        Paso 3 — Masterplan
+                    Subí el plano del proyecto en el{" "}
+                    <Link href="?tab=blueprint" className="underline font-bold">
+                        Paso 2 — Plano del Proyecto
                     </Link>{" "}
-                    para poder editar el mapa visual.
+                    para trabajar sobre el diseño visual.
                 </div>
             )}
 
-            {/* Mapa — superficie de edición */}
+            {/* Canvas principal — plano visual */}
             <div className="flex-1 min-h-0 overflow-hidden border-t-0 border border-slate-200 dark:border-slate-800 rounded-b-2xl">
-                <MasterplanMap
-                    proyectoId={proyectoId}
-                    modo="admin"
-                    canEdit={true}
-                    variant="editor"
-                    centerLat={centerLat}
-                    centerLng={centerLng}
-                    mapZoom={mapZoom}
-                />
+                {step2Done ? (
+                    <MasterplanViewer
+                        proyectoId={proyectoId}
+                        modo="admin"
+                        canEdit={true}
+                    />
+                ) : (
+                    /* Placeholder profesional cuando no hay plano */
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-5 bg-slate-950 px-6 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center">
+                            <LayoutTemplate className="w-8 h-8 text-brand-500/60" />
+                        </div>
+                        <div className="space-y-1.5 max-w-sm">
+                            <p className="text-sm font-bold text-slate-300">
+                                Sin plano cargado todavía
+                            </p>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Cargá el plano DXF, SVG, PDF o imagen en el Paso 2 para comenzar a diseñar las capas visuales del desarrollo.
+                            </p>
+                        </div>
+                        <Link
+                            href="?tab=blueprint"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 hover:border-brand-500/40 text-brand-400 text-xs font-bold transition-all"
+                        >
+                            <ArrowRight className="w-3.5 h-3.5" />
+                            Ir al Paso 2 — Plano del Proyecto
+                        </Link>
+                    </div>
+                )}
             </div>
         </div>
     );

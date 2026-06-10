@@ -756,10 +756,8 @@ export default function DevelopmentWizardClient({
           {activeTab === "editor" && (
             <VisualProjectEditorShell
               proyectoId={development.id}
+              step2Done={step2Done}
               step3Done={step3Done}
-              centerLat={development.mapCenterLat ?? undefined}
-              centerLng={development.mapCenterLng ?? undefined}
-              mapZoom={development.mapZoom ?? undefined}
             />
           )}
 
@@ -780,7 +778,8 @@ export default function DevelopmentWizardClient({
                 <MasterplanMap
                   proyectoId={development.id}
                   modo="admin"
-                  variant="viewer"
+                  canEdit={true}
+                  variant="editor"
                   centerLat={development.mapCenterLat ?? undefined}
                   centerLng={development.mapCenterLng ?? undefined}
                   mapZoom={development.mapZoom ?? undefined}
