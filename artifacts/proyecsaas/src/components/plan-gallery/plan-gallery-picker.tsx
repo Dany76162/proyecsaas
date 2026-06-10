@@ -38,6 +38,43 @@ const TIPO_LABELS: Record<PlanGalleryItem["tipo"], string> = {
     otro: "Otro",
 };
 
+function isPdfUrl(url: string) {
+    return /\.pdf(?:$|[?#])/i.test(url);
+}
+
+function PlanThumbnail({ item }: { item: PlanGalleryItem }) {
+    if (isPdfUrl(item.imageUrl)) {
+        return (
+            <div className="relative h-full w-full overflow-hidden bg-slate-900">
+                <object
+                    data={`${item.imageUrl}#page=1&toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                    type="application/pdf"
+                    className="pointer-events-none h-full w-full scale-[1.02]"
+                    aria-label={`Vista previa de ${item.nombre}`}
+                >
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-slate-400">
+                        <FileText className="h-8 w-8" />
+                        <span className="text-[10px] font-medium">PDF</span>
+                    </div>
+                </object>
+                <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end p-1">
+                    <span className="rounded bg-slate-950/80 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-200">
+                        PDF
+                    </span>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <img
+            src={item.imageUrl}
+            alt={item.nombre}
+            className="h-full w-full object-cover"
+        />
+    );
+}
+
 export default function PlanGalleryPicker({
     proyectoId,
     items: initialItems,
@@ -52,7 +89,7 @@ export default function PlanGalleryPicker({
     const [showUploadForm, setShowUploadForm] = useState(false);
     const [uploadName, setUploadName] = useState("");
     const [uploadTipo, setUploadTipo] = useState<PlanGalleryItem["tipo"]>("render");
-    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const updateItems = (next: PlanGalleryItem[]) => {
@@ -65,37 +102,44 @@ export default function PlanGalleryPicker({
     }, [initialItems]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setPendingFile(file);
-        setUploadName(file.name.replace(/\.[^.]+$/, ""));
+        const files = Array.from(e.target.files ?? []);
+        if (files.length === 0) return;
+        setPendingFiles(files);
+        setUploadName(files.length === 1 ? files[0].name.replace(/\.[^.]+$/, "") : `${files.length} planos`);
         setShowUploadForm(true);
     };
 
     const handleUpload = async () => {
-        if (!pendingFile) return;
+        if (pendingFiles.length === 0) return;
         setIsUploading(true);
         try {
-            const form = new FormData();
-            form.append("file", pendingFile);
-            form.append("nombre", uploadName || pendingFile.name);
-            form.append("tipo", uploadTipo);
+            const uploadedItems: PlanGalleryItem[] = [];
 
-            const res = await fetch(`/api/developments/${proyectoId}/plan-gallery`, {
-                method: "POST",
-                body: form,
-            });
-            if (!res.ok) throw new Error("Error al subir");
-            const { item } = await res.json();
-            const next = [...items, item];
+            for (const file of pendingFiles) {
+                const form = new FormData();
+                form.append("file", file);
+                form.append("nombre", pendingFiles.length === 1 ? (uploadName || file.name) : file.name.replace(/\.[^.]+$/, ""));
+                form.append("tipo", uploadTipo);
+
+                const res = await fetch(`/api/developments/${proyectoId}/plan-gallery`, {
+                    method: "POST",
+                    body: form,
+                });
+                if (!res.ok) throw new Error("Error al subir");
+                const { item } = await res.json();
+                uploadedItems.push(item);
+            }
+
+            const next = [...items, ...uploadedItems];
             updateItems(next);
-            toast.success("Plano agregado a la galería");
+            if (uploadedItems[0]) onSelect(uploadedItems[0]);
+            toast.success(uploadedItems.length === 1 ? "Plano agregado a la galería" : `${uploadedItems.length} planos agregados a la galería`);
             setShowUploadForm(false);
-            setPendingFile(null);
+            setPendingFiles([]);
             setUploadName("");
             if (fileRef.current) fileRef.current.value = "";
         } catch {
-            toast.error("No se pudo subir el plano");
+            toast.error("No se pudo subir uno o más planos");
         } finally {
             setIsUploading(false);
         }
@@ -117,7 +161,6 @@ export default function PlanGalleryPicker({
 
     return (
         <div className="space-y-3">
-            {/* Gallery grid */}
             {items.length === 0 ? (
                 <div className="text-center py-8 bg-slate-900/50 rounded-xl border border-dashed border-slate-700">
                     <ImageIcon className="w-10 h-10 mx-auto text-slate-600 mb-2" />
@@ -145,18 +188,7 @@ export default function PlanGalleryPicker({
                             onClick={() => onSelect(item)}
                         >
                             <div className="aspect-video bg-slate-800 relative">
-                                {/\.pdf$/i.test(item.imageUrl) ? (
-                                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-400">
-                                        <FileText className="w-8 h-8" />
-                                        <span className="text-[10px] font-medium">PDF</span>
-                                    </div>
-                                ) : (
-                                    <img
-                                        src={item.imageUrl}
-                                        alt={item.nombre}
-                                        className="w-full h-full object-cover"
-                                    />
-                                )}
+                                <PlanThumbnail item={item} />
                                 {selectedId === item.id && (
                                     <div className="absolute inset-0 bg-indigo-500/20 flex items-center justify-center">
                                         <Check className="w-8 h-8 text-white drop-shadow" />
@@ -180,20 +212,31 @@ export default function PlanGalleryPicker({
                 </div>
             )}
 
-            {/* Upload form */}
-            {showUploadForm && pendingFile && (
+            {showUploadForm && pendingFiles.length > 0 && (
                 <div className="bg-slate-800 rounded-xl p-3 space-y-2 border border-slate-700">
                     <div className="flex items-center justify-between">
-                        <p className="text-xs font-bold text-white">Agregar plano</p>
-                        <button onClick={() => { setShowUploadForm(false); setPendingFile(null); }} className="text-slate-400 hover:text-white">
+                        <p className="text-xs font-bold text-white">
+                            {pendingFiles.length === 1 ? "Agregar plano" : `Agregar ${pendingFiles.length} planos`}
+                        </p>
+                        <button onClick={() => { setShowUploadForm(false); setPendingFiles([]); }} className="text-slate-400 hover:text-white">
                             <X className="w-3.5 h-3.5" />
                         </button>
                     </div>
+                    {pendingFiles.length > 1 && (
+                        <div className="max-h-20 overflow-y-auto rounded-lg bg-slate-900/70 p-2">
+                            {pendingFiles.map((file) => (
+                                <p key={`${file.name}-${file.size}`} className="truncate text-[10px] font-medium text-slate-400">
+                                    {file.name}
+                                </p>
+                            ))}
+                        </div>
+                    )}
                     <input
                         value={uploadName}
                         onChange={e => setUploadName(e.target.value)}
-                        placeholder="Nombre del plano"
-                        className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                        placeholder={pendingFiles.length === 1 ? "Nombre del plano" : "Nombre del grupo"}
+                        disabled={pendingFiles.length > 1}
+                        className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 disabled:opacity-60"
                     />
                     <select
                         value={uploadTipo}
@@ -210,12 +253,11 @@ export default function PlanGalleryPicker({
                         className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold transition-all"
                     >
                         {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        {isUploading ? "Subiendo..." : "Confirmar y subir"}
+                        {isUploading ? "Subiendo..." : pendingFiles.length === 1 ? "Confirmar y subir" : "Confirmar y subir planos"}
                     </button>
                 </div>
             )}
 
-            {/* Upload button */}
             {allowUpload && !showUploadForm && (
                 <button
                     onClick={() => fileRef.current?.click()}
@@ -228,6 +270,7 @@ export default function PlanGalleryPicker({
                 ref={fileRef}
                 type="file"
                 accept="image/*,.pdf,.dxf,.svg"
+                multiple
                 className="hidden"
                 onChange={handleFileChange}
             />

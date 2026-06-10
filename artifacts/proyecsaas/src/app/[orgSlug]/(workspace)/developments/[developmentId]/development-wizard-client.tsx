@@ -24,6 +24,7 @@ import { deleteDevelopmentAction, updateDevelopmentAction } from "@/modules/deve
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import PlanGalleryPicker, { type PlanGalleryItem } from "@/components/plan-gallery/plan-gallery-picker";
 
 const BlueprintEngine = dynamicImport(
   () => import("@/components/masterplan/blueprint-engine"),
@@ -111,6 +112,8 @@ export default function DevelopmentWizardClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lotCountText, setLotCountText] = useState<string>("");
+  const [infoPlanGalleryItems, setInfoPlanGalleryItems] = useState<PlanGalleryItem[]>([]);
+  const [selectedBrochurePlanUrl, setSelectedBrochurePlanUrl] = useState<string>(development.brochurePlanUrl || "");
 
   const saveForm = async (formEl: HTMLFormElement, silent = false) => {
     setIsSaving(true);
@@ -196,6 +199,34 @@ export default function DevelopmentWizardClient({
     setActiveTab(initialActiveTab);
   }, [initialActiveTab]);
 
+  useEffect(() => {
+    setSelectedBrochurePlanUrl(development.brochurePlanUrl || "");
+  }, [development.brochurePlanUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadInfoPlanGallery = async () => {
+      try {
+        const res = await fetch(`/api/developments/${development.id}/plan-gallery`);
+        const data = await res.json();
+        if (!cancelled && res.ok && Array.isArray(data.items)) {
+          setInfoPlanGalleryItems(data.items);
+          setSelectedBrochurePlanUrl((current) => current || data.items[0]?.imageUrl || "");
+        }
+      } catch {
+        if (!cancelled) {
+          setInfoPlanGalleryItems([]);
+        }
+      }
+    };
+
+    loadInfoPlanGallery();
+    return () => {
+      cancelled = true;
+    };
+  }, [development.id]);
+
   const handleTabChange = async (tabId: string) => {
     if (activeTab === "info") {
       const formEl = document.getElementById("development-wizard-form") as HTMLFormElement;
@@ -262,11 +293,11 @@ export default function DevelopmentWizardClient({
       id: "editor",
       num: 4,
       label: "Editor Visual",
-      desc: "Calles, áreas verdes y capas",
+      desc: "Diseño visual del plano",
       required: false,
       icon: PenLine,
       done: step4Done,
-      guidance: "Dibujá calles, áreas verdes, perímetro y capas visuales sobre el mapa del proyecto.",
+      guidance: "Editá el plano visual del proyecto: lotes, etapas y referencias. El ajuste geográfico queda en el Paso 5.",
     },
     {
       id: "mapa",
@@ -499,7 +530,26 @@ export default function DevelopmentWizardClient({
                   <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Identidad de Marca y Ficha Técnica</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <ImageUploader label="Logo del Proyecto" name="logoUrl" defaultValue={development.logoUrl || ""} projectId={development.id} />
-                    <ImageUploader label="Plano Base Ficha (Alta Res)" name="brochurePlanUrl" defaultValue={development.brochurePlanUrl || ""} projectId={development.id} isPdfAccept />
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">
+                        Planos base ficha y galería
+                      </label>
+                      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-950 p-3">
+                        <PlanGalleryPicker
+                          proyectoId={development.id}
+                          items={infoPlanGalleryItems}
+                          selectedId={infoPlanGalleryItems.find((item) => item.imageUrl === selectedBrochurePlanUrl)?.id ?? null}
+                          onSelect={(item) => setSelectedBrochurePlanUrl(item.imageUrl)}
+                          onItemsChange={setInfoPlanGalleryItems}
+                          allowUpload
+                          allowDelete
+                        />
+                      </div>
+                      <input type="hidden" name="brochurePlanUrl" value={selectedBrochurePlanUrl} />
+                      <p className="text-[10px] text-slate-500">
+                        Podés subir varios planos en PDF, imagen, SVG o DXF. Todos quedan disponibles en Galería de planos; el seleccionado se usa como plano base de la ficha.
+                      </p>
+                    </div>
                     <ImageUploader label="Logo Empresa/Inmobiliaria" name="companyLogoUrl" defaultValue={development.companyLogoUrl || ""} projectId={development.id} />
                     
                     <div className="flex flex-col gap-2">
