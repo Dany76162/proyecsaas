@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
+import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, Video, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,7 @@ import {
 import type { PropertyImageItem, PropertyPanoramaItem } from "@/modules/properties/types";
 import { CameraCaptureModal } from "./camera-capture-modal";
 import { ContinuousScannerModal } from "./continuous-scanner-modal";
+import { Video360RecorderModal } from "./video-360-recorder-modal";
 import {
   MediaUploadModal,
   type MediaCategory,
@@ -103,6 +104,7 @@ export function MediaPanel({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isVideo360Open, setIsVideo360Open] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
   const [selectedPanoramaIds, setSelectedPanoramaIds] = useState<string[]>([]);
@@ -416,14 +418,27 @@ export function MediaPanel({
           Subir imagen
         </Button>
         {activeCategory === "PANORAMA" && (
-          <Button
-            type="button"
-            onClick={() => setIsCameraOpen(true)}
-            className="mt-2 w-full gap-2 bg-brand-600 hover:bg-brand-700"
-          >
-            <Camera className="h-4 w-4" />
-            Escanear con celular (Experimental)
-          </Button>
+          <div className="mt-2 space-y-2">
+            <Button
+              type="button"
+              onClick={() => setIsVideo360Open(true)}
+              className="w-full gap-2 bg-cyan-500 text-slate-950 hover:bg-cyan-400"
+            >
+              <Video className="h-4 w-4" />
+              Grabar giro 360 desde celular
+            </Button>
+            <p className="rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-[10px] font-medium leading-normal text-cyan-50/75">
+              Este modo crea una panorámica navegable con celular. No reemplaza una cámara 360 profesional.
+            </p>
+            <Button
+              type="button"
+              onClick={() => setIsCameraOpen(true)}
+              className="w-full gap-2 bg-brand-600 hover:bg-brand-700"
+            >
+              <Camera className="h-4 w-4" />
+              Escanear con celular (Experimental)
+            </Button>
+          </div>
         )}
         <Button
           type="button"
@@ -982,6 +997,14 @@ export function MediaPanel({
         defaultCategory={activeCategory}
         onOpenChange={setIsModalOpen}
         onUploaded={handleUploaded}
+      />
+      <Video360RecorderModal
+        open={isVideo360Open}
+        orgSlug={orgSlug}
+        propertyId={propertyId}
+        onOpenChange={setIsVideo360Open}
+        onCaptured={handleUploaded}
+        onUsePhotoFlow={() => setIsCameraOpen(true)}
       />
       {typeof window !== "undefined" && typeof (window as any).ImageCapture !== "undefined" ? (
         <ContinuousScannerModal
