@@ -109,7 +109,7 @@ export default function LayersPanel({
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
         <div>
           <h3 className="text-sm font-black">Capas del Proyecto</h3>
-          <p className="text-[11px] font-medium text-slate-400">Calles, áreas verdes y polígonos sobre el mapa.</p>
+          <p className="text-[11px] font-medium text-slate-400">Calles, áreas verdes y polígonos sobre el plano.</p>
         </div>
         <button
           type="button"
@@ -133,8 +133,8 @@ export default function LayersPanel({
         {!disabledReason && (
           <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2.5 text-[11px] leading-relaxed text-slate-400">
             {drawingLayerId
-              ? "Marcá los puntos sobre el mapa. Usá «Finalizar dibujo» para guardar o «Cancelar dibujo» para descartar."
-              : "Creá una capa, seleccionala y tocá «Dibujar» para marcar sus puntos sobre el mapa."}
+              ? "Marcá los puntos sobre el plano. Usá «Finalizar dibujo» para guardar o «Cancelar dibujo» para descartar."
+              : "Creá una capa, seleccionala y tocá «Dibujar» para marcar sus puntos sobre el plano."}
           </div>
         )}
 
@@ -311,7 +311,7 @@ export default function LayersPanel({
                     type="button"
                     onClick={() => onStartDraw(layer.id)}
                     disabled={!canDraw || layer.bloqueada}
-                    title={!canDraw ? "Ajustá el plano sobre el mapa para poder dibujar" : undefined}
+                    title={!canDraw ? disabledReason ?? "El dibujo todavía no está disponible." : undefined}
                     className={cn(
                       "flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-40",
                       isDrawing

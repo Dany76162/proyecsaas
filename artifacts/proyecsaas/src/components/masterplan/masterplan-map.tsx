@@ -19,10 +19,9 @@ import MasterplanComparator from "./masterplan-comparator";
 // OverlayConfig es un tipo — se importa con `import type` para que no fuerce
 // la carga del módulo overlay-editor en el bundle del viewer público.
 import type { OverlayConfig } from "./overlay-editor";
-// OverlayEditor y LayersPanel se cargan solo en variant="editor" (admin).
-// En variant="viewer" (público) estos módulos nunca se incluyen en el bundle.
+// OverlayEditor se carga solo en variant="editor" (admin).
+// En variant="viewer" (público) este módulo nunca se incluye en el bundle.
 const OverlayEditor = dynamic(() => import("./overlay-editor"), { ssr: false });
-const LayersPanel = dynamic(() => import("./layers-panel"), { ssr: false });
 // Fase futura: Tour 360 desacoplado del commit inicial de Desarrollos.
 // import Tour360Viewer from "./tour360-viewer";
 // const InfraestructuraTool = dynamic(() => import("./infraestructura-tool"), { ssr: false });
@@ -134,7 +133,7 @@ interface MasterplanMapProps {
     initialOverlayConfig?: PublicOverlayConfig | null;
     initialDrawableLayers?: DevelopmentDrawableLayerDto[];
     /**
-     * "editor" (default): carga OverlayEditor, LayersPanel, drawing handlers — modo admin completo.
+     * "editor" (default): carga OverlayEditor para ajuste geografico admin.
      * "viewer": omite todos los módulos de edición del bundle. Ideal para el mapa público (Paso 5).
      */
     variant?: "viewer" | "editor";
@@ -296,13 +295,7 @@ export default function MasterplanMap({
 
     // Drawable project layers
     const [drawableLayers, setDrawableLayers] = useState<DevelopmentDrawableLayerDto[]>(initialDrawableLayers);
-    const [showLayersPanel, setShowLayersPanel] = useState(false);
-    const [activeDrawableLayerId, setActiveDrawableLayerId] = useState<string | null>(null);
-    const [drawingLayerId, setDrawingLayerId] = useState<string | null>(null);
-    const [drawingPoints, setDrawingPoints] = useState<[number, number][]>([]);
-    const [isSavingDrawing, setIsSavingDrawing] = useState(false);
     const drawableLayerRefs = useRef<Map<string, any>>(new Map());
-    const drawingPreviewRef = useRef<any | null>(null);
 
     useEffect(() => {
         showNumbersRef.current = showNumbers;
@@ -323,9 +316,6 @@ export default function MasterplanMap({
         contentBoundsRef.current = null;
         setSelectedUnitId(null);
         setHoveredUnitId(null);
-        setActiveDrawableLayerId(null);
-        setDrawingLayerId(null);
-        setDrawingPoints([]);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [proyectoId]);
 
@@ -378,71 +368,6 @@ export default function MasterplanMap({
     useEffect(() => {
         loadDrawableLayers();
     }, [loadDrawableLayers]);
-
-    const updateDrawableLayerLocal = useCallback((layer: DevelopmentDrawableLayerDto) => {
-        setDrawableLayers((current) => {
-            const exists = current.some((item) => item.id === layer.id);
-            const next = exists
-                ? current.map((item) => (item.id === layer.id ? layer : item))
-                : [...current, layer];
-            return next.sort((a, b) => a.orden - b.orden);
-        });
-    }, []);
-
-    const createDrawableLayer = useCallback(async (payload: {
-        nombre: string;
-        tipo: DevelopmentDrawableLayerDto["tipo"];
-        colorRelleno: string;
-        colorBorde: string;
-        opacidad: number;
-        grosorBorde: number;
-    }) => {
-        const response = await fetch(`/api/developments/${proyectoId}/layers`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
-        const data = await readJsonResponse(response);
-        if (!response.ok) {
-            throw new Error(data.error || "No se pudo crear la capa.");
-        }
-        if (data.layer) {
-            updateDrawableLayerLocal(data.layer);
-            setActiveDrawableLayerId(data.layer.id);
-        }
-    }, [proyectoId, readJsonResponse, updateDrawableLayerLocal]);
-
-    const updateDrawableLayer = useCallback(async (
-        layerId: string,
-        payload: Partial<DevelopmentDrawableLayerDto>,
-    ) => {
-        const response = await fetch(`/api/developments/${proyectoId}/layers`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: layerId, ...payload }),
-        });
-        const data = await readJsonResponse(response);
-        if (!response.ok) {
-            throw new Error(data.error || "No se pudo actualizar la capa.");
-        }
-        if (data.layer) updateDrawableLayerLocal(data.layer);
-    }, [proyectoId, readJsonResponse, updateDrawableLayerLocal]);
-
-    const deleteDrawableLayer = useCallback(async (layerId: string) => {
-        const response = await fetch(`/api/developments/${proyectoId}/layers?layerId=${encodeURIComponent(layerId)}`, {
-            method: "DELETE",
-        });
-        const data = await readJsonResponse(response);
-        if (!response.ok) {
-            throw new Error(data.error || "No se pudo eliminar la capa.");
-        }
-        setDrawableLayers((current) => current.filter((layer) => layer.id !== layerId));
-        if (activeDrawableLayerId === layerId) setActiveDrawableLayerId(null);
-        if (drawingLayerId === layerId) {
-            setDrawingLayerId(null);
-            setDrawingPoints([]);
-        }
-    }, [activeDrawableLayerId, drawingLayerId, proyectoId, readJsonResponse]);
 
     const extractSvgViewBox = useCallback((svgString: string | null | undefined) => {
         if (!svgString || typeof window === "undefined") return null;
@@ -907,22 +832,6 @@ export default function MasterplanMap({
         return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
     }, [svgProjectionViewBox, units]);
 
-    const activeDrawableLayer = useMemo(
-        () => drawableLayers.find((layer) => layer.id === activeDrawableLayerId) ?? null,
-        [activeDrawableLayerId, drawableLayers],
-    );
-
-    // Dibujar capas usa clics directos de Leaflet (event.latlng) — no necesita overlay calibrado.
-    // Requiere mapa listo, permisos de edición, y que no esté activo el modo "Ajustar Plano"
-    // (OverlayEditor interceptaría los clics del mapa antes que el drawing handler).
-    const canDrawDrawableLayers = modo === "admin" && canEdit && isMapReady && !isEditingOverlay;
-    const drawableLayerDisabledReason =
-        modo === "admin" && canEdit && isEditingOverlay
-            ? "Cerrá «Ajustar Plano» para poder dibujar capas."
-            : modo === "admin" && canEdit && !isMapReady
-            ? "Esperando a que el mapa esté listo."
-            : null;
-
     // Lee de refs — identidad estable: el useEffect de zoomend/resize nunca se re-registra
     // por cambios de filtro/selección, eliminando la cascada de re-renders masivos.
     const updateLotVisualStyles = useCallback(() => {
@@ -1024,69 +933,6 @@ export default function MasterplanMap({
             drawableLayerRefs.current.clear();
         };
     }, [drawableLayers, isMapReady]);
-
-    useEffect(() => {
-        // El drawing handler solo existe en el editor admin — el viewer público nunca dibuja.
-        if (variant === "viewer") return;
-        if (!isMapReady || !leafletMapRef.current || !drawingLayerId) return;
-
-        const map = leafletMapRef.current;
-        const handleClick = (event: any) => {
-            setDrawingPoints((current) => [...current, [event.latlng.lat, event.latlng.lng]]);
-        };
-
-        map.on("click", handleClick);
-        map.getContainer().style.cursor = "crosshair";
-
-        return () => {
-            map.off("click", handleClick);
-            map.getContainer().style.cursor = "";
-        };
-    }, [drawingLayerId, isMapReady, variant]);
-
-    useEffect(() => {
-        if (!isMapReady || !leafletMapRef.current) return;
-
-        const updatePreview = async () => {
-            const L = (await import("leaflet")).default;
-            const map = leafletMapRef.current!;
-
-            if (drawingPreviewRef.current) {
-                map.removeLayer(drawingPreviewRef.current);
-                drawingPreviewRef.current = null;
-            }
-
-            if (!drawingLayerId || drawingPoints.length === 0) return;
-
-            const layer = drawableLayers.find((item) => item.id === drawingLayerId);
-            const isLine = layer?.tipo === "CALLE";
-            const style = {
-                pane: "drawablePane",
-                color: layer?.colorBorde ?? (isLine ? "#1e293b" : "#16a34a"),
-                fillColor: layer?.colorRelleno ?? (isLine ? "#475569" : "#22c55e"),
-                fillOpacity: isLine ? 0 : layer?.opacidad ?? 0.35,
-                weight: layer?.grosorBorde ?? (isLine ? 8 : 2),
-                dashArray: "6 6",
-                lineCap: "round",
-                lineJoin: "round",
-            };
-
-            drawingPreviewRef.current =
-                isLine || drawingPoints.length < 3
-                    ? L.polyline(drawingPoints, style as any).addTo(map)
-                    : L.polygon(drawingPoints, style as any).addTo(map);
-        };
-
-        updatePreview();
-
-        return () => {
-            const map = leafletMapRef.current;
-            if (map && drawingPreviewRef.current) {
-                map.removeLayer(drawingPreviewRef.current);
-                drawingPreviewRef.current = null;
-            }
-        };
-    }, [drawableLayers, drawingLayerId, drawingPoints, isMapReady]);
 
     // Draw lot polygons on map
     useEffect(() => {
@@ -1528,48 +1374,6 @@ export default function MasterplanMap({
         setShowDeleteOverlayConfirm(true);
     }, []);
 
-    const startDrawingLayer = useCallback((layerId: string) => {
-        if (!canDrawDrawableLayers) {
-            setShowLayersPanel(true);
-            return;
-        }
-        setActiveDrawableLayerId(layerId);
-        setDrawingLayerId(layerId);
-        setDrawingPoints([]);
-    }, [canDrawDrawableLayers]);
-
-    const cancelDrawingLayer = useCallback(() => {
-        setDrawingLayerId(null);
-        setDrawingPoints([]);
-    }, []);
-
-    const finishDrawingLayer = useCallback(async () => {
-        const layer = drawableLayers.find((item) => item.id === drawingLayerId);
-        if (!layer) return;
-
-        const isLine = layer.tipo === "CALLE";
-        const minimumPoints = isLine ? 2 : 3;
-        if (drawingPoints.length < minimumPoints) return;
-
-        const coordinates = isLine
-            ? drawingPoints.map(([lat, lng]) => [lng, lat])
-            : [[...drawingPoints.map(([lat, lng]) => [lng, lat]), [drawingPoints[0][1], drawingPoints[0][0]]]];
-
-        const geometria = {
-            type: isLine ? "LineString" : "Polygon",
-            coordinates,
-        };
-
-        setIsSavingDrawing(true);
-        try {
-            await updateDrawableLayer(layer.id, { geometria });
-            setDrawingLayerId(null);
-            setDrawingPoints([]);
-        } finally {
-            setIsSavingDrawing(false);
-        }
-    }, [drawableLayers, drawingLayerId, drawingPoints, updateDrawableLayer]);
-
     // Load masterplan SVG from paso 3 as overlay image
     const handleLoadPlanOverlay = useCallback(async () => {
         if (!leafletMapRef.current) return;
@@ -1883,45 +1687,6 @@ export default function MasterplanMap({
                             </button>
                         )}
 
-                        <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />
-
-                        <button
-                            onClick={() => setShowLayersPanel((value) => !value)}
-                            title="Capas del Proyecto"
-                            className={cn(
-                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap",
-                                showLayersPanel
-                                    ? "bg-brand-500 text-white border-brand-400"
-                                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
-                            )}
-                        >
-                            <LayersIcon className="w-3.5 h-3.5" />
-                            Capas del Proyecto
-                        </button>
-
-                        {drawingLayerId && (
-                            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1">
-                                <span className="text-[11px] font-bold text-emerald-200">
-                                    {activeDrawableLayer?.tipo === "CALLE" ? "Dibujando línea" : "Dibujando polígono"} · {drawingPoints.length} punto{drawingPoints.length !== 1 ? "s" : ""}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={finishDrawingLayer}
-                                    disabled={isSavingDrawing || drawingPoints.length < (activeDrawableLayer?.tipo === "CALLE" ? 2 : 3)}
-                                    className="rounded-md bg-emerald-500 px-2 py-1 text-[11px] font-black text-white transition hover:bg-emerald-600 disabled:opacity-50"
-                                >
-                                    {isSavingDrawing ? "Guardando..." : "Finalizar dibujo"}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={cancelDrawingLayer}
-                                    className="rounded-md border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-200 transition hover:bg-slate-800"
-                                >
-                                    Cancelar dibujo
-                                </button>
-                            </div>
-                        )}
-
                         {/* Fase futura: InfraestructuraTool e ImagenesMapaTool desacoplados del commit inicial de Desarrollos. */}
                         {/* {isMapReady && leafletMapRef.current && (
                             <>
@@ -2123,32 +1888,6 @@ export default function MasterplanMap({
                             className="absolute top-14 left-3 bottom-4 z-[1000] w-[260px]"
                         >
                             <MasterplanFilters onClose={() => setShowFilters(false)} />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                    {variant === "editor" && modo === "admin" && showLayersPanel && (
-                        <motion.div
-                            initial={{ x: 340, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: 340, opacity: 0 }}
-                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                            className="absolute right-3 top-14 bottom-4 z-[1000] w-[min(360px,calc(100vw-2rem))]"
-                        >
-                            <LayersPanel
-                                layers={drawableLayers}
-                                activeLayerId={activeDrawableLayerId}
-                                drawingLayerId={drawingLayerId}
-                                canDraw={canDrawDrawableLayers}
-                                disabledReason={drawableLayerDisabledReason}
-                                onClose={() => setShowLayersPanel(false)}
-                                onCreate={createDrawableLayer}
-                                onUpdate={updateDrawableLayer}
-                                onDelete={deleteDrawableLayer}
-                                onSelect={setActiveDrawableLayerId}
-                                onStartDraw={startDrawingLayer}
-                            />
                         </motion.div>
                     )}
                 </AnimatePresence>

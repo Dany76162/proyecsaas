@@ -8,6 +8,7 @@
  */
 
 import dynamic from "next/dynamic";
+import { useState } from "react";
 import {
     AlertCircle,
     ArrowRight,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import ProjectLayersEditorPanel from "./project-layers-editor-panel";
 
 const MasterplanViewer = dynamic(() => import("@/components/masterplan/masterplan-viewer"), {
     ssr: false,
@@ -44,9 +46,15 @@ interface Tool {
 
 const TOOLS: Tool[] = [
     {
+        label: "Capas del Proyecto",
+        description: "Crear capas, estilos, visibilidad y eliminacion",
+        icon: Layers,
+        status: "available",
+    },
+    {
         label: "Plano interactivo",
         description: "Zoom, filtros, seleccion de lotes y estados",
-        icon: Layers,
+        icon: PenLine,
         status: "available",
     },
     {
@@ -85,6 +93,8 @@ export default function VisualProjectEditorShell({
     proyectoId,
     step2Done,
 }: VisualProjectEditorShellProps) {
+    const [showProjectLayers, setShowProjectLayers] = useState(false);
+
     return (
         <div className="flex h-full min-h-[640px] flex-1 flex-col overflow-hidden">
             <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-4 pb-2 pt-3 dark:border-slate-800 dark:bg-slate-900/60">
@@ -165,9 +175,36 @@ export default function VisualProjectEditorShell({
                 </div>
             )}
 
-            <div className="min-h-0 flex-1 overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800">
+            <div className="relative min-h-0 flex-1 overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800">
                 {step2Done ? (
-                    <MasterplanViewer proyectoId={proyectoId} modo="admin" canEdit={true} />
+                    <>
+                        <div className="absolute right-4 top-4 z-30">
+                            <button
+                                type="button"
+                                onClick={() => setShowProjectLayers((value) => !value)}
+                                className={cn(
+                                    "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black shadow-lg backdrop-blur-sm transition-all",
+                                    showProjectLayers
+                                        ? "border-brand-400 bg-brand-500 text-white"
+                                        : "border-slate-700 bg-slate-900/90 text-slate-100 hover:bg-slate-800"
+                                )}
+                            >
+                                <Layers className="h-3.5 w-3.5" />
+                                Capas del Proyecto
+                            </button>
+                        </div>
+
+                        <MasterplanViewer proyectoId={proyectoId} modo="admin" canEdit={true} />
+
+                        {showProjectLayers && (
+                            <div className="absolute bottom-4 right-4 top-16 z-40 w-[min(360px,calc(100vw-2rem))]">
+                                <ProjectLayersEditorPanel
+                                    proyectoId={proyectoId}
+                                    onClose={() => setShowProjectLayers(false)}
+                                />
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-5 bg-slate-950 px-6 text-center">
                         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/10">
