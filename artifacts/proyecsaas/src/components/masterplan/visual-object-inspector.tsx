@@ -6,6 +6,7 @@ import type {
   DevelopmentVisualObjectDto,
   UpdateDevelopmentVisualObjectInput,
   VisualVisibility,
+  VisualTextGeometry,
 } from "@/types/development-visual-objects";
 
 interface VisualObjectInspectorProps {
@@ -46,8 +47,10 @@ export default function VisualObjectInspector({
     );
   }
 
+  const textGeometry = object.geometryKind === "TEXT" ? (object.geometry as VisualTextGeometry) : null;
+
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <aside key={object.id} className="flex h-full min-h-0 w-full flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-black text-slate-900 dark:text-white">Inspector</h3>
@@ -73,9 +76,65 @@ export default function VisualObjectInspector({
             className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition focus:border-brand-400 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             defaultValue={object.name}
             disabled={disabled}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") event.currentTarget.blur();
+            }}
             onBlur={(event) => onUpdate(object.id, { name: event.currentTarget.value.trim() || object.name })}
           />
         </label>
+
+        {textGeometry && (
+          <>
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+              Texto de la etiqueta
+              <input
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition focus:border-brand-400 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                defaultValue={textGeometry.text}
+                disabled={disabled}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+                onBlur={(event) => {
+                  const text = event.currentTarget.value.trim();
+                  if (text && text !== textGeometry.text) {
+                    onUpdate(object.id, {
+                      geometry: {
+                        ...textGeometry,
+                        text,
+                      },
+                    });
+                  }
+                }}
+              />
+            </label>
+
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+              Tamaño de letra (px)
+              <input
+                type="number"
+                min="8"
+                max="120"
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition focus:border-brand-400 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                defaultValue={textGeometry.fontSize ?? 18}
+                disabled={disabled}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+                onBlur={(event) => {
+                  const val = numberValue(event.currentTarget.value);
+                  if (val !== null && val !== textGeometry.fontSize) {
+                    onUpdate(object.id, {
+                      geometry: {
+                        ...textGeometry,
+                        fontSize: val,
+                      },
+                    });
+                  }
+                }}
+              />
+            </label>
+          </>
+        )}
 
         <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
           Tipo

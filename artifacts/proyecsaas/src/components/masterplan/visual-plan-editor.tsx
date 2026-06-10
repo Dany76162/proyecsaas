@@ -8,6 +8,7 @@ import type {
   DevelopmentVisualObjectDto,
   UpdateDevelopmentVisualObjectInput,
   VisualRectGeometry,
+  VisualTextGeometry,
 } from "@/types/development-visual-objects";
 import VisualEditorToolbar, { type VisualEditorTool } from "./visual-editor-toolbar";
 import VisualObjectInspector from "./visual-object-inspector";
@@ -49,6 +50,28 @@ function buildRectObjectInput(
     fillColor: "#22c55e",
     strokeColor: "#166534",
     opacity: 0.45,
+    strokeWidth: 2,
+    zIndex: order,
+    visibility: "BOTH",
+    interactive: true,
+    locked: false,
+  };
+}
+
+function buildTextObjectInput(
+  geometry: VisualTextGeometry,
+  order: number,
+): CreateDevelopmentVisualObjectInput {
+  return {
+    name: `Etiqueta ${order + 1}`,
+    type: "label",
+    tooltip: "Etiqueta visual",
+    geometryKind: "TEXT",
+    coordinateSpace: "PLAN_VIEWBOX",
+    geometry,
+    fillColor: "#e2e8f0",
+    strokeColor: "#0f172a",
+    opacity: 1,
     strokeWidth: 2,
     zIndex: order,
     visibility: "BOTH",
@@ -124,6 +147,30 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
     [objects.length, proyectoId],
   );
 
+  const createText = useCallback(
+    async (geometry: VisualTextGeometry) => {
+      setSaving(true);
+      setError(null);
+      try {
+        const input = buildTextObjectInput(geometry, objects.length);
+        const response = await fetch(`/api/developments/${proyectoId}/visual-objects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        const created = await readJson<{ object: DevelopmentVisualObjectDto }>(response);
+        setObjects((current) => [...current, created.object]);
+        setSelectedObjectId(created.object.id);
+        setActiveTool("select");
+      } catch (createError) {
+        setError(createError instanceof Error ? createError.message : "No se pudo crear la etiqueta");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [objects.length, proyectoId],
+  );
+
   const updateObject = useCallback(
     async (objectId: string, input: UpdateDevelopmentVisualObjectInput) => {
       const previousObjects = objects;
@@ -190,7 +237,6 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
             activeTool={activeTool}
             onToolChange={setActiveTool}
             disabled={loading || saving}
-            disabledTools={{ text: "Etiqueta queda para Fase 2B" }}
           />
           <button
             type="button"
@@ -236,6 +282,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
             onSelectObject={setSelectedObjectId}
             onUpdateObject={updateObject}
             onCreateRect={(geometry) => void createRect(geometry)}
+            onCreateText={(geometry) => void createText(geometry)}
           />
         </div>
 

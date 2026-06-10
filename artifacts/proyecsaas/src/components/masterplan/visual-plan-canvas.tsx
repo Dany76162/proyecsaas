@@ -18,6 +18,7 @@ interface VisualPlanCanvasProps {
   activeTool: VisualEditorTool;
   onSelectObject: (objectId: string | null) => void;
   onCreateRect: (geometry: VisualRectGeometry) => void;
+  onCreateText: (geometry: VisualTextGeometry) => void;
   // New callback to persist geometry updates
   onUpdateObject: (objectId: string, input: UpdateDevelopmentVisualObjectInput) => void;
 }
@@ -48,6 +49,7 @@ export default function VisualPlanCanvas({
   activeTool,
   onSelectObject,
   onCreateRect,
+  onCreateText,
   onUpdateObject,
 }: VisualPlanCanvasProps) {
   const [hoveredObjectId, setHoveredObjectId] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export default function VisualPlanCanvas({
   );
 
   const handleCanvasClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (activeTool !== "rect") {
+    if (activeTool !== "rect" && activeTool !== "text") {
       onSelectObject(null);
       return;
     }
@@ -92,33 +94,64 @@ export default function VisualPlanCanvas({
     if (!matrix) return;
     const svgPoint = point.matrixTransform(matrix.inverse());
 
-    onCreateRect({
-      x: Math.round(svgPoint.x - 60),
-      y: Math.round(svgPoint.y - 35),
-      width: 120,
-      height: 70,
-    });
+    if (activeTool === "rect") {
+      onCreateRect({
+        x: Math.round(svgPoint.x - 60),
+        y: Math.round(svgPoint.y - 35),
+        width: 120,
+        height: 70,
+      });
+    } else if (activeTool === "text") {
+      onCreateText({
+        x: Math.round(svgPoint.x),
+        y: Math.round(svgPoint.y),
+        text: "Nueva etiqueta",
+        fontSize: 24,
+      });
+    }
   };
 
-  // Pointer down on a rectangle – start drag
+  // Pointer down on an object – start drag
   const handlePointerDown = (
-    event: React.PointerEvent<SVGRectElement>,
+    event: React.PointerEvent<SVGElement>,
     object: DevelopmentVisualObjectDto,
   ) => {
     if (!object.interactive) return;
-    const geometry = getRectGeometry(object.geometry);
-    if (!geometry) return;
+
+    let startX = 0;
+    let startY = 0;
+    let startWidth = 0;
+    let startHeight = 0;
+
+    if (object.geometryKind === "RECT") {
+      const geometry = getRectGeometry(object.geometry);
+      if (!geometry) return;
+      startX = geometry.x;
+      startY = geometry.y;
+      startWidth = geometry.width;
+      startHeight = geometry.height;
+    } else if (object.geometryKind === "TEXT") {
+      const geometry = getTextGeometry(object.geometry);
+      if (!geometry) return;
+      startX = geometry.x;
+      startY = geometry.y;
+      startWidth = 0;
+      startHeight = 0;
+    } else {
+      return;
+    }
+
     setDraggingId(object.id);
     setDragStart({
-      x: geometry.x,
-      y: geometry.y,
-      width: geometry.width,
-      height: geometry.height,
+      x: startX,
+      y: startY,
+      width: startWidth,
+      height: startHeight,
       clientX: event.clientX,
       clientY: event.clientY,
     });
     event.stopPropagation();
-    (event.target as SVGRectElement).setPointerCapture(event.pointerId);
+    (event.target as SVGElement).setPointerCapture(event.pointerId);
   };
 
   // While dragging – update temporary visual position
@@ -234,9 +267,31 @@ export default function VisualPlanCanvas({
       0,
       Math.min(viewBoxHeight - dragStart.height, dragStart.y + deltaViewBoxY),
     );
+
+    const draggedObject = objects.find((o) => o.id === draggingId);
+    if (!draggedObject) return;
+
+    let finalGeometry: VisualObjectGeometry;
+    if (draggedObject.geometryKind === "TEXT") {
+      const currentTextGeom = getTextGeometry(draggedObject.geometry);
+      finalGeometry = {
+        ...currentTextGeom,
+        x: newX,
+        y: newY,
+        text: currentTextGeom?.text ?? "Etiqueta",
+      };
+    } else {
+      finalGeometry = {
+        x: newX,
+        y: newY,
+        width: dragStart.width,
+        height: dragStart.height,
+      };
+    }
+
     const updatePayload: UpdateDevelopmentVisualObjectInput = {
-      geometry: { x: newX, y: newY, width: dragStart.width, height: dragStart.height },
-      geometryKind: "RECT",
+      geometry: finalGeometry,
+      geometryKind: draggedObject.geometryKind,
       coordinateSpace: "PLAN_VIEWBOX",
     };
     onUpdateObject(draggingId, updatePayload);
@@ -347,21 +402,81 @@ export default function VisualPlanCanvas({
           if (object.geometryKind === "TEXT") {
             const geometry = getTextGeometry(object.geometry);
             if (!geometry) return null;
+
+            const tempDrag = tempPositions[object.id];
+            const renderX = tempDrag?.x ?? geometry.x;
+            const renderY = tempDrag?.y ?? geometry.y;
+            const selected = object.id === selectedObjectId;
+            const hovered = object.id === hoveredObjectId;
+            const fontSize = geometry.fontSize ?? 18;
+
+            // Estimación del tamaño del rectángulo de selección/hover
+            const estCharWidth = fontSize * 0.6;
+            const textWidth = geometry.text.length * estCharWidth;
+            const boxPadding = 6;
+            const boxX = renderX - boxPadding;
+            const boxY = renderY - fontSize;
+            const boxW = textWidth + boxPadding * 2;
+            const boxH = fontSize + boxPadding;
+
             return (
-              <text
+              <g
                 key={object.id}
-                x={geometry.x}
-                y={geometry.y}
-                fontSize={geometry.fontSize ?? 18}
-                fill={object.fillColor ?? "#e2e8f0"}
-                className="cursor-pointer font-black"
                 onClick={(event) => {
                   event.stopPropagation();
                   onSelectObject(object.id);
                 }}
+                onMouseEnter={() => setHoveredObjectId(object.id)}
+                onMouseLeave={() => setHoveredObjectId(null)}
+                className={object.interactive ? "cursor-pointer" : ""}
               >
-                {geometry.text}
-              </text>
+                {/* Rectángulo de selección dashed */}
+                {(selected || hovered) && (
+                  <rect
+                    x={boxX}
+                    y={boxY}
+                    width={boxW}
+                    height={boxH}
+                    fill="none"
+                    stroke={selected ? "#3b82f6" : "#64748b"}
+                    strokeWidth="1.5"
+                    strokeDasharray={selected ? "4 3" : "2 2"}
+                    rx="4"
+                    className="pointer-events-none"
+                  />
+                )}
+
+                <text
+                  x={renderX}
+                  y={renderY}
+                  fontSize={fontSize}
+                  fill={object.fillColor ?? "#e2e8f0"}
+                  fillOpacity={object.opacity ?? 1}
+                  stroke={object.strokeColor ?? "#0f172a"}
+                  strokeWidth={object.strokeWidth ?? 1.5}
+                  paintOrder="stroke"
+                  className="select-none font-black"
+                  style={draggingId === object.id ? { cursor: "move" } : undefined}
+                  onPointerDown={(e) => handlePointerDown(e, object)}
+                >
+                  {geometry.text}
+                </text>
+
+                {/* Tooltip on hover */}
+                {hovered && (object.tooltip || object.name) && (
+                  <text
+                    x={renderX}
+                    y={boxY - 8}
+                    textAnchor="start"
+                    className="pointer-events-none fill-white text-[11px] font-black"
+                    paintOrder="stroke"
+                    stroke="#020617"
+                    strokeWidth="3"
+                  >
+                    {object.tooltip || object.name}
+                  </text>
+                )}
+              </g>
             );
           }
 
