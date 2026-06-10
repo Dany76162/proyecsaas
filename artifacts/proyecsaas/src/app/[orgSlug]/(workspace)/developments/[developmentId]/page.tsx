@@ -65,13 +65,17 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
 
   const pctVendido = total > 0 ? Math.round(((vendidas + reservadas) / total) * 100) : 0;
 
-  // Step completion flags
+  // Step completion flags (5 pasos)
   const step1Done = !!(development.name && (development.city || development.province));
   const step2Done = !!development.masterplanSVG;
   const step3Done = total > 0;
-  const step4Done = !!development.overlayBounds;
+  // Paso 4 — Editor Visual: se considera completo cuando hay lotes y plano subido.
+  // El editor es una herramienta opcional; no bloqueamos el progreso si solo falta calibrar.
+  const step4Done = step2Done && step3Done;
+  // Paso 5 — Mapa Interactivo: completo cuando el plano está georreferenciado.
+  const step5Done = !!development.overlayBounds;
 
-  const stepsCompletion = [step1Done, step2Done, step3Done, step4Done];
+  const stepsCompletion = [step1Done, step2Done, step3Done, step4Done, step5Done];
   const completedCount = stepsCompletion.filter(Boolean).length;
 
   const stats = {
@@ -88,10 +92,11 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
     step2Done,
     step3Done,
     step4Done,
+    step5Done,
     completedCount,
   };
 
-  const isFullCanvas = ["blueprint", "masterplan", "mapa"].includes(activeTab);
+  const isFullCanvas = ["blueprint", "masterplan", "editor", "mapa"].includes(activeTab);
 
   return (
     <div className={cn(
@@ -129,7 +134,7 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
           <div className="text-right hidden sm:block">
             <div className="text-sm font-black text-slate-800 dark:text-white tabular-nums leading-tight">
               {completedCount}
-              <span className="text-slate-400 font-semibold text-xs">/4</span>
+              <span className="text-slate-400 font-semibold text-xs">/5</span>
             </div>
             <div className="text-[10px] text-slate-500 leading-tight">completados</div>
           </div>
@@ -137,7 +142,7 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
             <div
               className="h-full rounded-full transition-all duration-700 ease-out"
               style={{
-                width: `${Math.round((completedCount / 4) * 100)}%`,
+                width: `${Math.round((completedCount / 5) * 100)}%`,
                 background: "linear-gradient(90deg, #f97316 0%, #fb923c 100%)",
               }}
             />

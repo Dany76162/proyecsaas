@@ -15,6 +15,7 @@ import {
   Trash2,
   X,
   UploadCloud,
+  PenLine,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -87,6 +88,7 @@ interface DevelopmentWizardClientProps {
     step2Done: boolean;
     step3Done: boolean;
     step4Done: boolean;
+    step5Done: boolean;
     completedCount: number;
   };
 }
@@ -218,7 +220,7 @@ export default function DevelopmentWizardClient({
   };
 
   const { total, disponibles, reservadas, vendidas, bloqueados } = stats;
-  const { step1Done, step2Done, step3Done, step4Done, completedCount } = stepCompletion;
+  const { step1Done, step2Done, step3Done, step4Done, step5Done, completedCount } = stepCompletion;
 
   const steps = [
     {
@@ -252,13 +254,23 @@ export default function DevelopmentWizardClient({
       guidance: "Visualizá el masterplan del loteo y gestioná el estado de los lotes y el inventario.",
     },
     {
-      id: "mapa",
+      id: "editor",
       num: 4,
+      label: "Editor Visual",
+      desc: "Calles, áreas verdes y capas",
+      required: false,
+      icon: PenLine,
+      done: step4Done,
+      guidance: "Dibujá calles, áreas verdes, perímetro y capas visuales sobre el mapa del proyecto.",
+    },
+    {
+      id: "mapa",
+      num: 5,
       label: "Mapa Interactivo",
       desc: "Posicioná el plano sobre el terreno",
       required: false,
       icon: Globe,
-      done: step4Done,
+      done: step5Done,
       guidance: "Georreferenciá el proyecto en el mapa real calibrando el overlay del plano sobre el satélite.",
     },
   ];
@@ -267,7 +279,7 @@ export default function DevelopmentWizardClient({
   const activeStep = steps[currentStepIdx] ?? steps[0];
   const prevStep = currentStepIdx > 0 ? steps[currentStepIdx - 1] : null;
   const nextStep = currentStepIdx < steps.length - 1 ? steps[currentStepIdx + 1] : null;
-  const isWorkspaceTab = activeTab === "mapa" || activeTab === "blueprint" || activeTab === "masterplan";
+  const isWorkspaceTab = activeTab === "mapa" || activeTab === "editor" || activeTab === "blueprint" || activeTab === "masterplan";
 
   return (
     <div className={cn("flex-1 flex flex-col min-h-0 overflow-hidden", isWorkspaceTab ? "space-y-2.5" : "space-y-4")}>
@@ -735,7 +747,34 @@ export default function DevelopmentWizardClient({
             </div>
           )}
 
-          {/* PASO 4: MAPA INTERACTIVO */}
+          {/* PASO 4: EDITOR VISUAL */}
+          {activeTab === "editor" && (
+            <div className="flex-1 flex flex-col h-full min-h-[640px] overflow-hidden">
+              {!step3Done && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 mb-3">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  Sincronizá los lotes en el{" "}
+                  <Link href="?tab=masterplan" className="underline font-bold">
+                    Paso 3 — Masterplan
+                  </Link>{" "}
+                  para poder editar el mapa visual.
+                </div>
+              )}
+              <div className="flex-1 min-h-0 w-full overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <MasterplanMap
+                  proyectoId={development.id}
+                  modo="admin"
+                  canEdit={true}
+                  variant="editor"
+                  centerLat={development.mapCenterLat ?? undefined}
+                  centerLng={development.mapCenterLng ?? undefined}
+                  mapZoom={development.mapZoom ?? undefined}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* PASO 5: MAPA INTERACTIVO */}
           {activeTab === "mapa" && (
             <div className="flex-1 flex flex-col h-full min-h-[640px] overflow-hidden">
               {!step3Done && (
@@ -752,6 +791,7 @@ export default function DevelopmentWizardClient({
                 <MasterplanMap
                   proyectoId={development.id}
                   modo="admin"
+                  variant="viewer"
                   centerLat={development.mapCenterLat ?? undefined}
                   centerLng={development.mapCenterLng ?? undefined}
                   mapZoom={development.mapZoom ?? undefined}
