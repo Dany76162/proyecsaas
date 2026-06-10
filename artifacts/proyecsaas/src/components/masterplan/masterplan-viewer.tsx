@@ -326,6 +326,7 @@ interface MasterplanViewerProps {
     canEdit?: boolean;
     initialUnits?: MasterplanUnit[];
     backgroundAssetUrl?: string | null;
+    variant?: "inventory" | "visual-editor";
 }
 
 export default function MasterplanViewer({
@@ -334,6 +335,7 @@ export default function MasterplanViewer({
     canEdit = false,
     initialUnits = [],
     backgroundAssetUrl = null,
+    variant = "inventory",
 }: MasterplanViewerProps) {
     const {
         setUnits,
@@ -349,7 +351,11 @@ export default function MasterplanViewer({
 
     const units = useMasterplanStore(selectUnits);
     const filteredUnits = useFilteredUnits();
-    const filteredIds = useMemo(() => new Set(filteredUnits.map((u) => u.id)), [filteredUnits]);
+    const isVisualEditor = variant === "visual-editor";
+    const filteredIds = useMemo(
+        () => new Set((isVisualEditor ? units : filteredUnits).map((u) => u.id)),
+        [filteredUnits, isVisualEditor, units]
+    );
 
     // Only show lot-number labels when zoomed in enough (avoids wall-of-numbers at overview zoom)
     const showLabels = zoom >= 0.8;
@@ -369,6 +375,23 @@ export default function MasterplanViewer({
     const [targetStageFilter, setTargetStageFilter] = useState<string>("all");
     // ────────────────────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<"status" | "stage">("status");
+
+    useEffect(() => {
+        if (!isVisualEditor) return;
+        setSelectedUnitId(null);
+        setHoveredUnitId(null);
+        setShowFilters(false);
+        setShowLayers(false);
+        setShowComparator(false);
+        clearComparison();
+    }, [
+        clearComparison,
+        isVisualEditor,
+        setHoveredUnitId,
+        setSelectedUnitId,
+        setShowComparator,
+        setShowFilters,
+    ]);
 
     const existingStages = useMemo(() => {
         const stages = new Set<string>();
@@ -606,6 +629,7 @@ export default function MasterplanViewer({
     }, [proyectoId, updateUnitState]);
 
     const handleUnitHover = useCallback((e: React.MouseEvent, unit: MasterplanUnit) => {
+        if (isVisualEditor) return;
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
             setTooltip({
@@ -615,7 +639,7 @@ export default function MasterplanViewer({
             });
         }
         setHoveredUnitId(unit.id);
-    }, [setHoveredUnitId]);
+    }, [isVisualEditor, setHoveredUnitId]);
 
     const handleUnitLeave = useCallback(() => {
         setTooltip(null);
@@ -706,40 +730,43 @@ export default function MasterplanViewer({
         <div className="relative w-full h-full min-h-[400px] overflow-hidden bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-b-2xl" ref={containerRef}>
             {/* Top controls */}
             <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-                <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={cn(
-                        "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-sm transition-all",
-                        showFilters
-                            ? "bg-brand-500 text-white"
-                            : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700"
-                    )}
-                >
-                    <Filter className="w-3.5 h-3.5" />Filtros
-                </button>
-                <button
-                    onClick={() => setShowLayers(!showLayers)}
-                    className={cn(
-                        "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-sm transition-all",
-                        showLayers
-                            ? "bg-brand-500 text-white"
-                            : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700"
-                    )}
-                >
-                    <LayersIcon className="w-3.5 h-3.5" />Capas
-                </button>
+                {!isVisualEditor && (
+                    <>
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-sm transition-all",
+                                showFilters
+                                    ? "bg-brand-500 text-white"
+                                    : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700"
+                            )}
+                        >
+                            <Filter className="w-3.5 h-3.5" />Filtros
+                        </button>
+                        <button
+                            onClick={() => setShowLayers(!showLayers)}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-sm transition-all",
+                                showLayers
+                                    ? "bg-brand-500 text-white"
+                                    : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700"
+                            )}
+                        >
+                            <LayersIcon className="w-3.5 h-3.5" />Capas
+                        </button>
 
-                <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+                        <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
 
-                <button
-                    onClick={handleExportExcel}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-sm bg-emerald-500 text-white hover:bg-emerald-600 transition-all"
-                >
-                    <FileSpreadsheet className="w-3.5 h-3.5" />Exportar CSV
-                </button>
+                        <button
+                            onClick={handleExportExcel}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-sm bg-emerald-500 text-white hover:bg-emerald-600 transition-all"
+                        >
+                            <FileSpreadsheet className="w-3.5 h-3.5" />Exportar CSV
+                        </button>
+                    </>
+                )}
 
-
-                {canEdit && (
+                {canEdit && !isVisualEditor && (
                     <>
                         <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
                         <button
@@ -786,6 +813,7 @@ export default function MasterplanViewer({
             </div>
 
             {/* Legend + view toggle */}
+            {!isVisualEditor && (
             <div className="absolute bottom-4 left-4 z-20 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2 space-y-2">
                 {/* Toggle */}
                 {modo === "admin" && existingStages.length > 0 && (
@@ -831,6 +859,7 @@ export default function MasterplanViewer({
                     </div>
                 )}
             </div>
+            )}
 
             {/* SVG Canvas with Zoom/Pan */}
             <TransformWrapper
@@ -871,9 +900,18 @@ export default function MasterplanViewer({
                                 globalFontSize={globalFontSize}
                                 onMouseEnter={handleUnitHover}
                                 onMouseLeave={handleUnitLeave}
-                                onClick={() => { if (!isDividingStages) setSelectedUnitId(selectedUnitId === unit.id ? null : unit.id); }}
-                                onCompareToggle={(e) => { e.stopPropagation(); toggleComparison(unit.id); }}
-                                onTouchLongPress={() => toggleComparison(unit.id)}
+                                onClick={() => {
+                                    if (!isVisualEditor && !isDividingStages) {
+                                        setSelectedUnitId(selectedUnitId === unit.id ? null : unit.id);
+                                    }
+                                }}
+                                onCompareToggle={(e) => {
+                                    e.stopPropagation();
+                                    if (!isVisualEditor) toggleComparison(unit.id);
+                                }}
+                                onTouchLongPress={() => {
+                                    if (!isVisualEditor) toggleComparison(unit.id);
+                                }}
                                 highlightColor={
                                     getHighlightColor(unit) ??
                                     (viewMode === "stage" ? getStageColor(unit.etapaNombre) : undefined)
@@ -927,7 +965,7 @@ export default function MasterplanViewer({
 
             {/* Tooltip */}
             <AnimatePresence>
-                {!isDividingStages && tooltip && <Tooltip data={tooltip} />}
+                {!isVisualEditor && !isDividingStages && tooltip && <Tooltip data={tooltip} />}
             </AnimatePresence>
 
             {/* ─── Stage Division Instruction Banner ─────────────────────────── */}
@@ -1131,7 +1169,7 @@ export default function MasterplanViewer({
 
             {/* Side Panel */}
             <AnimatePresence>
-                {selectedUnit && (
+                {!isVisualEditor && selectedUnit && (
                     <MasterplanSidePanel
                         unit={selectedUnit}
                         modo={modo}
@@ -1143,7 +1181,7 @@ export default function MasterplanViewer({
 
             {/* Filters sidebar */}
             <AnimatePresence>
-                {showFilters && (
+                {!isVisualEditor && showFilters && (
                     <motion.div
                         initial={{ x: -300, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
@@ -1158,7 +1196,7 @@ export default function MasterplanViewer({
 
             {/* Layers panel */}
             <AnimatePresence>
-                {showLayers && (
+                {!isVisualEditor && showLayers && (
                     <motion.div
                         initial={{ x: -300, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
@@ -1197,7 +1235,7 @@ export default function MasterplanViewer({
 
             {/* Compare bar — appears when units are selected for comparison */}
             <AnimatePresence>
-                {comparisonIds.length > 0 && (
+                {!isVisualEditor && comparisonIds.length > 0 && (
                     <motion.div
                         initial={{ y: 60, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -1228,7 +1266,7 @@ export default function MasterplanViewer({
 
             {/* Comparator modal */}
             <AnimatePresence>
-                {showComparator && comparisonIds.length > 0 && (
+                {!isVisualEditor && showComparator && comparisonIds.length > 0 && (
                     <MasterplanComparator
                         units={units.filter((u) => comparisonIds.includes(u.id))}
                         onClose={() => { clearComparison(); setShowComparator(false); }}

@@ -313,14 +313,19 @@ export default function LayersPanel({
                     disabled={!canDraw || layer.bloqueada}
                     title={!canDraw ? disabledReason ?? "El dibujo todavía no está disponible." : undefined}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-40",
+                      "flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-bold transition",
+                      !canDraw || layer.bloqueada
+                        ? "cursor-default border border-slate-800 bg-slate-900/70 text-slate-500"
+                        : "",
                       isDrawing
                         ? "bg-emerald-500 text-white"
-                        : "border border-slate-700 text-slate-300 hover:bg-slate-800",
+                        : canDraw && !layer.bloqueada
+                          ? "border border-slate-700 text-slate-300 hover:bg-slate-800"
+                          : "",
                     )}
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                    {isDrawing ? "Dibujando…" : "Dibujar"}
+                    {isDrawing ? "Dibujando…" : canDraw && !layer.bloqueada ? "Dibujar" : "Dibujo en Fase 2"}
                   </button>
                 </div>
 

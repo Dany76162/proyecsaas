@@ -194,7 +194,12 @@ export default function VisualProjectEditorShell({
                             </button>
                         </div>
 
-                        <MasterplanViewer proyectoId={proyectoId} modo="admin" canEdit={true} />
+                        <MasterplanViewer
+                            proyectoId={proyectoId}
+                            modo="admin"
+                            canEdit={false}
+                            variant="visual-editor"
+                        />
 
                         {showProjectLayers && (
                             <div className="absolute bottom-4 right-4 top-16 z-40 w-[min(360px,calc(100vw-2rem))]">
