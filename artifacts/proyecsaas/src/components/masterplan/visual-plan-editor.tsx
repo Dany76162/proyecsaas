@@ -234,6 +234,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
             selectedObjectId={selectedObjectId}
             activeTool={activeTool}
             onSelectObject={setSelectedObjectId}
+            onUpdateObject={updateObject}
             onCreateRect={(geometry) => void createRect(geometry)}
           />
         </div>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 
 import type {
   DevelopmentVisualObjectDto,
   VisualObjectGeometry,
   VisualRectGeometry,
   VisualTextGeometry,
+  UpdateDevelopmentVisualObjectInput,
 } from "@/types/development-visual-objects";
 import type { VisualEditorTool } from "./visual-editor-toolbar";
 
@@ -17,6 +18,8 @@ interface VisualPlanCanvasProps {
   activeTool: VisualEditorTool;
   onSelectObject: (objectId: string | null) => void;
   onCreateRect: (geometry: VisualRectGeometry) => void;
+  // New callback to persist geometry updates
+  onUpdateObject: (objectId: string, input: UpdateDevelopmentVisualObjectInput) => void;
 }
 
 function getRectGeometry(geometry: VisualObjectGeometry): VisualRectGeometry | null {
@@ -26,14 +29,14 @@ function getRectGeometry(geometry: VisualObjectGeometry): VisualRectGeometry | n
     "width" in geometry &&
     "height" in geometry
   ) {
-    return geometry;
+    return geometry as VisualRectGeometry;
   }
   return null;
 }
 
 function getTextGeometry(geometry: VisualObjectGeometry): VisualTextGeometry | null {
   if ("x" in geometry && "y" in geometry && "text" in geometry) {
-    return geometry;
+    return geometry as VisualTextGeometry;
   }
   return null;
 }
@@ -45,9 +48,24 @@ export default function VisualPlanCanvas({
   activeTool,
   onSelectObject,
   onCreateRect,
+  onUpdateObject,
 }: VisualPlanCanvasProps) {
   const [hoveredObjectId, setHoveredObjectId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragStart, setDragStart] = useState<{
+    x: number;
+    y: number;
+    clientX: number;
+    clientY: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  // ViewBox dimensions – keep in sync with canvas rendering
   const viewBox = "0 0 1000 800";
+  const [viewBoxX, viewBoxY, viewBoxWidth, viewBoxHeight] = viewBox
+    .split(" ")
+    .map(Number);
 
   const sortedObjects = useMemo(
     () => [...objects].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0)),
@@ -76,11 +94,96 @@ export default function VisualPlanCanvas({
     });
   };
 
+  // Pointer down on a rectangle – start drag
+  const handlePointerDown = (
+    event: React.PointerEvent<SVGRectElement>,
+    object: DevelopmentVisualObjectDto,
+  ) => {
+    if (!object.interactive) return;
+    const geometry = getRectGeometry(object.geometry);
+    if (!geometry) return;
+    setDraggingId(object.id);
+    setDragStart({
+      x: geometry.x,
+      y: geometry.y,
+      width: geometry.width,
+      height: geometry.height,
+      clientX: event.clientX,
+      clientY: event.clientY,
+    });
+    event.stopPropagation();
+    (event.target as SVGRectElement).setPointerCapture(event.pointerId);
+  };
+
+  // While dragging – update temporary visual position
+  const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!draggingId || !dragStart) return;
+    const deltaClientX = event.clientX - dragStart.clientX;
+    const deltaClientY = event.clientY - dragStart.clientY;
+    // Convert delta from client pixels to viewBox units using SVG matrix scaling
+    const svg = event.currentTarget;
+    const matrix = svg.getScreenCTM();
+    const scaleX = matrix?.a ?? 1;
+    const scaleY = matrix?.d ?? 1;
+    const deltaViewBoxX = deltaClientX / scaleX;
+    const deltaViewBoxY = deltaClientY / scaleY;
+    const newX = Math.max(
+      0,
+      Math.min(viewBoxWidth - dragStart.width, dragStart.x + deltaViewBoxX),
+    );
+    const newY = Math.max(
+      0,
+      Math.min(viewBoxHeight - dragStart.height, dragStart.y + deltaViewBoxY),
+    );
+    setTempPositions((prev) => ({
+      ...prev,
+      [draggingId]: { x: newX, y: newY },
+    }));
+  };
+
+  // Pointer up – finalize drag and persist via PATCH
+  const handlePointerUp = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!draggingId || !dragStart) return;
+    (event.target as SVGSVGElement).releasePointerCapture(event.pointerId);
+    const deltaClientX = event.clientX - dragStart.clientX;
+    const deltaClientY = event.clientY - dragStart.clientY;
+    // Convert delta using SVG matrix scaling
+    const svg = event.currentTarget;
+    const matrix = svg.getScreenCTM();
+    const scaleX = matrix?.a ?? 1;
+    const scaleY = matrix?.d ?? 1;
+    const deltaViewBoxX = deltaClientX / scaleX;
+    const deltaViewBoxY = deltaClientY / scaleY;
+    const newX = Math.max(
+      0,
+      Math.min(viewBoxWidth - dragStart.width, dragStart.x + deltaViewBoxX),
+    );
+    const newY = Math.max(
+      0,
+      Math.min(viewBoxHeight - dragStart.height, dragStart.y + deltaViewBoxY),
+    );
+    const updatePayload: UpdateDevelopmentVisualObjectInput = {
+      geometry: { x: newX, y: newY, width: dragStart.width, height: dragStart.height },
+      geometryKind: "RECT",
+      coordinateSpace: "PLAN_VIEWBOX",
+    };
+    onUpdateObject(draggingId, updatePayload);
+    setDraggingId(null);
+    setDragStart(null);
+    setTempPositions((prev) => {
+      const { [draggingId]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  // Temporary positions during drag (objectId -> {x,y})
+  const [tempPositions, setTempPositions] = useState<Record<string, { x: number; y: number }>>({});
+
   return (
     <div className="relative h-full min-h-0 overflow-hidden rounded-b-2xl bg-slate-950">
       {masterplanSVG && (
         <div
-          className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-30 [&_svg]:h-full [&_svg]:w-full"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-30 [\&_svg]:h-full [\&_svg]:w-full"
           dangerouslySetInnerHTML={{ __html: masterplanSVG }}
         />
       )}
@@ -91,6 +194,9 @@ export default function VisualPlanCanvas({
         role="img"
         aria-label="Editor visual SVG del plano"
         onClick={handleCanvasClick}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
       >
         <defs>
           <pattern id="visual-editor-grid" width="25" height="25" patternUnits="userSpaceOnUse">
@@ -107,6 +213,9 @@ export default function VisualPlanCanvas({
           if (object.geometryKind === "RECT") {
             const geometry = getRectGeometry(object.geometry);
             if (!geometry) return null;
+            const temp = tempPositions[object.id];
+            const renderX = temp?.x ?? geometry.x;
+            const renderY = temp?.y ?? geometry.y;
 
             return (
               <g
@@ -120,8 +229,8 @@ export default function VisualPlanCanvas({
                 className={object.interactive ? "cursor-pointer" : ""}
               >
                 <rect
-                  x={geometry.x}
-                  y={geometry.y}
+                  x={renderX}
+                  y={renderY}
                   width={geometry.width}
                   height={geometry.height}
                   rx="4"
@@ -131,11 +240,14 @@ export default function VisualPlanCanvas({
                   strokeWidth={selected ? (object.strokeWidth ?? 2) + 1.5 : object.strokeWidth ?? 2}
                   strokeDasharray={selected ? "8 5" : undefined}
                   vectorEffect="non-scaling-stroke"
+                  opacity={draggingId === object.id ? 0.6 : undefined}
+                  style={draggingId === object.id ? { cursor: "move" } : undefined}
+                  onPointerDown={(e) => handlePointerDown(e, object)}
                 />
                 {(hovered || selected) && (
                   <text
-                    x={geometry.x + geometry.width / 2}
-                    y={geometry.y - 8}
+                    x={renderX + geometry.width / 2}
+                    y={renderY - 8}
                     textAnchor="middle"
                     className="pointer-events-none fill-white text-[13px] font-black"
                     paintOrder="stroke"
