@@ -61,6 +61,11 @@ const MasterplanMap = dynamicImport(
   }
 );
 
+const VisualProjectEditorShell = dynamicImport(
+  () => import("@/components/masterplan/visual-project-editor-shell"),
+  { ssr: false }
+);
+
 const InventarioClient = dynamicImport(
   () => import("@/components/developments/inventario-client"),
   { ssr: false }
@@ -749,29 +754,13 @@ export default function DevelopmentWizardClient({
 
           {/* PASO 4: EDITOR VISUAL */}
           {activeTab === "editor" && (
-            <div className="flex-1 flex flex-col h-full min-h-[640px] overflow-hidden">
-              {!step3Done && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 mb-3">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  Sincronizá los lotes en el{" "}
-                  <Link href="?tab=masterplan" className="underline font-bold">
-                    Paso 3 — Masterplan
-                  </Link>{" "}
-                  para poder editar el mapa visual.
-                </div>
-              )}
-              <div className="flex-1 min-h-0 w-full overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-                <MasterplanMap
-                  proyectoId={development.id}
-                  modo="admin"
-                  canEdit={true}
-                  variant="editor"
-                  centerLat={development.mapCenterLat ?? undefined}
-                  centerLng={development.mapCenterLng ?? undefined}
-                  mapZoom={development.mapZoom ?? undefined}
-                />
-              </div>
-            </div>
+            <VisualProjectEditorShell
+              proyectoId={development.id}
+              step3Done={step3Done}
+              centerLat={development.mapCenterLat ?? undefined}
+              centerLng={development.mapCenterLng ?? undefined}
+              mapZoom={development.mapZoom ?? undefined}
+            />
           )}
 
           {/* PASO 5: MAPA INTERACTIVO */}
