@@ -12,6 +12,9 @@ import type {
   VisualPathGeometry,
 } from "@/types/development-visual-objects";
 import VisualEditorToolbar, { type VisualEditorTool } from "./visual-editor-toolbar";
+import VisualProToolbar from "./visual-pro-toolbar";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
+import { VISUAL_TOOL_PRESETS, type VisualToolPresetId } from "@/lib/visual-object-presets";
 import VisualObjectInspector from "./visual-object-inspector";
 import VisualPlanCanvas from "./visual-plan-canvas";
 
@@ -40,18 +43,21 @@ async function readJson<T>(response: Response): Promise<T> {
 function buildRectObjectInput(
   geometry: VisualRectGeometry,
   order: number,
+  activeTool: VisualEditorTool | VisualToolPresetId,
 ): CreateDevelopmentVisualObjectInput {
+  const preset = VISUAL_TOOL_PRESETS[activeTool];
+
   return {
-    name: `Objeto visual ${order + 1}`,
-    type: "area",
-    tooltip: "Area visual",
+    name: preset ? preset.label : `Objeto visual ${order + 1}`,
+    type: preset ? preset.id : "area",
+    tooltip: preset ? preset.label : "Area visual",
     geometryKind: "RECT",
     coordinateSpace: "PLAN_VIEWBOX",
     geometry,
-    fillColor: "#22c55e",
-    strokeColor: "#166534",
-    opacity: 0.45,
-    strokeWidth: 2,
+    fillColor: preset?.fillColor ?? "#22c55e",
+    strokeColor: preset?.strokeColor ?? "#166534",
+    opacity: preset?.opacity ?? 0.45,
+    strokeWidth: preset?.strokeWidth ?? 2,
     zIndex: order,
     visibility: "BOTH",
     interactive: true,
@@ -62,18 +68,21 @@ function buildRectObjectInput(
 function buildTextObjectInput(
   geometry: VisualTextGeometry,
   order: number,
+  activeTool: VisualEditorTool | VisualToolPresetId,
 ): CreateDevelopmentVisualObjectInput {
+  const preset = VISUAL_TOOL_PRESETS[activeTool];
+
   return {
-    name: `Etiqueta ${order + 1}`,
-    type: "label",
-    tooltip: "Etiqueta visual",
+    name: preset ? preset.label : `Etiqueta ${order + 1}`,
+    type: preset ? preset.id : "label",
+    tooltip: preset ? preset.label : "Etiqueta visual",
     geometryKind: "TEXT",
     coordinateSpace: "PLAN_VIEWBOX",
     geometry,
-    fillColor: "#e2e8f0",
-    strokeColor: "#0f172a",
-    opacity: 1,
-    strokeWidth: 2,
+    fillColor: preset?.fillColor ?? "#e2e8f0",
+    strokeColor: preset?.strokeColor ?? "#0f172a",
+    opacity: preset?.opacity ?? 1,
+    strokeWidth: preset?.strokeWidth ?? 2,
     zIndex: order,
     visibility: "BOTH",
     interactive: true,
@@ -84,18 +93,21 @@ function buildTextObjectInput(
 function buildPolylineObjectInput(
   geometry: VisualPathGeometry,
   order: number,
+  activeTool: VisualEditorTool | VisualToolPresetId,
 ): CreateDevelopmentVisualObjectInput {
+  const preset = VISUAL_TOOL_PRESETS[activeTool];
+
   return {
-    name: `Calle ${order + 1}`,
-    type: "calle",
-    tooltip: "Calle / Acceso",
+    name: preset ? preset.label : `Calle ${order + 1}`,
+    type: preset ? preset.id : "calle",
+    tooltip: preset ? preset.label : "Calle / Acceso",
     geometryKind: "POLYLINE",
     coordinateSpace: "PLAN_VIEWBOX",
     geometry,
-    fillColor: null,
-    strokeColor: "#3b82f6",
-    opacity: 0.8,
-    strokeWidth: 8,
+    fillColor: preset?.fillColor ?? null,
+    strokeColor: preset?.strokeColor ?? "#3b82f6",
+    opacity: preset?.opacity ?? 0.8,
+    strokeWidth: preset?.strokeWidth ?? 8,
     zIndex: order,
     visibility: "BOTH",
     interactive: true,
@@ -104,7 +116,7 @@ function buildPolylineObjectInput(
 }
 
 export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) {
-  const [activeTool, setActiveTool] = useState<VisualEditorTool>("select");
+  const [activeTool, setActiveTool] = useState<VisualEditorTool | VisualToolPresetId>("select");
   const [objects, setObjects] = useState<DevelopmentVisualObjectDto[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [masterplanSVG, setMasterplanSVG] = useState<string | null>(null);
@@ -116,6 +128,19 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
     () => objects.find((object) => object.id === selectedObjectId) ?? null,
     [objects, selectedObjectId],
   );
+
+  const effectiveTool = useMemo<VisualEditorTool>(() => {
+    if (activeTool === "rect" || activeTool === "text" || activeTool === "line" || activeTool === "select") {
+      return activeTool as VisualEditorTool;
+    }
+    const preset = VISUAL_TOOL_PRESETS[activeTool];
+    if (preset) {
+      if (preset.geometryKind === "RECT") return "rect";
+      if (preset.geometryKind === "POLYLINE") return "line";
+      if (preset.geometryKind === "TEXT") return "text";
+    }
+    return "select";
+  }, [activeTool]);
 
   const loadEditorData = useCallback(async () => {
     setLoading(true);
@@ -151,7 +176,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
       setSaving(true);
       setError(null);
       try {
-        const input = buildRectObjectInput(geometry, objects.length);
+        const input = buildRectObjectInput(geometry, objects.length, activeTool);
         const response = await fetch(`/api/developments/${proyectoId}/visual-objects`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -167,7 +192,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
         setSaving(false);
       }
     },
-    [objects.length, proyectoId],
+    [objects.length, proyectoId, activeTool],
   );
 
   const createPolyline = useCallback(
@@ -175,7 +200,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
       setSaving(true);
       setError(null);
       try {
-        const input = buildPolylineObjectInput(geometry, objects.length);
+        const input = buildPolylineObjectInput(geometry, objects.length, activeTool);
         const response = await fetch(`/api/developments/${proyectoId}/visual-objects`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -191,7 +216,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
         setSaving(false);
       }
     },
-    [objects.length, proyectoId],
+    [objects.length, proyectoId, activeTool],
   );
 
   const createText = useCallback(
@@ -199,7 +224,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
       setSaving(true);
       setError(null);
       try {
-        const input = buildTextObjectInput(geometry, objects.length);
+        const input = buildTextObjectInput(geometry, objects.length, activeTool);
         const response = await fetch(`/api/developments/${proyectoId}/visual-objects`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -215,7 +240,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
         setSaving(false);
       }
     },
-    [objects.length, proyectoId],
+    [objects.length, proyectoId, activeTool],
   );
 
   const updateObject = useCallback(
@@ -272,28 +297,38 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
     <div className="flex h-full min-h-0 flex-col bg-slate-100 dark:bg-slate-950">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
         <div>
-          <h3 className="text-sm font-black text-slate-900 dark:text-white">
-            Editor Visual SVG · Fase 2A
-          </h3>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white">Editor Visual SVG · Fase 2A</h3>
           <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             Objetos visuales en PLAN_VIEWBOX, separados del mapa y de la georreferenciacion.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <VisualEditorToolbar
-            activeTool={activeTool}
-            onToolChange={setActiveTool}
-            disabled={loading || saving}
-          />
-          <button
-            type="button"
-            onClick={() => void createRect({ x: 120, y: 120, width: 160, height: 90 })}
-            disabled={loading || saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Rectangulo
-          </button>
+          {FEATURE_FLAGS.enableTechnicalTools && (
+            <VisualEditorToolbar
+              activeTool={activeTool as VisualEditorTool}
+              onToolChange={setActiveTool}
+              disabled={loading || saving}
+            />
+          )}
+          {FEATURE_FLAGS.enableVisualEditorPro && (
+            <VisualProToolbar
+              activeTool={activeTool}
+              onToolChange={setActiveTool}
+              disabled={loading || saving}
+            />
+          )}
+          {/* Preserve manual rect button for quick testing if technical tools are enabled */}
+          {FEATURE_FLAGS.enableTechnicalTools && (
+            <button
+              type="button"
+              onClick={() => void createRect({ x: 120, y: 120, width: 160, height: 90 })}
+              disabled={loading || saving}
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Rectangulo
+            </button>
+          )}
           <button
             type="button"
             onClick={() => void loadEditorData()}
@@ -325,7 +360,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
             masterplanSVG={masterplanSVG}
             objects={objects}
             selectedObjectId={selectedObjectId}
-            activeTool={activeTool}
+            activeTool={effectiveTool}
             onSelectObject={setSelectedObjectId}
             onUpdateObject={updateObject}
             onCreateRect={(geometry) => void createRect(geometry)}
