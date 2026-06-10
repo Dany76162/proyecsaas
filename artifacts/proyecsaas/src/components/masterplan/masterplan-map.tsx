@@ -750,6 +750,7 @@ export default function MasterplanMap({
                     rotate: true,
                     touchRotate: true,
                     rotateControl: false,
+                    preferCanvas: true,
                 };
 
                 const map = (L as any).map(mapRef.current, mapOptions);
@@ -898,10 +899,13 @@ export default function MasterplanMap({
     );
 
     // Dibujar capas usa clics directos de Leaflet (event.latlng) — no necesita overlay calibrado.
-    // Solo requiere que el mapa esté listo y el usuario tenga permisos de edición.
-    const canDrawDrawableLayers = modo === "admin" && canEdit && isMapReady;
+    // Requiere mapa listo, permisos de edición, y que no esté activo el modo "Ajustar Plano"
+    // (OverlayEditor interceptaría los clics del mapa antes que el drawing handler).
+    const canDrawDrawableLayers = modo === "admin" && canEdit && isMapReady && !isEditingOverlay;
     const drawableLayerDisabledReason =
-        modo === "admin" && canEdit && !isMapReady
+        modo === "admin" && canEdit && isEditingOverlay
+            ? "Cerrá «Ajustar Plano» para poder dibujar capas."
+            : modo === "admin" && canEdit && !isMapReady
             ? "Esperando a que el mapa esté listo."
             : null;
 
@@ -1103,6 +1107,16 @@ export default function MasterplanMap({
             if (anyEstadoChanged) return; // styles patched — skip full redraw
         }
 
+        // While the OverlayEditor is open, positions are managed live by updatePolygonPositionsLive.
+        // A full redraw here would snap polygons back to overlayConfig.bounds (the last save),
+        // causing visual misalignment if the user has already dragged the image to a new position.
+        // Only patch styles; coordinates will be re-drawn correctly when the editor closes.
+        if (isEditingOverlay && polygonsRef.current.size > 0) {
+            prevUnitsRef.current = units;
+            updateLotVisualStyles();
+            return;
+        }
+
         prevUnitsRef.current = units;
 
         const drawPolygons = async () => {
@@ -1277,7 +1291,7 @@ export default function MasterplanMap({
         drawPolygons();
     // overlayConfig y svgViewBox son parte del cálculo de coordenadas
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isMapReady, units, filteredIds, selectedUnitId, overlayConfig, svgViewBox]);
+    }, [isMapReady, units, filteredIds, selectedUnitId, overlayConfig, svgViewBox, isEditingOverlay]);
 
     // Fase futura: Camera markers para Tour 360° desacoplados del commit inicial de Desarrollos.
     // El useEffect que dibuja marcadores de cámara en el mapa está comentado junto con tour360-viewer.
