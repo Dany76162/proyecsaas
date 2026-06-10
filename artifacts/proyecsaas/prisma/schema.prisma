@@ -1426,6 +1426,7 @@ model Development {
   DevelopmentLot       DevelopmentLot[]
   DevelopmentMapImage  DevelopmentMapImage[]
   DevelopmentDrawableLayer DevelopmentDrawableLayer[]
+  visualObjects            DevelopmentVisualObject[]
 
   @@index([organizationId, publicVisible])
   @@index([organizationId, status])
@@ -1449,6 +1450,37 @@ model DevelopmentDrawableLayer {
   Development  Development @relation(fields: [developmentId], references: [id], onDelete: Cascade)
 
   @@index([developmentId, orden])
+}
+
+model DevelopmentVisualObject {
+  id              String                @id @default(uuid())
+  development    Development           @relation(fields: [developmentId], references: [id], onDelete: Cascade)
+  developmentId  String
+
+  name            String
+  type            String
+  description     String?
+  tooltip         String?
+
+  geometry        Json
+  geometryKind    VisualGeometryKind
+  coordinateSpace VisualCoordinateSpace @default(PLAN_VIEWBOX)
+
+  fillColor       String?               @default("#22c55e")
+  strokeColor     String?               @default("#166534")
+  opacity         Float?                @default(0.45)
+  strokeWidth     Float?                @default(2)
+  zIndex          Int?                  @default(0)
+
+  visibility      VisualVisibility      @default(BOTH)
+  interactive     Boolean               @default(true)
+  locked          Boolean               @default(false)
+
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([developmentId, zIndex])
+  @@index([developmentId, visibility])
 }
 
 model DevelopmentLot {
@@ -1610,6 +1642,26 @@ enum DevelopmentStatus {
 // Tracks whether Raíces Pilot has transferred (settled) the reservation funds
 // to the developer. Set to PENDING when MP payment is confirmed.
 // Updated manually by Superadmin in Fase 3 liquidation panel.
+enum VisualGeometryKind {
+  POLYGON
+  POLYLINE
+  RECT
+  CIRCLE
+  POINT
+  TEXT
+}
+
+enum VisualCoordinateSpace {
+  PLAN_VIEWBOX
+  PLAN_NORMALIZED
+}
+
+enum VisualVisibility {
+  ADMIN_ONLY
+  PUBLIC
+  BOTH
+}
+
 enum ReservationSettlementStatus {
   PENDING    // Payment received by Raíces Pilot — settlement to developer pending
   IN_REVIEW  // Under internal review before transfer

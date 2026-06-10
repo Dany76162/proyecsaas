@@ -9,6 +9,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import type { ComponentType } from "react";
 import {
     AlertCircle,
     ArrowRight,
@@ -37,10 +38,22 @@ const MasterplanViewer = dynamic(() => import("@/components/masterplan/masterpla
     ),
 });
 
+const VisualPlanEditor = dynamic(() => import("@/components/masterplan/visual-plan-editor"), {
+    ssr: false,
+    loading: () => (
+        <div className="flex flex-1 items-center justify-center gap-2 bg-slate-950 text-white">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <span className="text-sm font-semibold text-slate-400">Cargando editor SVG...</span>
+        </div>
+    ),
+});
+
+const useVisualObjectsEditor = false;
+
 interface Tool {
     label: string;
     description: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: ComponentType<{ className?: string }>;
     status: "available" | "soon";
 }
 
@@ -177,39 +190,43 @@ export default function VisualProjectEditorShell({
 
             <div className="relative min-h-0 flex-1 overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800">
                 {step2Done ? (
-                    <>
-                        <div className="absolute right-4 top-4 z-30">
-                            <button
-                                type="button"
-                                onClick={() => setShowProjectLayers((value) => !value)}
-                                className={cn(
-                                    "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black shadow-lg backdrop-blur-sm transition-all",
-                                    showProjectLayers
-                                        ? "border-brand-400 bg-brand-500 text-white"
-                                        : "border-slate-700 bg-slate-900/90 text-slate-100 hover:bg-slate-800"
-                                )}
-                            >
-                                <Layers className="h-3.5 w-3.5" />
-                                Capas del Proyecto
-                            </button>
-                        </div>
-
-                        <MasterplanViewer
-                            proyectoId={proyectoId}
-                            modo="admin"
-                            canEdit={false}
-                            variant="visual-editor"
-                        />
-
-                        {showProjectLayers && (
-                            <div className="absolute bottom-4 right-4 top-16 z-40 w-[min(360px,calc(100vw-2rem))]">
-                                <ProjectLayersEditorPanel
-                                    proyectoId={proyectoId}
-                                    onClose={() => setShowProjectLayers(false)}
-                                />
+                    useVisualObjectsEditor ? (
+                        <VisualPlanEditor proyectoId={proyectoId} />
+                    ) : (
+                        <>
+                            <div className="absolute right-4 top-4 z-30">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowProjectLayers((value) => !value)}
+                                    className={cn(
+                                        "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black shadow-lg backdrop-blur-sm transition-all",
+                                        showProjectLayers
+                                            ? "border-brand-400 bg-brand-500 text-white"
+                                            : "border-slate-700 bg-slate-900/90 text-slate-100 hover:bg-slate-800"
+                                    )}
+                                >
+                                    <Layers className="h-3.5 w-3.5" />
+                                    Capas del Proyecto
+                                </button>
                             </div>
-                        )}
-                    </>
+
+                            <MasterplanViewer
+                                proyectoId={proyectoId}
+                                modo="admin"
+                                canEdit={false}
+                                variant="visual-editor"
+                            />
+
+                            {showProjectLayers && (
+                                <div className="absolute bottom-4 right-4 top-16 z-40 w-[min(360px,calc(100vw-2rem))]">
+                                    <ProjectLayersEditorPanel
+                                        proyectoId={proyectoId}
+                                        onClose={() => setShowProjectLayers(false)}
+                                    />
+                                </div>
+                            )}
+                        </>
+                    )
                 ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-5 bg-slate-950 px-6 text-center">
                         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/10">
