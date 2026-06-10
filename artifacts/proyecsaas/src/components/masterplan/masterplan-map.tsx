@@ -16,8 +16,13 @@ import {
 import MasterplanSidePanel from "./masterplan-side-panel";
 import MasterplanFilters from "./masterplan-filters";
 import MasterplanComparator from "./masterplan-comparator";
-import OverlayEditor, { OverlayConfig } from "./overlay-editor";
-import LayersPanel from "./layers-panel";
+// OverlayConfig es un tipo — se importa con `import type` para que no fuerce
+// la carga del módulo overlay-editor en el bundle del viewer público.
+import type { OverlayConfig } from "./overlay-editor";
+// OverlayEditor y LayersPanel se cargan solo en variant="editor" (admin).
+// En variant="viewer" (público) estos módulos nunca se incluyen en el bundle.
+const OverlayEditor = dynamic(() => import("./overlay-editor"), { ssr: false });
+const LayersPanel = dynamic(() => import("./layers-panel"), { ssr: false });
 // Fase futura: Tour 360 desacoplado del commit inicial de Desarrollos.
 // import Tour360Viewer from "./tour360-viewer";
 // const InfraestructuraTool = dynamic(() => import("./infraestructura-tool"), { ssr: false });
@@ -128,6 +133,11 @@ interface MasterplanMapProps {
     /** Public mode only: overlay geo-transform passed from the server-rendered page (avoids auth-gated API call). */
     initialOverlayConfig?: PublicOverlayConfig | null;
     initialDrawableLayers?: DevelopmentDrawableLayerDto[];
+    /**
+     * "editor" (default): carga OverlayEditor, LayersPanel, drawing handlers — modo admin completo.
+     * "viewer": omite todos los módulos de edición del bundle. Ideal para el mapa público (Paso 5).
+     */
+    variant?: "viewer" | "editor";
 }
 
 type OverlayCorners = [[number, number], [number, number], [number, number], [number, number]];
@@ -188,6 +198,7 @@ export default function MasterplanMap({
     tours360 = [],
     initialOverlayConfig = null,
     initialDrawableLayers = [],
+    variant = "editor",
 }: MasterplanMapProps) {
     const {
         units, setUnits,
@@ -676,6 +687,9 @@ export default function MasterplanMap({
      * we should regenerate the visual blob ONLY if we haven't tried yet this session.
      */
     useEffect(() => {
+        // El rescue de blob URL solo aplica al editor admin — en el viewer público
+        // no hay blob URL que rescatar (el overlay se usa solo para geo-transform, no para display).
+        if (modo !== "admin" || variant !== "editor") return;
         if (
             isMapReady &&
             hasSavedBlueprint &&
@@ -688,7 +702,7 @@ export default function MasterplanMap({
             console.log("[Rescue] Georeferencing exists but visual blob is missing. Rehydrating...");
             loadSavedBlueprintOverlay(false);
         }
-    }, [hasSavedBlueprint, isMapReady, isLoadingPlan, loadSavedBlueprintOverlay, overlayConfig?.bounds, overlayConfig?.imageUrl]);
+    }, [hasSavedBlueprint, isMapReady, isLoadingPlan, loadSavedBlueprintOverlay, modo, overlayConfig?.bounds, overlayConfig?.imageUrl, variant]);
 
     // Initialize Leaflet map
     useEffect(() => {
@@ -1012,6 +1026,8 @@ export default function MasterplanMap({
     }, [drawableLayers, isMapReady]);
 
     useEffect(() => {
+        // El drawing handler solo existe en el editor admin — el viewer público nunca dibuja.
+        if (variant === "viewer") return;
         if (!isMapReady || !leafletMapRef.current || !drawingLayerId) return;
 
         const map = leafletMapRef.current;
@@ -1026,7 +1042,7 @@ export default function MasterplanMap({
             map.off("click", handleClick);
             map.getContainer().style.cursor = "";
         };
-    }, [drawingLayerId, isMapReady]);
+    }, [drawingLayerId, isMapReady, variant]);
 
     useEffect(() => {
         if (!isMapReady || !leafletMapRef.current) return;
@@ -2112,7 +2128,7 @@ export default function MasterplanMap({
                 </AnimatePresence>
 
                 <AnimatePresence>
-                    {modo === "admin" && showLayersPanel && (
+                    {variant === "editor" && modo === "admin" && showLayersPanel && (
                         <motion.div
                             initial={{ x: 340, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
@@ -2160,9 +2176,9 @@ export default function MasterplanMap({
                     )}
                 </AnimatePresence>
 
-                {/* Overlay Editor */}
+                {/* Overlay Editor — solo en variant="editor" (admin). En viewer nunca se renderiza. */}
                 <AnimatePresence>
-                    {isEditingOverlay && isMapReady && leafletMapRef.current && (
+                    {variant === "editor" && isEditingOverlay && isMapReady && leafletMapRef.current && (
                         <OverlayEditor
                             proyectoId={proyectoId}
                             map={leafletMapRef.current}

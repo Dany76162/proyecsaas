@@ -161,6 +161,7 @@ export default function MasterplanCanvas({
                             proyectoId={proyectoId}
                             modo="public"
                             canEdit={false}
+                            variant="viewer"
                             initialUnits={units}
                             overlayImageUrl={planAsset || undefined}
                             centerLat={mapCenterLat ?? undefined}
