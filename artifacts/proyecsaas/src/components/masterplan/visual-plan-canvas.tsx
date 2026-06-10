@@ -7,6 +7,8 @@ import type {
   VisualObjectGeometry,
   VisualRectGeometry,
   VisualTextGeometry,
+  VisualPathGeometry,
+  VisualPoint,
   UpdateDevelopmentVisualObjectInput,
 } from "@/types/development-visual-objects";
 import type { VisualEditorTool } from "./visual-editor-toolbar";
@@ -19,6 +21,7 @@ interface VisualPlanCanvasProps {
   onSelectObject: (objectId: string | null) => void;
   onCreateRect: (geometry: VisualRectGeometry) => void;
   onCreateText: (geometry: VisualTextGeometry) => void;
+  onCreatePolyline: (geometry: VisualPathGeometry) => void;
   // New callback to persist geometry updates
   onUpdateObject: (objectId: string, input: UpdateDevelopmentVisualObjectInput) => void;
 }
@@ -42,6 +45,13 @@ function getTextGeometry(geometry: VisualObjectGeometry): VisualTextGeometry | n
   return null;
 }
 
+function getPathGeometry(geometry: VisualObjectGeometry): VisualPathGeometry | null {
+  if ("points" in geometry && Array.isArray(geometry.points)) {
+    return geometry as VisualPathGeometry;
+  }
+  return null;
+}
+
 export default function VisualPlanCanvas({
   masterplanSVG,
   objects,
@@ -50,6 +60,7 @@ export default function VisualPlanCanvas({
   onSelectObject,
   onCreateRect,
   onCreateText,
+  onCreatePolyline,
   onUpdateObject,
 }: VisualPlanCanvasProps) {
   const [hoveredObjectId, setHoveredObjectId] = useState<string | null>(null);
@@ -75,13 +86,22 @@ export default function VisualPlanCanvas({
     .split(" ")
     .map(Number);
 
+  const CANVAS_MARGIN = 200;
+  const minX = -CANVAS_MARGIN;
+  const maxX = viewBoxWidth + CANVAS_MARGIN;
+  const minY = -CANVAS_MARGIN;
+  const maxY = viewBoxHeight + CANVAS_MARGIN;
+
+  const [lineStartPoint, setLineStartPoint] = useState<VisualPoint | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<VisualPoint | null>(null);
+
   const sortedObjects = useMemo(
     () => [...objects].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0)),
     [objects],
   );
 
   const handleCanvasClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (activeTool !== "rect" && activeTool !== "text") {
+    if (activeTool !== "rect" && activeTool !== "text" && activeTool !== "line") {
       onSelectObject(null);
       return;
     }
@@ -93,21 +113,34 @@ export default function VisualPlanCanvas({
     const matrix = svg.getScreenCTM();
     if (!matrix) return;
     const svgPoint = point.matrixTransform(matrix.inverse());
+    const clickedX = Math.round(svgPoint.x);
+    const clickedY = Math.round(svgPoint.y);
 
     if (activeTool === "rect") {
       onCreateRect({
-        x: Math.round(svgPoint.x - 60),
-        y: Math.round(svgPoint.y - 35),
+        x: clickedX - 60,
+        y: clickedY - 35,
         width: 120,
         height: 70,
       });
     } else if (activeTool === "text") {
       onCreateText({
-        x: Math.round(svgPoint.x),
-        y: Math.round(svgPoint.y),
+        x: clickedX,
+        y: clickedY,
         text: "Nueva etiqueta",
         fontSize: 24,
       });
+    } else if (activeTool === "line") {
+      if (!lineStartPoint) {
+        setLineStartPoint({ x: clickedX, y: clickedY });
+        setHoverPoint({ x: clickedX, y: clickedY });
+      } else {
+        onCreatePolyline({
+          points: [lineStartPoint, { x: clickedX, y: clickedY }],
+        });
+        setLineStartPoint(null);
+        setHoverPoint(null);
+      }
     }
   };
 
@@ -137,6 +170,13 @@ export default function VisualPlanCanvas({
       startY = geometry.y;
       startWidth = 0;
       startHeight = 0;
+    } else if (object.geometryKind === "POLYLINE") {
+      const geometry = getPathGeometry(object.geometry);
+      if (!geometry || geometry.points.length === 0) return;
+      startX = geometry.points[0].x;
+      startY = geometry.points[0].y;
+      startWidth = 0;
+      startHeight = 0;
     } else {
       return;
     }
@@ -156,6 +196,19 @@ export default function VisualPlanCanvas({
 
   // While dragging – update temporary visual position
   const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    // If we are drawing a line, update hoverPoint for preview
+    if (activeTool === "line" && lineStartPoint) {
+      const svg = event.currentTarget;
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const matrix = svg.getScreenCTM();
+      if (matrix) {
+        const svgPoint = point.matrixTransform(matrix.inverse());
+        setHoverPoint({ x: Math.round(svgPoint.x), y: Math.round(svgPoint.y) });
+      }
+    }
+
     // If we are resizing, handle that first
     if (resizeInfo) {
       const { id, handle, start } = resizeInfo;
@@ -174,18 +227,18 @@ export default function VisualPlanCanvas({
       const minSize = 20;
       switch (handle) {
         case 'tl':
-          newX = Math.max(0, start.x + deltaViewBoxX);
-          newY = Math.max(0, start.y + deltaViewBoxY);
+          newX = Math.max(minX, start.x + deltaViewBoxX);
+          newY = Math.max(minY, start.y + deltaViewBoxY);
           newWidth = Math.max(minSize, start.width - deltaViewBoxX);
           newHeight = Math.max(minSize, start.height - deltaViewBoxY);
           break;
         case 'tr':
-          newY = Math.max(0, start.y + deltaViewBoxY);
+          newY = Math.max(minY, start.y + deltaViewBoxY);
           newWidth = Math.max(minSize, start.width + deltaViewBoxX);
           newHeight = Math.max(minSize, start.height - deltaViewBoxY);
           break;
         case 'bl':
-          newX = Math.max(0, start.x + deltaViewBoxX);
+          newX = Math.max(minX, start.x + deltaViewBoxX);
           newWidth = Math.max(minSize, start.width - deltaViewBoxX);
           newHeight = Math.max(minSize, start.height + deltaViewBoxY);
           break;
@@ -194,9 +247,9 @@ export default function VisualPlanCanvas({
           newHeight = Math.max(minSize, start.height + deltaViewBoxY);
           break;
       }
-      // Clamp to viewBox bounds
-      if (newX + newWidth > viewBoxWidth) newWidth = viewBoxWidth - newX;
-      if (newY + newHeight > viewBoxHeight) newHeight = viewBoxHeight - newY;
+      // Clamp to viewBox bounds + margins
+      if (newX + newWidth > maxX) newWidth = maxX - newX;
+      if (newY + newHeight > maxY) newHeight = maxY - newY;
       setTempResize((prev) => ({
         ...prev,
         [id]: { x: newX, y: newY, width: newWidth, height: newHeight },
@@ -214,12 +267,12 @@ export default function VisualPlanCanvas({
     const deltaViewBoxX = deltaClientX / scaleX;
     const deltaViewBoxY = deltaClientY / scaleY;
     const newX = Math.max(
-      0,
-      Math.min(viewBoxWidth - dragStart.width, dragStart.x + deltaViewBoxX),
+      minX,
+      Math.min(maxX - dragStart.width, dragStart.x + deltaViewBoxX),
     );
     const newY = Math.max(
-      0,
-      Math.min(viewBoxHeight - dragStart.height, dragStart.y + deltaViewBoxY),
+      minY,
+      Math.min(maxY - dragStart.height, dragStart.y + deltaViewBoxY),
     );
     setTempPositions((prev) => ({
       ...prev,
@@ -260,12 +313,12 @@ export default function VisualPlanCanvas({
     const deltaViewBoxX = deltaClientX / scaleX;
     const deltaViewBoxY = deltaClientY / scaleY;
     const newX = Math.max(
-      0,
-      Math.min(viewBoxWidth - dragStart.width, dragStart.x + deltaViewBoxX),
+      minX,
+      Math.min(maxX - dragStart.width, dragStart.x + deltaViewBoxX),
     );
     const newY = Math.max(
-      0,
-      Math.min(viewBoxHeight - dragStart.height, dragStart.y + deltaViewBoxY),
+      minY,
+      Math.min(maxY - dragStart.height, dragStart.y + deltaViewBoxY),
     );
 
     const draggedObject = objects.find((o) => o.id === draggingId);
@@ -280,6 +333,20 @@ export default function VisualPlanCanvas({
         y: newY,
         text: currentTextGeom?.text ?? "Etiqueta",
       };
+    } else if (draggedObject.geometryKind === "POLYLINE") {
+      const currentPathGeom = getPathGeometry(draggedObject.geometry);
+      if (currentPathGeom) {
+        const dx = newX - dragStart.x;
+        const dy = newY - dragStart.y;
+        finalGeometry = {
+          points: currentPathGeom.points.map((p) => ({
+            x: Math.round(p.x + dx),
+            y: Math.round(p.y + dy),
+          })),
+        };
+      } else {
+        return;
+      }
     } else {
       finalGeometry = {
         x: newX,
@@ -313,6 +380,24 @@ export default function VisualPlanCanvas({
           className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-30 [\&_svg]:h-full [\&_svg]:w-full"
           dangerouslySetInnerHTML={{ __html: masterplanSVG }}
         />
+      )}
+
+      {activeTool === "line" && (
+        <div className="absolute left-3 top-3 rounded-lg bg-brand-500/90 px-3 py-1.5 text-xs font-bold text-white shadow-md z-30">
+          {lineStartPoint
+            ? "Paso 2: Hacé click en el plano para definir el punto final."
+            : "Paso 1: Hacé click en el plano para iniciar la línea."}
+        </div>
+      )}
+      {activeTool === "text" && (
+        <div className="absolute left-3 top-3 rounded-lg bg-brand-500/90 px-3 py-1.5 text-xs font-bold text-white shadow-md z-30">
+          Hacé click en el plano para crear una etiqueta.
+        </div>
+      )}
+      {activeTool === "rect" && (
+        <div className="absolute left-3 top-3 rounded-lg bg-brand-500/90 px-3 py-1.5 text-xs font-bold text-white shadow-md z-30">
+          Hacé click en el plano para colocar un rectángulo.
+        </div>
       )}
 
       <svg
@@ -480,8 +565,110 @@ export default function VisualPlanCanvas({
             );
           }
 
+          if (object.geometryKind === "POLYLINE") {
+            const geometry = getPathGeometry(object.geometry);
+            if (!geometry || geometry.points.length === 0) return null;
+
+            const tempDrag = tempPositions[object.id];
+            let renderPoints = geometry.points;
+            if (tempDrag) {
+              const dx = tempDrag.x - geometry.points[0].x;
+              const dy = tempDrag.y - geometry.points[0].y;
+              renderPoints = geometry.points.map((p) => ({
+                x: p.x + dx,
+                y: p.y + dy,
+              }));
+            }
+
+            const pointsString = renderPoints.map((p) => `${p.x},${p.y}`).join(" ");
+
+            // Calculate min/max bounds for the dashed selection rectangle
+            const xs = renderPoints.map((p) => p.x);
+            const ys = renderPoints.map((p) => p.y);
+            const minXPt = Math.min(...xs);
+            const maxXPt = Math.max(...xs);
+            const minYPt = Math.min(...ys);
+            const maxYPt = Math.max(...ys);
+            const boxPadding = 6;
+            const boxX = minXPt - boxPadding;
+            const boxY = minYPt - boxPadding;
+            const boxW = (maxXPt - minXPt) + boxPadding * 2;
+            const boxH = (maxYPt - minYPt) + boxPadding * 2;
+
+            return (
+              <g
+                key={object.id}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSelectObject(object.id);
+                }}
+                onMouseEnter={() => setHoveredObjectId(object.id)}
+                onMouseLeave={() => setHoveredObjectId(null)}
+                className={object.interactive ? "cursor-pointer" : ""}
+              >
+                {/* Selection outline */}
+                {(selected || hovered) && (
+                  <rect
+                    x={boxX}
+                    y={boxY}
+                    width={boxW}
+                    height={boxH}
+                    fill="none"
+                    stroke={selected ? "#3b82f6" : "#64748b"}
+                    strokeWidth="1.5"
+                    strokeDasharray={selected ? "4 3" : "2 2"}
+                    rx="4"
+                    className="pointer-events-none"
+                  />
+                )}
+
+                <polyline
+                  points={pointsString}
+                  fill="none"
+                  stroke={object.strokeColor ?? "#3b82f6"}
+                  strokeWidth={object.strokeWidth ?? 8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity={object.opacity ?? 0.8}
+                  style={draggingId === object.id ? { cursor: "move" } : undefined}
+                  onPointerDown={(e) => handlePointerDown(e, object)}
+                />
+
+                {/* Tooltip on hover */}
+                {hovered && (object.tooltip || object.name) && (
+                  <text
+                    x={(minXPt + maxXPt) / 2}
+                    y={boxY - 8}
+                    textAnchor="middle"
+                    className="pointer-events-none fill-white text-[11px] font-black"
+                    paintOrder="stroke"
+                    stroke="#020617"
+                    strokeWidth="3"
+                  >
+                    {object.tooltip || object.name}
+                  </text>
+                )}
+              </g>
+            );
+          }
+
           return null;
         })}
+
+        {/* Line preview during creation */}
+        {lineStartPoint && hoverPoint && (
+          <line
+            x1={lineStartPoint.x}
+            y1={lineStartPoint.y}
+            x2={hoverPoint.x}
+            y2={hoverPoint.y}
+            stroke="#3b82f6"
+            strokeWidth="4"
+            strokeDasharray="4 4"
+            opacity="0.7"
+            className="pointer-events-none"
+          />
+        )}
       </svg>
 
       <div className="pointer-events-none absolute bottom-3 left-3 rounded-lg border border-slate-800 bg-slate-950/90 px-3 py-2 text-[11px] font-semibold text-slate-400">

@@ -9,6 +9,7 @@ import type {
   UpdateDevelopmentVisualObjectInput,
   VisualRectGeometry,
   VisualTextGeometry,
+  VisualPathGeometry,
 } from "@/types/development-visual-objects";
 import VisualEditorToolbar, { type VisualEditorTool } from "./visual-editor-toolbar";
 import VisualObjectInspector from "./visual-object-inspector";
@@ -80,6 +81,28 @@ function buildTextObjectInput(
   };
 }
 
+function buildPolylineObjectInput(
+  geometry: VisualPathGeometry,
+  order: number,
+): CreateDevelopmentVisualObjectInput {
+  return {
+    name: `Calle ${order + 1}`,
+    type: "calle",
+    tooltip: "Calle / Acceso",
+    geometryKind: "POLYLINE",
+    coordinateSpace: "PLAN_VIEWBOX",
+    geometry,
+    fillColor: null,
+    strokeColor: "#3b82f6",
+    opacity: 0.8,
+    strokeWidth: 8,
+    zIndex: order,
+    visibility: "BOTH",
+    interactive: true,
+    locked: false,
+  };
+}
+
 export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) {
   const [activeTool, setActiveTool] = useState<VisualEditorTool>("select");
   const [objects, setObjects] = useState<DevelopmentVisualObjectDto[]>([]);
@@ -140,6 +163,30 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
         setActiveTool("select");
       } catch (createError) {
         setError(createError instanceof Error ? createError.message : "No se pudo crear el objeto");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [objects.length, proyectoId],
+  );
+
+  const createPolyline = useCallback(
+    async (geometry: VisualPathGeometry) => {
+      setSaving(true);
+      setError(null);
+      try {
+        const input = buildPolylineObjectInput(geometry, objects.length);
+        const response = await fetch(`/api/developments/${proyectoId}/visual-objects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        const created = await readJson<{ object: DevelopmentVisualObjectDto }>(response);
+        setObjects((current) => [...current, created.object]);
+        setSelectedObjectId(created.object.id);
+        setActiveTool("select");
+      } catch (createError) {
+        setError(createError instanceof Error ? createError.message : "No se pudo crear la línea");
       } finally {
         setSaving(false);
       }
@@ -283,6 +330,7 @@ export default function VisualPlanEditor({ proyectoId }: VisualPlanEditorProps) 
             onUpdateObject={updateObject}
             onCreateRect={(geometry) => void createRect(geometry)}
             onCreateText={(geometry) => void createText(geometry)}
+            onCreatePolyline={(geometry) => void createPolyline(geometry)}
           />
         </div>
 

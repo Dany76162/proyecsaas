@@ -157,18 +157,20 @@ export default function VisualObjectInspector({
         </label>
 
         <div className="grid grid-cols-2 gap-2">
-          <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-            Relleno
-            <input
-              type="color"
-              className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900"
-              value={object.fillColor ?? "#22c55e"}
-              disabled={disabled}
-              onChange={(event) => onUpdate(object.id, { fillColor: event.currentTarget.value })}
-            />
-          </label>
-          <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-            Borde
+          {object.geometryKind !== "POLYLINE" && (
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+              Relleno
+              <input
+                type="color"
+                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900"
+                value={object.fillColor ?? "#22c55e"}
+                disabled={disabled}
+                onChange={(event) => onUpdate(object.id, { fillColor: event.currentTarget.value })}
+              />
+            </label>
+          )}
+          <label className={object.geometryKind === "POLYLINE" ? "col-span-2 block text-xs font-bold text-slate-600 dark:text-slate-300" : "block text-xs font-bold text-slate-600 dark:text-slate-300"}>
+            {object.geometryKind === "POLYLINE" ? "Color de línea" : "Borde"}
             <input
               type="color"
               className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900"
@@ -195,7 +197,7 @@ export default function VisualObjectInspector({
         </label>
 
         <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-          Grosor de borde
+          {object.geometryKind === "POLYLINE" ? "Grosor de línea" : "Grosor de borde"}
           <input
             type="number"
             min="0"

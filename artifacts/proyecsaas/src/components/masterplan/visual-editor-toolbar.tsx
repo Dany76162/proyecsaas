@@ -1,11 +1,11 @@
 "use client";
 
-import { MousePointer2, Square, Type } from "lucide-react";
+import { MousePointer2, Square, Type, Slash } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { cn } from "@/lib/utils";
 
-export type VisualEditorTool = "select" | "rect" | "text";
+export type VisualEditorTool = "select" | "rect" | "text" | "line";
 
 interface VisualEditorToolbarProps {
   activeTool: VisualEditorTool;
@@ -22,6 +22,7 @@ const TOOLS: Array<{
   { id: "select", label: "Seleccionar", icon: MousePointer2 },
   { id: "rect", label: "Rectangulo", icon: Square },
   { id: "text", label: "Etiqueta", icon: Type },
+  { id: "line", label: "Línea", icon: Slash },
 ];
 
 export default function VisualEditorToolbar({
