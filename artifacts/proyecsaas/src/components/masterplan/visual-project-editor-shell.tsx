@@ -48,7 +48,7 @@ const VisualPlanEditor = dynamic(() => import("@/components/masterplan/visual-pl
     ),
 });
 
-const useVisualObjectsEditor = false;
+const useVisualObjectsEditor = true;
 
 interface Tool {
     label: string;
