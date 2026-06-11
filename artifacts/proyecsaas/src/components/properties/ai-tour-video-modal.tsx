@@ -143,7 +143,7 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
         });
         const data = (await response.json().catch(() => ({}))) as ProcessResponse;
         if (!response.ok || !data.success) {
-          throw new Error(data.error || "No se pudo procesar el tour 360 con IA.");
+          throw new Error(data.error || "No se pudo procesar la escena panorámica con IA.");
         }
 
         setStatusText("Revisando calidad");
@@ -185,14 +185,14 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
         };
         const saved = await upsertPropertyMediaAction(orgSlug, propertyId, payload);
         if (!saved.success) {
-          throw new Error(saved.message ?? "No se pudo guardar el tour 360 generado.");
+          throw new Error(saved.message ?? "No se pudo guardar la escena panorámica generada.");
         }
         onCaptured?.(payload);
-        setStatusText("Tour 360 guardado");
+        setStatusText("Escena 360 guardada");
         onOpenChange(false);
         reset();
       } catch (saveError) {
-        setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el tour 360 generado.");
+        setError(saveError instanceof Error ? saveError.message : "No se pudo guardar la escena panorámica generada.");
       }
     });
   }
@@ -206,7 +206,7 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Generar tour 360 con IA</h2>
+              <h2 className="text-lg font-bold">Crear escena panorámica desde video</h2>
               <p className="text-xs text-white/55">Función experimental. Resultado sujeto a calidad del video.</p>
             </div>
           </div>
@@ -242,6 +242,8 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
           </div>
 
           <div className="rounded-xl border border-cyan-400/20 bg-cyan-500/10 p-4 text-sm leading-6 text-cyan-50/80">
+            <p>Panorámica asistida por IA para prueba rápida con celular.</p>
+            <p>El resultado puede no ser equivalente a una cámara 360 profesional.</p>
             <p>Quedate quieto en un punto.</p>
             <p>Girás lento sobre tu propio eje, sin caminar.</p>
             <p>Usá buena luz y mantené el celular estable.</p>
@@ -279,7 +281,7 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
           {result && (
             <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
               {recommendedPreviewUrl && (
-                <img src={recommendedPreviewUrl} alt="Preview del tour 360 generado con IA" className="max-h-80 w-full rounded-lg object-contain bg-black" />
+                <img src={recommendedPreviewUrl} alt="Preview de la escena panorámica generada con IA" className="max-h-80 w-full rounded-lg object-contain bg-black" />
               )}
               <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
                 <Metric label="Recomendación" value={result.recommendation ?? "Sin dato"} />
@@ -326,7 +328,7 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
             className="rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-emerald-400 disabled:opacity-40"
           >
             <CheckCircle2 className="mr-2 inline h-4 w-4" />
-            Guardar como tour 360
+            Guardar como escena 360
           </button>
         </div>
       </DialogContent>

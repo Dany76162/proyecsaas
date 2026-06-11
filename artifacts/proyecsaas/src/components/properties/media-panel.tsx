@@ -424,7 +424,7 @@ export function MediaPanel({
                   className="w-full gap-2 bg-emerald-400 text-slate-950 hover:bg-emerald-300"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Generar tour 360 con IA
+                  Crear escena 360° desde video
                 </Button>
                 <p className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-[10px] font-medium leading-normal text-emerald-50/75">
                   Función experimental. Resultado sujeto a calidad del video.

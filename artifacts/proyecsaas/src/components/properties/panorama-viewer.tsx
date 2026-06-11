@@ -19,6 +19,16 @@ type PanoramaViewerProps = {
 }
 
 type SceneProjectionType = 'equirectangular' | 'cylindrical'
+type ProjectionConfig = {
+  type: 'equirectangular'
+  haov?: number
+  vaov?: number
+  vOffset?: number
+  minPitch?: number
+  maxPitch?: number
+  pitch?: number
+  hfov?: number
+}
 
 function getPanoramaSourceUrl(url: string) {
   if (!url || url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:')) {
@@ -37,13 +47,17 @@ function getPanoramaSourceUrl(url: string) {
   return url
 }
 
-function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined) {
+function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined): ProjectionConfig {
   if (sceneType === 'cylindrical') {
     return {
       type: 'equirectangular',
-      haov: 360,
-      vaov: 90,
+      haov: 160,
+      vaov: 55,
       vOffset: 0,
+      minPitch: -25,
+      maxPitch: 25,
+      pitch: 0,
+      hfov: 75,
     }
   }
 
@@ -94,8 +108,8 @@ export function PanoramaViewer({
             img.onload = () => {
               if (cancelled) return resolve()
               const aspect = img.width / img.height
-              // Panorámicas móviles clásicas tienen aspect > 2.2. Equirectangulares son estrictamente 2:1 (aspect 2.0).
-              types[i] = aspect > 2.2 ? 'cylindrical' : 'equirectangular'
+              // Las 360 reales suelen estar cerca de 2:1. Recortes o panoramicas de celular usan vista parcial.
+              types[i] = aspect >= 1.85 && aspect <= 2.15 ? 'equirectangular' : 'cylindrical'
               resolve()
             }
             img.onerror = () => {
@@ -206,12 +220,13 @@ export function PanoramaViewer({
 
       try {
         if (viewerScenes.length === 1) {
+          const projectionConfig = getPannellumProjectionConfig(sceneTypes[0])
           // @ts-ignore
           viewerRef.current = window.pannellum.viewer(containerRef.current, {
-            ...getPannellumProjectionConfig(sceneTypes[0]),
+            ...projectionConfig,
             panorama: viewerScenes[0].sourceUrl,
             autoLoad: true,
-            hfov: 100,
+            hfov: projectionConfig.hfov ?? 100,
             showControls: true,
             mouseZoom: true,
             gyroscope: true,
