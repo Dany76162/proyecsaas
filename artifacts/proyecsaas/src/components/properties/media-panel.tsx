@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
+import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Sparkles, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import {
   removePropertyMediaBatchAction,
   setPropertyFloorPlanAction,
@@ -13,6 +14,7 @@ import {
 } from "@/modules/properties/actions";
 import type { PropertyImageItem, PropertyPanoramaItem } from "@/modules/properties/types";
 import { CameraCaptureModal } from "./camera-capture-modal";
+import { AiTourVideoModal } from "./ai-tour-video-modal";
 import { ContinuousScannerModal } from "./continuous-scanner-modal";
 import { Video360RecorderModal } from "./video-360-recorder-modal";
 import {
@@ -104,6 +106,7 @@ export function MediaPanel({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isAiTourOpen, setIsAiTourOpen] = useState(false);
   const [isVideo360Open, setIsVideo360Open] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
@@ -413,6 +416,21 @@ export function MediaPanel({
         </Button>
         {activeCategory === "PANORAMA" && (
           <div className="mt-2 space-y-2">
+            {FEATURE_FLAGS.enableExperimentalAiTourGenerator && (
+              <>
+                <Button
+                  type="button"
+                  onClick={() => setIsAiTourOpen(true)}
+                  className="w-full gap-2 bg-emerald-400 text-slate-950 hover:bg-emerald-300"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Generar tour 360 con IA
+                </Button>
+                <p className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-[10px] font-medium leading-normal text-emerald-50/75">
+                  Función experimental. Resultado sujeto a calidad del video.
+                </p>
+              </>
+            )}
             <Button
               type="button"
               onClick={() => setIsVideo360Open(true)}
@@ -999,6 +1017,13 @@ export function MediaPanel({
         onOpenChange={setIsVideo360Open}
         onCaptured={handleUploaded}
         onUsePhotoFlow={() => setIsCameraOpen(true)}
+      />
+      <AiTourVideoModal
+        open={isAiTourOpen}
+        orgSlug={orgSlug}
+        propertyId={propertyId}
+        onOpenChange={setIsAiTourOpen}
+        onCaptured={handleUploaded}
       />
       {typeof window !== "undefined" && typeof (window as any).ImageCapture !== "undefined" ? (
         <ContinuousScannerModal

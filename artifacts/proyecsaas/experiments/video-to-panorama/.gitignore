@@ -2,6 +2,7 @@
 samples/*
 outputs/*
 frames/*
+runtime/*
 *.mp4
 *.mov
 *.webm
