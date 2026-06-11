@@ -77,9 +77,8 @@ function runProcessor(inputPath: string, outputPath: string) {
   });
 }
 
-function fileUrl(req: Request, jobId: string, file: string) {
-  const url = new URL(req.url);
-  return `${url.origin}/api/experimental/property-tour-ai/file?jobId=${encodeURIComponent(jobId)}&file=${encodeURIComponent(file)}`;
+function fileUrl(_req: Request, jobId: string, file: string) {
+  return `/api/experimental/property-tour-ai/file?jobId=${encodeURIComponent(jobId)}&file=${encodeURIComponent(file)}`;
 }
 
 export async function POST(req: Request) {
