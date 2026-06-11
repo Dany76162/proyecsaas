@@ -164,6 +164,7 @@ export async function POST(req: Request) {
       frames_selected: report.frames_selected ?? null,
       stitching_success: report.stitching?.success ?? false,
       recommended_panorama_type: visualQuality.recommended_panorama_type ?? null,
+      recommended_disabled_for_viewer: visualQuality.recommended_disabled_for_viewer ?? true,
       seam_warning: visualQuality.seam_warning ?? null,
       seam_rotation_applied: visualQuality.seam_rotation_applied ?? false,
       visual_distortion_warning: visualQuality.visual_distortion_warning ?? null,

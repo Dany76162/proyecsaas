@@ -81,10 +81,8 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
     return selectedAmbient;
   }, [customAmbient, selectedAmbient]);
 
-  const recommendedImageUrl =
-    result?.urls?.panorama_recommended || result?.urls?.panorama_cropped || result?.urls?.panorama || null;
-  const recommendedPreviewUrl =
-    result?.urls?.preview_recommended || result?.urls?.preview_cropped || result?.urls?.preview || recommendedImageUrl;
+  const recommendedImageUrl = result?.urls?.panorama_cropped || result?.urls?.panorama || null;
+  const recommendedPreviewUrl = result?.urls?.preview_cropped || result?.urls?.preview || recommendedImageUrl;
   const canSave = Boolean(
     recommendedImageUrl &&
       result?.recommendation &&

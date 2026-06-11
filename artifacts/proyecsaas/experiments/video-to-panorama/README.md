@@ -13,7 +13,7 @@ Procesar videos locales de prueba y generar:
 - panorama final si OpenCV logra stitch;
 - preview reducido;
 - recorte opcional si el stitch deja bordes negros utiles de remover;
-- panorama recomendado para visor si conviene rotar la costura o recortar zonas extremas;
+- panorama experimental de diagnostico si conviene analizar rotacion de costura o recorte extremo;
 - fallback diagnostico si el stitch falla;
 - `report.json`;
 - `report.md`.
@@ -67,7 +67,7 @@ python process_video.py --input ./samples/living.mp4 --output ./outputs/living -
 11. Analiza area negra, bordes vacios y bounding box de contenido util.
 12. Si el recorte es razonable, genera `panorama_cropped.jpg` y `preview_cropped.jpg`.
 13. Detecta una zona de baja informacion visual para ubicar la costura del panorama fuera de elementos notorios.
-14. Genera `panorama_recommended.jpg` y `preview_recommended.jpg` como candidata preferida para el visor.
+14. Genera `panorama_recommended.jpg` y `preview_recommended.jpg` solo como diagnostico experimental.
 15. Si falla, genera un fallback horizontal solo para diagnostico.
 16. Escribe reportes JSON y Markdown.
 
@@ -94,12 +94,15 @@ Metricas visuales nuevas:
 - `selection_strategy`: estrategia usada para seleccionar frames.
 - `low_confidence_stitching_attempted`: indica si se intento stitching con pocos frames.
 - `frame_quality_warning`: advertencia resumida sobre calidad de frames.
-- `recommended_panorama_type`: indica si la imagen recomendada es rotada, recortada o ambas.
-- `recommended_panorama_path`: ruta de la imagen recomendada para el visor.
+- `recommended_panorama_type`: indica si la imagen experimental es rotada, recortada o ambas.
+- `recommended_panorama_path`: ruta de la imagen experimental para revision visual.
+- `recommended_disabled_for_viewer`: indica que esta salida no debe usarse automaticamente en el visor.
 - `seam_warning`: advertencia si la costura todavia puede ser visible.
 - `seam_rotation_applied`: indica si se roto la panoramica para mover la costura.
 - `visual_distortion_warning`: advertencia si se aplico recorte para reducir curvatura o estiramiento.
 - `viewer_recommendation`: recomendacion concreta para elegir la imagen del visor.
+
+Importante: `panorama_recommended.jpg` no debe usarse automaticamente como salida final. En pruebas reales puede empeorar la deformacion o hacer mas visible la costura, por lo que queda solo como material de diagnostico hasta validar mas casos.
 
 Mensajes frecuentes:
 

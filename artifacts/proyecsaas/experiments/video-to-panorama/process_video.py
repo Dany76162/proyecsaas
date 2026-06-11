@@ -501,14 +501,19 @@ def build_recommended_panorama(
     if seam_analysis["score"] > 24:
         seam_warning = "La costura puede seguir siendo visible porque no se encontro una zona de cierre suficientemente limpia."
 
-    viewer_recommendation = "Usar panorama_recommended.jpg para el visor y conservar panorama.jpg para comparacion tecnica."
+    viewer_recommendation = (
+        "panorama_recommended.jpg es diagnostica y experimental; no usar automaticamente como imagen final del visor."
+    )
     if recommended_type in {"cropped", "rotated_cropped"}:
-        viewer_recommendation = "Usar panorama_recommended.jpg: combina rotacion de costura y recorte para una vista mas agradable."
+        viewer_recommendation = (
+            "panorama_recommended.jpg combina rotacion de costura y recorte, pero requiere revision visual antes de usarse."
+        )
 
     return {
         "recommended_panorama_type": recommended_type,
         "recommended_panorama_path": str(recommended_path),
         "recommended_preview_path": str(recommended_preview_path),
+        "recommended_disabled_for_viewer": True,
         "seam_warning": seam_warning,
         "seam_rotation_applied": seam_rotation_applied,
         "seam_rotation_pixels": seam_x,
@@ -790,6 +795,7 @@ def empty_visual_quality() -> dict[str, Any]:
         "recommended_panorama_type": None,
         "recommended_panorama_path": None,
         "recommended_preview_path": None,
+        "recommended_disabled_for_viewer": True,
         "seam_warning": None,
         "seam_rotation_applied": False,
         "seam_rotation_pixels": 0,
@@ -891,6 +897,7 @@ def render_markdown_report(report: dict[str, Any]) -> str:
         f"- Tamano recortado: `{visual_quality.get('cropped_size')}`",
         f"- Score visual: `{visual_quality.get('quality_score')}`",
         f"- Panorama recomendado: `{visual_quality.get('recommended_panorama_type')}`",
+        f"- Recommended deshabilitado para visor: `{visual_quality.get('recommended_disabled_for_viewer')}`",
         f"- Rotacion de costura aplicada: `{visual_quality.get('seam_rotation_applied')}`",
         f"- Pixeles de rotacion de costura: `{visual_quality.get('seam_rotation_pixels')}`",
         f"- Score de costura: `{visual_quality.get('seam_score')}`",
