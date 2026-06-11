@@ -410,46 +410,50 @@ export function MediaPanel({
           className="hidden"
           onChange={handleFloorPlanChange}
         />
-        <Button type="button" onClick={() => fileInputRef.current?.click()} className="mt-4 w-full gap-2">
+        <Button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="mt-4 w-full gap-2 bg-brand-600 hover:bg-brand-700 text-white"
+        >
           <ImagePlus className="h-4 w-4" />
-          Subir imagen
+          {activeCategory === "PANORAMA" ? "Subir imagen panorámica" : "Subir imagen"}
         </Button>
         {activeCategory === "PANORAMA" && (
           <div className="mt-2 space-y-2">
+            <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px] font-medium leading-normal text-white/60">
+              Subí fotos tomadas con cámaras 360° profesionales o con el modo "Panorámica" nativo de tu celular.
+            </p>
             {FEATURE_FLAGS.enableExperimentalAiTourGenerator && (
-              <>
+              <div className="mt-6 space-y-2 border-t border-white/10 pt-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                  Laboratorio Experimental (Beta)
+                </h4>
                 <Button
                   type="button"
                   onClick={() => setIsAiTourOpen(true)}
-                  className="w-full gap-2 bg-emerald-400 text-slate-950 hover:bg-emerald-300"
+                  className="w-full gap-2 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30"
                 >
                   <Sparkles className="h-4 w-4" />
                   Crear escena desde video (IA)
                 </Button>
-                <p className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-[10px] font-medium leading-normal text-emerald-50/75">
-                  Función experimental. Resultado sujeto a calidad del video.
-                </p>
-              </>
+                <Button
+                  type="button"
+                  onClick={() => setIsVideo360Open(true)}
+                  className="w-full gap-2 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
+                >
+                  <Camera className="h-4 w-4" />
+                  Cámara web (Experimental)
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setIsCameraOpen(true)}
+                  className="w-full gap-2 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
+                >
+                  <Camera className="h-4 w-4" />
+                  Captura por fotos (Alternativa)
+                </Button>
+              </div>
             )}
-            <Button
-              type="button"
-              onClick={() => setIsVideo360Open(true)}
-              className="w-full gap-2 bg-cyan-500 text-slate-950 hover:bg-cyan-400"
-            >
-              <Camera className="h-4 w-4" />
-              Cámara
-            </Button>
-            <p className="rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-[10px] font-medium leading-normal text-cyan-50/75">
-              Este modo crea una panorámica navegable con celular. No reemplaza una cámara 360 profesional.
-            </p>
-            <Button
-              type="button"
-              onClick={() => setIsCameraOpen(true)}
-              className="w-full gap-2 bg-brand-600 hover:bg-brand-700"
-            >
-              <Camera className="h-4 w-4" />
-              Usar captura por fotos (alternativa)
-            </Button>
           </div>
         )}
         <Button
