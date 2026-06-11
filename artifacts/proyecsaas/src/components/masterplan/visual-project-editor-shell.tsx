@@ -27,6 +27,7 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import ProjectLayersEditorPanel from "./project-layers-editor-panel";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 
 const MasterplanViewer = dynamic(() => import("@/components/masterplan/masterplan-viewer"), {
     ssr: false,
@@ -47,6 +48,19 @@ const VisualPlanEditor = dynamic(() => import("@/components/masterplan/visual-pl
         </div>
     ),
 });
+
+const VisualCadEditor = dynamic(
+    () => import("@/components/masterplan/visual-cad-editor/visual-cad-editor"),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex flex-1 items-center justify-center gap-2 bg-slate-950 text-white">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span className="text-sm font-semibold text-slate-400">Iniciando motor CAD 2D...</span>
+            </div>
+        ),
+    }
+);
 
 const useVisualObjectsEditor = true;
 
@@ -190,7 +204,9 @@ export default function VisualProjectEditorShell({
 
             <div className="relative min-h-0 flex-1 overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800">
                 {step2Done ? (
-                    useVisualObjectsEditor ? (
+                    FEATURE_FLAGS.enableVisualCadEditor ? (
+                        <VisualCadEditor developmentId={proyectoId} title="Editor CAD Visual (Prototipo)" />
+                    ) : useVisualObjectsEditor ? (
                         <VisualPlanEditor proyectoId={proyectoId} />
                     ) : (
                         <>

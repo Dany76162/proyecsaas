@@ -16,7 +16,12 @@ const VisualCadCanvas = dynamic(() => import("./visual-cad-canvas"), {
   ),
 });
 
-export default function VisualCadEditor() {
+interface VisualCadEditorProps {
+  developmentId?: string;
+  title?: string;
+}
+
+export default function VisualCadEditor({ title }: VisualCadEditorProps) {
   return (
     <div className="flex h-[650px] w-full flex-col gap-4 bg-slate-900/40 p-4 rounded-xl border border-slate-800 backdrop-blur-sm">
       {/* Header and Toolbar */}
@@ -24,7 +29,7 @@ export default function VisualCadEditor() {
         <div>
           <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-            VisualCadEditor (Fase 0.1)
+            {title ?? "VisualCadEditor (Fase 0.2)"}
           </h2>
           <p className="text-xs text-slate-400">
             Prototipo paralelo e independiente con renderizado basado en Konva 2D.

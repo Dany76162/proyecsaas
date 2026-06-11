@@ -49,6 +49,7 @@ export function VisualCadToolbar() {
         {tools.map((tool) => (
           <button
             key={tool.id}
+            type="button"
             onClick={() => setActiveTool(tool.id)}
             title={tool.label}
             className={`flex h-8 w-8 items-center justify-center rounded transition-colors ${
@@ -64,6 +65,7 @@ export function VisualCadToolbar() {
 
       <div className="flex items-center gap-1">
         <button
+          type="button"
           onClick={resetView}
           title="Restablecer Vista"
           className="flex h-8 px-2 items-center gap-1 rounded text-xs text-slate-400 transition-colors hover:bg-slate-900 hover:text-white"
@@ -73,6 +75,7 @@ export function VisualCadToolbar() {
         </button>
 
         <button
+          type="button"
           onClick={clearAll}
           title="Borrar Todo"
           disabled={shapes.length === 0}
