@@ -89,7 +89,7 @@ const PMAP_CSS = `
   .pmap-popup-badge--op { position: absolute; top: 8px; left: 8px; background: rgba(15,23,42,0.82); backdrop-filter: blur(4px); }
   .pmap-popup-badge--op-inline { position: static; background: #0f172a; }
   .pmap-popup-body { padding: 11px 12px 12px; }
-  .pmap-popup-type { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin: 0 0 3px; }
+  .pmap-popup-type { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: #94a3b8; margin: 0 0 3px; }
   .pmap-popup-title { font-size: 13px; font-weight: 700; color: #0f172a; margin: 0 0 3px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .pmap-popup-loc { font-size: 11px; color: #64748b; margin: 0 0 9px; }
   .pmap-popup-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 9px; border-top: 1px solid #f1f5f9; gap: 8px; }
@@ -115,6 +115,31 @@ const TYPE_LABELS: Record<string, string> = {
   emprendimiento: "Empr.",
   development:  "Empr.",
 };
+
+const TYPE_FULL_LABELS: Record<string, string> = {
+  departamento:   "Departamento",
+  apartment:      "Departamento",
+  depto:          "Departamento",
+  casa:           "Casa",
+  house:          "Casa",
+  lote:           "Lote",
+  terreno:        "Lote",
+  land:           "Lote",
+  local:          "Local",
+  oficina:        "Oficina",
+  office:         "Oficina",
+  loft:           "Loft",
+  ph:             "PH",
+  emprendimiento: "Emprendimiento",
+  development:    "Emprendimiento",
+};
+
+/** Tipo completo para el popup: "Departamento", "Oficina", etc. Devuelve null si no reconocido. */
+function formatTypeFullLabel(type: string | null | undefined): string | null {
+  if (!type) return null;
+  const key = type.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return TYPE_FULL_LABELS[key] ?? null;
+}
 
 /** Tipo compacto para el chip: "Depto", "Casa", etc. Devuelve null si no reconocido. */
 function formatTypeLabel(type: string | null | undefined): string | null {
@@ -337,7 +362,7 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
       const chipLabel = formatChipPrice(priceCents, marker.currency);
       const isConsultar = chipLabel === "Consultar";
       const opLabel = OP_LABEL[marker.operationType ?? marker.operation ?? ""] ?? "";
-      const typeLabel = marker.propertyType ?? "";
+      const typeLabel = formatTypeFullLabel(marker.propertyType) ?? "";
 
       // Elemento del marker
       const el = document.createElement("div");
