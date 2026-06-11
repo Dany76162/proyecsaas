@@ -109,7 +109,7 @@ export function PanoramaViewer({
               if (cancelled) return resolve()
               const aspect = img.width / img.height
               // Las 360 reales suelen estar cerca de 2:1. Recortes o panoramicas de celular usan vista parcial.
-              types[i] = aspect >= 1.85 && aspect <= 2.15 ? 'equirectangular' : 'cylindrical'
+              types[i] = aspect >= 1.85 && aspect <= 2.22 ? 'equirectangular' : 'cylindrical'
               resolve()
             }
             img.onerror = () => {
