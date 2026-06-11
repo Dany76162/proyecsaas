@@ -55,8 +55,8 @@ const OP_LABEL: Record<string, string> = {
 const PMAP_CSS = `
   .pmap-marker { cursor: pointer; }
   .pmap-chip {
-    display: inline-flex; align-items: center; gap: 3px;
-    height: 26px; padding: 0 9px;
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 26px; padding: 0 9px 0 5px;
     background: #0f172a; color: #fff;
     border: 2px solid #fff; border-radius: 999px;
     font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap;
@@ -68,6 +68,14 @@ const PMAP_CSS = `
   .pmap-chip--active { background: #4f46e5 !important; border-color: #a5b4fc !important; transform: scale(1.12) !important; z-index: 10 !important; }
   .pmap-chip--consultar { background: #334155; border-color: #cbd5e1; }
   .pmap-chip--consultar:hover { background: #1e293b; }
+  .pmap-chip-logo {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; flex-shrink: 0;
+    background: rgba(255,255,255,0.18); border-radius: 50%;
+    font-size: 8px; font-weight: 900; letter-spacing: -0.01em; color: #fff; line-height: 1;
+  }
+  .pmap-chip--active .pmap-chip-logo { background: rgba(255,255,255,0.28); }
+  .pmap-chip--consultar .pmap-chip-logo { background: rgba(255,255,255,0.12); }
   .maplibregl-popup-content { padding: 0 !important; border-radius: 16px !important; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important; border: 1px solid #e2e8f0 !important; }
   .maplibregl-popup-close-button { top: 7px !important; right: 7px !important; background: rgba(255,255,255,0.9) !important; border-radius: 50% !important; width: 22px !important; height: 22px !important; font-size: 15px !important; line-height: 21px !important; color: #334155 !important; border: 1px solid #e2e8f0 !important; z-index: 10; }
   .pmap-popup { width: 240px; font-family: -apple-system, system-ui, sans-serif; color: #0f172a; }
@@ -311,7 +319,17 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
 
       const chipEl = document.createElement("div");
       chipEl.className = `pmap-chip${isConsultar ? " pmap-chip--consultar" : ""}`;
-      chipEl.textContent = chipLabel;
+
+      // Insignia de marca (elemento DOM seguro, sin innerHTML dinámico)
+      const logoEl = document.createElement("span");
+      logoEl.className = "pmap-chip-logo";
+      logoEl.textContent = "R";
+
+      const labelEl = document.createElement("span");
+      labelEl.textContent = chipLabel;
+
+      chipEl.appendChild(logoEl);
+      chipEl.appendChild(labelEl);
       el.appendChild(chipEl);
 
       // HTML del popup
