@@ -38,6 +38,8 @@ const MAX_VIDEO_SIZE = 30 * 1024 * 1024;
 const PANORAMA_WIDTH = 4096;
 const PANORAMA_HEIGHT = 1024;
 const SAMPLE_COUNT = 12;
+const SEEK_TIMEOUT_MS = 3000;
+const MIN_DURATION_SECONDS = 2;
 
 const mimeCandidates = [
   "video/mp4;codecs=h264",
@@ -91,7 +93,11 @@ function drawCover(
   context.drawImage(source, sourceX, sourceY, drawWidth, drawHeight, x, y, width, height);
 }
 
-function waitForVideoEvent(video: HTMLVideoElement, eventName: "loadedmetadata" | "seeked") {
+function waitForVideoEvent(
+  video: HTMLVideoElement,
+  eventName: "loadedmetadata" | "seeked",
+  timeoutMs = SEEK_TIMEOUT_MS,
+) {
   return new Promise<void>((resolve, reject) => {
     const onEvent = () => {
       cleanup();
@@ -101,14 +107,26 @@ function waitForVideoEvent(video: HTMLVideoElement, eventName: "loadedmetadata" 
       cleanup();
       reject(new Error("No se pudo leer el video grabado."));
     };
+    const onTimeout = () => {
+      cleanup();
+      reject(new Error("No se pudo leer un fotograma del video a tiempo. Volvé a grabar el giro."));
+    };
     const cleanup = () => {
+      window.clearTimeout(timeoutId);
       video.removeEventListener(eventName, onEvent);
       video.removeEventListener("error", onError);
     };
 
+    const timeoutId = window.setTimeout(onTimeout, timeoutMs);
     video.addEventListener(eventName, onEvent, { once: true });
     video.addEventListener("error", onError, { once: true });
   });
+}
+
+function seekVideoFrame(video: HTMLVideoElement, time: number) {
+  const waitForSeek = waitForVideoEvent(video, "seeked");
+  video.currentTime = time;
+  return waitForSeek;
 }
 
 async function buildPanoramaFromVideo(file: File, propertyId: string): Promise<File> {
@@ -123,6 +141,9 @@ async function buildPanoramaFromVideo(file: File, propertyId: string): Promise<F
     await waitForVideoEvent(video, "loadedmetadata");
     if (!Number.isFinite(video.duration) || video.duration <= 0) {
       throw new Error("No se pudo calcular la duración del video.");
+    }
+    if (video.duration < MIN_DURATION_SECONDS) {
+      throw new Error("El video es demasiado corto. Grabá un giro más lento de al menos 2 segundos.");
     }
     if (video.duration > MAX_DURATION_SECONDS + 1) {
       throw new Error(`El video supera el máximo de ${MAX_DURATION_SECONDS} segundos.`);
@@ -142,8 +163,7 @@ async function buildPanoramaFromVideo(file: File, propertyId: string): Promise<F
 
     for (let index = 0; index < SAMPLE_COUNT; index++) {
       const time = Math.min(safeDuration, Math.max(0.05, (safeDuration * index) / SAMPLE_COUNT));
-      video.currentTime = time;
-      await waitForVideoEvent(video, "seeked");
+      await seekVideoFrame(video, time);
       drawCover(context, video, index * tileWidth, 0, tileWidth + 1, canvas.height);
     }
 
