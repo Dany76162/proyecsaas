@@ -18,6 +18,8 @@ type PanoramaViewerProps = {
   onCoordsSelected?: (pitch: number, yaw: number) => void
 }
 
+type SceneProjectionType = 'equirectangular' | 'cylindrical'
+
 function getPanoramaSourceUrl(url: string) {
   if (!url || url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:')) {
     return url
@@ -35,6 +37,27 @@ function getPanoramaSourceUrl(url: string) {
   return url
 }
 
+function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined) {
+  if (sceneType === 'cylindrical') {
+    return {
+      type: 'equirectangular',
+      haov: 360,
+      vaov: 90,
+      vOffset: 0,
+    }
+  }
+
+  return { type: 'equirectangular' }
+}
+
+function refreshViewerLayout(viewer: any) {
+  window.setTimeout(() => {
+    try {
+      viewer?.resize?.()
+    } catch {}
+  }, 80)
+}
+
 export function PanoramaViewer({ 
   scenes, 
   className = "h-full w-full bg-black",
@@ -45,7 +68,7 @@ export function PanoramaViewer({
   const viewerRef = useRef<any>(null)
   const hotspotStyleInjected = useRef(false)
   const [activeSceneIndex, setActiveSceneIndex] = useState(0)
-  const [sceneTypes, setSceneTypes] = useState<Record<number, 'equirectangular' | 'cylindrical'>>({})
+  const [sceneTypes, setSceneTypes] = useState<Record<number, SceneProjectionType>>({})
 
   const safeScenes = scenes || []
   const viewerScenes = safeScenes.map((scene) => ({
@@ -63,7 +86,7 @@ export function PanoramaViewer({
 
     let cancelled = false
     const detectTypes = async () => {
-      const types: Record<number, 'equirectangular' | 'cylindrical'> = {}
+      const types: Record<number, SceneProjectionType> = {}
       await Promise.all(
         viewerScenes.map((scene, i) => {
           return new Promise<void>((resolve) => {
@@ -185,7 +208,7 @@ export function PanoramaViewer({
         if (viewerScenes.length === 1) {
           // @ts-ignore
           viewerRef.current = window.pannellum.viewer(containerRef.current, {
-            type: sceneTypes[0] || 'equirectangular',
+            ...getPannellumProjectionConfig(sceneTypes[0]),
             panorama: viewerScenes[0].sourceUrl,
             autoLoad: true,
             hfov: 100,
@@ -193,6 +216,7 @@ export function PanoramaViewer({
             mouseZoom: true,
             gyroscope: true,
           })
+          refreshViewerLayout(viewerRef.current)
         } else {
           const scenesConfig: Record<string, any> = {}
           viewerScenes.forEach((scene, i) => {
@@ -225,7 +249,7 @@ export function PanoramaViewer({
             }
 
             scenesConfig[`scene-${i}`] = {
-              type: sceneTypes[i] || 'equirectangular',
+              ...getPannellumProjectionConfig(sceneTypes[i]),
               panorama: scene.sourceUrl,
               title: scene.label,
               autoLoad: true,
@@ -240,6 +264,7 @@ export function PanoramaViewer({
             mouseZoom: true,
             gyroscope: true,
           })
+          refreshViewerLayout(viewerRef.current)
 
           // Escuchar eventos de cambio de escena internos de Pannellum
           viewerRef.current.on('scenechange', (sceneId: string) => {
@@ -286,8 +311,8 @@ export function PanoramaViewer({
   if (safeScenes.length === 0) return null
 
   return (
-    <div className={`relative flex flex-col bg-black ${className}`}>
-      <div ref={containerRef} className="flex-1 w-full min-h-0"></div>
+    <div className={`relative flex min-h-[360px] flex-col bg-black ${className}`}>
+      <div ref={containerRef} className="min-h-[360px] flex-1 w-full"></div>
       {safeScenes.length > 1 && (
         <div className="bg-slate-950/90 border-t border-white/10 px-4 py-3 flex justify-center gap-2 overflow-x-auto scrollbar-none">
           {safeScenes.map((scene, i) => (

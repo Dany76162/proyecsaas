@@ -33,8 +33,8 @@ const ambientOptions = [
   "Otro",
 ];
 
-const MAX_DURATION_SECONDS = 10;
-const MAX_VIDEO_SIZE = 30 * 1024 * 1024;
+const MAX_DURATION_SECONDS = 60;
+const MAX_VIDEO_SIZE = 180 * 1024 * 1024;
 const PANORAMA_WIDTH = 4096;
 const PANORAMA_HEIGHT = 1024;
 const SAMPLE_COUNT = 12;
@@ -550,7 +550,7 @@ export function Video360RecorderModal({
                   <p>Sostené el celular firme.</p>
                   <p>Girás lentamente sobre tu propio eje.</p>
                   <p>No camines mientras grabás.</p>
-                  <p>Intentá completar una vuelta en 10 segundos.</p>
+                  <p>Intentá completar una vuelta en hasta 1 minuto.</p>
                 </div>
               </div>
 

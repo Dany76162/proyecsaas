@@ -8,7 +8,7 @@ import { prisma } from "@/server/db/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const MAX_VIDEO_SIZE = 30 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 180 * 1024 * 1024;
 const ALLOWED_VIDEO_TYPES = new Set(["video/webm", "video/mp4", "video/quicktime"]);
 
 function uploadError(error: string, status = 400) {
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     }
 
     if (file.size <= 0 || file.size > MAX_VIDEO_SIZE) {
-      return uploadError("El video supera el maximo permitido de 30 MB.", 413);
+      return uploadError("El video supera el maximo permitido de 180 MB.", 413);
     }
 
     const contentType = inferContentType(file.name, file.type);
