@@ -25,6 +25,7 @@ import {
     TreePine,
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import ProjectLayersEditorPanel from "./project-layers-editor-panel";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
@@ -121,6 +122,9 @@ export default function VisualProjectEditorShell({
     step2Done,
 }: VisualProjectEditorShellProps) {
     const [showProjectLayers, setShowProjectLayers] = useState(false);
+    const searchParams = useSearchParams();
+    const isCadPreview = searchParams.get("cadPreview") === "1" || searchParams.get("cadPreview") === "true";
+    const shouldShowCadEditor = FEATURE_FLAGS.enableVisualCadEditor || isCadPreview;
 
     return (
         <div className="flex h-full min-h-[640px] flex-1 flex-col overflow-hidden">
@@ -204,7 +208,7 @@ export default function VisualProjectEditorShell({
 
             <div className="relative min-h-0 flex-1 overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800">
                 {step2Done ? (
-                    FEATURE_FLAGS.enableVisualCadEditor ? (
+                    shouldShowCadEditor ? (
                         <VisualCadEditor developmentId={proyectoId} title="Editor CAD Visual (Prototipo)" />
                     ) : useVisualObjectsEditor ? (
                         <VisualPlanEditor proyectoId={proyectoId} />
