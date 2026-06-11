@@ -76,6 +76,8 @@ const PMAP_CSS = `
   }
   .pmap-chip--active .pmap-chip-logo { background: rgba(255,255,255,0.28); }
   .pmap-chip--consultar .pmap-chip-logo { background: rgba(255,255,255,0.12); }
+  .pmap-chip-type { opacity: 0.75; font-weight: 700; font-size: 10px; }
+  .pmap-chip-sep { opacity: 0.4; font-size: 10px; margin: 0 1px; }
   .maplibregl-popup-content { padding: 0 !important; border-radius: 16px !important; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important; border: 1px solid #e2e8f0 !important; }
   .maplibregl-popup-close-button { top: 7px !important; right: 7px !important; background: rgba(255,255,255,0.9) !important; border-radius: 50% !important; width: 22px !important; height: 22px !important; font-size: 15px !important; line-height: 21px !important; color: #334155 !important; border: 1px solid #e2e8f0 !important; z-index: 10; }
   .pmap-popup { width: 240px; font-family: -apple-system, system-ui, sans-serif; color: #0f172a; }
@@ -95,6 +97,31 @@ const PMAP_CSS = `
   .pmap-popup-cta { background: #0f172a; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 10px; border-radius: 8px; text-decoration: none; white-space: nowrap; }
   .pmap-popup-cta:hover { background: #1e293b; }
 `;
+
+const TYPE_LABELS: Record<string, string> = {
+  departamento: "Depto",
+  apartment:    "Depto",
+  depto:        "Depto",
+  casa:         "Casa",
+  house:        "Casa",
+  lote:         "Lote",
+  terreno:      "Lote",
+  land:         "Lote",
+  local:        "Local",
+  oficina:      "Ofic.",
+  office:       "Ofic.",
+  loft:         "Loft",
+  ph:           "PH",
+  emprendimiento: "Empr.",
+  development:  "Empr.",
+};
+
+/** Tipo compacto para el chip: "Depto", "Casa", etc. Devuelve null si no reconocido. */
+function formatTypeLabel(type: string | null | undefined): string | null {
+  if (!type) return null;
+  const key = type.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return TYPE_LABELS[key] ?? null;
+}
 
 /** Precio compacto para el chip del marker: "USD 120K", "ARS 2,5M", "Consultar". */
 function formatChipPrice(priceCents: number | null | undefined, currency: string): string {
@@ -324,11 +351,23 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
       const logoEl = document.createElement("span");
       logoEl.className = "pmap-chip-logo";
       logoEl.textContent = "R";
+      chipEl.appendChild(logoEl);
+
+      const typeShort = formatTypeLabel(marker.propertyType);
+      if (typeShort) {
+        const typeEl = document.createElement("span");
+        typeEl.className = "pmap-chip-type";
+        typeEl.textContent = typeShort;
+        chipEl.appendChild(typeEl);
+
+        const sepEl = document.createElement("span");
+        sepEl.className = "pmap-chip-sep";
+        sepEl.textContent = "·";
+        chipEl.appendChild(sepEl);
+      }
 
       const labelEl = document.createElement("span");
       labelEl.textContent = chipLabel;
-
-      chipEl.appendChild(logoEl);
       chipEl.appendChild(labelEl);
       el.appendChild(chipEl);
 
