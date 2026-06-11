@@ -1,0 +1,14 @@
+# Videos y resultados locales del experimento Fase 2A
+samples/*
+outputs/*
+frames/*
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv
+__pycache__/
+*.pyc
+
+!samples/README.md
+!outputs/.gitkeep
