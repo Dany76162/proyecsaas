@@ -8,15 +8,20 @@ import {
   Circle,
   Line as KonvaLine,
   Text as KonvaText,
+  Image as KonvaImage,
   Transformer,
 } from "react-konva";
 import { useCadStore } from "./visual-cad-store";
-import { CadShape, CadShapeType } from "./visual-cad-types";
+import { CadShape } from "./visual-cad-types";
 
-// Helper to generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-export default function VisualCadCanvas() {
+interface VisualCadCanvasProps {
+  masterplanSVG: string | null;
+  loading?: boolean;
+}
+
+export default function VisualCadCanvas({ masterplanSVG, loading = false }: VisualCadCanvasProps) {
   const {
     shapes,
     selectedId,
@@ -28,13 +33,24 @@ export default function VisualCadCanvas() {
     setSelectedId,
     setZoom,
     setPan,
+    clearAll,
   } = useCadStore();
 
   const stageRef = useRef<any>(null);
   const transformerRef = useRef<any>(null);
   const shapeRefs = useRef<{ [key: string]: any }>({});
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const coordsRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
+  const [gridEnabled, setGridEnabled] = useState(true);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+
+  // Clear CAD store shapes on initial mount to start clean
+  useEffect(() => {
+    clearAll();
+  }, [clearAll]);
 
   // Resize canvas to container
   useEffect(() => {
@@ -52,6 +68,39 @@ export default function VisualCadCanvas() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
+  // Convert raw SVG string to Image blob for Konva rendering
+  useEffect(() => {
+    if (!masterplanSVG) {
+      setImage(null);
+      return;
+    }
+
+    const blob = new Blob([masterplanSVG], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const img = new window.Image();
+    img.src = url;
+    img.onload = () => {
+      setImage(img);
+    };
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [masterplanSVG]);
+
+  // Auto-center blueprint on load
+  useEffect(() => {
+    if (dimensions.width > 0 && dimensions.height > 0) {
+      // Fit 1000x800 viewBox into actual container size with 90% padding
+      const scale = Math.min(dimensions.width / 1000, dimensions.height / 800) * 0.9;
+      const panX = (dimensions.width - 1000 * scale) / 2;
+      const panY = (dimensions.height - 800 * scale) / 2;
+
+      setZoom(scale);
+      setPan({ x: panX, y: panY });
+    }
+  }, [dimensions.width, dimensions.height, setZoom, setPan]);
+
   // Update Transformer nodes when selection changes
   useEffect(() => {
     if (!transformerRef.current) return;
@@ -65,19 +114,38 @@ export default function VisualCadCanvas() {
     }
   }, [selectedId, activeTool, shapes]);
 
+  // Handle stage mouse move for high-performance coordinate tracking
+  const handleMouseMove = (e: any) => {
+    const stage = stageRef.current;
+    if (!stage || !coordsRef.current) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    // Convert screen coordinate to world coordinate
+    const worldX = Math.round((pointer.x - pan.x) / zoom);
+    const worldY = Math.round((pointer.y - pan.y) / zoom);
+
+    coordsRef.current.textContent = `X: ${worldX}m | Y: ${worldY}m`;
+  };
+
   // Handle stage click to add new shapes or deselect
   const handleStageClick = (e: any) => {
     const clickedOnStage = e.target === e.target.getStage();
     const stage = stageRef.current;
     if (!stage) return;
 
-    // Get pointer position relative to stage/zoom/pan
     const pointer = stage.getPointerPosition();
     if (!pointer) return;
 
-    // Convert screen coordinates to world coordinates (taking zoom & pan into account)
-    const worldX = (pointer.x - pan.x) / zoom;
-    const worldY = (pointer.y - pan.y) / zoom;
+    let worldX = (pointer.x - pan.x) / zoom;
+    let worldY = (pointer.y - pan.y) / zoom;
+
+    // Snap to grid (20px increments)
+    if (snapEnabled) {
+      worldX = Math.round(worldX / 20) * 20;
+      worldY = Math.round(worldY / 20) * 20;
+    }
 
     if (clickedOnStage) {
       if (activeTool === "select") {
@@ -85,7 +153,6 @@ export default function VisualCadCanvas() {
         return;
       }
 
-      // Add new shape based on active tool
       let newShape: CadShape;
       const id = generateId();
 
@@ -98,7 +165,7 @@ export default function VisualCadCanvas() {
             y: worldY - 30,
             width: 80,
             height: 60,
-            fillColor: "rgba(59, 130, 246, 0.4)",
+            fillColor: "rgba(59, 130, 246, 0.35)",
             strokeColor: "#3b82f6",
             strokeWidth: 2,
             label: `Rectángulo ${shapes.length + 1}`,
@@ -112,7 +179,7 @@ export default function VisualCadCanvas() {
             x: worldX,
             y: worldY,
             radius: 40,
-            fillColor: "rgba(16, 185, 129, 0.4)",
+            fillColor: "rgba(16, 185, 129, 0.35)",
             strokeColor: "#10b981",
             strokeWidth: 2,
             label: `Círculo ${shapes.length + 1}`,
@@ -125,7 +192,7 @@ export default function VisualCadCanvas() {
             type: "LINE",
             x: worldX,
             y: worldY,
-            points: [worldX - 50, worldY - 50, worldX + 50, worldY + 50],
+            points: [worldX - 60, worldY, worldX + 60, worldY],
             strokeColor: "#f59e0b",
             strokeWidth: 3,
             label: `Línea ${shapes.length + 1}`,
@@ -139,8 +206,8 @@ export default function VisualCadCanvas() {
             x: worldX,
             y: worldY,
             text: "Etiqueta",
-            fontSize: 16,
-            fillColor: "#ffffff",
+            fontSize: 14,
+            fillColor: "#e2e8f0",
             label: `Texto ${shapes.length + 1}`,
           };
           break;
@@ -159,7 +226,7 @@ export default function VisualCadCanvas() {
     const stage = stageRef.current;
     if (!stage) return;
 
-    const scaleBy = 1.1;
+    const scaleBy = 1.15;
     const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
     if (!pointer) return;
@@ -170,8 +237,7 @@ export default function VisualCadCanvas() {
     };
 
     const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
-    // Bounded zoom
-    const boundedScale = Math.max(0.1, Math.min(newScale, 20));
+    const boundedScale = Math.max(0.1, Math.min(newScale, 15));
 
     setZoom(boundedScale);
     setPan({
@@ -187,13 +253,20 @@ export default function VisualCadCanvas() {
     }
   };
 
-  // Drag shapes
+  // Drag shapes with optional snap
   const handleShapeDragEnd = (id: string, e: any) => {
     const node = e.target;
-    updateShape(id, {
-      x: node.x(),
-      y: node.y(),
-    });
+    let newX = node.x();
+    let newY = node.y();
+
+    if (snapEnabled) {
+      newX = Math.round(newX / 20) * 20;
+      newY = Math.round(newY / 20) * 20;
+      node.x(newX);
+      node.y(newY);
+    }
+
+    updateShape(id, { x: newX, y: newY });
   };
 
   // Transform shapes
@@ -202,7 +275,6 @@ export default function VisualCadCanvas() {
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
 
-    // Reset scale to 1 and update width/height instead (only for RECT/CIRCLE/TEXT)
     node.scaleX(1);
     node.scaleY(1);
 
@@ -213,8 +285,8 @@ export default function VisualCadCanvas() {
       updateShape(id, {
         x: node.x(),
         y: node.y(),
-        width: Math.max(5, (shape.width ?? 10) * scaleX),
-        height: Math.max(5, (shape.height ?? 10) * scaleY),
+        width: Math.max(10, (shape.width ?? 10) * scaleX),
+        height: Math.max(10, (shape.height ?? 10) * scaleY),
       });
     } else if (shape.type === "CIRCLE") {
       updateShape(id, {
@@ -234,147 +306,236 @@ export default function VisualCadCanvas() {
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950"
-      style={{
-        backgroundImage: `
-          radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-          linear-gradient(to right, rgba(255, 255, 255, 0.01) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 1px, transparent 1px)
-        `,
-        backgroundSize: "20px 20px, 100px 100px, 100px 100px",
-      }}
+      className="relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#080d16] shadow-2xl"
     >
-      <Stage
-        ref={stageRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        x={pan.x}
-        y={pan.y}
-        scaleX={zoom}
-        scaleY={zoom}
-        draggable={activeTool === "select"}
-        onClick={handleStageClick}
-        onWheel={handleWheel}
-        onDragEnd={handleStageDragEnd}
-        className="cursor-crosshair active:cursor-grabbing"
+      {/* CAD Grid viewport */}
+      <div
+        className="relative flex-1 min-h-0 w-full overflow-hidden"
+        style={{
+          backgroundImage: gridEnabled
+            ? `
+              radial-gradient(circle, rgba(59, 130, 246, 0.08) 1.2px, transparent 1.2px),
+              linear-gradient(to right, rgba(59, 130, 246, 0.02) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(59, 130, 246, 0.02) 1px, transparent 1px)
+            `
+            : "none",
+          backgroundSize: "20px 20px, 100px 100px, 100px 100px",
+          backgroundColor: "#070b12",
+        }}
       >
-        <Layer>
-          {shapes.map((shape) => {
-            const isSelected = shape.id === selectedId;
+        <Stage
+          ref={stageRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          x={pan.x}
+          y={pan.y}
+          scaleX={zoom}
+          scaleY={zoom}
+          draggable={activeTool === "select"}
+          onClick={handleStageClick}
+          onWheel={handleWheel}
+          onMouseMove={handleMouseMove}
+          onDragEnd={handleStageDragEnd}
+          className="cursor-crosshair active:cursor-grabbing"
+        >
+          {/* Layer 1: Read-only background masterplan SVG blueprint */}
+          <Layer>
+            {image ? (
+              <KonvaImage
+                image={image}
+                x={0}
+                y={0}
+                width={1000}
+                height={800}
+                opacity={0.35}
+                listening={false} // completely locked
+              />
+            ) : (
+              // Discrete technical placeholder if no blueprint loaded
+              <KonvaText
+                x={380}
+                y={380}
+                text={loading ? "CARGANDO PLANO BASE..." : "SIN PLANO BASE DE REFERENCIA"}
+                fontSize={12}
+                fontFamily="monospace"
+                fill="rgba(148, 163, 184, 0.3)"
+                align="center"
+                listening={false}
+              />
+            )}
+          </Layer>
 
-            if (shape.type === "RECT") {
-              return (
-                <Rect
-                  key={shape.id}
-                  ref={(node) => {
-                    if (node) shapeRefs.current[shape.id] = node;
-                  }}
-                  x={shape.x}
-                  y={shape.y}
-                  width={shape.width ?? 80}
-                  height={shape.height ?? 60}
-                  fill={shape.fillColor}
-                  stroke={shape.strokeColor}
-                  strokeWidth={shape.strokeWidth}
-                  draggable={activeTool === "select"}
-                  onClick={(e) => {
-                    e.cancelBubble = true;
-                    if (activeTool === "select") setSelectedId(shape.id);
-                  }}
-                  onDragEnd={(e) => handleShapeDragEnd(shape.id, e)}
-                  onTransformEnd={(e) => handleTransformEnd(shape.id, e)}
-                />
-              );
-            }
+          {/* Layer 2: Editable user drawing entities on top */}
+          <Layer>
+            {shapes.map((shape) => {
+              const isSelected = shape.id === selectedId;
 
-            if (shape.type === "CIRCLE") {
-              return (
-                <Circle
-                  key={shape.id}
-                  ref={(node) => {
-                    if (node) shapeRefs.current[shape.id] = node;
-                  }}
-                  x={shape.x}
-                  y={shape.y}
-                  radius={shape.radius ?? 40}
-                  fill={shape.fillColor}
-                  stroke={shape.strokeColor}
-                  strokeWidth={shape.strokeWidth}
-                  draggable={activeTool === "select"}
-                  onClick={(e) => {
-                    e.cancelBubble = true;
-                    if (activeTool === "select") setSelectedId(shape.id);
-                  }}
-                  onDragEnd={(e) => handleShapeDragEnd(shape.id, e)}
-                  onTransformEnd={(e) => handleTransformEnd(shape.id, e)}
-                />
-              );
-            }
+              if (shape.type === "RECT") {
+                return (
+                  <Rect
+                    key={shape.id}
+                    ref={(node) => {
+                      if (node) shapeRefs.current[shape.id] = node;
+                    }}
+                    x={shape.x}
+                    y={shape.y}
+                    width={shape.width ?? 80}
+                    height={shape.height ?? 60}
+                    fill={shape.fillColor}
+                    stroke={shape.strokeColor}
+                    strokeWidth={shape.strokeWidth}
+                    draggable={activeTool === "select"}
+                    onClick={(e) => {
+                      e.cancelBubble = true;
+                      if (activeTool === "select") setSelectedId(shape.id);
+                    }}
+                    onDragEnd={(e) => handleShapeDragEnd(shape.id, e)}
+                    onTransformEnd={(e) => handleTransformEnd(shape.id, e)}
+                    cornerRadius={2}
+                  />
+                );
+              }
 
-            if (shape.type === "LINE") {
-              return (
-                <KonvaLine
-                  key={shape.id}
-                  ref={(node) => {
-                    if (node) shapeRefs.current[shape.id] = node;
-                  }}
-                  points={shape.points ?? []}
-                  stroke={shape.strokeColor}
-                  strokeWidth={shape.strokeWidth}
-                  draggable={activeTool === "select"}
-                  onClick={(e) => {
-                    e.cancelBubble = true;
-                    if (activeTool === "select") setSelectedId(shape.id);
-                  }}
-                  onDragEnd={(e) => handleShapeDragEnd(shape.id, e)}
-                />
-              );
-            }
+              if (shape.type === "CIRCLE") {
+                return (
+                  <Circle
+                    key={shape.id}
+                    ref={(node) => {
+                      if (node) shapeRefs.current[shape.id] = node;
+                    }}
+                    x={shape.x}
+                    y={shape.y}
+                    radius={shape.radius ?? 40}
+                    fill={shape.fillColor}
+                    stroke={shape.strokeColor}
+                    strokeWidth={shape.strokeWidth}
+                    draggable={activeTool === "select"}
+                    onClick={(e) => {
+                      e.cancelBubble = true;
+                      if (activeTool === "select") setSelectedId(shape.id);
+                    }}
+                    onDragEnd={(e) => handleShapeDragEnd(shape.id, e)}
+                    onTransformEnd={(e) => handleTransformEnd(shape.id, e)}
+                  />
+                );
+              }
 
-            if (shape.type === "TEXT") {
-              return (
-                <KonvaText
-                  key={shape.id}
-                  ref={(node) => {
-                    if (node) shapeRefs.current[shape.id] = node;
-                  }}
-                  x={shape.x}
-                  y={shape.y}
-                  text={shape.text ?? "Texto"}
-                  fontSize={shape.fontSize ?? 16}
-                  fill={shape.fillColor}
-                  draggable={activeTool === "select"}
-                  onClick={(e) => {
-                    e.cancelBubble = true;
-                    if (activeTool === "select") setSelectedId(shape.id);
-                  }}
-                  onDragEnd={(e) => handleShapeDragEnd(shape.id, e)}
-                  onTransformEnd={(e) => handleTransformEnd(shape.id, e)}
-                />
-              );
-            }
+              if (shape.type === "LINE") {
+                return (
+                  <KonvaLine
+                    key={shape.id}
+                    ref={(node) => {
+                      if (node) shapeRefs.current[shape.id] = node;
+                    }}
+                    points={shape.points ?? []}
+                    stroke={shape.strokeColor}
+                    strokeWidth={shape.strokeWidth}
+                    draggable={activeTool === "select"}
+                    onClick={(e) => {
+                      e.cancelBubble = true;
+                      if (activeTool === "select") setSelectedId(shape.id);
+                    }}
+                    onDragEnd={(e) => handleShapeDragEnd(shape.id, e)}
+                  />
+                );
+              }
 
-            return null;
-          })}
+              if (shape.type === "TEXT") {
+                return (
+                  <KonvaText
+                    key={shape.id}
+                    ref={(node) => {
+                      if (node) shapeRefs.current[shape.id] = node;
+                    }}
+                    x={shape.x}
+                    y={shape.y}
+                    text={shape.text ?? "Texto"}
+                    fontSize={shape.fontSize ?? 14}
+                    fill={shape.fillColor}
+                    draggable={activeTool === "select"}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    onClick={(e) => {
+                      e.cancelBubble = true;
+                      if (activeTool === "select") setSelectedId(shape.id);
+                    }}
+                    onDragEnd={(e) => handleShapeDragEnd(shape.id, e)}
+                    onTransformEnd={(e) => handleTransformEnd(shape.id, e)}
+                  />
+                );
+              }
 
-          {activeTool === "select" && (
-            <Transformer
-              ref={transformerRef}
-              boundBoxFunc={(oldBox, newBox) => {
-                // Limit minimum size
-                if (newBox.width < 5 || newBox.height < 5) {
-                  return oldBox;
-                }
-                return newBox;
-              }}
-            />
-          )}
-        </Layer>
-      </Stage>
+              return null;
+            })}
 
-      {/* Floating Zoom Display */}
-      <div className="absolute bottom-4 right-4 rounded-md bg-slate-900/80 px-2 py-1 text-[10px] font-mono text-slate-400 backdrop-blur-sm">
-        Zoom: {Math.round(zoom * 100)}%
+            {activeTool === "select" && (
+              <Transformer
+                ref={transformerRef}
+                borderStroke="#3b82f6"
+                anchorStroke="#3b82f6"
+                anchorFill="#1e293b"
+                anchorSize={8}
+                keepRatio={false}
+                boundBoxFunc={(oldBox, newBox) => {
+                  if (newBox.width < 10 || newBox.height < 10) {
+                    return oldBox;
+                  }
+                  return newBox;
+                }}
+              />
+            )}
+          </Layer>
+        </Stage>
+
+        {/* Floating Canvas controls */}
+        <div className="absolute right-4 top-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setGridEnabled(!gridEnabled)}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-mono backdrop-blur-md transition-all ${
+              gridEnabled
+                ? "border-blue-500/30 bg-blue-950/70 text-blue-400"
+                : "border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300"
+            }`}
+            title="Alternar Rejilla (GRID)"
+          >
+            G
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSnapEnabled(!snapEnabled)}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-mono backdrop-blur-md transition-all ${
+              snapEnabled
+                ? "border-emerald-500/30 bg-emerald-950/70 text-emerald-400"
+                : "border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300"
+            }`}
+            title="Forzar Cursor (SNAP 20m)"
+          >
+            S
+          </button>
+        </div>
+      </div>
+
+      {/* CAD Status Bar */}
+      <div className="flex h-8 w-full items-center justify-between border-t border-slate-800/80 bg-[#060a10] px-4 text-[10px] font-mono text-slate-400">
+        <div ref={coordsRef} className="font-semibold text-slate-300">
+          X: 0m | Y: 0m
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className={snapEnabled ? "text-emerald-400 font-bold" : "text-slate-600"}>
+            SNAP ON
+          </span>
+          <span className="text-slate-700">|</span>
+          <span className={gridEnabled ? "text-blue-400 font-bold" : "text-slate-600"}>
+            GRID ON
+          </span>
+          <span className="text-slate-700">|</span>
+          <span className="text-slate-500">
+            ZOOM: {Math.round(zoom * 100)}%
+          </span>
+        </div>
       </div>
     </div>
   );
