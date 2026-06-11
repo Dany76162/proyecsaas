@@ -59,13 +59,14 @@ python process_video.py --input ./samples/living.mp4 --output ./outputs/living -
 4. Calcula blur score con varianza de Laplaciano.
 5. Calcula brillo promedio.
 6. Detecta frames oscuros.
-7. Detecta frames demasiado parecidos al anterior.
-8. Selecciona un subconjunto util.
-9. Intenta stitching con OpenCV Stitcher.
-10. Analiza area negra, bordes vacios y bounding box de contenido util.
-11. Si el recorte es razonable, genera `panorama_cropped.jpg` y `preview_cropped.jpg`.
-12. Si falla, genera un fallback horizontal solo para diagnostico.
-13. Escribe reportes JSON y Markdown.
+7. Aplica seleccion adaptativa de frames: empieza con el blur threshold ideal y baja automaticamente a 60, 50, 40, 30 o 20 si no hay suficientes frames utiles.
+8. Ordena candidatos por calidad y evita frames demasiado parecidos, relajando similitud cuando hay pocos frames aprovechables.
+9. Selecciona un subconjunto util de hasta 30 frames para no saturar OpenCV.
+10. Intenta stitching con OpenCV Stitcher.
+11. Analiza area negra, bordes vacios y bounding box de contenido util.
+12. Si el recorte es razonable, genera `panorama_cropped.jpg` y `preview_cropped.jpg`.
+13. Si falla, genera un fallback horizontal solo para diagnostico.
+14. Escribe reportes JSON y Markdown.
 
 ## Interpretacion de resultados
 
@@ -84,6 +85,12 @@ Metricas visuales nuevas:
 - `cropped_size`: tamano del recorte.
 - `quality_score`: score simple de 0 a 100.
 - `quality_warnings`: advertencias visuales post-stitching.
+- `blur_threshold_initial`: umbral ideal configurado al iniciar.
+- `blur_threshold_used`: umbral real usado luego de la seleccion adaptativa.
+- `candidate_frames_by_threshold`: cantidad de frames candidatos por umbral.
+- `selection_strategy`: estrategia usada para seleccionar frames.
+- `low_confidence_stitching_attempted`: indica si se intento stitching con pocos frames.
+- `frame_quality_warning`: advertencia resumida sobre calidad de frames.
 
 Mensajes frecuentes:
 

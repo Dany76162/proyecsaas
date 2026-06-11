@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", required=True, help="Carpeta de salida del procesamiento.")
     parser.add_argument("--fps", type=float, default=1.0, help="Frames por segundo a extraer con FFmpeg. Default: 1.")
     parser.add_argument("--max-frames", type=int, default=120, help="Maximo de frames a extraer. Default: 120.")
-    parser.add_argument("--max-stitch-frames", type=int, default=40, help="Maximo de frames seleccionados para stitching. Default: 40.")
+    parser.add_argument("--max-stitch-frames", type=int, default=30, help="Maximo de frames seleccionados para stitching. Default: 30.")
     parser.add_argument("--blur-threshold", type=float, default=75.0, help="Umbral minimo de nitidez. Default: 75.")
     parser.add_argument("--dark-threshold", type=float, default=30.0, help="Brillo minimo promedio. Default: 30.")
     parser.add_argument("--similarity-threshold", type=int, default=5, help="Distancia minima de hash entre frames consecutivos. Default: 5.")
@@ -144,6 +144,18 @@ def hash_distance(a: Any | None, b: Any, np: Any) -> int | None:
     return int(np.count_nonzero(a != b))
 
 
+def build_adaptive_thresholds(initial_threshold: float) -> list[float]:
+    fallback_thresholds = [60.0, 50.0, 40.0, 30.0, 20.0]
+    thresholds = [float(initial_threshold)]
+    thresholds.extend(threshold for threshold in fallback_thresholds if threshold < initial_threshold)
+    return list(dict.fromkeys(thresholds))
+
+
+def frame_quality_score(blur_score: float, brightness: float) -> float:
+    brightness_penalty = max(0.0, 55.0 - brightness) * 0.35
+    return blur_score - brightness_penalty
+
+
 def resize_for_stitch(image: Any, max_width: int, cv2: Any) -> Any:
     height, width = image.shape[:2]
     if width <= max_width:
@@ -161,10 +173,8 @@ def analyze_and_select_frames(
     max_stitch_frames: int,
     cv2: Any,
     np: Any,
-) -> tuple[list[FrameMetrics], list[Path]]:
-    metrics: list[FrameMetrics] = []
-    candidates: list[Path] = []
-    previous_hash = None
+) -> tuple[list[FrameMetrics], list[Path], dict[str, Any]]:
+    analyzed_frames: list[dict[str, Any]] = []
 
     for frame_path in frame_paths:
         image = cv2.imread(str(frame_path))
@@ -174,41 +184,214 @@ def analyze_and_select_frames(
         blur_score = float(cv2.Laplacian(gray, cv2.CV_64F).var())
         brightness = float(gray.mean())
         current_hash = average_hash(gray, cv2, np)
-        distance = hash_distance(previous_hash, current_hash, np)
-
-        too_blurry = blur_score < blur_threshold
-        too_dark = brightness < dark_threshold
-        too_similar = distance is not None and distance < similarity_threshold
-        selected = not (too_blurry or too_dark or too_similar)
-
-        if selected:
-            candidates.append(frame_path)
-            shutil.copy2(frame_path, selected_dir / frame_path.name)
-            previous_hash = current_hash
-        elif not too_blurry and not too_dark:
-            previous_hash = current_hash
 
         height, width = gray.shape[:2]
+        analyzed_frames.append(
+            {
+                "path": frame_path,
+                "width": width,
+                "height": height,
+                "blur_score": blur_score,
+                "brightness": brightness,
+                "hash": current_hash,
+            }
+        )
+
+    adaptive_thresholds = build_adaptive_thresholds(blur_threshold)
+    candidate_frames_by_threshold = {
+        str(format_threshold(threshold)): sum(
+            1
+            for item in analyzed_frames
+            if item["blur_score"] >= threshold and item["brightness"] >= dark_threshold
+        )
+        for threshold in adaptive_thresholds
+    }
+
+    max_selected = max(4, min(max_stitch_frames, 30))
+    selected_frames: list[dict[str, Any]] = []
+    blur_threshold_used = blur_threshold
+    similarity_threshold_used = similarity_threshold
+    low_confidence = False
+    selection_strategy = "fixed_threshold_quality_ranking"
+    best_low_confidence: tuple[list[dict[str, Any]], float, int] | None = None
+
+    for threshold in adaptive_thresholds:
+        threshold_candidates = [
+            item
+            for item in analyzed_frames
+            if item["blur_score"] >= threshold and item["brightness"] >= dark_threshold
+        ]
+        if len(threshold_candidates) < 4:
+            continue
+
+        similarity_options = build_similarity_options(similarity_threshold, len(threshold_candidates))
+        for candidate_similarity_threshold in similarity_options:
+            candidate_selection = select_diverse_ranked_frames(
+                threshold_candidates,
+                candidate_similarity_threshold,
+                max_selected,
+                np,
+            )
+            if len(candidate_selection) >= 8:
+                selected_frames = candidate_selection
+                blur_threshold_used = threshold
+                similarity_threshold_used = candidate_similarity_threshold
+                selection_strategy = (
+                    "fixed_threshold_quality_ranking"
+                    if threshold == blur_threshold
+                    else "adaptive_blur_quality_ranking"
+                )
+                break
+            if len(candidate_selection) >= 4 and (
+                best_low_confidence is None or len(candidate_selection) > len(best_low_confidence[0])
+            ):
+                best_low_confidence = (candidate_selection, threshold, candidate_similarity_threshold)
+        if selected_frames:
+            break
+
+    if not selected_frames and best_low_confidence is not None:
+        selected_frames, blur_threshold_used, similarity_threshold_used = best_low_confidence
+        low_confidence = True
+        selection_strategy = (
+            "fixed_threshold_low_confidence"
+            if blur_threshold_used == blur_threshold
+            else "adaptive_blur_low_confidence"
+        )
+
+    selected_paths = [item["path"] for item in selected_frames]
+    selected_names = {path.name for path in selected_paths}
+    for path in selected_paths:
+        shutil.copy2(path, selected_dir / path.name)
+
+    metrics = build_frame_metrics(
+        analyzed_frames,
+        selected_names,
+        blur_threshold_used,
+        dark_threshold,
+        similarity_threshold_used,
+        np,
+    )
+
+    frame_quality_warning = build_frame_quality_warning(
+        initial_threshold=blur_threshold,
+        used_threshold=blur_threshold_used,
+        selected_count=len(selected_paths),
+        low_confidence=low_confidence,
+    )
+    selection_info = {
+        "blur_threshold_initial": blur_threshold,
+        "blur_threshold_used": blur_threshold_used,
+        "adaptive_blur_enabled": blur_threshold_used < blur_threshold,
+        "candidate_frames_by_threshold": candidate_frames_by_threshold,
+        "selection_strategy": selection_strategy,
+        "low_confidence_stitching_attempted": low_confidence,
+        "frame_quality_warning": frame_quality_warning,
+        "similarity_threshold_used": similarity_threshold_used,
+        "max_stitch_frames_used": max_selected,
+    }
+
+    return metrics, selected_paths, selection_info
+
+
+def format_threshold(value: float) -> str:
+    return str(int(value)) if float(value).is_integer() else str(value)
+
+
+def build_similarity_options(similarity_threshold: int, candidate_count: int) -> list[int]:
+    if candidate_count < 8:
+        options = [max(1, similarity_threshold - 3), 0]
+    elif candidate_count < 16:
+        options = [similarity_threshold, max(1, similarity_threshold - 2), 0]
+    else:
+        options = [similarity_threshold, max(2, similarity_threshold - 1)]
+    return list(dict.fromkeys(options))
+
+
+def select_diverse_ranked_frames(
+    candidates: list[dict[str, Any]],
+    similarity_threshold: int,
+    max_selected: int,
+    np: Any,
+) -> list[dict[str, Any]]:
+    diverse: list[dict[str, Any]] = []
+    previous_hash = None
+    for item in candidates:
+        distance = hash_distance(previous_hash, item["hash"], np)
+        if distance is None or similarity_threshold <= 0 or distance >= similarity_threshold:
+            diverse.append(item)
+            previous_hash = item["hash"]
+
+    if len(diverse) <= max_selected:
+        return diverse
+
+    bucket_size = len(diverse) / max_selected
+    selected: list[dict[str, Any]] = []
+    for index in range(max_selected):
+        start = math.floor(index * bucket_size)
+        end = math.floor((index + 1) * bucket_size)
+        bucket = diverse[start : max(end, start + 1)]
+        selected.append(max(bucket, key=lambda item: frame_quality_score(item["blur_score"], item["brightness"])))
+    return selected
+
+
+def build_frame_metrics(
+    analyzed_frames: list[dict[str, Any]],
+    selected_names: set[str],
+    blur_threshold_used: float,
+    dark_threshold: float,
+    similarity_threshold_used: int,
+    np: Any,
+) -> list[FrameMetrics]:
+    metrics: list[FrameMetrics] = []
+    previous_hash = None
+    for item in analyzed_frames:
+        frame_path = item["path"]
+        too_blurry = item["blur_score"] < blur_threshold_used
+        too_dark = item["brightness"] < dark_threshold
+        distance = None
+        too_similar = False
+        if not too_blurry and not too_dark:
+            distance = hash_distance(previous_hash, item["hash"], np)
+            too_similar = (
+                distance is not None
+                and similarity_threshold_used > 0
+                and distance < similarity_threshold_used
+                and frame_path.name not in selected_names
+            )
+            if not too_similar:
+                previous_hash = item["hash"]
+
         metrics.append(
             FrameMetrics(
                 filename=frame_path.name,
-                width=width,
-                height=height,
-                blur_score=round(blur_score, 2),
-                brightness=round(brightness, 2),
+                width=int(item["width"]),
+                height=int(item["height"]),
+                blur_score=round(float(item["blur_score"]), 2),
+                brightness=round(float(item["brightness"]), 2),
                 too_blurry=too_blurry,
                 too_dark=too_dark,
                 too_similar=too_similar,
-                selected=selected,
+                selected=frame_path.name in selected_names,
             )
         )
+    return metrics
 
-    if len(candidates) > max_stitch_frames:
-        step = len(candidates) / max_stitch_frames
-        sampled_indexes = sorted({min(len(candidates) - 1, math.floor(i * step)) for i in range(max_stitch_frames)})
-        candidates = [candidates[i] for i in sampled_indexes]
 
-    return metrics, candidates
+def build_frame_quality_warning(
+    initial_threshold: float,
+    used_threshold: float,
+    selected_count: int,
+    low_confidence: bool,
+) -> str | None:
+    if selected_count < 4:
+        return "No se reunieron suficientes frames para intentar una panoramica."
+    if low_confidence:
+        return "Hay pocos frames aprovechables; se intento stitching con baja confianza."
+    if used_threshold <= 30:
+        return "El video tiene movimiento fuerte; se intento generar una panoramica con frames de menor nitidez."
+    if used_threshold < initial_threshold:
+        return "El video tiene movimiento, pero se intento generar una panoramica con los mejores frames disponibles."
+    return None
 
 
 def stitch_frames(selected_paths: list[Path], output_dir: Path, stitch_width: int, cv2: Any) -> dict[str, Any]:
@@ -404,7 +587,12 @@ def calculate_visual_quality_score(
     return max(0, min(100, score))
 
 
-def build_recommendation(metrics: list[FrameMetrics], selected_count: int, stitch_result: dict[str, Any]) -> tuple[str, list[str]]:
+def build_recommendation(
+    metrics: list[FrameMetrics],
+    selected_count: int,
+    stitch_result: dict[str, Any],
+    selection_info: dict[str, Any],
+) -> tuple[str, list[str]]:
     warnings: list[str] = []
     total = len(metrics)
     blurry = sum(1 for item in metrics if item.too_blurry)
@@ -414,6 +602,11 @@ def build_recommendation(metrics: list[FrameMetrics], selected_count: int, stitc
     black_area_percent = float(visual_quality.get("black_area_percent") or 0)
     crop_area_percent = float(visual_quality.get("crop_area_percent") or 0)
     quality_score = int(visual_quality.get("quality_score") or 0)
+    blur_threshold_initial = float(selection_info.get("blur_threshold_initial") or 0)
+    blur_threshold_used = float(selection_info.get("blur_threshold_used") or blur_threshold_initial)
+    adaptive_blur_enabled = bool(selection_info.get("adaptive_blur_enabled"))
+    low_confidence = bool(selection_info.get("low_confidence_stitching_attempted"))
+    frame_quality_warning = selection_info.get("frame_quality_warning")
 
     if total == 0:
         return "NO APTO", ["No se pudieron extraer frames del video."]
@@ -427,11 +620,22 @@ def build_recommendation(metrics: list[FrameMetrics], selected_count: int, stitc
         warnings.append("Hay demasiados frames repetidos o muy parecidos.")
     if not stitch_result.get("success"):
         warnings.append(stitch_result.get("error") or "No se pudo generar una panoramica confiable.")
+    if adaptive_blur_enabled:
+        warnings.append("El video tiene movimiento, pero se intento generar una panoramica con los mejores frames disponibles.")
+    if low_confidence:
+        warnings.append("El stitching se intento con baja confianza por falta de frames nitidos.")
+    if frame_quality_warning:
+        warnings.append(str(frame_quality_warning))
     warnings.extend(visual_quality.get("quality_warnings") or [])
 
     if stitch_result.get("success") and (black_area_percent > 25 or (crop_area_percent and crop_area_percent < 45)):
         warnings.append("El resultado es util como prueba tecnica, pero no esta listo para publicacion.")
         return "NO APTO", dedupe_warnings(warnings)
+    if stitch_result.get("success") and (low_confidence or blur_threshold_used <= 30):
+        warnings.append("Proba grabar de nuevo con mas estabilidad antes de usar este resultado comercialmente.")
+        return "APTO CON OBSERVACIONES", dedupe_warnings(warnings)
+    if stitch_result.get("success") and adaptive_blur_enabled:
+        return "APTO CON OBSERVACIONES", dedupe_warnings(warnings)
     if stitch_result.get("success") and quality_score < 70:
         warnings.append("Proba grabar mas lento, con mas luz y evitando mover el celular hacia arriba o abajo.")
         return "APTO CON OBSERVACIONES", dedupe_warnings(warnings)
@@ -475,10 +679,11 @@ def write_reports(
     metrics: list[FrameMetrics],
     selected_paths: list[Path],
     stitch_result: dict[str, Any],
+    selection_info: dict[str, Any],
     elapsed_seconds: float,
 ) -> dict[str, Any]:
     blur_values = [item.blur_score for item in metrics]
-    recommendation, warnings = build_recommendation(metrics, len(selected_paths), stitch_result)
+    recommendation, warnings = build_recommendation(metrics, len(selected_paths), stitch_result, selection_info)
     final_size = None
     panorama_path = stitch_result.get("panorama_path")
     if panorama_path and Path(panorama_path).exists():
@@ -493,6 +698,15 @@ def write_reports(
         "discarded_by_blur": sum(1 for item in metrics if item.too_blurry),
         "discarded_by_darkness": sum(1 for item in metrics if item.too_dark),
         "discarded_by_similarity": sum(1 for item in metrics if item.too_similar),
+        "blur_threshold_initial": selection_info.get("blur_threshold_initial"),
+        "blur_threshold_used": selection_info.get("blur_threshold_used"),
+        "adaptive_blur_enabled": selection_info.get("adaptive_blur_enabled"),
+        "candidate_frames_by_threshold": selection_info.get("candidate_frames_by_threshold"),
+        "selection_strategy": selection_info.get("selection_strategy"),
+        "low_confidence_stitching_attempted": selection_info.get("low_confidence_stitching_attempted"),
+        "frame_quality_warning": selection_info.get("frame_quality_warning"),
+        "similarity_threshold_used": selection_info.get("similarity_threshold_used"),
+        "max_stitch_frames_used": selection_info.get("max_stitch_frames_used"),
         "stitching": stitch_result,
         "visual_quality": stitch_result.get("visual_quality") or empty_visual_quality(),
         "final_image_size_bytes": final_size,
@@ -525,6 +739,13 @@ def render_markdown_report(report: dict[str, Any]) -> str:
         f"- Frames extraidos: `{report['frames_extracted']}`",
         f"- Frames seleccionados: `{report['frames_selected']}`",
         f"- Blur promedio: `{report['blur_average']}`",
+        f"- Blur threshold inicial: `{report.get('blur_threshold_initial')}`",
+        f"- Blur threshold usado: `{report.get('blur_threshold_used')}`",
+        f"- Seleccion adaptativa: `{report.get('adaptive_blur_enabled')}`",
+        f"- Candidatos por threshold: `{report.get('candidate_frames_by_threshold')}`",
+        f"- Estrategia de seleccion: `{report.get('selection_strategy')}`",
+        f"- Stitching de baja confianza: `{report.get('low_confidence_stitching_attempted')}`",
+        f"- Advertencia de calidad de frames: `{report.get('frame_quality_warning')}`",
         f"- Descartados por blur: `{report['discarded_by_blur']}`",
         f"- Descartados por oscuridad: `{report['discarded_by_darkness']}`",
         f"- Descartados por similitud: `{report['discarded_by_similarity']}`",
@@ -580,7 +801,7 @@ def main() -> int:
         paths = prepare_output(output_dir, args.keep_existing)
         metadata = get_video_metadata(input_path)
         frame_paths = extract_frames(input_path, paths["frames"], args.fps, args.max_frames)
-        metrics, selected_paths = analyze_and_select_frames(
+        metrics, selected_paths, selection_info = analyze_and_select_frames(
             frame_paths=frame_paths,
             selected_dir=paths["selected"],
             blur_threshold=args.blur_threshold,
@@ -591,7 +812,16 @@ def main() -> int:
             np=np,
         )
         stitch_result = stitch_frames(selected_paths, output_dir, args.stitch_width, cv2)
-        report = write_reports(output_dir, input_path, metadata, metrics, selected_paths, stitch_result, time.perf_counter() - start)
+        report = write_reports(
+            output_dir,
+            input_path,
+            metadata,
+            metrics,
+            selected_paths,
+            stitch_result,
+            selection_info,
+            time.perf_counter() - start,
+        )
 
         print(f"Procesamiento finalizado: {report['recommendation']}")
         print(f"Reporte: {output_dir / 'report.md'}")
