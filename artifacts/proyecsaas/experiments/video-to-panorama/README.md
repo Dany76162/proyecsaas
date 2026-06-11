@@ -13,6 +13,7 @@ Procesar videos locales de prueba y generar:
 - panorama final si OpenCV logra stitch;
 - preview reducido;
 - recorte opcional si el stitch deja bordes negros utiles de remover;
+- panorama recomendado para visor si conviene rotar la costura o recortar zonas extremas;
 - fallback diagnostico si el stitch falla;
 - `report.json`;
 - `report.md`.
@@ -65,8 +66,10 @@ python process_video.py --input ./samples/living.mp4 --output ./outputs/living -
 10. Intenta stitching con OpenCV Stitcher.
 11. Analiza area negra, bordes vacios y bounding box de contenido util.
 12. Si el recorte es razonable, genera `panorama_cropped.jpg` y `preview_cropped.jpg`.
-13. Si falla, genera un fallback horizontal solo para diagnostico.
-14. Escribe reportes JSON y Markdown.
+13. Detecta una zona de baja informacion visual para ubicar la costura del panorama fuera de elementos notorios.
+14. Genera `panorama_recommended.jpg` y `preview_recommended.jpg` como candidata preferida para el visor.
+15. Si falla, genera un fallback horizontal solo para diagnostico.
+16. Escribe reportes JSON y Markdown.
 
 ## Interpretacion de resultados
 
@@ -91,6 +94,12 @@ Metricas visuales nuevas:
 - `selection_strategy`: estrategia usada para seleccionar frames.
 - `low_confidence_stitching_attempted`: indica si se intento stitching con pocos frames.
 - `frame_quality_warning`: advertencia resumida sobre calidad de frames.
+- `recommended_panorama_type`: indica si la imagen recomendada es rotada, recortada o ambas.
+- `recommended_panorama_path`: ruta de la imagen recomendada para el visor.
+- `seam_warning`: advertencia si la costura todavia puede ser visible.
+- `seam_rotation_applied`: indica si se roto la panoramica para mover la costura.
+- `visual_distortion_warning`: advertencia si se aplico recorte para reducir curvatura o estiramiento.
+- `viewer_recommendation`: recomendacion concreta para elegir la imagen del visor.
 
 Mensajes frecuentes:
 

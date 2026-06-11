@@ -32,9 +32,16 @@ type ProcessResponse = {
   frames_extracted?: number | null;
   frames_selected?: number | null;
   stitching_success?: boolean;
+  recommended_panorama_type?: string | null;
+  seam_warning?: string | null;
+  seam_rotation_applied?: boolean;
+  visual_distortion_warning?: string | null;
+  viewer_recommendation?: string | null;
   urls?: {
+    panorama_recommended?: string | null;
     panorama?: string | null;
     panorama_cropped?: string | null;
+    preview_recommended?: string | null;
     preview?: string | null;
     preview_cropped?: string | null;
     report?: string | null;
@@ -74,8 +81,10 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
     return selectedAmbient;
   }, [customAmbient, selectedAmbient]);
 
-  const recommendedImageUrl = result?.urls?.panorama_cropped || result?.urls?.panorama || null;
-  const recommendedPreviewUrl = result?.urls?.preview_cropped || result?.urls?.preview || recommendedImageUrl;
+  const recommendedImageUrl =
+    result?.urls?.panorama_recommended || result?.urls?.panorama_cropped || result?.urls?.panorama || null;
+  const recommendedPreviewUrl =
+    result?.urls?.preview_recommended || result?.urls?.preview_cropped || result?.urls?.preview || recommendedImageUrl;
   const canSave = Boolean(
     recommendedImageUrl &&
       result?.recommendation &&
@@ -154,7 +163,7 @@ export function AiTourVideoModal({ open, orgSlug, propertyId, onOpenChange, onCa
   }
 
   function saveAsTour() {
-    if (!recommendedImageUrl) return;
+    if (!canSave || !recommendedImageUrl) return;
 
     startSaving(async () => {
       try {

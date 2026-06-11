@@ -146,8 +146,10 @@ export async function POST(req: Request) {
     const visualQuality = report.visual_quality ?? {};
     const hasPanorama = existsSync(join(outputDir, "panorama.jpg"));
     const hasCropped = existsSync(join(outputDir, "panorama_cropped.jpg"));
+    const hasRecommended = existsSync(join(outputDir, "panorama_recommended.jpg"));
     const hasPreview = existsSync(join(outputDir, "preview.jpg"));
     const hasPreviewCropped = existsSync(join(outputDir, "preview_cropped.jpg"));
+    const hasPreviewRecommended = existsSync(join(outputDir, "preview_recommended.jpg"));
 
     return NextResponse.json({
       success: true,
@@ -161,14 +163,21 @@ export async function POST(req: Request) {
       frames_extracted: report.frames_extracted ?? null,
       frames_selected: report.frames_selected ?? null,
       stitching_success: report.stitching?.success ?? false,
+      recommended_panorama_type: visualQuality.recommended_panorama_type ?? null,
+      seam_warning: visualQuality.seam_warning ?? null,
+      seam_rotation_applied: visualQuality.seam_rotation_applied ?? false,
+      visual_distortion_warning: visualQuality.visual_distortion_warning ?? null,
+      viewer_recommendation: visualQuality.viewer_recommendation ?? null,
       processor: {
         exitCode: processResult.exitCode,
         stdout: processResult.stdout.slice(-2000),
         stderr: processResult.stderr.slice(-2000),
       },
       urls: {
+        panorama_recommended: hasRecommended ? fileUrl(req, jobId, "panorama_recommended.jpg") : null,
         panorama: hasPanorama ? fileUrl(req, jobId, "panorama.jpg") : null,
         panorama_cropped: hasCropped ? fileUrl(req, jobId, "panorama_cropped.jpg") : null,
+        preview_recommended: hasPreviewRecommended ? fileUrl(req, jobId, "preview_recommended.jpg") : null,
         preview: hasPreview ? fileUrl(req, jobId, "preview.jpg") : null,
         preview_cropped: hasPreviewCropped ? fileUrl(req, jobId, "preview_cropped.jpg") : null,
         report: fileUrl(req, jobId, "report.md"),
@@ -184,4 +193,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

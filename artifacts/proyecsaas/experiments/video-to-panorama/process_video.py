@@ -432,6 +432,8 @@ def stitch_frames(selected_paths: list[Path], output_dir: Path, stitch_width: in
         preview = resize_for_stitch(panorama, 1600, cv2)
         cv2.imwrite(str(preview_path), preview, [int(cv2.IMWRITE_JPEG_QUALITY), 86])
         visual_quality = analyze_panorama_visual_quality(panorama, output_dir, cv2)
+        recommendation_assets = build_recommended_panorama(panorama, output_dir, visual_quality, cv2)
+        visual_quality.update(recommendation_assets)
         height, width = panorama.shape[:2]
         result.update(
             {
@@ -470,6 +472,122 @@ def stitch_status_message(status: int) -> str:
         3: "No se pudo ajustar la camara para una panoramica confiable.",
     }
     return messages.get(int(status), "No se pudo generar una panoramica confiable.")
+
+
+def build_recommended_panorama(
+    panorama: Any,
+    output_dir: Path,
+    visual_quality: dict[str, Any],
+    cv2: Any,
+) -> dict[str, Any]:
+    seam_analysis = find_low_detail_seam(panorama, cv2)
+    seam_x = int(seam_analysis["x"])
+    seam_rotation_applied = seam_x > 0
+    rotated = rotate_panorama_to_seam(panorama, seam_x, cv2) if seam_rotation_applied else panorama
+
+    recommended = crop_for_viewer(rotated, cv2)
+    recommended_type = "rotated" if seam_rotation_applied else "base"
+    if recommended.shape[:2] != rotated.shape[:2]:
+        recommended_type = "rotated_cropped" if seam_rotation_applied else "cropped"
+
+    recommended_path = output_dir / "panorama_recommended.jpg"
+    recommended_preview_path = output_dir / "preview_recommended.jpg"
+    cv2.imwrite(str(recommended_path), recommended, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
+    preview = resize_for_stitch(recommended, 1600, cv2)
+    cv2.imwrite(str(recommended_preview_path), preview, [int(cv2.IMWRITE_JPEG_QUALITY), 86])
+
+    distortion_warning = build_visual_distortion_warning(panorama, recommended, visual_quality)
+    seam_warning = None
+    if seam_analysis["score"] > 24:
+        seam_warning = "La costura puede seguir siendo visible porque no se encontro una zona de cierre suficientemente limpia."
+
+    viewer_recommendation = "Usar panorama_recommended.jpg para el visor y conservar panorama.jpg para comparacion tecnica."
+    if recommended_type in {"cropped", "rotated_cropped"}:
+        viewer_recommendation = "Usar panorama_recommended.jpg: combina rotacion de costura y recorte para una vista mas agradable."
+
+    return {
+        "recommended_panorama_type": recommended_type,
+        "recommended_panorama_path": str(recommended_path),
+        "recommended_preview_path": str(recommended_preview_path),
+        "seam_warning": seam_warning,
+        "seam_rotation_applied": seam_rotation_applied,
+        "seam_rotation_pixels": seam_x,
+        "seam_score": round(float(seam_analysis["score"]), 2),
+        "visual_distortion_warning": distortion_warning,
+        "viewer_recommendation": viewer_recommendation,
+    }
+
+
+def find_low_detail_seam(panorama: Any, cv2: Any) -> dict[str, Any]:
+    height, width = panorama.shape[:2]
+    gray = cv2.cvtColor(panorama, cv2.COLOR_BGR2GRAY)
+    y1 = max(0, int(height * 0.18))
+    y2 = min(height, int(height * 0.82))
+    band = gray[y1:y2, :] if y2 > y1 else gray
+    gradient_x = cv2.Sobel(band, cv2.CV_64F, 1, 0, ksize=3)
+    gradient_score = cv2.reduce(cv2.convertScaleAbs(gradient_x), 0, cv2.REDUCE_AVG).flatten()
+
+    column_std = []
+    black_penalty = []
+    for index in range(width):
+        column = band[:, index]
+        column_std.append(float(column.std()))
+        black_ratio = float((column <= 8).sum()) / max(1, column.shape[0])
+        black_penalty.append(18.0 if black_ratio > 0.65 else 0.0)
+
+    scores = [float(gradient_score[index]) + column_std[index] * 0.35 + black_penalty[index] for index in range(width)]
+    window = max(8, int(width * 0.025))
+    smoothed_scores = []
+    for index in range(width):
+        start = max(0, index - window)
+        end = min(width, index + window + 1)
+        smoothed_scores.append(sum(scores[start:end]) / max(1, end - start))
+
+    best_x = min(range(width), key=lambda index: smoothed_scores[index])
+    return {"x": int(best_x), "score": float(smoothed_scores[best_x])}
+
+
+def rotate_panorama_to_seam(panorama: Any, seam_x: int, cv2: Any) -> Any:
+    width = panorama.shape[1]
+    seam_x = max(0, min(width - 1, seam_x))
+    if seam_x == 0:
+        return panorama
+    return cv2.hconcat([panorama[:, seam_x:], panorama[:, :seam_x]])
+
+
+def crop_for_viewer(image: Any, cv2: Any) -> Any:
+    height, width = image.shape[:2]
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    content_mask = gray > 8
+    points = cv2.findNonZero(content_mask.astype("uint8"))
+    if points is None:
+        return image
+
+    x, y, crop_width, crop_height = cv2.boundingRect(points)
+    if crop_width < 800 or crop_height < 240:
+        return image
+
+    candidate = image[y : y + crop_height, x : x + crop_width]
+    candidate_height, candidate_width = candidate.shape[:2]
+    if candidate_width / max(candidate_height, 1) < 1.5:
+        return candidate
+
+    trim_y = int(candidate_height * 0.06)
+    if candidate_height - (trim_y * 2) >= 260:
+        candidate = candidate[trim_y : candidate_height - trim_y, :]
+    return candidate
+
+
+def build_visual_distortion_warning(panorama: Any, recommended: Any, visual_quality: dict[str, Any]) -> str | None:
+    original_height, original_width = panorama.shape[:2]
+    recommended_height, recommended_width = recommended.shape[:2]
+    if recommended_height < original_height * 0.85:
+        return "Se recortaron zonas superiores e inferiores para reducir curvatura y estiramiento percibido."
+    if visual_quality.get("border_black_percent") and float(visual_quality["border_black_percent"]) > 20:
+        return "La panoramica puede mostrar estiramiento en bordes; conviene revisar la version recomendada."
+    if recommended_width < original_width * 0.9:
+        return "Se recortaron bordes con poca informacion util para mejorar la navegacion."
+    return None
 
 
 def analyze_panorama_visual_quality(panorama: Any, output_dir: Path, cv2: Any) -> dict[str, Any]:
@@ -669,6 +787,15 @@ def empty_visual_quality() -> dict[str, Any]:
         "cropped_size": None,
         "quality_score": None,
         "quality_warnings": [],
+        "recommended_panorama_type": None,
+        "recommended_panorama_path": None,
+        "recommended_preview_path": None,
+        "seam_warning": None,
+        "seam_rotation_applied": False,
+        "seam_rotation_pixels": 0,
+        "seam_score": None,
+        "visual_distortion_warning": None,
+        "viewer_recommendation": None,
     }
 
 
@@ -763,6 +890,13 @@ def render_markdown_report(report: dict[str, Any]) -> str:
         f"- Recorte generado: `{visual_quality.get('cropped_generated')}`",
         f"- Tamano recortado: `{visual_quality.get('cropped_size')}`",
         f"- Score visual: `{visual_quality.get('quality_score')}`",
+        f"- Panorama recomendado: `{visual_quality.get('recommended_panorama_type')}`",
+        f"- Rotacion de costura aplicada: `{visual_quality.get('seam_rotation_applied')}`",
+        f"- Pixeles de rotacion de costura: `{visual_quality.get('seam_rotation_pixels')}`",
+        f"- Score de costura: `{visual_quality.get('seam_score')}`",
+        f"- Advertencia de costura: `{visual_quality.get('seam_warning')}`",
+        f"- Advertencia de deformacion visual: `{visual_quality.get('visual_distortion_warning')}`",
+        f"- Recomendacion para visor: `{visual_quality.get('viewer_recommendation')}`",
         "",
         "## Observaciones",
         "",
@@ -777,6 +911,10 @@ def render_markdown_report(report: dict[str, Any]) -> str:
         lines += ["", f"Panorama recortado: `{visual_quality['cropped_path']}`"]
     if visual_quality.get("preview_cropped_path"):
         lines += ["", f"Preview recortado: `{visual_quality['preview_cropped_path']}`"]
+    if visual_quality.get("recommended_panorama_path"):
+        lines += ["", f"Panorama recomendado: `{visual_quality['recommended_panorama_path']}`"]
+    if visual_quality.get("recommended_preview_path"):
+        lines += ["", f"Preview recomendado: `{visual_quality['recommended_preview_path']}`"]
     if stitching.get("fallback_path"):
         lines += ["", f"Fallback diagnostico: `{stitching['fallback_path']}`"]
     return "\n".join(lines) + "\n"

@@ -10,7 +10,15 @@ export const runtime = "nodejs";
 
 const EXPERIMENT_ROOT = join(process.cwd(), "experiments", "video-to-panorama");
 const RUNTIME_ROOT = join(EXPERIMENT_ROOT, "runtime");
-const ALLOWED_FILES = new Set(["panorama.jpg", "panorama_cropped.jpg", "preview.jpg", "preview_cropped.jpg", "report.md"]);
+const ALLOWED_FILES = new Set([
+  "panorama.jpg",
+  "panorama_cropped.jpg",
+  "panorama_recommended.jpg",
+  "preview.jpg",
+  "preview_cropped.jpg",
+  "preview_recommended.jpg",
+  "report.md",
+]);
 
 function isSafeJobId(value: string) {
   return /^[a-zA-Z0-9_-]{8,80}$/.test(value);
@@ -48,4 +56,3 @@ export async function GET(req: Request) {
     },
   });
 }
-
