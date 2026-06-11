@@ -189,6 +189,7 @@ def analyze_and_select_frames(
         analyzed_frames.append(
             {
                 "path": frame_path,
+                "index": len(analyzed_frames),
                 "width": width,
                 "height": height,
                 "blur_score": blur_score,
@@ -208,11 +209,12 @@ def analyze_and_select_frames(
     }
 
     max_selected = max(4, min(max_stitch_frames, 30))
+    frame_bucket_count = determine_temporal_bucket_count(len(analyzed_frames))
     selected_frames: list[dict[str, Any]] = []
     blur_threshold_used = blur_threshold
     similarity_threshold_used = similarity_threshold
     low_confidence = False
-    selection_strategy = "fixed_threshold_quality_ranking"
+    selection_strategy = "fixed_threshold_temporal_buckets"
     best_low_confidence: tuple[list[dict[str, Any]], float, int] | None = None
 
     for threshold in adaptive_thresholds:
@@ -226,20 +228,22 @@ def analyze_and_select_frames(
 
         similarity_options = build_similarity_options(similarity_threshold, len(threshold_candidates))
         for candidate_similarity_threshold in similarity_options:
-            candidate_selection = select_diverse_ranked_frames(
-                threshold_candidates,
-                candidate_similarity_threshold,
-                max_selected,
-                np,
+            candidate_selection = select_temporally_covered_frames(
+                candidates=threshold_candidates,
+                total_frame_count=len(analyzed_frames),
+                bucket_count=frame_bucket_count,
+                similarity_threshold=candidate_similarity_threshold,
+                max_selected=max_selected,
+                np=np,
             )
             if len(candidate_selection) >= 8:
                 selected_frames = candidate_selection
                 blur_threshold_used = threshold
                 similarity_threshold_used = candidate_similarity_threshold
                 selection_strategy = (
-                    "fixed_threshold_quality_ranking"
+                    "fixed_threshold_temporal_buckets"
                     if threshold == blur_threshold
-                    else "adaptive_blur_quality_ranking"
+                    else "adaptive_blur_temporal_buckets"
                 )
                 break
             if len(candidate_selection) >= 4 and (
@@ -253,9 +257,9 @@ def analyze_and_select_frames(
         selected_frames, blur_threshold_used, similarity_threshold_used = best_low_confidence
         low_confidence = True
         selection_strategy = (
-            "fixed_threshold_low_confidence"
+            "fixed_threshold_temporal_low_confidence"
             if blur_threshold_used == blur_threshold
-            else "adaptive_blur_low_confidence"
+            else "adaptive_blur_temporal_low_confidence"
         )
 
     selected_paths = [item["path"] for item in selected_frames]
@@ -270,6 +274,11 @@ def analyze_and_select_frames(
         dark_threshold,
         similarity_threshold_used,
         np,
+    )
+    temporal_coverage = calculate_temporal_coverage(
+        selected_frames=selected_frames,
+        total_frame_count=len(analyzed_frames),
+        bucket_count=frame_bucket_count,
     )
 
     frame_quality_warning = build_frame_quality_warning(
@@ -288,6 +297,7 @@ def analyze_and_select_frames(
         "frame_quality_warning": frame_quality_warning,
         "similarity_threshold_used": similarity_threshold_used,
         "max_stitch_frames_used": max_selected,
+        "temporal_coverage": temporal_coverage,
     }
 
     return metrics, selected_paths, selection_info
@@ -305,6 +315,171 @@ def build_similarity_options(similarity_threshold: int, candidate_count: int) ->
     else:
         options = [similarity_threshold, max(2, similarity_threshold - 1)]
     return list(dict.fromkeys(options))
+
+
+def determine_temporal_bucket_count(total_frame_count: int) -> int:
+    if total_frame_count >= 72:
+        return 12
+    if total_frame_count >= 40:
+        return 10
+    if total_frame_count >= 16:
+        return 8
+    return max(1, total_frame_count)
+
+
+def frame_bucket_index(frame_index: int, total_frame_count: int, bucket_count: int) -> int:
+    if total_frame_count <= 1 or bucket_count <= 1:
+        return 0
+    return min(bucket_count - 1, math.floor(frame_index * bucket_count / total_frame_count))
+
+
+def select_temporally_covered_frames(
+    candidates: list[dict[str, Any]],
+    total_frame_count: int,
+    bucket_count: int,
+    similarity_threshold: int,
+    max_selected: int,
+    np: Any,
+) -> list[dict[str, Any]]:
+    if not candidates:
+        return []
+
+    per_bucket_limit = 3 if max_selected >= bucket_count * 3 else 2
+    buckets: list[list[dict[str, Any]]] = [[] for _ in range(max(1, bucket_count))]
+    for item in candidates:
+        bucket_index = frame_bucket_index(int(item["index"]), total_frame_count, bucket_count)
+        buckets[bucket_index].append(item)
+
+    provisional: list[dict[str, Any]] = []
+    for bucket in buckets:
+        ranked_bucket = sorted(
+            bucket,
+            key=lambda item: frame_quality_score(item["blur_score"], item["brightness"]),
+            reverse=True,
+        )
+        provisional.extend(ranked_bucket[:per_bucket_limit])
+
+    provisional = sorted({item["path"].name: item for item in provisional}.values(), key=lambda item: int(item["index"]))
+    diverse = filter_similar_in_temporal_order(provisional, similarity_threshold, np)
+
+    missing_bucket_indexes = set(range(bucket_count)) - {
+        frame_bucket_index(int(item["index"]), total_frame_count, bucket_count) for item in diverse
+    }
+    for bucket_index in sorted(missing_bucket_indexes):
+        if len(diverse) >= max_selected:
+            break
+        bucket = buckets[bucket_index]
+        if not bucket:
+            continue
+        best = max(bucket, key=lambda item: frame_quality_score(item["blur_score"], item["brightness"]))
+        diverse_names = {item["path"].name for item in diverse}
+        if best["path"].name not in diverse_names:
+            diverse.append(best)
+
+    diverse = sorted(diverse, key=lambda item: int(item["index"]))
+    if len(diverse) <= max_selected:
+        return diverse
+
+    return trim_selection_preserving_coverage(diverse, max_selected, total_frame_count, bucket_count)
+
+
+def filter_similar_in_temporal_order(
+    candidates: list[dict[str, Any]],
+    similarity_threshold: int,
+    np: Any,
+) -> list[dict[str, Any]]:
+    diverse: list[dict[str, Any]] = []
+    previous_hash = None
+    for item in sorted(candidates, key=lambda candidate: int(candidate["index"])):
+        distance = hash_distance(previous_hash, item["hash"], np)
+        if distance is None or similarity_threshold <= 0 or distance >= similarity_threshold:
+            diverse.append(item)
+            previous_hash = item["hash"]
+    return diverse
+
+
+def trim_selection_preserving_coverage(
+    selected: list[dict[str, Any]],
+    max_selected: int,
+    total_frame_count: int,
+    bucket_count: int,
+) -> list[dict[str, Any]]:
+    best_by_bucket: dict[int, dict[str, Any]] = {}
+    for item in selected:
+        bucket_index = frame_bucket_index(int(item["index"]), total_frame_count, bucket_count)
+        current = best_by_bucket.get(bucket_index)
+        if current is None or frame_quality_score(item["blur_score"], item["brightness"]) > frame_quality_score(
+            current["blur_score"],
+            current["brightness"],
+        ):
+            best_by_bucket[bucket_index] = item
+
+    preserved_names = {item["path"].name for item in best_by_bucket.values()}
+    remaining = [item for item in selected if item["path"].name not in preserved_names]
+    remaining = sorted(remaining, key=lambda item: frame_quality_score(item["blur_score"], item["brightness"]), reverse=True)
+    kept = list(best_by_bucket.values()) + remaining[: max(0, max_selected - len(best_by_bucket))]
+    return sorted(kept, key=lambda item: int(item["index"]))
+
+
+def calculate_temporal_coverage(
+    selected_frames: list[dict[str, Any]],
+    total_frame_count: int,
+    bucket_count: int,
+) -> dict[str, Any]:
+    if not selected_frames or total_frame_count <= 0:
+        return {
+            "first_selected_frame_index": None,
+            "last_selected_frame_index": None,
+            "temporal_coverage_percent": 0.0,
+            "frame_bucket_count": bucket_count,
+            "buckets_with_selected_frames": 0,
+            "largest_temporal_gap_ratio": None,
+            "coverage_warning": "Los frames utiles no cubren toda la vuelta del video.",
+        }
+
+    indexes = sorted(int(item["index"]) for item in selected_frames)
+    first_index = indexes[0]
+    last_index = indexes[-1]
+    denominator = max(1, total_frame_count - 1)
+    temporal_coverage_percent = round(((last_index - first_index) / denominator) * 100, 2)
+    selected_buckets = {
+        frame_bucket_index(index, total_frame_count, bucket_count)
+        for index in indexes
+    }
+    gaps = [indexes[index + 1] - indexes[index] for index in range(len(indexes) - 1)]
+    largest_gap = max(gaps) if gaps else 0
+    largest_gap_ratio = largest_gap / denominator
+    coverage_warning = build_coverage_warning(
+        temporal_coverage_percent=temporal_coverage_percent,
+        buckets_with_selected_frames=len(selected_buckets),
+        bucket_count=bucket_count,
+        largest_gap_ratio=largest_gap_ratio,
+    )
+
+    return {
+        "first_selected_frame_index": first_index,
+        "last_selected_frame_index": last_index,
+        "temporal_coverage_percent": temporal_coverage_percent,
+        "frame_bucket_count": bucket_count,
+        "buckets_with_selected_frames": len(selected_buckets),
+        "largest_temporal_gap_ratio": round(largest_gap_ratio, 4),
+        "coverage_warning": coverage_warning,
+    }
+
+
+def build_coverage_warning(
+    temporal_coverage_percent: float,
+    buckets_with_selected_frames: int,
+    bucket_count: int,
+    largest_gap_ratio: float,
+) -> str | None:
+    if temporal_coverage_percent < 65 or buckets_with_selected_frames < max(3, math.ceil(bucket_count * 0.55)):
+        return "Los frames utiles no cubren toda la vuelta del video."
+    if temporal_coverage_percent < 80 or buckets_with_selected_frames < math.ceil(bucket_count * 0.7):
+        return "El procesamiento puede haber usado solo una parte del giro."
+    if largest_gap_ratio > 0.28:
+        return "Hay un hueco temporal grande entre frames seleccionados."
+    return None
 
 
 def select_diverse_ranked_frames(
@@ -730,6 +905,12 @@ def build_recommendation(
     adaptive_blur_enabled = bool(selection_info.get("adaptive_blur_enabled"))
     low_confidence = bool(selection_info.get("low_confidence_stitching_attempted"))
     frame_quality_warning = selection_info.get("frame_quality_warning")
+    temporal_coverage = selection_info.get("temporal_coverage") or {}
+    temporal_coverage_percent = float(temporal_coverage.get("temporal_coverage_percent") or 0)
+    buckets_with_selected_frames = int(temporal_coverage.get("buckets_with_selected_frames") or 0)
+    frame_bucket_count = int(temporal_coverage.get("frame_bucket_count") or 0)
+    largest_gap_ratio = float(temporal_coverage.get("largest_temporal_gap_ratio") or 0)
+    coverage_warning = temporal_coverage.get("coverage_warning")
 
     if total == 0:
         return "NO APTO", ["No se pudieron extraer frames del video."]
@@ -749,11 +930,24 @@ def build_recommendation(
         warnings.append("El stitching se intento con baja confianza por falta de frames nitidos.")
     if frame_quality_warning:
         warnings.append(str(frame_quality_warning))
+    if coverage_warning:
+        warnings.append(str(coverage_warning))
+        warnings.append("Graba manteniendo velocidad constante durante toda la vuelta.")
+        warnings.append("El video debe cubrir inicio, medio y final con imagenes estables.")
     warnings.extend(visual_quality.get("quality_warnings") or [])
 
     if stitch_result.get("success") and (black_area_percent > 25 or (crop_area_percent and crop_area_percent < 45)):
         warnings.append("El resultado es util como prueba tecnica, pero no esta listo para publicacion.")
         return "NO APTO", dedupe_warnings(warnings)
+    if stitch_result.get("success") and (
+        temporal_coverage_percent < 60
+        or largest_gap_ratio > 0.35
+        or buckets_with_selected_frames < max(3, math.ceil(frame_bucket_count * 0.5))
+    ):
+        warnings.append("El procesamiento puede haber usado solo una parte del giro.")
+        return "NO APTO", dedupe_warnings(warnings)
+    if stitch_result.get("success") and coverage_warning:
+        return "APTO CON OBSERVACIONES", dedupe_warnings(warnings)
     if stitch_result.get("success") and (low_confidence or blur_threshold_used <= 30):
         warnings.append("Proba grabar de nuevo con mas estabilidad antes de usar este resultado comercialmente.")
         return "APTO CON OBSERVACIONES", dedupe_warnings(warnings)
@@ -805,6 +999,41 @@ def empty_visual_quality() -> dict[str, Any]:
     }
 
 
+def build_temporal_report_fields(
+    temporal_coverage: dict[str, Any],
+    metadata: dict[str, Any],
+    total_frame_count: int,
+) -> dict[str, Any]:
+    duration = metadata.get("duration_seconds")
+    duration_seconds = float(duration) if isinstance(duration, (int, float)) else None
+    denominator = max(1, total_frame_count - 1)
+    first_index = temporal_coverage.get("first_selected_frame_index")
+    last_index = temporal_coverage.get("last_selected_frame_index")
+    largest_gap_ratio = temporal_coverage.get("largest_temporal_gap_ratio")
+
+    selected_frame_time_start = None
+    selected_frame_time_end = None
+    largest_temporal_gap_seconds = None
+    if duration_seconds is not None and isinstance(first_index, int):
+        selected_frame_time_start = round((first_index / denominator) * duration_seconds, 2)
+    if duration_seconds is not None and isinstance(last_index, int):
+        selected_frame_time_end = round((last_index / denominator) * duration_seconds, 2)
+    if duration_seconds is not None and isinstance(largest_gap_ratio, (int, float)):
+        largest_temporal_gap_seconds = round(float(largest_gap_ratio) * duration_seconds, 2)
+
+    return {
+        "first_selected_frame_index": first_index,
+        "last_selected_frame_index": last_index,
+        "selected_frame_time_start": selected_frame_time_start,
+        "selected_frame_time_end": selected_frame_time_end,
+        "temporal_coverage_percent": temporal_coverage.get("temporal_coverage_percent"),
+        "frame_bucket_count": temporal_coverage.get("frame_bucket_count"),
+        "buckets_with_selected_frames": temporal_coverage.get("buckets_with_selected_frames"),
+        "largest_temporal_gap_seconds": largest_temporal_gap_seconds,
+        "coverage_warning": temporal_coverage.get("coverage_warning"),
+    }
+
+
 def write_reports(
     output_dir: Path,
     input_path: Path,
@@ -817,6 +1046,11 @@ def write_reports(
 ) -> dict[str, Any]:
     blur_values = [item.blur_score for item in metrics]
     recommendation, warnings = build_recommendation(metrics, len(selected_paths), stitch_result, selection_info)
+    temporal_report_fields = build_temporal_report_fields(
+        temporal_coverage=selection_info.get("temporal_coverage") or {},
+        metadata=metadata,
+        total_frame_count=len(metrics),
+    )
     final_size = None
     panorama_path = stitch_result.get("panorama_path")
     if panorama_path and Path(panorama_path).exists():
@@ -840,6 +1074,7 @@ def write_reports(
         "frame_quality_warning": selection_info.get("frame_quality_warning"),
         "similarity_threshold_used": selection_info.get("similarity_threshold_used"),
         "max_stitch_frames_used": selection_info.get("max_stitch_frames_used"),
+        **temporal_report_fields,
         "stitching": stitch_result,
         "visual_quality": stitch_result.get("visual_quality") or empty_visual_quality(),
         "final_image_size_bytes": final_size,
@@ -879,6 +1114,15 @@ def render_markdown_report(report: dict[str, Any]) -> str:
         f"- Estrategia de seleccion: `{report.get('selection_strategy')}`",
         f"- Stitching de baja confianza: `{report.get('low_confidence_stitching_attempted')}`",
         f"- Advertencia de calidad de frames: `{report.get('frame_quality_warning')}`",
+        f"- Primer frame seleccionado: `{report.get('first_selected_frame_index')}`",
+        f"- Ultimo frame seleccionado: `{report.get('last_selected_frame_index')}`",
+        f"- Tiempo inicial seleccionado: `{report.get('selected_frame_time_start')}` segundos",
+        f"- Tiempo final seleccionado: `{report.get('selected_frame_time_end')}` segundos",
+        f"- Cobertura temporal: `{report.get('temporal_coverage_percent')}`%",
+        f"- Buckets temporales: `{report.get('frame_bucket_count')}`",
+        f"- Buckets con frames seleccionados: `{report.get('buckets_with_selected_frames')}`",
+        f"- Mayor hueco temporal: `{report.get('largest_temporal_gap_seconds')}` segundos",
+        f"- Advertencia de cobertura: `{report.get('coverage_warning')}`",
         f"- Descartados por blur: `{report['discarded_by_blur']}`",
         f"- Descartados por oscuridad: `{report['discarded_by_darkness']}`",
         f"- Descartados por similitud: `{report['discarded_by_similarity']}`",
