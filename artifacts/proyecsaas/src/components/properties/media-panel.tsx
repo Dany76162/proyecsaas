@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, Video, X } from "lucide-react";
+import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +44,7 @@ const categories: { value: MediaCategory; label: string }[] = [
   { value: "PANORAMA", label: "360° / Panorámica" },
   { value: "REAL", label: "Fotos reales" },
   { value: "RENDER", label: "Render" },
-  { value: "PROGRESS", label: "Cámara" },
+  { value: "PROGRESS", label: "Avance de obra" },
 ];
 
 function sceneToPlane(positionX: number, positionY: number) {
@@ -379,12 +379,7 @@ export function MediaPanel({
             <button
               key={category.value}
               type="button"
-              onClick={() => {
-                onCategoryChange(category.value);
-                if (category.value === "PROGRESS") {
-                  setIsCameraOpen(true);
-                }
-              }}
+              onClick={() => onCategoryChange(category.value)}
               className={`min-h-9 rounded-md px-2 py-1.5 text-left text-[11px] font-semibold leading-tight transition ${
                 activeCategory === category.value
                   ? "bg-white text-slate-950"
@@ -392,7 +387,6 @@ export function MediaPanel({
               }`}
             >
               <span className="flex items-center gap-1.5">
-                {category.value === "PROGRESS" ? <Camera className="h-3.5 w-3.5" /> : null}
                 {category.label}
               </span>
             </button>
@@ -424,8 +418,8 @@ export function MediaPanel({
               onClick={() => setIsVideo360Open(true)}
               className="w-full gap-2 bg-cyan-500 text-slate-950 hover:bg-cyan-400"
             >
-              <Video className="h-4 w-4" />
-              Grabar giro 360 desde celular
+              <Camera className="h-4 w-4" />
+              Cámara
             </Button>
             <p className="rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-[10px] font-medium leading-normal text-cyan-50/75">
               Este modo crea una panorámica navegable con celular. No reemplaza una cámara 360 profesional.
@@ -436,7 +430,7 @@ export function MediaPanel({
               className="w-full gap-2 bg-brand-600 hover:bg-brand-700"
             >
               <Camera className="h-4 w-4" />
-              Escanear con celular (Experimental)
+              Usar captura por fotos (alternativa)
             </Button>
           </div>
         )}

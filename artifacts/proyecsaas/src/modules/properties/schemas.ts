@@ -27,6 +27,10 @@ function stringNumberToNullableInt(value: unknown) {
   return Number.isNaN(parsed) ? value : parsed;
 }
 
+function isAllowedStoredMediaUrl(value: string) {
+  return value.startsWith("/uploads/") || value.startsWith("/api/storage/view?key=") || /^https?:\/\//.test(value);
+}
+
 export const createPropertySchema = z.object({
   title: z.string().min(2).max(120),
   address: z.string().min(4).max(160),
@@ -104,7 +108,7 @@ export const addPropertyImageSchema = z.object({
 });
 
 export const upsertPropertyMediaSchema = z.object({
-  url: z.string().max(1000).refine((value) => value.startsWith("/uploads/") || /^https?:\/\//.test(value), {
+  url: z.string().max(1000).refine(isAllowedStoredMediaUrl, {
     message: "URL de medio inválida.",
   }),
   category: z.nativeEnum(PropertyImageCategory),
