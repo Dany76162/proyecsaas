@@ -1,10 +1,11 @@
 import { create } from "zustand";
-import { CadState, CadShape, CadTool } from "./visual-cad-types";
+import { CadState, CadShape, CadTool, LocalPresetId } from "./visual-cad-types";
 
 export const useCadStore = create<CadState>((set) => ({
   shapes: [],
   selectedId: null,
   activeTool: "select",
+  activePresetId: "verde",
   zoom: 1,
   pan: { x: 0, y: 0 },
 
@@ -36,11 +37,13 @@ export const useCadStore = create<CadState>((set) => ({
       selectedId: tool !== "select" ? null : state.selectedId,
     })),
 
+  setActivePresetId: (presetId) => set({ activePresetId: presetId }),
+
   setZoom: (zoom) => set({ zoom }),
 
   setPan: (pan) => set({ pan }),
 
   resetView: () => set({ zoom: 1, pan: { x: 0, y: 0 } }),
 
-  clearAll: () => set({ shapes: [], selectedId: null, activeTool: "select" }),
+  clearAll: () => set({ shapes: [], selectedId: null, activeTool: "select", activePresetId: "verde" }),
 }));

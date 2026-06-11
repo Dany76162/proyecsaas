@@ -21,11 +21,50 @@ interface VisualCadCanvasProps {
   loading?: boolean;
 }
 
+const PRESET_STYLES = {
+  verde: {
+    label: "Área Verde",
+    fillColor: "rgba(16, 185, 129, 0.22)",
+    strokeColor: "#10b981",
+    strokeWidth: 2,
+    layer: "area-verde",
+  },
+  agua: {
+    label: "Laguna",
+    fillColor: "rgba(14, 165, 233, 0.25)",
+    strokeColor: "#0ea5e9",
+    strokeWidth: 2,
+    layer: "laguna",
+  },
+  amenity: {
+    label: "Amenity",
+    fillColor: "rgba(249, 115, 22, 0.22)",
+    strokeColor: "#f97316",
+    strokeWidth: 2,
+    layer: "amenity",
+  },
+  calle: {
+    label: "Calle / Lote",
+    fillColor: "rgba(100, 116, 139, 0.15)",
+    strokeColor: "#94a3b8",
+    strokeWidth: 3,
+    layer: "calle",
+  },
+  etiqueta: {
+    label: "Etiqueta",
+    fillColor: "#f1f5f9",
+    strokeColor: "#f1f5f9",
+    strokeWidth: 1,
+    layer: "etiqueta",
+  },
+};
+
 export default function VisualCadCanvas({ masterplanSVG, loading = false }: VisualCadCanvasProps) {
   const {
     shapes,
     selectedId,
     activeTool,
+    activePresetId,
     zoom,
     pan,
     addShape,
@@ -46,6 +85,7 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
   const [gridEnabled, setGridEnabled] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [svgSize, setSvgSize] = useState({ width: 1000, height: 800 });
 
   // Clear CAD store shapes on initial mount to start clean
   useEffect(() => {
@@ -68,7 +108,7 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // Convert raw SVG string to Image blob for Konva rendering
+  // Convert raw SVG string to Image blob for Konva rendering and detect natural dimensions
   useEffect(() => {
     if (!masterplanSVG) {
       setImage(null);
@@ -81,6 +121,10 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
     img.src = url;
     img.onload = () => {
       setImage(img);
+      setSvgSize({
+        width: img.naturalWidth || 1000,
+        height: img.naturalHeight || 800,
+      });
     };
 
     return () => {
@@ -88,18 +132,17 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
     };
   }, [masterplanSVG]);
 
-  // Auto-center blueprint on load
+  // Auto-center blueprint on load with scale-to-fit aspect preservation
   useEffect(() => {
-    if (dimensions.width > 0 && dimensions.height > 0) {
-      // Fit 1000x800 viewBox into actual container size with 90% padding
-      const scale = Math.min(dimensions.width / 1000, dimensions.height / 800) * 0.9;
-      const panX = (dimensions.width - 1000 * scale) / 2;
-      const panY = (dimensions.height - 800 * scale) / 2;
+    if (dimensions.width > 0 && dimensions.height > 0 && svgSize.width > 0 && svgSize.height > 0) {
+      const scale = Math.min(dimensions.width / svgSize.width, dimensions.height / svgSize.height) * 0.9;
+      const panX = (dimensions.width - svgSize.width * scale) / 2;
+      const panY = (dimensions.height - svgSize.height * scale) / 2;
 
       setZoom(scale);
       setPan({ x: panX, y: panY });
     }
-  }, [dimensions.width, dimensions.height, setZoom, setPan]);
+  }, [dimensions.width, dimensions.height, svgSize.width, svgSize.height, setZoom, setPan]);
 
   // Update Transformer nodes when selection changes
   useEffect(() => {
@@ -155,6 +198,7 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
 
       let newShape: CadShape;
       const id = generateId();
+      const currentStyle = PRESET_STYLES[activePresetId] || PRESET_STYLES.verde;
 
       switch (activeTool) {
         case "rect":
@@ -165,10 +209,11 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
             y: worldY - 30,
             width: 80,
             height: 60,
-            fillColor: "rgba(59, 130, 246, 0.35)",
-            strokeColor: "#3b82f6",
-            strokeWidth: 2,
-            label: `Rectángulo ${shapes.length + 1}`,
+            fillColor: currentStyle.fillColor,
+            strokeColor: currentStyle.strokeColor,
+            strokeWidth: currentStyle.strokeWidth,
+            label: `${currentStyle.label} ${shapes.length + 1}`,
+            layer: currentStyle.layer,
           };
           break;
 
@@ -179,10 +224,11 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
             x: worldX,
             y: worldY,
             radius: 40,
-            fillColor: "rgba(16, 185, 129, 0.35)",
-            strokeColor: "#10b981",
-            strokeWidth: 2,
-            label: `Círculo ${shapes.length + 1}`,
+            fillColor: currentStyle.fillColor,
+            strokeColor: currentStyle.strokeColor,
+            strokeWidth: currentStyle.strokeWidth,
+            label: `${currentStyle.label} ${shapes.length + 1}`,
+            layer: currentStyle.layer,
           };
           break;
 
@@ -193,9 +239,10 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
             x: worldX,
             y: worldY,
             points: [worldX - 60, worldY, worldX + 60, worldY],
-            strokeColor: "#f59e0b",
-            strokeWidth: 3,
-            label: `Línea ${shapes.length + 1}`,
+            strokeColor: currentStyle.strokeColor,
+            strokeWidth: currentStyle.strokeWidth,
+            label: `${currentStyle.label} ${shapes.length + 1}`,
+            layer: currentStyle.layer,
           };
           break;
 
@@ -207,8 +254,9 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
             y: worldY,
             text: "Etiqueta",
             fontSize: 14,
-            fillColor: "#e2e8f0",
-            label: `Texto ${shapes.length + 1}`,
+            fillColor: currentStyle.fillColor,
+            label: `${currentStyle.label} ${shapes.length + 1}`,
+            layer: currentStyle.layer,
           };
           break;
 
@@ -323,6 +371,20 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
           backgroundColor: "#070b12",
         }}
       >
+        {/* Dynamic Layer indicators / legends */}
+        <div className="pointer-events-none absolute left-4 top-4 z-20 flex flex-col gap-1 rounded-lg border border-slate-800/80 bg-slate-950/80 p-2 text-[10px] font-mono shadow-md backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-500/80" />
+            <span className="text-slate-400 font-bold">Plano base:</span>
+            <span className="text-slate-500">Solo lectura</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-slate-400 font-bold">Capa CAD:</span>
+            <span className="text-blue-400/90 font-semibold">Temporal en memoria</span>
+          </div>
+        </div>
+
         <Stage
           ref={stageRef}
           width={dimensions.width}
@@ -345,16 +407,16 @@ export default function VisualCadCanvas({ masterplanSVG, loading = false }: Visu
                 image={image}
                 x={0}
                 y={0}
-                width={1000}
-                height={800}
+                width={svgSize.width}
+                height={svgSize.height}
                 opacity={0.35}
                 listening={false} // completely locked
               />
             ) : (
               // Discrete technical placeholder if no blueprint loaded
               <KonvaText
-                x={380}
-                y={380}
+                x={svgSize.width / 2 - 120}
+                y={svgSize.height / 2 - 10}
                 text={loading ? "CARGANDO PLANO BASE..." : "SIN PLANO BASE DE REFERENCIA"}
                 fontSize={12}
                 fontFamily="monospace"

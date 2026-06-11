@@ -1,7 +1,7 @@
 "use client";
 
 import { useCadStore } from "./visual-cad-store";
-import type { CadTool } from "./visual-cad-types";
+import type { CadTool, LocalPresetId } from "./visual-cad-types";
 import {
   MousePointer,
   Square,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 export function VisualCadToolbar() {
-  const { activeTool, setActiveTool, resetView, clearAll, shapes } = useCadStore();
+  const { activeTool, setActiveTool, activePresetId, setActivePresetId, resetView, clearAll, shapes } = useCadStore();
 
   const tools: { id: CadTool; label: string; icon: React.ReactNode; desc: string }[] = [
     {
@@ -24,28 +24,36 @@ export function VisualCadToolbar() {
     },
     {
       id: "rect",
-      label: "Lote / Manzana",
+      label: "Área / Bloque",
       icon: <Square className="h-4 w-4" />,
-      desc: "Dibuja un polígono rectangular de lote",
+      desc: "Dibuja un bloque o área rectangular",
     },
     {
       id: "circle",
-      label: "Rotonda / Amenities",
+      label: "Laguna / Rotonda",
       icon: <CircleIcon className="h-4 w-4" />,
-      desc: "Dibuja un círculo de rotonda o zona común",
+      desc: "Dibuja una laguna, rotonda o área circular",
     },
     {
       id: "line",
-      label: "Calle / Eje",
+      label: "Calle / Línea",
       icon: <Minus className="h-4 w-4" />,
-      desc: "Dibuja un trazo lineal para calles",
+      desc: "Dibuja un trazo lineal para calles o límites",
     },
     {
       id: "text",
       label: "Etiqueta",
       icon: <Type className="h-4 w-4" />,
-      desc: "Inserta un texto descriptivo",
+      desc: "Inserta una etiqueta de texto descriptiva",
     },
+  ];
+
+  const presets: { id: LocalPresetId; label: string; dotColor: string }[] = [
+    { id: "verde", label: "Área Verde", dotColor: "#10b981" },
+    { id: "agua", label: "Laguna", dotColor: "#0ea5e9" },
+    { id: "amenity", label: "Amenity", dotColor: "#f97316" },
+    { id: "calle", label: "Calle / Lote", dotColor: "#94a3b8" },
+    { id: "etiqueta", label: "Etiqueta", dotColor: "#f1f5f9" },
   ];
 
   return (
@@ -72,6 +80,32 @@ export function VisualCadToolbar() {
         })}
       </div>
 
+      {/* Local Style Presets Selector (shown when drawing) */}
+      {activeTool !== "select" && (
+        <div className="flex items-center gap-1.5 border-r border-slate-800/80 pr-3 animate-fade-in">
+          <span className="text-[9px] font-bold text-slate-500 mr-1 uppercase">Estilo:</span>
+          {presets.map((preset) => {
+            const isPresetActive = activePresetId === preset.id;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => setActivePresetId(preset.id)}
+                title={`Aplicar estilo: ${preset.label}`}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold transition-all duration-150 ${
+                  isPresetActive
+                    ? "border-blue-500/30 bg-blue-600/20 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.1)]"
+                    : "border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700 hover:bg-slate-900/80 hover:text-slate-300"
+                }`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: preset.dotColor }} />
+                <span>{preset.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Global Actions */}
       <div className="flex items-center gap-2">
         <button
@@ -92,7 +126,7 @@ export function VisualCadToolbar() {
           className="flex h-9 items-center gap-1.5 rounded-lg border border-red-950/20 bg-red-950/5 px-3 text-xs font-semibold text-red-400/90 transition-all hover:border-red-900/30 hover:bg-red-950/20 hover:text-red-300 disabled:opacity-30 disabled:hover:border-transparent disabled:hover:bg-transparent"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          <span>Limpiar Canvas</span>
+          <span>Limpiar Capa CAD</span>
         </button>
       </div>
 
