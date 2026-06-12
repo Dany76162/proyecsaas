@@ -227,6 +227,7 @@ export default function MasterplanMap({
     const leafletMapRef = useRef<any>(null);
     const polygonsRef = useRef<Map<string, any>>(new Map());
     const prevUnitsRef = useRef<MasterplanUnit[]>([]);
+    const prevSelectedUnitIdRef = useRef<string | null>(selectedUnitId);
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const [isMapReady, setIsMapReady] = useState(false);
     const [mapView, setMapView] = useState<"satellite" | "street">("satellite");
@@ -952,6 +953,62 @@ export default function MasterplanMap({
             if (anyEstadoChanged) return; // styles patched — skip full redraw
         }
 
+        // Fast path: if only selectedUnitId changed (user clicked a lot), patch only the two
+        // affected polygons (previous selection → deselect, new selection → select).
+        // This avoids the full removeLayer/addLayer cycle on every lot click.
+        const prevSelected = prevSelectedUnitIdRef.current;
+        const onlySelectionChanged =
+            prevSelected !== selectedUnitId &&
+            prev.length === units.length &&
+            polygonsRef.current.size > 0 &&
+            units.every((u, i) => prev[i]?.id === u.id);
+
+        if (onlySelectionChanged) {
+            const map = leafletMapRef.current;
+            const zoom = map?.getZoom?.() ?? 16;
+            const isMobile = (mapRef.current?.clientWidth ?? window.innerWidth) < 640;
+
+            // Deselect previous lot
+            if (prevSelected) {
+                const oldPolygon = polygonsRef.current.get(prevSelected);
+                if (oldPolygon) {
+                    const prevUnit = units.find((u) => u.id === prevSelected);
+                    if (prevUnit) {
+                        const color = STATUS_COLORS[prevUnit.estado] || "#94a3b8";
+                        oldPolygon.setStyle(getLotMapVisualStyle({
+                            zoom,
+                            isFiltered: filteredIds.has(prevSelected),
+                            isSelected: false,
+                            isMobile,
+                            color,
+                        }));
+                    }
+                }
+            }
+
+            // Apply selected style to new lot
+            if (selectedUnitId) {
+                const newPolygon = polygonsRef.current.get(selectedUnitId);
+                if (newPolygon) {
+                    const newUnit = units.find((u) => u.id === selectedUnitId);
+                    if (newUnit) {
+                        const color = STATUS_COLORS[newUnit.estado] || "#94a3b8";
+                        newPolygon.setStyle(getLotMapVisualStyle({
+                            zoom,
+                            isFiltered: filteredIds.has(selectedUnitId),
+                            isSelected: true,
+                            isMobile,
+                            color,
+                        }));
+                    }
+                }
+            }
+
+            prevSelectedUnitIdRef.current = selectedUnitId;
+            prevUnitsRef.current = units;
+            return; // selection patched — skip full redraw
+        }
+
         // While the OverlayEditor is open, positions are managed live by updatePolygonPositionsLive.
         // A full redraw here would snap polygons back to overlayConfig.bounds (the last save),
         // causing visual misalignment if the user has already dragged the image to a new position.
@@ -963,6 +1020,7 @@ export default function MasterplanMap({
         }
 
         prevUnitsRef.current = units;
+        prevSelectedUnitIdRef.current = selectedUnitId;
 
         const drawPolygons = async () => {
             const L = (await import("leaflet")).default;
