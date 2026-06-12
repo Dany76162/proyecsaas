@@ -101,6 +101,16 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
   const [modalTab, setModalTab] = useState<"cliente" | "operacion" | "cuotas" | "whatsapp">("cliente");
   const [loadingVentaModal, setLoadingVentaModal] = useState(false);
   const [isSavingVenta, setIsSavingVenta] = useState(false);
+  const [ventaInstallments, setVentaInstallments] = useState<any[]>([]);
+  const [ventaSummary, setVentaSummary] = useState<{
+    totalInstallments: number;
+    paidInstallments: number;
+    pendingInstallments: number;
+    overdueInstallments: number;
+    totalAmountCents: number;
+    paidAmountCents: number;
+    pendingAmountCents: number;
+  } | null>(null);
   const [ventaForm, setVentaForm] = useState({
     clientName: "",
     buyerDni: "",
@@ -294,10 +304,12 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
     [editingField, updateUnitState]
   );
 
-  // Gestión de Venta: open modal and prefill form
+  // Gestión de Venta: open modal and prefill form + load installments
   const openVentaModal = useCallback(async (unit: MasterplanUnit) => {
     setVentaModal({ unit });
     setModalTab("cliente");
+    setVentaInstallments([]);
+    setVentaSummary(null);
     setLoadingVentaModal(true);
     try {
       const res = await fetch(`/api/developments/lots/${unit.id}/reservation`);
@@ -315,6 +327,8 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
           installmentCount: r?.installmentCount ? String(r.installmentCount) : "",
           firstDueDate: r?.firstDueDate ? new Date(r.firstDueDate).toISOString().split("T")[0] : "",
         });
+        setVentaInstallments(data.installments ?? []);
+        setVentaSummary(data.summary ?? null);
       }
     } catch {}
     setLoadingVentaModal(false);
@@ -353,8 +367,14 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
       });
 
       if (res.ok) {
+        const data = await res.json();
         updateUnitState(ventaModal.unit.id, { clientName: ventaForm.clientName || null });
-        toast.success("Gestión de venta guardada.");
+        const generated: number = data.installmentsGenerated ?? 0;
+        if (generated > 0) {
+          toast.success(`Plan de cuotas generado: ${generated} cuotas.`);
+        } else {
+          toast.success("Gestión de venta guardada.");
+        }
         setVentaModal(null);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -1325,9 +1345,25 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
                     const baseAmount = baseAmountCents / 100;
                     const residuoCents = count > 0 ? Math.round(saldo * 100) % count : 0;
                     const firstDate = ventaForm.firstDueDate ? new Date(ventaForm.firstDueDate + "T12:00:00") : null;
+                    const hasSaved = ventaInstallments.length > 0;
+                    const hasPaid = (ventaSummary?.paidInstallments ?? 0) > 0;
+
+                    const INST_STATUS_LABEL: Record<string, string> = {
+                      PAID: "Pagada",
+                      OVERDUE: "Vencida",
+                      CANCELLED: "Cancelada",
+                      PENDING: "Pendiente",
+                    };
+                    const INST_STATUS_CLASS: Record<string, string> = {
+                      PAID: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+                      OVERDUE: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                      CANCELLED: "bg-slate-100 text-slate-500",
+                      PENDING: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+                    };
 
                     return (
                       <div className="space-y-3">
+                        {/* Input fields — always shown to allow editing / regeneration */}
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Cantidad de cuotas</label>
@@ -1351,58 +1387,118 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
                             />
                           </div>
                         </div>
-                        {count > 0 && saldo > 0 ? (
+
+                        {/* Saved installments (from DB) */}
+                        {hasSaved ? (
                           <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                            <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-2 flex items-center justify-between">
-                              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Vista previa</span>
-                              <span className="text-xs text-slate-500">
-                                ${baseAmount.toLocaleString()} / mes · saldo ${saldo.toLocaleString()} USD
+                            <div className="bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-100 dark:border-emerald-800/30 px-3 py-2 flex items-center justify-between">
+                              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                                ✓ {ventaInstallments.length} cuotas guardadas
                               </span>
+                              {ventaSummary && (
+                                <span className="text-xs text-emerald-600 dark:text-emerald-500">
+                                  {ventaSummary.paidInstallments > 0 && `${ventaSummary.paidInstallments} pagadas · `}
+                                  {ventaSummary.pendingInstallments} pendientes
+                                  {ventaSummary.overdueInstallments > 0 && ` · ${ventaSummary.overdueInstallments} vencidas`}
+                                </span>
+                              )}
                             </div>
-                            <div className="max-h-48 overflow-y-auto">
+                            {hasPaid && (
+                              <div className="bg-amber-50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-800/30 px-3 py-1.5">
+                                <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                                  ⚠️ Plan bloqueado: hay cuotas pagadas. Refinanciación en etapa futura.
+                                </p>
+                              </div>
+                            )}
+                            <div className="max-h-44 overflow-y-auto">
                               <table className="w-full text-xs">
                                 <thead>
-                                  <tr className="border-b border-slate-100 dark:border-slate-700">
+                                  <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                                     <th className="px-3 py-1.5 text-left font-semibold text-slate-500">#</th>
                                     <th className="px-3 py-1.5 text-left font-semibold text-slate-500">Vencimiento</th>
                                     <th className="px-3 py-1.5 text-right font-semibold text-slate-500">Monto</th>
+                                    <th className="px-3 py-1.5 text-center font-semibold text-slate-500">Estado</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                                  {Array.from({ length: Math.min(count, 36) }, (_, i) => {
-                                    const isLast = i === count - 1;
-                                    const amount = isLast ? (baseAmountCents + residuoCents) / 100 : baseAmount;
-                                    let dueLabel: string | null = null;
-                                    if (firstDate) {
-                                      const d = new Date(firstDate);
-                                      d.setMonth(d.getMonth() + i);
-                                      dueLabel = d.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
-                                    }
-                                    return (
-                                      <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                                        <td className="px-3 py-1.5 text-slate-500">{i + 1}</td>
-                                        <td className="px-3 py-1.5 text-slate-600 dark:text-slate-300">{dueLabel || "—"}</td>
-                                        <td className="px-3 py-1.5 text-right font-medium text-slate-700 dark:text-slate-200">
-                                          ${amount.toLocaleString()}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                  {count > 36 && (
-                                    <tr>
-                                      <td colSpan={3} className="px-3 py-1.5 text-center text-slate-400 italic">
-                                        … y {count - 36} cuotas más
+                                  {ventaInstallments.map((inst: any) => (
+                                    <tr key={inst.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                      <td className="px-3 py-1.5 text-slate-500">{inst.installmentNumber}</td>
+                                      <td className="px-3 py-1.5 text-slate-600 dark:text-slate-300">
+                                        {new Date(inst.dueDate).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
+                                      </td>
+                                      <td className="px-3 py-1.5 text-right font-medium text-slate-700 dark:text-slate-200">
+                                        ${(inst.amountCents / 100).toLocaleString()}
+                                      </td>
+                                      <td className="px-3 py-1.5 text-center">
+                                        <span className={cn(
+                                          "inline-block px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide",
+                                          INST_STATUS_CLASS[inst.status] ?? INST_STATUS_CLASS.PENDING
+                                        )}>
+                                          {INST_STATUS_LABEL[inst.status] ?? inst.status}
+                                        </span>
                                       </td>
                                     </tr>
-                                  )}
+                                  ))}
                                 </tbody>
                               </table>
                             </div>
                           </div>
                         ) : (
-                          <p className="text-xs text-slate-400 italic text-center py-4">
-                            Completá el precio total, anticipo y cantidad de cuotas para ver el plan.
-                          </p>
+                          /* Preview (no saved installments yet) */
+                          count > 0 && saldo > 0 ? (
+                            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                              <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-2 flex items-center justify-between">
+                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Vista previa</span>
+                                <span className="text-xs text-slate-500">
+                                  ${baseAmount.toLocaleString()} / mes · saldo ${saldo.toLocaleString()} USD
+                                </span>
+                              </div>
+                              <div className="max-h-48 overflow-y-auto">
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="border-b border-slate-100 dark:border-slate-700">
+                                      <th className="px-3 py-1.5 text-left font-semibold text-slate-500">#</th>
+                                      <th className="px-3 py-1.5 text-left font-semibold text-slate-500">Vencimiento</th>
+                                      <th className="px-3 py-1.5 text-right font-semibold text-slate-500">Monto</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                    {Array.from({ length: Math.min(count, 36) }, (_, i) => {
+                                      const isLast = i === count - 1;
+                                      const amount = isLast ? (baseAmountCents + residuoCents) / 100 : baseAmount;
+                                      let dueLabel: string | null = null;
+                                      if (firstDate) {
+                                        const d = new Date(firstDate);
+                                        d.setMonth(d.getMonth() + i);
+                                        dueLabel = d.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
+                                      }
+                                      return (
+                                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                          <td className="px-3 py-1.5 text-slate-500">{i + 1}</td>
+                                          <td className="px-3 py-1.5 text-slate-600 dark:text-slate-300">{dueLabel || "—"}</td>
+                                          <td className="px-3 py-1.5 text-right font-medium text-slate-700 dark:text-slate-200">
+                                            ${amount.toLocaleString()}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                    {count > 36 && (
+                                      <tr>
+                                        <td colSpan={3} className="px-3 py-1.5 text-center text-slate-400 italic">
+                                          … y {count - 36} cuotas más
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-400 italic text-center py-4">
+                              Completá el precio total, anticipo y cantidad de cuotas para ver el plan.
+                            </p>
+                          )
                         )}
                       </div>
                     );

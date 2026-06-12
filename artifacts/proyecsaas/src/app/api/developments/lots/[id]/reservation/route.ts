@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { requireOrganizationMembership } from "@/server/auth/access";
-import { DevelopmentReservationStatus } from "@prisma/client";
+import { DevelopmentReservationStatus, DevelopmentInstallmentStatus } from "@prisma/client";
 
-// GET /api/developments/lots/[id]/reservation
+// ── Helper ───────────────────────────────────────────────────────────────────
+// Adds `months` to `date` preserving the original day-of-month.
+// Clamps to the last day of the target month when needed (e.g. Jan 31 + 1 → Feb 28).
+function addMonthsPreserveDay(date: Date, months: number): Date {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0-indexed
+  const day = date.getDate();
+  const targetMonth = month + months;
+  const targetYear = year + Math.floor(targetMonth / 12);
+  const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+  const lastDay = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+  return new Date(targetYear, normalizedMonth, Math.min(day, lastDay), 12, 0, 0);
+}
+
+// ── GET /api/developments/lots/[id]/reservation ──────────────────────────────
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -35,16 +49,56 @@ export async function GET(
         installmentAmountCents: true,
         firstDueDate: true,
         notes: true,
+        Installments: {
+          orderBy: { installmentNumber: "asc" },
+          select: {
+            id: true,
+            installmentNumber: true,
+            dueDate: true,
+            amountCents: true,
+            currency: true,
+            status: true,
+            paidAt: true,
+            paymentMethod: true,
+            paymentReference: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json({ reservation: reservation ?? null });
+    if (!reservation) {
+      return NextResponse.json({ reservation: null, installments: [], summary: null });
+    }
+
+    const { Installments, ...reservationData } = reservation;
+    const installments = Installments ?? [];
+
+    const summary =
+      installments.length > 0
+        ? {
+            totalInstallments: installments.length,
+            paidInstallments: installments.filter((i) => i.status === "PAID").length,
+            pendingInstallments: installments.filter((i) => i.status === "PENDING").length,
+            overdueInstallments: installments.filter((i) => i.status === "OVERDUE").length,
+            totalAmountCents: installments.reduce((s, i) => s + i.amountCents, 0),
+            paidAmountCents: installments
+              .filter((i) => i.status === "PAID")
+              .reduce((s, i) => s + i.amountCents, 0),
+            pendingAmountCents: installments
+              .filter((i) => i.status !== "PAID")
+              .reduce((s, i) => s + i.amountCents, 0),
+          }
+        : null;
+
+    return NextResponse.json({ reservation: reservationData, installments, summary });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 });
   }
 }
 
-// PUT /api/developments/lots/[id]/reservation — upsert reservation fields
+// ── PUT /api/developments/lots/[id]/reservation ──────────────────────────────
+// Upserts reservation fields and, when a complete plan is provided, generates
+// real installment rows in DevelopmentReservationInstallment.
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -62,51 +116,153 @@ export async function PUT(
 
     const body = await request.json();
 
-    const reservationData = {
-      buyerDni: body.buyerDni ?? null,
-      buyerWhatsapp: body.buyerWhatsapp ?? null,
-      paymentMethod: body.paymentMethod ?? null,
-      paymentReference: body.paymentReference ?? null,
-      totalPriceCents: body.totalPriceCents ?? null,
-      downPaymentCents: body.downPaymentCents ?? null,
-      installmentCount: body.installmentCount ?? null,
-      installmentAmountCents: body.installmentAmountCents ?? null,
-      firstDueDate: body.firstDueDate ? new Date(body.firstDueDate) : null,
-      notes: body.notes ?? undefined,
-    };
+    const totalPriceCents: number | null = body.totalPriceCents ?? null;
+    const downPaymentCents: number | null = body.downPaymentCents ?? null;
+    const installmentCount: number | null = body.installmentCount ?? null;
+    const firstDueDateRaw: string | null = body.firstDueDate ?? null;
+    const firstDueDate: Date | null = firstDueDateRaw ? new Date(firstDueDateRaw) : null;
 
-    // Also sync clientName on the lot when provided
-    if (body.clientName !== undefined) {
-      await prisma.developmentLot.update({
-        where: { id },
-        data: { clientName: body.clientName || null },
-      });
+    const organizationId = lot.Development.organizationId;
+    const currency = lot.currency || "USD";
+
+    // Determine whether the full plan data is present to generate installments
+    const shouldGenerate =
+      totalPriceCents !== null &&
+      downPaymentCents !== null &&
+      installmentCount !== null &&
+      installmentCount > 0 &&
+      firstDueDate !== null;
+
+    // Validate saldo before touching the DB
+    let saldoCents = 0;
+    if (shouldGenerate) {
+      saldoCents = totalPriceCents! - downPaymentCents!;
+      if (saldoCents <= 0) {
+        return NextResponse.json(
+          {
+            error:
+              "El anticipo no puede ser mayor o igual al precio total para generar cuotas.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
+    // Find existing reservation (most recent for this lot)
     const existing = await prisma.developmentReservation.findFirst({
       where: { lotId: id },
       orderBy: { createdAt: "desc" },
       select: { id: true },
     });
 
-    let reservation;
-    if (existing) {
-      reservation = await prisma.developmentReservation.update({
-        where: { id: existing.id },
-        data: reservationData,
+    // Guard: block regeneration if any installment is already PAID
+    if (shouldGenerate && existing) {
+      const paidCount = await prisma.developmentReservationInstallment.count({
+        where: { reservationId: existing.id, status: DevelopmentInstallmentStatus.PAID },
       });
-    } else {
-      reservation = await prisma.developmentReservation.create({
-        data: {
-          ...reservationData,
-          lotId: id,
-          organizationId: lot.Development.organizationId,
-          status: DevelopmentReservationStatus.ACTIVE,
-        },
-      });
+      if (paidCount > 0) {
+        return NextResponse.json(
+          {
+            error:
+              "No se puede regenerar el plan porque ya hay cuotas pagadas. Crear una refinanciación será una etapa posterior.",
+          },
+          { status: 409 }
+        );
+      }
     }
 
-    return NextResponse.json({ reservation });
+    const reservationData = {
+      buyerDni: body.buyerDni ?? null,
+      buyerWhatsapp: body.buyerWhatsapp ?? null,
+      paymentMethod: body.paymentMethod ?? null,
+      paymentReference: body.paymentReference ?? null,
+      totalPriceCents,
+      downPaymentCents,
+      installmentCount,
+      installmentAmountCents: body.installmentAmountCents ?? null,
+      firstDueDate,
+      notes: body.notes ?? undefined,
+    };
+
+    // Pre-calculate installment rows
+    let newRows: {
+      installmentNumber: number;
+      dueDate: Date;
+      amountCents: number;
+      currency: string;
+      status: DevelopmentInstallmentStatus;
+      organizationId: string;
+    }[] = [];
+
+    if (shouldGenerate) {
+      const base = Math.floor(saldoCents / installmentCount!);
+      const residuo = saldoCents - base * installmentCount!;
+      newRows = Array.from({ length: installmentCount! }, (_, i) => ({
+        installmentNumber: i + 1,
+        dueDate: addMonthsPreserveDay(firstDueDate!, i),
+        amountCents: i === installmentCount! - 1 ? base + residuo : base,
+        currency,
+        status: DevelopmentInstallmentStatus.PENDING,
+        organizationId,
+      }));
+    }
+
+    // ── Transaction ──────────────────────────────────────────────────────────
+    let reservation: any;
+    let generatedInstallments: any[] = [];
+
+    await prisma.$transaction(async (tx) => {
+      // Sync clientName on the lot
+      if (body.clientName !== undefined) {
+        await tx.developmentLot.update({
+          where: { id },
+          data: { clientName: body.clientName || null },
+        });
+      }
+
+      // Upsert reservation
+      if (existing) {
+        reservation = await tx.developmentReservation.update({
+          where: { id: existing.id },
+          data: reservationData,
+        });
+      } else {
+        reservation = await tx.developmentReservation.create({
+          data: {
+            ...reservationData,
+            lotId: id,
+            organizationId,
+            status: DevelopmentReservationStatus.ACTIVE,
+          },
+        });
+      }
+
+      if (shouldGenerate && newRows.length > 0) {
+        // Delete existing non-paid installments (PENDING, OVERDUE, CANCELLED)
+        await tx.developmentReservationInstallment.deleteMany({
+          where: {
+            reservationId: reservation.id,
+            status: { notIn: [DevelopmentInstallmentStatus.PAID] },
+          },
+        });
+
+        // Create new installments
+        await tx.developmentReservationInstallment.createMany({
+          data: newRows.map((row) => ({ ...row, reservationId: reservation.id })),
+        });
+
+        generatedInstallments = await tx.developmentReservationInstallment.findMany({
+          where: { reservationId: reservation.id },
+          orderBy: { installmentNumber: "asc" },
+        });
+      }
+    });
+
+    return NextResponse.json({
+      reservation,
+      installmentsGenerated: generatedInstallments.length,
+      installments: generatedInstallments,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 });
   }
