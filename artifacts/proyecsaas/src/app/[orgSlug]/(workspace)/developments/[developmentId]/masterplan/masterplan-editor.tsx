@@ -10,7 +10,7 @@ import {
   buildDetectedLotsSVG,
   withBlueprintMeta,
   sanitizeBlueprintSVG,
-} from "@/modules/developments/blueprint-utils";
+} from "@/lib/blueprint-utils";
 import { LotStatusBadge } from "@/components/developments/lot-status-badge";
 import type { LotStatus } from "@/components/developments/lot-status-badge";
 import dynamic from "next/dynamic";

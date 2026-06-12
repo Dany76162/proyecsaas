@@ -3,8 +3,8 @@ import { MembershipRole, DevelopmentLotStatus } from "@prisma/client";
 
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
-import { withBlueprintMeta, sanitizeBlueprintSVG } from "@/modules/developments/blueprint-utils";
-import type { BlueprintEmbeddedMeta } from "@/modules/developments/blueprint-utils";
+import { withBlueprintMeta, sanitizeBlueprintSVG } from "@/lib/blueprint-utils";
+import type { BlueprintEmbeddedMeta } from "@/lib/blueprint-utils";
 
 export const dynamic = "force-dynamic";
 

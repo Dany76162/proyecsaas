@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { requireOrganizationMembership } from "@/server/auth/access";
-import { extractBlueprintMeta } from "@/modules/developments/blueprint-utils";
+import { extractBlueprintMeta } from "@/lib/blueprint-utils";
 
 export const dynamic = "force-dynamic";
 
