@@ -530,26 +530,6 @@ export default function DevelopmentWizardClient({
                   <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Identidad de Marca y Ficha Técnica</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <ImageUploader label="Logo del Proyecto" name="logoUrl" defaultValue={development.logoUrl || ""} projectId={development.id} />
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">
-                        Planos base ficha y galería
-                      </label>
-                      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-950 p-3">
-                        <PlanGalleryPicker
-                          proyectoId={development.id}
-                          items={infoPlanGalleryItems}
-                          selectedId={infoPlanGalleryItems.find((item) => item.imageUrl === selectedBrochurePlanUrl)?.id ?? null}
-                          onSelect={(item) => setSelectedBrochurePlanUrl(item.imageUrl)}
-                          onItemsChange={setInfoPlanGalleryItems}
-                          allowUpload
-                          allowDelete
-                        />
-                      </div>
-                      <input type="hidden" name="brochurePlanUrl" value={selectedBrochurePlanUrl} />
-                      <p className="text-[10px] text-slate-500">
-                        Podés subir varios planos en PDF, imagen, SVG o DXF. Todos quedan disponibles en Galería de planos; el seleccionado se usa como plano base de la ficha.
-                      </p>
-                    </div>
                     <ImageUploader label="Logo Empresa/Inmobiliaria" name="companyLogoUrl" defaultValue={development.companyLogoUrl || ""} projectId={development.id} />
                     
                     <div className="flex flex-col gap-2">
@@ -580,87 +560,110 @@ export default function DevelopmentWizardClient({
                 </div>
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-                <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Publicación y Estado</h3>
-                
-                <div className="space-y-4">
-                  <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 text-xs text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-900">
-                    <input
-                      name="publicVisible"
-                      type="checkbox"
-                      defaultChecked={development.publicVisible}
-                      className="h-4 w-4 rounded border-slate-300 accent-brand-500"
-                    />
-                    <div>
-                      <span className="font-semibold text-slate-800 dark:text-white">Publicar este desarrollo</span>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Aparecerá en el catálogo público y los buscadores.</p>
+              <div className="flex flex-col gap-4">
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Planos base ficha y galería</h3>
+                  <div className="flex flex-col gap-2">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-950 p-3">
+                      <PlanGalleryPicker
+                        proyectoId={development.id}
+                        items={infoPlanGalleryItems}
+                        selectedId={infoPlanGalleryItems.find((item) => item.imageUrl === selectedBrochurePlanUrl)?.id ?? null}
+                        onSelect={(item) => setSelectedBrochurePlanUrl(item.imageUrl)}
+                        onItemsChange={setInfoPlanGalleryItems}
+                        allowUpload
+                        allowDelete
+                      />
                     </div>
-                  </label>
-
-                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Estado del desarrollo</label>
-                    <select
-                      name="status"
-                      defaultValue={development.status || "DRAFT"}
-                      className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500"
-                    >
-                      <option value="DRAFT">Borrador (Edición)</option>
-                      <option value="ACTIVE">Activo (Publicado)</option>
-                      <option value="SOLD_OUT">Vendido por completo (Agotado)</option>
-                      <option value="PAUSED">Pausado temporariamente</option>
-                      <option value="CANCELLED">Cancelado</option>
-                    </select>
+                    <input type="hidden" name="brochurePlanUrl" value={selectedBrochurePlanUrl} />
+                    <p className="text-[10px] text-slate-500">
+                      Podés subir varios planos en PDF, imagen, SVG o DXF. Todos quedan disponibles en Galería de planos; el seleccionado se usa como plano base de la ficha.
+                    </p>
                   </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 bg-brand-500 text-white hover:bg-brand-600 rounded-xl text-xs font-bold transition-all disabled:opacity-50 shadow-md shadow-brand-500/20"
-                  >
-                    {isSaving ? "Guardando..." : "Guardar desarrollo"}
-                  </button>
                 </div>
 
-                <div className="border-t border-slate-200 dark:border-slate-800 pt-4 mt-4">
-                  <p className="text-[11px] font-bold text-red-500 mb-2">Zona de Peligro</p>
-                  <p className="text-[10px] text-slate-400 mb-3">
-                    Eliminar el desarrollo borrará permanentemente todo su historial, lotes cargados y plano georreferenciado.
-                  </p>
-                  {!showDeleteConfirm ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteConfirm(true)}
-                      disabled={isDeleting}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition disabled:opacity-50 text-xs font-semibold"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Eliminar desarrollo
-                    </button>
-                  ) : (
-                    <div className="rounded-xl border border-red-200 bg-red-50 p-3 space-y-2">
-                      <p className="text-xs font-bold text-red-700">
-                        ¿Confirmar eliminación? Esta acción es irreversible.
-                      </p>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowDeleteConfirm(false)}
-                          disabled={isDeleting}
-                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleDelete}
-                          disabled={isDeleting}
-                          className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-                        >
-                          {isDeleting ? "Eliminando..." : "Sí, eliminar"}
-                        </button>
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Publicación y Estado</h3>
+
+                  <div className="space-y-4">
+                    <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 text-xs text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-900">
+                      <input
+                        name="publicVisible"
+                        type="checkbox"
+                        defaultChecked={development.publicVisible}
+                        className="h-4 w-4 rounded border-slate-300 accent-brand-500"
+                      />
+                      <div>
+                        <span className="font-semibold text-slate-800 dark:text-white">Publicar este desarrollo</span>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Aparecerá en el catálogo público y los buscadores.</p>
                       </div>
+                    </label>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Estado del desarrollo</label>
+                      <select
+                        name="status"
+                        defaultValue={development.status || "DRAFT"}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500"
+                      >
+                        <option value="DRAFT">Borrador (Edición)</option>
+                        <option value="ACTIVE">Activo (Publicado)</option>
+                        <option value="SOLD_OUT">Vendido por completo (Agotado)</option>
+                        <option value="PAUSED">Pausado temporariamente</option>
+                        <option value="CANCELLED">Cancelado</option>
+                      </select>
                     </div>
-                  )}
+
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 bg-brand-500 text-white hover:bg-brand-600 rounded-xl text-xs font-bold transition-all disabled:opacity-50 shadow-md shadow-brand-500/20"
+                    >
+                      {isSaving ? "Guardando..." : "Guardar desarrollo"}
+                    </button>
+                  </div>
+
+                  <div className="border-t border-slate-200 dark:border-slate-800 pt-4 mt-4">
+                    <p className="text-[11px] font-bold text-red-500 mb-2">Zona de Peligro</p>
+                    <p className="text-[10px] text-slate-400 mb-3">
+                      Eliminar el desarrollo borrará permanentemente todo su historial, lotes cargados y plano georreferenciado.
+                    </p>
+                    {!showDeleteConfirm ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={isDeleting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition disabled:opacity-50 text-xs font-semibold"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Eliminar desarrollo
+                      </button>
+                    ) : (
+                      <div className="rounded-xl border border-red-200 bg-red-50 p-3 space-y-2">
+                        <p className="text-xs font-bold text-red-700">
+                          ¿Confirmar eliminación? Esta acción es irreversible.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowDeleteConfirm(false)}
+                            disabled={isDeleting}
+                            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                          >
+                            {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               </form>
