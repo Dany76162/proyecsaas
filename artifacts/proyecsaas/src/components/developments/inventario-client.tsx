@@ -24,6 +24,8 @@ const STATUS_LABELS: Record<string, string> = {
   SUSPENDIDO: "Suspendido",
 };
 
+const ROWS_PER_PAGE = 100;
+
 interface InventarioClientProps {
   proyectoId: string;
   onCountChange?: (text: string) => void;
@@ -87,6 +89,7 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
   const [filterEtapa, setFilterEtapa] = useState("");
 
   const [activeTab, setActiveTab] = useState<"comercial" | "estructura" | "venta">("comercial");
+  const [page, setPage] = useState(0);
 
   // Inline editing
   const [editingField, setEditingField] = useState<{ id: string; field: "precio" | "superficie" | "frente" | "fondo" | "observaciones" | "manzanaNombre" | "destino" | "clientName" | "sellerName" | "precioSqm"; value: string } | null>(null);
@@ -173,6 +176,25 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
       onCountChange(`${filtered.length} de ${units.length} lotes`);
     }
   }, [filtered.length, units.length, onCountChange]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
+  const visibleUnits = useMemo(
+    () => filtered.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE),
+    [filtered, page],
+  );
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, filterEstado, filterManzana, filterEtapa, activeTab]);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const u of units) {
+      const e = (u as any).estado as string;
+      counts[e] = (counts[e] ?? 0) + 1;
+    }
+    return counts;
+  }, [units]);
 
   // Estado change
   const handleEstadoChange = useCallback(
@@ -545,7 +567,7 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {filtered.map((unit: any) => {
+            {visibleUnits.map((unit: any) => {
               const manzana = unit.manzanaNombre || (unit as any).manzana?.nombre || "—";
               const etapa = (unit as any).manzana?.etapa?.nombre || unit.etapaNombre || "—";
               const tags = tagsMap[unit.id] || [];
@@ -996,10 +1018,37 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
         </table>
       </div>
 
+      {/* ── Pagination ── */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between gap-4 px-1 py-1">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            Mostrando {page * ROWS_PER_PAGE + 1}–{Math.min((page + 1) * ROWS_PER_PAGE, filtered.length)} de {filtered.length} lotes · Página {page + 1} de {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+              className="px-3 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-3 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Stats bar ── */}
       <div className="flex flex-wrap items-center gap-4 px-1">
         {Object.entries(STATUS_LABELS).map(([estado, label]) => {
-          const count = units.filter((u: any) => u.estado === estado).length;
+          const count = statusCounts[estado] ?? 0;
           if (count === 0) return null;
           return (
             <div key={estado} className="flex items-center gap-1.5 text-xs">
