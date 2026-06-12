@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
@@ -59,14 +59,10 @@ function timingSafePasswordEqual(provided: string, expected: string): boolean {
 
 function getSharedPassword() {
   const password = process.env.AUTH_SHARED_PASSWORD?.trim();
-
   if (password) {
     return password;
   }
-
-  throw new Error(
-    "[auth] Missing AUTH_SHARED_PASSWORD. Login cannot be validated without explicit shared password configuration.",
-  );
+  return undefined;
 }
 
 function sanitizeRedirectPath(nextPath: string | undefined, fallbackPath: string) {
@@ -129,7 +125,8 @@ export async function loginAction(formData: FormData) {
   let isValidPassword = false;
 
   if (user) {
-    if (timingSafePasswordEqual(parsed.data.password, getSharedPassword())) {
+    const sharedPassword = getSharedPassword();
+    if (sharedPassword && timingSafePasswordEqual(parsed.data.password, sharedPassword)) {
       isValidPassword = true;
     } else if (user.passwordHash) {
       isValidPassword = await verifyPassword(parsed.data.password, user.passwordHash);
