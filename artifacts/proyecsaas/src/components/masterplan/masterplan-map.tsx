@@ -228,6 +228,7 @@ export default function MasterplanMap({
     const polygonsRef = useRef<Map<string, any>>(new Map());
     const prevUnitsRef = useRef<MasterplanUnit[]>([]);
     const prevSelectedUnitIdRef = useRef<string | null>(selectedUnitId);
+    const prevFilteredIdsRef = useRef<Set<string>>(filteredIds);
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const [isMapReady, setIsMapReady] = useState(false);
     const [mapView, setMapView] = useState<"satellite" | "street">("satellite");
@@ -1009,6 +1010,24 @@ export default function MasterplanMap({
             return; // selection patched — skip full redraw
         }
 
+        // Fast path: if only filteredIds changed (user toggled a filter), patch styles only.
+        // updateLotVisualStyles reads filteredIdsRef.current which is already up to date.
+        // 2C-1: styles-only fast-path for filters.
+        // Labels are intentionally left for a later 2C-2 pass.
+        const onlyFilterChanged =
+            prevFilteredIdsRef.current !== filteredIds &&
+            prevSelectedUnitIdRef.current === selectedUnitId &&
+            prev.length === units.length &&
+            polygonsRef.current.size > 0 &&
+            units.every((u, i) => prev[i]?.id === u.id);
+
+        if (onlyFilterChanged) {
+            updateLotVisualStyles();
+            prevFilteredIdsRef.current = filteredIds;
+            prevUnitsRef.current = units;
+            return; // filter styles patched — skip full redraw
+        }
+
         // While the OverlayEditor is open, positions are managed live by updatePolygonPositionsLive.
         // A full redraw here would snap polygons back to overlayConfig.bounds (the last save),
         // causing visual misalignment if the user has already dragged the image to a new position.
@@ -1021,6 +1040,7 @@ export default function MasterplanMap({
 
         prevUnitsRef.current = units;
         prevSelectedUnitIdRef.current = selectedUnitId;
+        prevFilteredIdsRef.current = filteredIds;
 
         const drawPolygons = async () => {
             const L = (await import("leaflet")).default;
