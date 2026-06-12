@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { requireOrganizationMembership } from "@/server/auth/access";
-import { DevelopmentReservationStatus, DevelopmentInstallmentStatus } from "@prisma/client";
+import { DevelopmentReservationStatus, DevelopmentInstallmentStatus, DevelopmentLotStatus } from "@prisma/client";
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 // Adds `months` to `date` preserving the original day-of-month.
@@ -210,6 +210,8 @@ export async function PUT(
     // ── Transaction ──────────────────────────────────────────────────────────
     let reservation: any;
     let generatedInstallments: any[] = [];
+    let lotTransitioned = false;
+    const previousLotStatus = lot.status;
 
     await prisma.$transaction(async (tx) => {
       // Sync clientName on the lot
@@ -237,6 +239,29 @@ export async function PUT(
         });
       }
 
+      // ── F-5: Auto-transition lot AVAILABLE / RESERVED_PENDING → RESERVED ──
+      const escalatableLotStatuses: DevelopmentLotStatus[] = [
+        DevelopmentLotStatus.AVAILABLE,
+        DevelopmentLotStatus.RESERVED_PENDING,
+      ];
+      if (escalatableLotStatuses.includes(lot.status as DevelopmentLotStatus)) {
+        await tx.developmentLot.update({
+          where: { id },
+          data: { status: DevelopmentLotStatus.RESERVED },
+        });
+        await tx.developmentLotHistory.create({
+          data: {
+            lotId: id,
+            organizationId,
+            previousStatus: lot.status as DevelopmentLotStatus,
+            newStatus: DevelopmentLotStatus.RESERVED,
+            reason: "Reserva comercial registrada por administrador",
+            metadata: { reservationId: reservation.id },
+          },
+        });
+        lotTransitioned = true;
+      }
+
       if (shouldGenerate && newRows.length > 0) {
         // Delete existing non-paid installments (PENDING, OVERDUE, CANCELLED)
         await tx.developmentReservationInstallment.deleteMany({
@@ -262,6 +287,9 @@ export async function PUT(
       reservation,
       installmentsGenerated: generatedInstallments.length,
       installments: generatedInstallments,
+      lotStatus: lotTransitioned ? DevelopmentLotStatus.RESERVED : lot.status,
+      lotStatusChanged: lotTransitioned,
+      previousLotStatus: lotTransitioned ? previousLotStatus : undefined,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 });

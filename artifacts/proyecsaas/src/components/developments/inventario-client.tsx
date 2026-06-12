@@ -371,9 +371,21 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
 
       if (res.ok) {
         const data = await res.json();
-        updateUnitState(ventaModal.unit.id, { clientName: ventaForm.clientName || null });
+        const unitUpdate: Partial<MasterplanUnit> = { clientName: ventaForm.clientName || null };
+        // F-5: sync lot status in UI if lot was transitioned to RESERVED
+        if (data.lotStatusChanged && data.lotStatus) {
+          const uiEstado = DB_TO_UI_ESTADO[data.lotStatus];
+          if (uiEstado) unitUpdate.estado = uiEstado;
+        }
+        updateUnitState(ventaModal.unit.id, unitUpdate);
         const generated: number = data.installmentsGenerated ?? 0;
-        if (generated > 0) {
+        if (data.lotStatusChanged) {
+          toast.success(
+            generated > 0
+              ? `Lote reservado y plan de ${generated} cuotas generado.`
+              : "Lote reservado automáticamente."
+          );
+        } else if (generated > 0) {
           toast.success(`Plan de cuotas generado: ${generated} cuotas.`);
         } else {
           toast.success("Gestión de venta guardada.");
@@ -389,6 +401,15 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
       setIsSavingVenta(false);
     }
   }, [ventaModal, ventaForm, updateUnitState]);
+
+  // DB status → UI estado label (mirrors STATUS_DB_TO_UI in the lot API route)
+  const DB_TO_UI_ESTADO: Record<string, MasterplanUnit["estado"]> = {
+    AVAILABLE: "DISPONIBLE",
+    RESERVED_PENDING: "RESERVADA",
+    RESERVED: "RESERVADA",
+    SOLD: "VENDIDA",
+    BLOCKED: "BLOQUEADO",
+  };
 
   // Patch installment status (pay / revert)
   const patchInstallment = useCallback(
@@ -412,7 +433,18 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
           setVentaInstallments(data.installments ?? []);
           setVentaSummary(data.summary ?? null);
           setPayModal(null);
-          toast.success(action === "pay" ? "Cuota marcada como pagada." : "Cuota revertida a pendiente.");
+          // F-5: sync lot status in UI if the operation was completed (all paid → SOLD)
+          if (data.lotStatus && ventaModal) {
+            const uiEstado = DB_TO_UI_ESTADO[data.lotStatus];
+            if (uiEstado) updateUnitState(ventaModal.unit.id, { estado: uiEstado });
+          }
+          const successMsg =
+            data.allPaidTransition
+              ? "¡Operación concretada! Todas las cuotas pagadas. Lote marcado como VENDIDO."
+              : action === "pay"
+              ? "Cuota marcada como pagada."
+              : "Cuota revertida a pendiente.";
+          toast.success(successMsg);
         } else {
           const err = await res.json().catch(() => ({}));
           toast.error(err.error || "Error al actualizar cuota.");
@@ -423,7 +455,7 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
         setIsSavingPay(false);
       }
     },
-    []
+    [ventaModal, updateUnitState]
   );
 
   // Tags
