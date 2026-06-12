@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
-import { MapPin, Phone, Globe, CheckCircle2, Ruler, Maximize, Tag } from "lucide-react";
+import { requireOrganizationMembership } from "@/server/auth/access";
+import { MapPin, Phone, Globe, CheckCircle2, Ruler, Maximize, Tag, User, Briefcase, Calendar, Banknote } from "lucide-react";
 import PrintButton from "./print-button";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -23,6 +24,11 @@ function formatPrice(priceCents: number | null | undefined, currency: string | n
   }
 }
 
+const formatDate = (d: Date | null | undefined) =>
+  d
+    ? new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : "—";
+
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     AVAILABLE:        { label: "Disponible", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
@@ -39,8 +45,22 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function ReservationStatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    ACTIVE:            { label: "Reserva activa",           cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    PENDING_APPROVAL:  { label: "Pendiente de aprobación",  cls: "bg-amber-100 text-amber-700 border-amber-200" },
+    SOLD:              { label: "Operación concretada",      cls: "bg-sky-100 text-sky-700 border-sky-200" },
+    CANCELLED:         { label: "Cancelada",                cls: "bg-slate-100 text-slate-500 border-slate-200" },
+  };
+  const { label, cls } = map[status] ?? { label: status, cls: "bg-slate-100 text-slate-500 border-slate-200" };
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
 // ── C-2: viewBox del mini-plano (sin DOM) ─────────────────────────────────────
-// Mismo algoritmo que masterplan-viewer.tsx líneas 652-680.
 function computeSvgViewBox(paths: (string | null | undefined)[]): string | null {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const p of paths) {
@@ -64,12 +84,12 @@ function computeSvgViewBox(paths: (string | null | undefined)[]): string | null 
 // ── C-2B: datos del croquis individual del lote ───────────────────────────────
 interface LotSketchData {
   viewBox: string;
-  pathD: string;        // path a renderizar (real o fallback rectangular)
+  pathD: string;
   minX: number; minY: number; maxX: number; maxY: number;
   pad: number;
-  fs: number;           // font size proporcional
-  ds: number;           // dim stroke width
-  isApprox: boolean;    // true si es rectángulo estimado (no pathData real)
+  fs: number;
+  ds: number;
+  isApprox: boolean;
 }
 
 function computeLotSketchData(
@@ -77,7 +97,6 @@ function computeLotSketchData(
   frontM: number | null | undefined,
   backM: number | null | undefined,
 ): LotSketchData | null {
-  // Opción A: usar pathData real del lote
   if (pathData) {
     const nums = pathData.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
     if (nums && nums.length >= 4) {
@@ -104,7 +123,6 @@ function computeLotSketchData(
     }
   }
 
-  // Opción B: fallback rectangular proporcional con frente/fondo
   const fw = frontM ?? 20;
   const fh = backM ?? 20;
   const pad = Math.max(fw, fh) * 0.30;
@@ -123,14 +141,9 @@ function computeLotSketchData(
 export default async function FichaLotePage({ params }: { params: Promise<{ lotId: string }> }) {
   const { lotId } = await params;
 
-  // publicVisible: true se mantiene (ruta pública).
-  // Se quitó status: "ACTIVE" para permitir desarrollos en DRAFT/PAUSED
-  // que ya estén marcados como visibles públicamente.
+  // ── D-1: query sin publicVisible — la validación de acceso es por membership ──
   const lotRaw = await prisma.developmentLot.findFirst({
-    where: {
-      id: lotId,
-      Development: { publicVisible: true },
-    },
+    where: { id: lotId },
     include: {
       Development: {
         include: { Organization: true },
@@ -140,7 +153,28 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
   if (!lotRaw) notFound();
 
-  // C-2: traer todos los lotes del desarrollo para el mini-plano SVG.
+  // ── D-1: validar tenant — solo miembros de la org pueden ver esta ficha ──────
+  await requireOrganizationMembership(lotRaw.Development.Organization.slug);
+
+  // ── D-2: reserva más relevante del lote (prioridad ACTIVE > PENDING > SOLD) ──
+  const reservationsRaw = await prisma.developmentReservation.findMany({
+    where: { lotId: lotRaw.id },
+    include: {
+      Lead: { select: { fullName: true, email: true, phone: true } },
+      User: { select: { fullName: true, email: true, phone: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  const STATUS_PRIORITY = ["ACTIVE", "PENDING_APPROVAL", "SOLD", "CANCELLED"];
+  const reservation = reservationsRaw.length > 0
+    ? [...reservationsRaw].sort(
+        (a, b) => STATUS_PRIORITY.indexOf(a.status) - STATUS_PRIORITY.indexOf(b.status)
+      )[0]
+    : null;
+
+  // ── C-2: traer todos los lotes del desarrollo para el mini-plano SVG ─────────
   const siblingLots = await prisma.developmentLot.findMany({
     where: { developmentId: lotRaw.developmentId },
     select: { id: true, pathData: true, centerX: true, centerY: true, lotNumber: true },
@@ -156,7 +190,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
   const dev = lot.development;
 
-  // Validar colores seguros (#RGB o #RRGGBB) — previene inyección CSS
+  // Validar colores seguros (#RGB o #RRGGBB)
   const themeColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(dev.themeColor ?? "")
     ? dev.themeColor!
     : "#0D9488";
@@ -165,6 +199,23 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
     : themeColor;
 
   const price = formatPrice(lot.priceCents, lot.currency);
+
+  // ── D-2: resolver nombre/contacto del cliente ─────────────────────────────
+  const clientDisplayName = reservation?.Lead?.fullName ?? lot.clientName ?? null;
+  const clientPhone = reservation?.Lead?.phone ?? null;
+  const clientEmail = reservation?.Lead?.email ?? null;
+  const hasClientData = !!(clientDisplayName || clientPhone || clientEmail);
+
+  // ── D-2: resolver vendedor/asesor ─────────────────────────────────────────
+  const sellerDisplayName = reservation?.User?.fullName ?? lot.sellerName ?? null;
+  const sellerPhone = reservation?.User?.phone ?? null;
+  const sellerEmail = reservation?.User?.email ?? null;
+  const hasSellerData = !!(sellerDisplayName || sellerPhone || sellerEmail);
+
+  // ── D-2: depósito/seña ────────────────────────────────────────────────────
+  const depositFormatted = reservation?.depositCents
+    ? formatPrice(reservation.depositCents, reservation.mpCurrency ?? lot.currency)
+    : null;
 
   // ── C-2: mini-plano general ───────────────────────────────────────────────
   const lotsWithPath = siblingLots.filter((l) => !!l.pathData);
@@ -186,23 +237,14 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
   // ── C-2B: croquis grande del lote ────────────────────────────────────────
   const sketchData = computeLotSketchData(lot.pathData, lot.frontMeters, lot.backMeters);
 
-  // Orientación de la brújula.
-  // overlayRotation (Development.overlayRotation) es la rotación del plano sobre el mapa
-  // satelital en Paso 5 (grados, sentido antihorario desde este del Leaflet rotate plugin).
-  // Lo usamos como best-effort para orientar la aguja N.
-  // Si es 0/null → brújula estática con N arriba.
   const compassRotation = dev.overlayRotation ?? 0;
   const hasOrientationData = compassRotation !== 0;
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-8 print:p-0 print:bg-white">
-      {/*
-        Contenedor A4: 794×1123 px.
-        Layout: flex-col para que el footer quede al final del flujo natural.
-      */}
       <div className="bg-white w-full max-w-[794px] min-h-[1123px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full">
 
-        {/* Print Button — hidden en impresión */}
+        {/* Print Button */}
         <div className="absolute top-4 right-4 print:hidden z-50">
           <PrintButton />
         </div>
@@ -234,9 +276,10 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         {/* ── BODY ── */}
         <div className="flex-1 p-7 grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-6">
 
-          {/* ── COLUMNA IZQUIERDA: datos del lote ── */}
+          {/* ── COLUMNA IZQUIERDA ── */}
           <div className="flex flex-col gap-4">
 
+            {/* Ficha técnica del lote */}
             <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm">
               <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 text-center">
                 Ficha Técnica del Lote
@@ -297,6 +340,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
               </div>
             </div>
 
+            {/* Precio */}
             {price && (
               <div className="rounded-2xl p-5 text-white shadow-md" style={{ backgroundColor: themeColor }}>
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Precio</p>
@@ -305,6 +349,95 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
               </div>
             )}
 
+            {/* ── D-2: Cliente / Reservante ── */}
+            {hasClientData && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                  <User className="w-3 h-3" />
+                  Cliente / Reservante
+                </h3>
+                <div className="divide-y divide-slate-100">
+                  {clientDisplayName && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold">Nombre</span>
+                      <span className="font-bold text-sm text-slate-800 text-right max-w-[60%] leading-tight">{clientDisplayName}</span>
+                    </div>
+                  )}
+                  {clientPhone && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold">Teléfono</span>
+                      <span className="font-semibold text-sm text-slate-700">{clientPhone}</span>
+                    </div>
+                  )}
+                  {clientEmail && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold">Email</span>
+                      <span className="font-semibold text-xs text-slate-700 text-right max-w-[60%] break-all leading-tight">{clientEmail}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── D-2: Operación / Reserva ── */}
+            {reservation && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                  <Briefcase className="w-3 h-3" />
+                  Operación
+                </h3>
+                <div className="divide-y divide-slate-100">
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-slate-500 text-xs font-semibold">Estado</span>
+                    <ReservationStatusBadge status={reservation.status} />
+                  </div>
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-slate-500 text-xs font-semibold flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Fecha
+                    </span>
+                    <span className="font-semibold text-sm text-slate-700">{formatDate(reservation.createdAt)}</span>
+                  </div>
+                  {depositFormatted && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold flex items-center gap-1">
+                        <Banknote className="w-3 h-3" /> Seña
+                      </span>
+                      <span className="font-black text-sm text-slate-800">{depositFormatted}</span>
+                    </div>
+                  )}
+                  {hasSellerData && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold">Asesor</span>
+                      <span className="font-semibold text-sm text-slate-700 text-right max-w-[60%] leading-tight">
+                        {sellerDisplayName}
+                        {sellerPhone && <span className="block text-[10px] text-slate-400 font-normal">{sellerPhone}</span>}
+                      </span>
+                    </div>
+                  )}
+                  {reservation.notes && (
+                    <div className="py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold block mb-0.5">Notas</span>
+                      <p className="text-xs text-slate-600 leading-snug line-clamp-2">{reservation.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Vendedor sin reserva (fallback solo si hay sellerName en lote y no hay reserva) */}
+            {!reservation && hasSellerData && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
+                  <Briefcase className="w-3 h-3" />
+                  Asesor
+                </h3>
+                <p className="font-bold text-sm text-slate-800">{sellerDisplayName}</p>
+                {sellerPhone && <p className="text-xs text-slate-500 mt-0.5">{sellerPhone}</p>}
+                {sellerEmail && <p className="text-xs text-slate-500">{sellerEmail}</p>}
+              </div>
+            )}
+
+            {/* Servicios */}
             {dev.services && dev.services.length > 0 && (
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">Servicios</h3>
@@ -323,7 +456,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
           {/* ── COLUMNA DERECHA: plano general + croquis del lote ── */}
           <div className="flex flex-col gap-3">
 
-            {/* ── Bloque A: Plano del Desarrollo (mini-plano general) ── */}
+            {/* ── Bloque A: Plano del Desarrollo ── */}
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
                 Plano del Desarrollo
@@ -393,7 +526,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
               <div className="flex-1 flex gap-3 items-stretch min-h-[200px]">
 
-                {/* ── Croquis SVG grande del lote ── */}
+                {/* Croquis SVG */}
                 <div className="flex-1">
                   {sketchData ? (
                     <svg
@@ -402,7 +535,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                       className="w-full h-full"
                       preserveAspectRatio="xMidYMid meet"
                     >
-                      {/* Fondo suave del área de dibujo */}
                       <rect
                         x={sketchData.minX - sketchData.pad * 0.05}
                         y={sketchData.minY - sketchData.pad * 0.05}
@@ -410,8 +542,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         height={sketchData.maxY - sketchData.minY + sketchData.pad * 0.1}
                         fill="white" stroke="none"
                       />
-
-                      {/* Shape del lote */}
                       <path
                         d={sketchData.pathD}
                         fill={etapaColor}
@@ -422,22 +552,19 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         vectorEffect="non-scaling-stroke"
                       />
 
-                      {/* ── Línea de cota: Frente (horizontal, debajo del lote) ── */}
+                      {/* Cota frente */}
                       {lot.frontMeters != null && (() => {
                         const y = sketchData.maxY + sketchData.pad * 0.28;
                         const tick = sketchData.pad * 0.12;
                         const mid = (sketchData.minX + sketchData.maxX) / 2;
                         return (
                           <>
-                            {/* Línea horizontal */}
                             <line x1={sketchData.minX} y1={y} x2={sketchData.maxX} y2={y}
                               stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            {/* Ticks extremos */}
                             <line x1={sketchData.minX} y1={y - tick} x2={sketchData.minX} y2={y + tick}
                               stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
                             <line x1={sketchData.maxX} y1={y - tick} x2={sketchData.maxX} y2={y + tick}
                               stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            {/* Texto */}
                             <text x={mid} y={y + sketchData.pad * 0.2}
                               textAnchor="middle" dominantBaseline="hanging"
                               fontSize={sketchData.fs * 0.85} fill="#475569" fontFamily="sans-serif" fontWeight="600">
@@ -447,7 +574,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         );
                       })()}
 
-                      {/* ── Línea de cota: Fondo (vertical, a la derecha del lote) ── */}
+                      {/* Cota fondo */}
                       {lot.backMeters != null && (() => {
                         const x = sketchData.maxX + sketchData.pad * 0.28;
                         const tick = sketchData.pad * 0.12;
@@ -460,7 +587,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                               stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
                             <line x1={x - tick} y1={sketchData.maxY} x2={x + tick} y2={sketchData.maxY}
                               stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            {/* Texto rotado 90° */}
                             <text
                               x={x + sketchData.pad * 0.18}
                               y={mid}
@@ -478,7 +604,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         );
                       })()}
 
-                      {/* ── Superficie centrada dentro del lote ── */}
+                      {/* Área */}
                       {lot.areaSqm != null && (
                         <text
                           x={(sketchData.minX + sketchData.maxX) / 2}
@@ -497,7 +623,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         </text>
                       )}
 
-                      {/* Nota si es croquis aproximado */}
                       {sketchData.isApprox && (
                         <text
                           x={(sketchData.minX + sketchData.maxX) / 2}
@@ -520,16 +645,12 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                   )}
                 </div>
 
-                {/* ── Brújula + leyenda ── */}
+                {/* Brújula */}
                 <div className="flex flex-col items-center gap-1.5 shrink-0 w-[72px]">
-                  {/* SVG de brújula pura — sin DOM, sin dependencias */}
                   <div className="w-[68px] h-[68px]">
                     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                      {/* Aro exterior */}
                       <circle cx="50" cy="50" r="46" fill="white" stroke="#e2e8f0" strokeWidth="2.5" />
                       <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" strokeWidth="1" />
-
-                      {/* Ticks de los 8 cardinales */}
                       {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
                         const rad = (deg * Math.PI) / 180;
                         const isCardinal = deg % 90 === 0;
@@ -545,26 +666,12 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                           />
                         );
                       })}
-
-                      {/* Aguja giratoria — N apunta según overlayRotation */}
                       <g transform={`rotate(${compassRotation}, 50, 50)`}>
-                        {/* Punta N (coloreada) */}
-                        <polygon
-                          points="50,10 44,50 50,44 56,50"
-                          fill={themeColor}
-                        />
-                        {/* Punta S (gris) */}
-                        <polygon
-                          points="50,90 44,50 50,56 56,50"
-                          fill="#cbd5e1"
-                        />
+                        <polygon points="50,10 44,50 50,44 56,50" fill={themeColor} />
+                        <polygon points="50,90 44,50 50,56 56,50" fill="#cbd5e1" />
                       </g>
-
-                      {/* Punto central */}
                       <circle cx="50" cy="50" r="4" fill={themeColor} />
                       <circle cx="50" cy="50" r="2" fill="white" />
-
-                      {/* Letras cardinales (siempre en posición fija, legibles) */}
                       <text x="50" y="7" textAnchor="middle" dominantBaseline="middle"
                         fontSize="11" fontWeight="800" fill={themeColor} fontFamily="sans-serif">N</text>
                       <text x="50" y="93" textAnchor="middle" dominantBaseline="middle"
@@ -573,8 +680,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         fontSize="9" fill="#94a3b8" fontFamily="sans-serif">E</text>
                       <text x="7" y="51" textAnchor="middle" dominantBaseline="middle"
                         fontSize="9" fill="#94a3b8" fontFamily="sans-serif">O</text>
-
-                      {/* Letras ordinales */}
                       {[
                         { deg: 45,  label: "NE" },
                         { deg: 135, label: "SE" },
@@ -599,8 +704,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                       })}
                     </svg>
                   </div>
-
-                  {/* Leyenda de la brújula */}
                   {hasOrientationData ? (
                     <p className="text-[8px] text-slate-400 text-center leading-tight font-medium">
                       Orientación<br />georreferenciada
@@ -657,7 +760,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         </div>
       </div>
 
-      {/* Print styles — A4 portrait, exact colors */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
