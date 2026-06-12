@@ -39,6 +39,32 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ── C-2: computar viewBox server-side (sin DOM, sin canvas, sin dependencias) ─
+// Mismo algoritmo que masterplan-viewer.tsx líneas 652-680, adaptado para servidor.
+function computeSvgViewBox(paths: (string | null | undefined)[]): string | null {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of paths) {
+    if (!p) continue;
+    const nums = p.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
+    if (!nums) continue;
+    for (let i = 0; i + 1 < nums.length; i += 2) {
+      const x = parseFloat(nums[i]);
+      const y = parseFloat(nums[i + 1]);
+      if (!isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y)) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (!isFinite(minX) || !isFinite(minY)) return null;
+  const w = maxX - minX || 1000;
+  const h = maxY - minY || 800;
+  const pad = Math.max(w, h) * 0.06;
+  return `${minX - pad} ${minY - pad} ${w + pad * 2} ${h + pad * 2}`;
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function FichaLotePage({ params }: { params: Promise<{ lotId: string }> }) {
@@ -61,6 +87,19 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
   if (!lotRaw) notFound();
 
+  // C-2: traer todos los lotes del desarrollo para el mini-plano SVG.
+  // Query liviana: solo campos necesarios para renderizar los paths.
+  const siblingLots = await prisma.developmentLot.findMany({
+    where: { developmentId: lotRaw.developmentId },
+    select: {
+      id: true,
+      pathData: true,
+      centerX: true,
+      centerY: true,
+      lotNumber: true,
+    },
+  });
+
   const lot = {
     ...lotRaw,
     development: {
@@ -77,13 +116,39 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
     ? rawThemeColor
     : "#0D9488";
 
-  // Validar etapaColor
+  // Validar etapaColor — fallback a themeColor
   const rawEtapaColor = lot.etapaColor ?? "";
   const etapaColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(rawEtapaColor)
     ? rawEtapaColor
     : themeColor;
 
   const price = formatPrice(lot.priceCents, lot.currency);
+
+  // ── C-2: preparar datos del mini-plano ─────────────────────────────────────
+  const lotsWithPath = siblingLots.filter((l) => !!l.pathData);
+  const hasMiniPlan = lotsWithPath.length >= 2;
+  const miniPlanViewBox = hasMiniPlan
+    ? computeSvgViewBox(lotsWithPath.map((l) => l.pathData))
+    : null;
+
+  // Separar lotes para orden de renderizado SVG:
+  // primero los no-seleccionados (fondo gris), luego el seleccionado (encima).
+  const otherLots = lotsWithPath.filter((l) => l.id !== lotId);
+  const selectedLotPath = lotsWithPath.find((l) => l.id === lotId);
+
+  // Font size proporcional al espacio del viewBox para el label del lote.
+  let labelFontSize = 8;
+  if (miniPlanViewBox) {
+    const parts = miniPlanViewBox.split(" ").map(parseFloat);
+    const vbW = parts[2] ?? 1000;
+    const vbH = parts[3] ?? 800;
+    labelFontSize = Math.min(vbW, vbH) / 50;
+  }
+
+  // Leyenda textual del lote seleccionado
+  const lotLabel = lot.manzana
+    ? `Manzana ${lot.manzana} · Lote ${lot.lotNumber}`
+    : `Lote ${lot.lotNumber}`;
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-8 print:p-0 print:bg-white">
@@ -234,35 +299,106 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
             )}
           </div>
 
-          {/* ── Columna derecha: plano ── */}
-          <div className="flex flex-col gap-4">
-            {/*
-              C-2 (pendiente): renderizar mini-plano SVG con el lote resaltado.
-              Requiere: traer pathData de todos los lotes del desarrollo + svgViewBox
-              del blueprint. Por ahora se muestra brochurePlanUrl como imagen plana.
-            */}
-            <div className="flex-1 flex flex-col">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                Plano del Desarrollo
-              </p>
-              {dev.brochurePlanUrl ? (
-                <div className="flex-1 min-h-[260px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-white">
-                  {dev.brochurePlanUrl.endsWith(".pdf") ? (
-                    <iframe src={dev.brochurePlanUrl} className="w-full h-full min-h-[260px]" />
-                  ) : (
-                    <img
-                      src={dev.brochurePlanUrl}
-                      alt="Plano del desarrollo"
-                      className="w-full h-full object-contain"
-                    />
-                  )}
+          {/* ── Columna derecha: mini-plano SVG con lote resaltado ── */}
+          <div className="flex flex-col gap-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Plano del Desarrollo
+            </p>
+
+            {hasMiniPlan && miniPlanViewBox ? (
+              <>
+                {/*
+                  C-2: mini-plano SVG inline.
+                  - Sin dangerouslySetInnerHTML: pathData solo en atributo d de <path>.
+                  - Lotes no seleccionados: relleno gris suave + borde gris.
+                  - Lote seleccionado: renderizado último (encima), relleno etapaColor.
+                  - Label con número del lote centrado en centerX/centerY.
+                  - vectorEffect="non-scaling-stroke": borde no escala con zoom de impresión.
+                */}
+                <div className="flex-1 min-h-[260px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-slate-50 flex items-center justify-center p-1">
+                  <svg
+                    viewBox={miniPlanViewBox}
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-full h-full"
+                    preserveAspectRatio="xMidYMid meet"
+                  >
+                    {/* Lotes no seleccionados — fondo */}
+                    {otherLots.map((l) => (
+                      <path
+                        key={l.id}
+                        d={l.pathData!}
+                        fill="rgba(226,232,240,0.7)"
+                        stroke="#94a3b8"
+                        strokeWidth="1"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    ))}
+
+                    {/* Lote seleccionado — renderizado último para quedar encima */}
+                    {selectedLotPath?.pathData && (
+                      <path
+                        d={selectedLotPath.pathData}
+                        fill={etapaColor}
+                        fillOpacity={0.8}
+                        stroke={etapaColor}
+                        strokeWidth="2.5"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    )}
+
+                    {/* Label del lote seleccionado — solo si hay centerX/centerY */}
+                    {lot.centerX != null && lot.centerY != null && (
+                      <text
+                        x={lot.centerX}
+                        y={lot.centerY}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize={labelFontSize}
+                        fill="white"
+                        fontWeight="bold"
+                        fontFamily="sans-serif"
+                        stroke="rgba(0,0,0,0.35)"
+                        strokeWidth={labelFontSize * 0.06}
+                        paintOrder="stroke fill"
+                      >
+                        {lot.lotNumber}
+                      </text>
+                    )}
+                  </svg>
                 </div>
-              ) : (
-                <div className="flex-1 min-h-[260px] rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 text-slate-400 text-sm font-medium">
-                  Plano no disponible
-                </div>
-              )}
-            </div>
+
+                {/* Leyenda del lote */}
+                <p className="text-[10px] text-slate-400 font-semibold text-center">
+                  {lotLabel}
+                </p>
+              </>
+            ) : (
+              <>
+                {/* Fallback: no hay pathData suficientes → mostrar brochurePlanUrl */}
+                {dev.brochurePlanUrl ? (
+                  <div className="flex-1 min-h-[260px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-white">
+                    {dev.brochurePlanUrl.endsWith(".pdf") ? (
+                      <iframe src={dev.brochurePlanUrl} className="w-full h-full min-h-[260px]" />
+                    ) : (
+                      <img
+                        src={dev.brochurePlanUrl}
+                        alt="Plano del desarrollo"
+                        className="w-full h-full object-contain"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex-1 min-h-[260px] rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 text-slate-400 text-sm font-medium">
+                    Plano no disponible
+                  </div>
+                )}
+                {!hasMiniPlan && (
+                  <p className="text-[10px] text-slate-400 font-medium text-center">
+                    Vista con lote destacado no disponible para este plano.
+                  </p>
+                )}
+              </>
+            )}
 
             {/* Tag del desarrollo — nombre organización */}
             <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
@@ -273,10 +409,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         </div>
 
         {/* ── FOOTER ── */}
-        {/*
-          Footer en flujo normal (no absolute) para que no tape el body.
-          Se aplica siempre al final del flex-col del contenedor.
-        */}
         <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-5 flex items-center justify-between gap-4 flex-wrap print:flex-nowrap">
           <div className="flex items-center gap-5 flex-wrap">
             {dev.companyLogoUrl && (
