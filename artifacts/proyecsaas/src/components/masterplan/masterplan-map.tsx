@@ -1687,7 +1687,8 @@ export default function MasterplanMap({
                             </button>
                         )}
 
-                        {/* Fase futura: InfraestructuraTool — requiere API y modelo Prisma antes de activar. */}
+                        {/* InfraestructuraTool pertenece al Paso 4 — Editor Visual, no al Paso 5. */}
+                        {/* No activar aquí: el Paso 5 solo georreferencia el plano ya armado. */}
                         {/* <InfraestructuraTool
                                 proyectoId={proyectoId}
                                 map={leafletMapRef.current}
