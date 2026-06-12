@@ -1052,6 +1052,61 @@ ${labelElements.join("\n")}
     return { svg, paths };
 }
 
+// ─── File validation (server-side) ────────────────────────────────────────────
+
+export function validateBlueprintFile(buffer: Buffer, filename: string, mimeType: string): {
+  ok: boolean;
+  detectedType: "svg" | "dxf" | "dwg" | "pdf" | "png" | "jpg" | "webp" | null;
+  error?: string;
+} {
+  const ext = filename.toLowerCase().split(".").pop() ?? "";
+  const mime = mimeType.toLowerCase();
+
+  let detectedType: "svg" | "dxf" | "dwg" | "pdf" | "png" | "jpg" | "webp" | null = null;
+  if (ext === "svg" || mime.includes("svg")) detectedType = "svg";
+  else if (ext === "dxf" || mime.includes("dxf")) detectedType = "dxf";
+  else if (ext === "dwg" || mime.includes("acad") || mime.includes("autocad")) detectedType = "dwg";
+  else if (ext === "pdf" || mime.includes("pdf")) detectedType = "pdf";
+  else if (ext === "png" || mime.includes("png")) detectedType = "png";
+  else if (ext === "jpg" || ext === "jpeg" || mime.includes("jpeg")) detectedType = "jpg";
+  else if (ext === "webp" || mime.includes("webp")) detectedType = "webp";
+
+  if (!detectedType) return { ok: false, detectedType: null, error: "Formato no soportado. Use DXF, SVG, PDF, PNG, JPG o WEBP." };
+
+  if (detectedType === "dxf") {
+    const header = buffer.toString("utf8", 0, Math.min(buffer.length, 2048)).toUpperCase();
+    const ok = header.includes("SECTION") || header.includes("ENTITIES") || header.includes("ACADVER");
+    return { ok, detectedType, error: ok ? undefined : "El DXF no tiene estructura legible (SECTION/ENTITIES/ACADVER)." };
+  }
+  if (detectedType === "dwg") {
+    const ok = buffer.toString("ascii", 0, Math.min(buffer.length, 8)).toUpperCase().startsWith("AC10");
+    return { ok, detectedType, error: ok ? undefined : "El DWG no tiene firma reconocible (AC10xx)." };
+  }
+  if (detectedType === "pdf") {
+    const ok = buffer.toString("hex", 0, 4).toUpperCase() === "25504446";
+    return { ok, detectedType, error: ok ? undefined : "El PDF está corrupto o no es un PDF válido." };
+  }
+  if (detectedType === "png") {
+    const ok = buffer.toString("hex", 0, 4).toUpperCase() === "89504E47";
+    return { ok, detectedType, error: ok ? undefined : "El PNG está corrupto." };
+  }
+  if (detectedType === "jpg") {
+    const ok = buffer.toString("hex", 0, 2).toUpperCase() === "FFD8";
+    return { ok, detectedType, error: ok ? undefined : "El JPEG está corrupto." };
+  }
+  if (detectedType === "webp") {
+    const ok = buffer.toString("hex", 0, 4).toUpperCase() === "52494646" && buffer.toString("ascii", 8, 12) === "WEBP";
+    return { ok, detectedType, error: ok ? undefined : "El WEBP está corrupto." };
+  }
+  if (detectedType === "svg") {
+    const start = buffer.toString("utf8", 0, 200).toLowerCase();
+    const ok = start.includes("<svg") || start.includes("<?xml");
+    return { ok, detectedType, error: ok ? undefined : "El SVG no tiene estructura válida." };
+  }
+
+  return { ok: true, detectedType };
+}
+
 /**
  * Projects SVG coordinates to Lat/Lng based on overlay bounds
  */

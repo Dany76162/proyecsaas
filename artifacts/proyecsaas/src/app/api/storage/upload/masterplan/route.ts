@@ -6,7 +6,7 @@ import path from "path";
 import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
 import { uploadBufferToR2, isR2Configured } from "@/lib/storage/r2";
-import { validateBlueprintFile } from "@/modules/developments/blueprint-utils";
+import { validateBlueprintFile } from "@/lib/blueprint-utils";
 
 export const dynamic = "force-dynamic";
 
