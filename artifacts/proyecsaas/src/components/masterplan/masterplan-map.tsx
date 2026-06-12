@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Map as MapIcon, Layers as LayersIcon, Filter, ZoomIn, ZoomOut,
-    Crosshair, X, Search, MapPin, Check, Save, Camera, Grid3x3, Compass, Hash
+    Crosshair, X, Search, MapPin, Check, Save, Grid3x3, Compass, Hash
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -239,9 +239,6 @@ export default function MasterplanMap({
     const [planGalleryItems, setPlanGalleryItems] = useState<PlanGalleryItem[]>([]);
     const [showPlanGallery, setShowPlanGallery] = useState(false);
 
-    // Tour 360 state
-    const [activeTour, setActiveTour] = useState<{ url: string; title: string; sceneId?: string; initialOverlay?: Record<string, number> | null } | null>(null);
-
     // Location search state
     const [showLocationPanel, setShowLocationPanel] = useState(false);
     const [locationQuery, setLocationQuery] = useState("");
@@ -259,18 +256,8 @@ export default function MasterplanMap({
     const [planSaved, setPlanSaved] = useState(false);
     const [showDeleteOverlayConfirm, setShowDeleteOverlayConfirm] = useState(false);
 
-    // Active tool panel (mutually exclusive)
-    const [activePanel, setActivePanel] = useState<"infraestructura" | "imagenes" | null>(null);
-
-    // Tour 360° preview card state
-    const [tourPreview, setTourPreview] = useState<{
-        tour: Tour360Marker;
-        screenX: number;
-        screenY: number;
-    } | null>(null);
-
-    // Camera marker layers ref
-    const cameraMarkersRef = useRef<Map<string, any>>(new Map());
+    // Active tool panel (mutually exclusive) — solo "imagenes" pertenece al Paso 5
+    const [activePanel, setActivePanel] = useState<"imagenes" | null>(null);
 
     // Map rotation state (0-360)
     const [mapRotation, setMapRotation] = useState(0);
@@ -347,10 +334,6 @@ export default function MasterplanMap({
             // optional support UI
         }
     }, [proyectoId, readJsonResponse]);
-
-    useEffect(() => {
-        loadPlanGallery();
-    }, [loadPlanGallery]);
 
     const loadDrawableLayers = useCallback(async () => {
         if (modo !== "admin") return;
@@ -1555,7 +1538,13 @@ export default function MasterplanMap({
                         </button>
 
                         <button
-                            onClick={() => setShowPlanGallery((v) => !v)}
+                            onClick={() => {
+                                // Lazy load: fetch plan gallery only the first time the panel is opened
+                                if (!showPlanGallery && planGalleryItems.length === 0) {
+                                    void loadPlanGallery();
+                                }
+                                setShowPlanGallery((v) => !v);
+                            }}
                             className={cn(
                                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
                                 showPlanGallery
@@ -2051,9 +2040,6 @@ export default function MasterplanMap({
                 }
                 .leaflet-container {
                     font-family: Inter, system-ui, sans-serif;
-                }
-                .infra-layer {
-                    cursor: pointer;
                 }
             `}</style>
 
