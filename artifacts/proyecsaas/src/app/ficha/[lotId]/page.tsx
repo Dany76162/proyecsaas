@@ -39,8 +39,8 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ── C-2: computar viewBox server-side (sin DOM, sin canvas, sin dependencias) ─
-// Mismo algoritmo que masterplan-viewer.tsx líneas 652-680, adaptado para servidor.
+// ── C-2: viewBox del mini-plano (sin DOM) ─────────────────────────────────────
+// Mismo algoritmo que masterplan-viewer.tsx líneas 652-680.
 function computeSvgViewBox(paths: (string | null | undefined)[]): string | null {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const p of paths) {
@@ -48,21 +48,74 @@ function computeSvgViewBox(paths: (string | null | undefined)[]): string | null 
     const nums = p.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
     if (!nums) continue;
     for (let i = 0; i + 1 < nums.length; i += 2) {
-      const x = parseFloat(nums[i]);
-      const y = parseFloat(nums[i + 1]);
-      if (!isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y)) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+      const x = parseFloat(nums[i]), y = parseFloat(nums[i + 1]);
+      if (isFinite(x) && isFinite(y)) {
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
       }
     }
   }
-  if (!isFinite(minX) || !isFinite(minY)) return null;
-  const w = maxX - minX || 1000;
-  const h = maxY - minY || 800;
+  if (!isFinite(minX)) return null;
+  const w = maxX - minX || 1000, h = maxY - minY || 800;
   const pad = Math.max(w, h) * 0.06;
   return `${minX - pad} ${minY - pad} ${w + pad * 2} ${h + pad * 2}`;
+}
+
+// ── C-2B: datos del croquis individual del lote ───────────────────────────────
+interface LotSketchData {
+  viewBox: string;
+  pathD: string;        // path a renderizar (real o fallback rectangular)
+  minX: number; minY: number; maxX: number; maxY: number;
+  pad: number;
+  fs: number;           // font size proporcional
+  ds: number;           // dim stroke width
+  isApprox: boolean;    // true si es rectángulo estimado (no pathData real)
+}
+
+function computeLotSketchData(
+  pathData: string | null | undefined,
+  frontM: number | null | undefined,
+  backM: number | null | undefined,
+): LotSketchData | null {
+  // Opción A: usar pathData real del lote
+  if (pathData) {
+    const nums = pathData.match(/-?[\d.]+(?:e[+-]?\d+)?/gi);
+    if (nums && nums.length >= 4) {
+      let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+      for (let i = 0; i + 1 < nums.length; i += 2) {
+        const x = parseFloat(nums[i]), y = parseFloat(nums[i + 1]);
+        if (isFinite(x) && isFinite(y)) {
+          if (x < mnX) mnX = x; if (x > mxX) mxX = x;
+          if (y < mnY) mnY = y; if (y > mxY) mxY = y;
+        }
+      }
+      if (isFinite(mnX)) {
+        const w = mxX - mnX || 10, h = mxY - mnY || 10;
+        const pad = Math.max(w, h) * 0.28;
+        const side = Math.min(w + pad * 2, h + pad * 2);
+        return {
+          viewBox: `${mnX - pad} ${mnY - pad} ${w + pad * 2} ${h + pad * 2}`,
+          pathD: pathData,
+          minX: mnX, minY: mnY, maxX: mxX, maxY: mxY,
+          pad, fs: side / 9, ds: Math.max(w, h) / 280,
+          isApprox: false,
+        };
+      }
+    }
+  }
+
+  // Opción B: fallback rectangular proporcional con frente/fondo
+  const fw = frontM ?? 20;
+  const fh = backM ?? 20;
+  const pad = Math.max(fw, fh) * 0.30;
+  const side = Math.min(fw + pad * 2, fh + pad * 2);
+  return {
+    viewBox: `${-pad} ${-pad} ${fw + pad * 2} ${fh + pad * 2}`,
+    pathD: `M 0 0 L ${fw} 0 L ${fw} ${fh} L 0 ${fh} Z`,
+    minX: 0, minY: 0, maxX: fw, maxY: fh,
+    pad, fs: side / 9, ds: Math.max(fw, fh) / 280,
+    isApprox: !pathData,
+  };
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -88,16 +141,9 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
   if (!lotRaw) notFound();
 
   // C-2: traer todos los lotes del desarrollo para el mini-plano SVG.
-  // Query liviana: solo campos necesarios para renderizar los paths.
   const siblingLots = await prisma.developmentLot.findMany({
     where: { developmentId: lotRaw.developmentId },
-    select: {
-      id: true,
-      pathData: true,
-      centerX: true,
-      centerY: true,
-      lotNumber: true,
-    },
+    select: { id: true, pathData: true, centerX: true, centerY: true, lotNumber: true },
   });
 
   const lot = {
@@ -110,52 +156,49 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
   const dev = lot.development;
 
-  // Validar themeColor seguro (#RGB o #RRGGBB) — previene inyección CSS
-  const rawThemeColor = dev.themeColor ?? "";
-  const themeColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(rawThemeColor)
-    ? rawThemeColor
+  // Validar colores seguros (#RGB o #RRGGBB) — previene inyección CSS
+  const themeColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(dev.themeColor ?? "")
+    ? dev.themeColor!
     : "#0D9488";
-
-  // Validar etapaColor — fallback a themeColor
-  const rawEtapaColor = lot.etapaColor ?? "";
-  const etapaColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(rawEtapaColor)
-    ? rawEtapaColor
+  const etapaColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(lot.etapaColor ?? "")
+    ? lot.etapaColor!
     : themeColor;
 
   const price = formatPrice(lot.priceCents, lot.currency);
 
-  // ── C-2: preparar datos del mini-plano ─────────────────────────────────────
+  // ── C-2: mini-plano general ───────────────────────────────────────────────
   const lotsWithPath = siblingLots.filter((l) => !!l.pathData);
   const hasMiniPlan = lotsWithPath.length >= 2;
-  const miniPlanViewBox = hasMiniPlan
-    ? computeSvgViewBox(lotsWithPath.map((l) => l.pathData))
-    : null;
-
-  // Separar lotes para orden de renderizado SVG:
-  // primero los no-seleccionados (fondo gris), luego el seleccionado (encima).
+  const miniPlanViewBox = hasMiniPlan ? computeSvgViewBox(lotsWithPath.map((l) => l.pathData)) : null;
   const otherLots = lotsWithPath.filter((l) => l.id !== lotId);
   const selectedLotPath = lotsWithPath.find((l) => l.id === lotId);
 
-  // Font size proporcional al espacio del viewBox para el label del lote.
   let labelFontSize = 8;
   if (miniPlanViewBox) {
-    const parts = miniPlanViewBox.split(" ").map(parseFloat);
-    const vbW = parts[2] ?? 1000;
-    const vbH = parts[3] ?? 800;
-    labelFontSize = Math.min(vbW, vbH) / 50;
+    const p = miniPlanViewBox.split(" ").map(parseFloat);
+    labelFontSize = Math.min(p[2] ?? 1000, p[3] ?? 800) / 50;
   }
 
-  // Leyenda textual del lote seleccionado
   const lotLabel = lot.manzana
     ? `Manzana ${lot.manzana} · Lote ${lot.lotNumber}`
     : `Lote ${lot.lotNumber}`;
+
+  // ── C-2B: croquis grande del lote ────────────────────────────────────────
+  const sketchData = computeLotSketchData(lot.pathData, lot.frontMeters, lot.backMeters);
+
+  // Orientación de la brújula.
+  // overlayRotation (Development.overlayRotation) es la rotación del plano sobre el mapa
+  // satelital en Paso 5 (grados, sentido antihorario desde este del Leaflet rotate plugin).
+  // Lo usamos como best-effort para orientar la aguja N.
+  // Si es 0/null → brújula estática con N arriba.
+  const compassRotation = dev.overlayRotation ?? 0;
+  const hasOrientationData = compassRotation !== 0;
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-8 print:p-0 print:bg-white">
       {/*
         Contenedor A4: 794×1123 px.
-        Layout: flex-col para que el footer quede al final del flujo
-        natural — evita que absolute bottom-0 tape el cuerpo.
+        Layout: flex-col para que el footer quede al final del flujo natural.
       */}
       <div className="bg-white w-full max-w-[794px] min-h-[1123px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full">
 
@@ -174,7 +217,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
               <img src={dev.logoUrl} alt={dev.name} className="h-14 md:h-16 object-contain print:h-16" />
             </div>
           )}
-
           <div className="text-white">
             <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">{dev.name}</h1>
             {(dev.address || dev.city || dev.province) && (
@@ -184,13 +226,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
               </p>
             )}
           </div>
-
-          {/* Deco shape */}
-          <svg
-            className="absolute bottom-0 right-0 h-full text-white/10"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-          >
+          <svg className="absolute bottom-0 right-0 h-full text-white/10" viewBox="0 0 100 100" preserveAspectRatio="none">
             <polygon points="0,100 100,0 100,100" fill="currentColor" />
           </svg>
         </div>
@@ -198,16 +234,13 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         {/* ── BODY ── */}
         <div className="flex-1 p-7 grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-6">
 
-          {/* ── Columna izquierda: datos del lote ── */}
+          {/* ── COLUMNA IZQUIERDA: datos del lote ── */}
           <div className="flex flex-col gap-4">
 
-            {/* Identificación del lote */}
             <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm">
               <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 text-center">
                 Ficha Técnica del Lote
               </h2>
-
-              {/* Badge de número de lote + status */}
               <div className="flex items-center justify-between mb-5">
                 <div
                   className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl text-white shadow-md shrink-0"
@@ -220,17 +253,12 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                   <StatusBadge status={lot.status} />
                   {lot.etapaNombre && (
                     <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: etapaColor }}
-                      />
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: etapaColor }} />
                       {lot.etapaNombre}
                     </span>
                   )}
                 </div>
               </div>
-
-              {/* Tabla de datos técnicos */}
               <div className="divide-y divide-slate-100">
                 {lot.manzana && (
                   <div className="flex justify-between items-center py-2">
@@ -269,21 +297,14 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
               </div>
             </div>
 
-            {/* Precio — solo si existe */}
             {price && (
-              <div
-                className="rounded-2xl p-5 text-white shadow-md"
-                style={{ backgroundColor: themeColor }}
-              >
+              <div className="rounded-2xl p-5 text-white shadow-md" style={{ backgroundColor: themeColor }}>
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Precio</p>
                 <p className="text-2xl font-black tracking-tight">{price}</p>
-                {lot.currency && (
-                  <p className="text-[10px] opacity-70 mt-0.5">{lot.currency}</p>
-                )}
+                {lot.currency && <p className="text-[10px] opacity-70 mt-0.5">{lot.currency}</p>}
               </div>
             )}
 
-            {/* Servicios — si existen */}
             {dev.services && dev.services.length > 0 && (
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">Servicios</h3>
@@ -299,108 +320,301 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
             )}
           </div>
 
-          {/* ── Columna derecha: mini-plano SVG con lote resaltado ── */}
+          {/* ── COLUMNA DERECHA: plano general + croquis del lote ── */}
           <div className="flex flex-col gap-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Plano del Desarrollo
-            </p>
 
-            {hasMiniPlan && miniPlanViewBox ? (
-              <>
-                {/*
-                  C-2: mini-plano SVG inline.
-                  - Sin dangerouslySetInnerHTML: pathData solo en atributo d de <path>.
-                  - Lotes no seleccionados: relleno gris suave + borde gris.
-                  - Lote seleccionado: renderizado último (encima), relleno etapaColor.
-                  - Label con número del lote centrado en centerX/centerY.
-                  - vectorEffect="non-scaling-stroke": borde no escala con zoom de impresión.
-                */}
-                <div className="flex-1 min-h-[260px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-slate-50 flex items-center justify-center p-1">
-                  <svg
-                    viewBox={miniPlanViewBox}
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-full h-full"
-                    preserveAspectRatio="xMidYMid meet"
-                  >
-                    {/* Lotes no seleccionados — fondo */}
-                    {otherLots.map((l) => (
-                      <path
-                        key={l.id}
-                        d={l.pathData!}
-                        fill="rgba(226,232,240,0.7)"
-                        stroke="#94a3b8"
-                        strokeWidth="1"
-                        vectorEffect="non-scaling-stroke"
+            {/* ── Bloque A: Plano del Desarrollo (mini-plano general) ── */}
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                Plano del Desarrollo
+              </p>
+              {hasMiniPlan && miniPlanViewBox ? (
+                <>
+                  <div className="h-[180px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-slate-50 flex items-center justify-center p-1">
+                    <svg
+                      viewBox={miniPlanViewBox}
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-full h-full"
+                      preserveAspectRatio="xMidYMid meet"
+                    >
+                      {otherLots.map((l) => (
+                        <path key={l.id} d={l.pathData!}
+                          fill="rgba(226,232,240,0.7)" stroke="#94a3b8"
+                          strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                      ))}
+                      {selectedLotPath?.pathData && (
+                        <path d={selectedLotPath.pathData}
+                          fill={etapaColor} fillOpacity={0.8}
+                          stroke={etapaColor} strokeWidth="2.5"
+                          vectorEffect="non-scaling-stroke" />
+                      )}
+                      {lot.centerX != null && lot.centerY != null && (
+                        <text x={lot.centerX} y={lot.centerY}
+                          textAnchor="middle" dominantBaseline="middle"
+                          fontSize={labelFontSize} fill="white" fontWeight="bold"
+                          fontFamily="sans-serif" stroke="rgba(0,0,0,0.35)"
+                          strokeWidth={labelFontSize * 0.06} paintOrder="stroke fill">
+                          {lot.lotNumber}
+                        </text>
+                      )}
+                    </svg>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-semibold text-center mt-1">{lotLabel}</p>
+                </>
+              ) : (
+                <>
+                  {dev.brochurePlanUrl ? (
+                    <div className="h-[180px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-white">
+                      {dev.brochurePlanUrl.endsWith(".pdf") ? (
+                        <iframe src={dev.brochurePlanUrl} className="w-full h-full" />
+                      ) : (
+                        <img src={dev.brochurePlanUrl} alt="Plano del desarrollo" className="w-full h-full object-contain" />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-[180px] rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 text-slate-400 text-xs font-medium">
+                      Plano no disponible
+                    </div>
+                  )}
+                  {!hasMiniPlan && (
+                    <p className="text-[10px] text-slate-400 font-medium text-center mt-1">
+                      Vista con lote destacado no disponible para este plano.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* ── Bloque B: Croquis del Lote + Brújula ── */}
+            <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Croquis del Lote
+              </p>
+
+              <div className="flex-1 flex gap-3 items-stretch min-h-[200px]">
+
+                {/* ── Croquis SVG grande del lote ── */}
+                <div className="flex-1">
+                  {sketchData ? (
+                    <svg
+                      viewBox={sketchData.viewBox}
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-full h-full"
+                      preserveAspectRatio="xMidYMid meet"
+                    >
+                      {/* Fondo suave del área de dibujo */}
+                      <rect
+                        x={sketchData.minX - sketchData.pad * 0.05}
+                        y={sketchData.minY - sketchData.pad * 0.05}
+                        width={sketchData.maxX - sketchData.minX + sketchData.pad * 0.1}
+                        height={sketchData.maxY - sketchData.minY + sketchData.pad * 0.1}
+                        fill="white" stroke="none"
                       />
-                    ))}
 
-                    {/* Lote seleccionado — renderizado último para quedar encima */}
-                    {selectedLotPath?.pathData && (
+                      {/* Shape del lote */}
                       <path
-                        d={selectedLotPath.pathData}
+                        d={sketchData.pathD}
                         fill={etapaColor}
-                        fillOpacity={0.8}
+                        fillOpacity={0.18}
                         stroke={etapaColor}
-                        strokeWidth="2.5"
+                        strokeWidth={sketchData.ds * 6}
+                        strokeLinejoin="round"
                         vectorEffect="non-scaling-stroke"
                       />
-                    )}
 
-                    {/* Label del lote seleccionado — solo si hay centerX/centerY */}
-                    {lot.centerX != null && lot.centerY != null && (
-                      <text
-                        x={lot.centerX}
-                        y={lot.centerY}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fontSize={labelFontSize}
-                        fill="white"
-                        fontWeight="bold"
-                        fontFamily="sans-serif"
-                        stroke="rgba(0,0,0,0.35)"
-                        strokeWidth={labelFontSize * 0.06}
-                        paintOrder="stroke fill"
-                      >
-                        {lot.lotNumber}
-                      </text>
-                    )}
-                  </svg>
+                      {/* ── Línea de cota: Frente (horizontal, debajo del lote) ── */}
+                      {lot.frontMeters != null && (() => {
+                        const y = sketchData.maxY + sketchData.pad * 0.28;
+                        const tick = sketchData.pad * 0.12;
+                        const mid = (sketchData.minX + sketchData.maxX) / 2;
+                        return (
+                          <>
+                            {/* Línea horizontal */}
+                            <line x1={sketchData.minX} y1={y} x2={sketchData.maxX} y2={y}
+                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
+                            {/* Ticks extremos */}
+                            <line x1={sketchData.minX} y1={y - tick} x2={sketchData.minX} y2={y + tick}
+                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
+                            <line x1={sketchData.maxX} y1={y - tick} x2={sketchData.maxX} y2={y + tick}
+                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
+                            {/* Texto */}
+                            <text x={mid} y={y + sketchData.pad * 0.2}
+                              textAnchor="middle" dominantBaseline="hanging"
+                              fontSize={sketchData.fs * 0.85} fill="#475569" fontFamily="sans-serif" fontWeight="600">
+                              {`Frente ${formatNum(lot.frontMeters)} m`}
+                            </text>
+                          </>
+                        );
+                      })()}
+
+                      {/* ── Línea de cota: Fondo (vertical, a la derecha del lote) ── */}
+                      {lot.backMeters != null && (() => {
+                        const x = sketchData.maxX + sketchData.pad * 0.28;
+                        const tick = sketchData.pad * 0.12;
+                        const mid = (sketchData.minY + sketchData.maxY) / 2;
+                        return (
+                          <>
+                            <line x1={x} y1={sketchData.minY} x2={x} y2={sketchData.maxY}
+                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
+                            <line x1={x - tick} y1={sketchData.minY} x2={x + tick} y2={sketchData.minY}
+                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
+                            <line x1={x - tick} y1={sketchData.maxY} x2={x + tick} y2={sketchData.maxY}
+                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
+                            {/* Texto rotado 90° */}
+                            <text
+                              x={x + sketchData.pad * 0.18}
+                              y={mid}
+                              textAnchor="middle"
+                              dominantBaseline="auto"
+                              fontSize={sketchData.fs * 0.85}
+                              fill="#475569"
+                              fontFamily="sans-serif"
+                              fontWeight="600"
+                              transform={`rotate(90, ${x + sketchData.pad * 0.18}, ${mid})`}
+                            >
+                              {`Fondo ${formatNum(lot.backMeters)} m`}
+                            </text>
+                          </>
+                        );
+                      })()}
+
+                      {/* ── Superficie centrada dentro del lote ── */}
+                      {lot.areaSqm != null && (
+                        <text
+                          x={(sketchData.minX + sketchData.maxX) / 2}
+                          y={(sketchData.minY + sketchData.maxY) / 2}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize={sketchData.fs}
+                          fill={etapaColor}
+                          fontFamily="sans-serif"
+                          fontWeight="bold"
+                          stroke="white"
+                          strokeWidth={sketchData.fs * 0.08}
+                          paintOrder="stroke fill"
+                        >
+                          {`${formatNum(lot.areaSqm)} m²`}
+                        </text>
+                      )}
+
+                      {/* Nota si es croquis aproximado */}
+                      {sketchData.isApprox && (
+                        <text
+                          x={(sketchData.minX + sketchData.maxX) / 2}
+                          y={sketchData.minY - sketchData.pad * 0.5}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize={sketchData.fs * 0.65}
+                          fill="#94a3b8"
+                          fontFamily="sans-serif"
+                          fontStyle="italic"
+                        >
+                          Croquis orientativo
+                        </text>
+                      )}
+                    </svg>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-medium">
+                      Croquis no disponible
+                    </div>
+                  )}
                 </div>
 
-                {/* Leyenda del lote */}
-                <p className="text-[10px] text-slate-400 font-semibold text-center">
-                  {lotLabel}
-                </p>
-              </>
-            ) : (
-              <>
-                {/* Fallback: no hay pathData suficientes → mostrar brochurePlanUrl */}
-                {dev.brochurePlanUrl ? (
-                  <div className="flex-1 min-h-[260px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-white">
-                    {dev.brochurePlanUrl.endsWith(".pdf") ? (
-                      <iframe src={dev.brochurePlanUrl} className="w-full h-full min-h-[260px]" />
-                    ) : (
-                      <img
-                        src={dev.brochurePlanUrl}
-                        alt="Plano del desarrollo"
-                        className="w-full h-full object-contain"
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex-1 min-h-[260px] rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 text-slate-400 text-sm font-medium">
-                    Plano no disponible
-                  </div>
-                )}
-                {!hasMiniPlan && (
-                  <p className="text-[10px] text-slate-400 font-medium text-center">
-                    Vista con lote destacado no disponible para este plano.
-                  </p>
-                )}
-              </>
-            )}
+                {/* ── Brújula + leyenda ── */}
+                <div className="flex flex-col items-center gap-1.5 shrink-0 w-[72px]">
+                  {/* SVG de brújula pura — sin DOM, sin dependencias */}
+                  <div className="w-[68px] h-[68px]">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      {/* Aro exterior */}
+                      <circle cx="50" cy="50" r="46" fill="white" stroke="#e2e8f0" strokeWidth="2.5" />
+                      <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" strokeWidth="1" />
 
-            {/* Tag del desarrollo — nombre organización */}
+                      {/* Ticks de los 8 cardinales */}
+                      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+                        const rad = (deg * Math.PI) / 180;
+                        const isCardinal = deg % 90 === 0;
+                        const r1 = isCardinal ? 34 : 37;
+                        const r2 = 43;
+                        return (
+                          <line
+                            key={deg}
+                            x1={50 + r1 * Math.sin(rad)} y1={50 - r1 * Math.cos(rad)}
+                            x2={50 + r2 * Math.sin(rad)} y2={50 - r2 * Math.cos(rad)}
+                            stroke={isCardinal ? "#94a3b8" : "#cbd5e1"}
+                            strokeWidth={isCardinal ? "2" : "1.2"}
+                          />
+                        );
+                      })}
+
+                      {/* Aguja giratoria — N apunta según overlayRotation */}
+                      <g transform={`rotate(${compassRotation}, 50, 50)`}>
+                        {/* Punta N (coloreada) */}
+                        <polygon
+                          points="50,10 44,50 50,44 56,50"
+                          fill={themeColor}
+                        />
+                        {/* Punta S (gris) */}
+                        <polygon
+                          points="50,90 44,50 50,56 56,50"
+                          fill="#cbd5e1"
+                        />
+                      </g>
+
+                      {/* Punto central */}
+                      <circle cx="50" cy="50" r="4" fill={themeColor} />
+                      <circle cx="50" cy="50" r="2" fill="white" />
+
+                      {/* Letras cardinales (siempre en posición fija, legibles) */}
+                      <text x="50" y="7" textAnchor="middle" dominantBaseline="middle"
+                        fontSize="11" fontWeight="800" fill={themeColor} fontFamily="sans-serif">N</text>
+                      <text x="50" y="93" textAnchor="middle" dominantBaseline="middle"
+                        fontSize="9" fill="#94a3b8" fontFamily="sans-serif">S</text>
+                      <text x="93" y="51" textAnchor="middle" dominantBaseline="middle"
+                        fontSize="9" fill="#94a3b8" fontFamily="sans-serif">E</text>
+                      <text x="7" y="51" textAnchor="middle" dominantBaseline="middle"
+                        fontSize="9" fill="#94a3b8" fontFamily="sans-serif">O</text>
+
+                      {/* Letras ordinales */}
+                      {[
+                        { deg: 45,  label: "NE" },
+                        { deg: 135, label: "SE" },
+                        { deg: 225, label: "SO" },
+                        { deg: 315, label: "NO" },
+                      ].map(({ deg, label }) => {
+                        const rad = (deg * Math.PI) / 180;
+                        return (
+                          <text
+                            key={deg}
+                            x={50 + 30 * Math.sin(rad)}
+                            y={50 - 30 * Math.cos(rad)}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fontSize="6.5"
+                            fill="#cbd5e1"
+                            fontFamily="sans-serif"
+                          >
+                            {label}
+                          </text>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* Leyenda de la brújula */}
+                  {hasOrientationData ? (
+                    <p className="text-[8px] text-slate-400 text-center leading-tight font-medium">
+                      Orientación<br />georreferenciada
+                    </p>
+                  ) : (
+                    <p className="text-[8px] text-slate-400 text-center leading-tight font-medium">
+                      Orientación<br />referencial
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Tag del desarrollo */}
             <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
               <Tag className="w-3.5 h-3.5 shrink-0" />
               <span>{dev.organization.name}</span>
@@ -412,11 +626,8 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-5 flex items-center justify-between gap-4 flex-wrap print:flex-nowrap">
           <div className="flex items-center gap-5 flex-wrap">
             {dev.companyLogoUrl && (
-              <img
-                src={dev.companyLogoUrl}
-                alt="Inmobiliaria"
-                className="h-8 object-contain filter grayscale brightness-200 opacity-80"
-              />
+              <img src={dev.companyLogoUrl} alt="Inmobiliaria"
+                className="h-8 object-contain filter grayscale brightness-200 opacity-80" />
             )}
             <div className="flex flex-col gap-1 border-l border-slate-700 pl-5">
               {dev.contactPhone && (
@@ -439,7 +650,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
               )}
             </div>
           </div>
-
           <div className="text-right shrink-0">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Desarrollado por</p>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">{dev.organization.name}</p>
