@@ -1,3 +1,4 @@
+import React from "react";
 import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
 import { requireOrganizationMembership } from "@/server/auth/access";
@@ -90,6 +91,7 @@ interface LotSketchData {
   fs: number;
   ds: number;
   isApprox: boolean;
+  isLandscape: boolean;
 }
 
 function computeLotSketchData(
@@ -110,14 +112,18 @@ function computeLotSketchData(
       }
       if (isFinite(mnX)) {
         const w = mxX - mnX || 10, h = mxY - mnY || 10;
-        const pad = Math.max(w, h) * 0.28;
-        const side = Math.min(w + pad * 2, h + pad * 2);
+        const maxDim = Math.max(w, h);
+        const minDim = Math.min(w, h);
+        const pad = maxDim * 0.35;
+        const fs = minDim / 7;
+        const ds = maxDim / 280;
         return {
           viewBox: `${mnX - pad} ${mnY - pad} ${w + pad * 2} ${h + pad * 2}`,
           pathD: pathData,
           minX: mnX, minY: mnY, maxX: mxX, maxY: mxY,
-          pad, fs: side / 9, ds: Math.max(w, h) / 280,
+          pad, fs, ds,
           isApprox: false,
+          isLandscape: w >= h,
         };
       }
     }
@@ -125,14 +131,18 @@ function computeLotSketchData(
 
   const fw = frontM ?? 20;
   const fh = backM ?? 20;
-  const pad = Math.max(fw, fh) * 0.30;
-  const side = Math.min(fw + pad * 2, fh + pad * 2);
+  const maxDim = Math.max(fw, fh);
+  const minDim = Math.min(fw, fh);
+  const pad = maxDim * 0.35;
+  const fs = minDim / 7;
+  const ds = maxDim / 280;
   return {
     viewBox: `${-pad} ${-pad} ${fw + pad * 2} ${fh + pad * 2}`,
     pathD: `M 0 0 L ${fw} 0 L ${fw} ${fh} L 0 ${fh} Z`,
     minX: 0, minY: 0, maxX: fw, maxY: fh,
-    pad, fs: side / 9, ds: Math.max(fw, fh) / 280,
+    pad, fs, ds,
     isApprox: !pathData,
+    isLandscape: fw >= fh,
   };
 }
 
@@ -552,43 +562,51 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         vectorEffect="non-scaling-stroke"
                       />
 
-                      {/* Cota frente */}
-                      {lot.frontMeters != null && (() => {
-                        const y = sketchData.maxY + sketchData.pad * 0.28;
-                        const tick = sketchData.pad * 0.12;
-                        const mid = (sketchData.minX + sketchData.maxX) / 2;
-                        return (
-                          <>
-                            <line x1={sketchData.minX} y1={y} x2={sketchData.maxX} y2={y}
-                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            <line x1={sketchData.minX} y1={y - tick} x2={sketchData.minX} y2={y + tick}
-                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            <line x1={sketchData.maxX} y1={y - tick} x2={sketchData.maxX} y2={y + tick}
-                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            <text x={mid} y={y + sketchData.pad * 0.2}
+                      {/* Cotas frente/fondo — orientación según isLandscape */}
+                      {(() => {
+                        const cotaOffset = sketchData.pad * 0.20;
+                        const textGap    = sketchData.pad * 0.15;
+                        const tick       = sketchData.pad * 0.10;
+                        const sw         = sketchData.ds * 2;
+
+                        // Portrait: horiz=Frente, vert=Fondo — Landscape: horiz=Fondo, vert=Frente
+                        const horizLabel = sketchData.isLandscape ? "Fondo"  : "Frente";
+                        const horizValue = sketchData.isLandscape ? lot.backMeters  : lot.frontMeters;
+                        const vertLabel  = sketchData.isLandscape ? "Frente" : "Fondo";
+                        const vertValue  = sketchData.isLandscape ? lot.frontMeters : lot.backMeters;
+
+                        const nodes: React.ReactNode[] = [];
+
+                        if (horizValue != null) {
+                          const y   = sketchData.maxY + cotaOffset;
+                          const mid = (sketchData.minX + sketchData.maxX) / 2;
+                          nodes.push(
+                            <line key="h-line" x1={sketchData.minX} y1={y} x2={sketchData.maxX} y2={y}
+                              stroke="#64748b" strokeWidth={sw} vectorEffect="non-scaling-stroke" />,
+                            <line key="h-tick-l" x1={sketchData.minX} y1={y - tick} x2={sketchData.minX} y2={y + tick}
+                              stroke="#64748b" strokeWidth={sw} vectorEffect="non-scaling-stroke" />,
+                            <line key="h-tick-r" x1={sketchData.maxX} y1={y - tick} x2={sketchData.maxX} y2={y + tick}
+                              stroke="#64748b" strokeWidth={sw} vectorEffect="non-scaling-stroke" />,
+                            <text key="h-text" x={mid} y={y + textGap}
                               textAnchor="middle" dominantBaseline="hanging"
                               fontSize={sketchData.fs * 0.85} fill="#475569" fontFamily="sans-serif" fontWeight="600">
-                              {`Frente ${formatNum(lot.frontMeters)} m`}
-                            </text>
-                          </>
-                        );
-                      })()}
+                              {`${horizLabel} ${formatNum(horizValue)} m`}
+                            </text>,
+                          );
+                        }
 
-                      {/* Cota fondo */}
-                      {lot.backMeters != null && (() => {
-                        const x = sketchData.maxX + sketchData.pad * 0.28;
-                        const tick = sketchData.pad * 0.12;
-                        const mid = (sketchData.minY + sketchData.maxY) / 2;
-                        return (
-                          <>
-                            <line x1={x} y1={sketchData.minY} x2={x} y2={sketchData.maxY}
-                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            <line x1={x - tick} y1={sketchData.minY} x2={x + tick} y2={sketchData.minY}
-                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            <line x1={x - tick} y1={sketchData.maxY} x2={x + tick} y2={sketchData.maxY}
-                              stroke="#64748b" strokeWidth={sketchData.ds * 2} vectorEffect="non-scaling-stroke" />
-                            <text
-                              x={x + sketchData.pad * 0.18}
+                        if (vertValue != null) {
+                          const x   = sketchData.maxX + cotaOffset;
+                          const mid = (sketchData.minY + sketchData.maxY) / 2;
+                          nodes.push(
+                            <line key="v-line" x1={x} y1={sketchData.minY} x2={x} y2={sketchData.maxY}
+                              stroke="#64748b" strokeWidth={sw} vectorEffect="non-scaling-stroke" />,
+                            <line key="v-tick-t" x1={x - tick} y1={sketchData.minY} x2={x + tick} y2={sketchData.minY}
+                              stroke="#64748b" strokeWidth={sw} vectorEffect="non-scaling-stroke" />,
+                            <line key="v-tick-b" x1={x - tick} y1={sketchData.maxY} x2={x + tick} y2={sketchData.maxY}
+                              stroke="#64748b" strokeWidth={sw} vectorEffect="non-scaling-stroke" />,
+                            <text key="v-text"
+                              x={x + textGap}
                               y={mid}
                               textAnchor="middle"
                               dominantBaseline="auto"
@@ -596,12 +614,14 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                               fill="#475569"
                               fontFamily="sans-serif"
                               fontWeight="600"
-                              transform={`rotate(90, ${x + sketchData.pad * 0.18}, ${mid})`}
+                              transform={`rotate(90, ${x + textGap}, ${mid})`}
                             >
-                              {`Fondo ${formatNum(lot.backMeters)} m`}
-                            </text>
-                          </>
-                        );
+                              {`${vertLabel} ${formatNum(vertValue)} m`}
+                            </text>,
+                          );
+                        }
+
+                        return nodes;
                       })()}
 
                       {/* Área */}
