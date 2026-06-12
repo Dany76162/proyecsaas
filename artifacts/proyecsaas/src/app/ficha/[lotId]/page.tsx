@@ -2,7 +2,10 @@ import React from "react";
 import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
 import { requireOrganizationMembership } from "@/server/auth/access";
-import { MapPin, Phone, Globe, CheckCircle2, Ruler, Maximize, Tag, User, Briefcase, Calendar, Banknote } from "lucide-react";
+import {
+  MapPin, Phone, Globe, CheckCircle2, Ruler, Maximize,
+  Tag, User, Briefcase, Calendar, Banknote,
+} from "lucide-react";
 import PrintButton from "./print-button";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -48,10 +51,10 @@ function StatusBadge({ status }: { status: string }) {
 
 function ReservationStatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    ACTIVE:            { label: "Reserva activa",           cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-    PENDING_APPROVAL:  { label: "Pendiente de aprobación",  cls: "bg-amber-100 text-amber-700 border-amber-200" },
-    SOLD:              { label: "Operación concretada",      cls: "bg-sky-100 text-sky-700 border-sky-200" },
-    CANCELLED:         { label: "Cancelada",                cls: "bg-slate-100 text-slate-500 border-slate-200" },
+    ACTIVE:            { label: "Reserva activa",          cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    PENDING_APPROVAL:  { label: "Pendiente de aprobación", cls: "bg-amber-100 text-amber-700 border-amber-200" },
+    SOLD:              { label: "Operación concretada",    cls: "bg-sky-100 text-sky-700 border-sky-200" },
+    CANCELLED:         { label: "Cancelada",               cls: "bg-slate-100 text-slate-500 border-slate-200" },
   };
   const { label, cls } = map[status] ?? { label: status, cls: "bg-slate-100 text-slate-500 border-slate-200" };
   return (
@@ -283,10 +286,67 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
           </svg>
         </div>
 
-        {/* ── BODY ── */}
+        {/* ── BLOQUE A: Plano del Desarrollo (ancho completo, grande) ── */}
+        <div className="px-7 pt-7">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+            Plano del Desarrollo
+          </p>
+          {hasMiniPlan && miniPlanViewBox ? (
+            <div className="rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-slate-50">
+              <div className="h-[260px] flex items-center justify-center p-2">
+                <svg
+                  viewBox={miniPlanViewBox}
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-full h-full"
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  {otherLots.map((l) => (
+                    <path key={l.id} d={l.pathData!}
+                      fill="rgba(226,232,240,0.7)" stroke="#94a3b8"
+                      strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  ))}
+                  {selectedLotPath?.pathData && (
+                    <path d={selectedLotPath.pathData}
+                      fill={etapaColor} fillOpacity={0.85}
+                      stroke={etapaColor} strokeWidth="2.5"
+                      vectorEffect="non-scaling-stroke" />
+                  )}
+                  {lot.centerX != null && lot.centerY != null && (
+                    <text x={lot.centerX} y={lot.centerY}
+                      textAnchor="middle" dominantBaseline="middle"
+                      fontSize={labelFontSize} fill="white" fontWeight="bold"
+                      fontFamily="sans-serif"
+                      stroke="rgba(0,0,0,0.35)"
+                      strokeWidth={labelFontSize * 0.06}
+                      paintOrder="stroke fill">
+                      {lot.lotNumber}
+                    </text>
+                  )}
+                </svg>
+              </div>
+              <div className="border-t border-slate-100 px-4 py-2 bg-white/80">
+                <p className="text-[11px] text-slate-500 font-semibold text-center">{lotLabel} resaltado</p>
+              </div>
+            </div>
+          ) : dev.brochurePlanUrl ? (
+            <div className="rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-white h-[260px]">
+              {dev.brochurePlanUrl.endsWith(".pdf") ? (
+                <iframe src={dev.brochurePlanUrl} className="w-full h-full" />
+              ) : (
+                <img src={dev.brochurePlanUrl} alt="Plano del desarrollo" className="w-full h-full object-contain" />
+              )}
+            </div>
+          ) : (
+            <div className="h-[100px] rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 text-slate-400 text-sm font-medium">
+              Plano no disponible
+            </div>
+          )}
+        </div>
+
+        {/* ── BLOQUE B: Cuerpo en dos columnas ── */}
         <div className="flex-1 p-7 grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-6">
 
-          {/* ── COLUMNA IZQUIERDA ── */}
+          {/* ── COLUMNA IZQUIERDA: ficha técnica + precio + servicios ── */}
           <div className="flex flex-col gap-4">
 
             {/* Ficha técnica del lote */}
@@ -359,94 +419,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
               </div>
             )}
 
-            {/* ── D-2: Cliente / Reservante ── */}
-            {hasClientData && (
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
-                  <User className="w-3 h-3" />
-                  Cliente / Reservante
-                </h3>
-                <div className="divide-y divide-slate-100">
-                  {clientDisplayName && (
-                    <div className="flex justify-between items-center py-1.5">
-                      <span className="text-slate-500 text-xs font-semibold">Nombre</span>
-                      <span className="font-bold text-sm text-slate-800 text-right max-w-[60%] leading-tight">{clientDisplayName}</span>
-                    </div>
-                  )}
-                  {clientPhone && (
-                    <div className="flex justify-between items-center py-1.5">
-                      <span className="text-slate-500 text-xs font-semibold">Teléfono</span>
-                      <span className="font-semibold text-sm text-slate-700">{clientPhone}</span>
-                    </div>
-                  )}
-                  {clientEmail && (
-                    <div className="flex justify-between items-center py-1.5">
-                      <span className="text-slate-500 text-xs font-semibold">Email</span>
-                      <span className="font-semibold text-xs text-slate-700 text-right max-w-[60%] break-all leading-tight">{clientEmail}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ── D-2: Operación / Reserva ── */}
-            {reservation && (
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
-                  <Briefcase className="w-3 h-3" />
-                  Operación
-                </h3>
-                <div className="divide-y divide-slate-100">
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 text-xs font-semibold">Estado</span>
-                    <ReservationStatusBadge status={reservation.status} />
-                  </div>
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-slate-500 text-xs font-semibold flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> Fecha
-                    </span>
-                    <span className="font-semibold text-sm text-slate-700">{formatDate(reservation.createdAt)}</span>
-                  </div>
-                  {depositFormatted && (
-                    <div className="flex justify-between items-center py-1.5">
-                      <span className="text-slate-500 text-xs font-semibold flex items-center gap-1">
-                        <Banknote className="w-3 h-3" /> Seña
-                      </span>
-                      <span className="font-black text-sm text-slate-800">{depositFormatted}</span>
-                    </div>
-                  )}
-                  {hasSellerData && (
-                    <div className="flex justify-between items-center py-1.5">
-                      <span className="text-slate-500 text-xs font-semibold">Asesor</span>
-                      <span className="font-semibold text-sm text-slate-700 text-right max-w-[60%] leading-tight">
-                        {sellerDisplayName}
-                        {sellerPhone && <span className="block text-[10px] text-slate-400 font-normal">{sellerPhone}</span>}
-                      </span>
-                    </div>
-                  )}
-                  {reservation.notes && (
-                    <div className="py-1.5">
-                      <span className="text-slate-500 text-xs font-semibold block mb-0.5">Notas</span>
-                      <p className="text-xs text-slate-600 leading-snug line-clamp-2">{reservation.notes}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Vendedor sin reserva (fallback solo si hay sellerName en lote y no hay reserva) */}
-            {!reservation && hasSellerData && (
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
-                  <Briefcase className="w-3 h-3" />
-                  Asesor
-                </h3>
-                <p className="font-bold text-sm text-slate-800">{sellerDisplayName}</p>
-                {sellerPhone && <p className="text-xs text-slate-500 mt-0.5">{sellerPhone}</p>}
-                {sellerEmail && <p className="text-xs text-slate-500">{sellerEmail}</p>}
-              </div>
-            )}
-
             {/* Servicios */}
             {dev.services && dev.services.length > 0 && (
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm">
@@ -463,78 +435,16 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
             )}
           </div>
 
-          {/* ── COLUMNA DERECHA: plano general + croquis del lote ── */}
-          <div className="flex flex-col gap-3">
+          {/* ── COLUMNA DERECHA: croquis + brújula + cliente + operación + asesor ── */}
+          <div className="flex flex-col gap-4">
 
-            {/* ── Bloque A: Plano del Desarrollo ── */}
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                Plano del Desarrollo
-              </p>
-              {hasMiniPlan && miniPlanViewBox ? (
-                <>
-                  <div className="h-[180px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-slate-50 flex items-center justify-center p-1">
-                    <svg
-                      viewBox={miniPlanViewBox}
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-full h-full"
-                      preserveAspectRatio="xMidYMid meet"
-                    >
-                      {otherLots.map((l) => (
-                        <path key={l.id} d={l.pathData!}
-                          fill="rgba(226,232,240,0.7)" stroke="#94a3b8"
-                          strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                      ))}
-                      {selectedLotPath?.pathData && (
-                        <path d={selectedLotPath.pathData}
-                          fill={etapaColor} fillOpacity={0.8}
-                          stroke={etapaColor} strokeWidth="2.5"
-                          vectorEffect="non-scaling-stroke" />
-                      )}
-                      {lot.centerX != null && lot.centerY != null && (
-                        <text x={lot.centerX} y={lot.centerY}
-                          textAnchor="middle" dominantBaseline="middle"
-                          fontSize={labelFontSize} fill="white" fontWeight="bold"
-                          fontFamily="sans-serif" stroke="rgba(0,0,0,0.35)"
-                          strokeWidth={labelFontSize * 0.06} paintOrder="stroke fill">
-                          {lot.lotNumber}
-                        </text>
-                      )}
-                    </svg>
-                  </div>
-                  <p className="text-[10px] text-slate-400 font-semibold text-center mt-1">{lotLabel}</p>
-                </>
-              ) : (
-                <>
-                  {dev.brochurePlanUrl ? (
-                    <div className="h-[180px] rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-white">
-                      {dev.brochurePlanUrl.endsWith(".pdf") ? (
-                        <iframe src={dev.brochurePlanUrl} className="w-full h-full" />
-                      ) : (
-                        <img src={dev.brochurePlanUrl} alt="Plano del desarrollo" className="w-full h-full object-contain" />
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-[180px] rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 text-slate-400 text-xs font-medium">
-                      Plano no disponible
-                    </div>
-                  )}
-                  {!hasMiniPlan && (
-                    <p className="text-[10px] text-slate-400 font-medium text-center mt-1">
-                      Vista con lote destacado no disponible para este plano.
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* ── Bloque B: Croquis del Lote + Brújula ── */}
-            <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+            {/* Croquis del Lote + Brújula */}
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Croquis del Lote
               </p>
 
-              <div className="flex-1 flex gap-3 items-stretch min-h-[200px]">
+              <div className="flex gap-3 items-stretch min-h-[180px]">
 
                 {/* Croquis SVG */}
                 <div className="flex-1">
@@ -569,7 +479,6 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         const tick       = sketchData.pad * 0.10;
                         const sw         = sketchData.ds * 2;
 
-                        // Portrait: horiz=Frente, vert=Fondo — Landscape: horiz=Fondo, vert=Frente
                         const horizLabel = sketchData.isLandscape ? "Fondo"  : "Frente";
                         const horizValue = sketchData.isLandscape ? lot.backMeters  : lot.frontMeters;
                         const vertLabel  = sketchData.isLandscape ? "Frente" : "Fondo";
@@ -606,14 +515,9 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                             <line key="v-tick-b" x1={x - tick} y1={sketchData.maxY} x2={x + tick} y2={sketchData.maxY}
                               stroke="#64748b" strokeWidth={sw} vectorEffect="non-scaling-stroke" />,
                             <text key="v-text"
-                              x={x + textGap}
-                              y={mid}
-                              textAnchor="middle"
-                              dominantBaseline="auto"
-                              fontSize={sketchData.fs * 0.85}
-                              fill="#475569"
-                              fontFamily="sans-serif"
-                              fontWeight="600"
+                              x={x + textGap} y={mid}
+                              textAnchor="middle" dominantBaseline="auto"
+                              fontSize={sketchData.fs * 0.85} fill="#475569" fontFamily="sans-serif" fontWeight="600"
                               transform={`rotate(90, ${x + textGap}, ${mid})`}
                             >
                               {`${vertLabel} ${formatNum(vertValue)} m`}
@@ -624,7 +528,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                         return nodes;
                       })()}
 
-                      {/* Área */}
+                      {/* Área centrada */}
                       {lot.areaSqm != null && (
                         <text
                           x={(sketchData.minX + sketchData.maxX) / 2}
@@ -736,6 +640,94 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                 </div>
               </div>
             </div>
+
+            {/* ── D-2: Cliente / Reservante ── */}
+            {hasClientData && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                  <User className="w-3 h-3" />
+                  Cliente / Reservante
+                </h3>
+                <div className="divide-y divide-slate-100">
+                  {clientDisplayName && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold">Nombre</span>
+                      <span className="font-bold text-sm text-slate-800 text-right max-w-[60%] leading-tight">{clientDisplayName}</span>
+                    </div>
+                  )}
+                  {clientPhone && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold">Teléfono</span>
+                      <span className="font-semibold text-sm text-slate-700">{clientPhone}</span>
+                    </div>
+                  )}
+                  {clientEmail && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold">Email</span>
+                      <span className="font-semibold text-xs text-slate-700 text-right max-w-[60%] break-all leading-tight">{clientEmail}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── D-2: Operación / Reserva ── */}
+            {reservation && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                  <Briefcase className="w-3 h-3" />
+                  Operación
+                </h3>
+                <div className="divide-y divide-slate-100">
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-slate-500 text-xs font-semibold">Estado</span>
+                    <ReservationStatusBadge status={reservation.status} />
+                  </div>
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-slate-500 text-xs font-semibold flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Fecha
+                    </span>
+                    <span className="font-semibold text-sm text-slate-700">{formatDate(reservation.createdAt)}</span>
+                  </div>
+                  {depositFormatted && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold flex items-center gap-1">
+                        <Banknote className="w-3 h-3" /> Seña
+                      </span>
+                      <span className="font-black text-sm text-slate-800">{depositFormatted}</span>
+                    </div>
+                  )}
+                  {hasSellerData && (
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold">Asesor</span>
+                      <span className="font-semibold text-sm text-slate-700 text-right max-w-[60%] leading-tight">
+                        {sellerDisplayName}
+                        {sellerPhone && <span className="block text-[10px] text-slate-400 font-normal">{sellerPhone}</span>}
+                      </span>
+                    </div>
+                  )}
+                  {reservation.notes && (
+                    <div className="py-1.5">
+                      <span className="text-slate-500 text-xs font-semibold block mb-0.5">Notas</span>
+                      <p className="text-xs text-slate-600 leading-snug line-clamp-2">{reservation.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Vendedor sin reserva (fallback solo si hay sellerName en lote y no hay reserva) */}
+            {!reservation && hasSellerData && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
+                  <Briefcase className="w-3 h-3" />
+                  Asesor
+                </h3>
+                <p className="font-bold text-sm text-slate-800">{sellerDisplayName}</p>
+                {sellerPhone && <p className="text-xs text-slate-500 mt-0.5">{sellerPhone}</p>}
+                {sellerEmail && <p className="text-xs text-slate-500">{sellerEmail}</p>}
+              </div>
+            )}
 
             {/* Tag del desarrollo */}
             <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
