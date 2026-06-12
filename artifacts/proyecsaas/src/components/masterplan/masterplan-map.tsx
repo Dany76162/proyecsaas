@@ -23,7 +23,6 @@ import type { OverlayConfig } from "./overlay-editor";
 // En variant="viewer" (público) este módulo nunca se incluye en el bundle.
 const OverlayEditor = dynamic(() => import("./overlay-editor"), { ssr: false });
 // Fase futura: Tour 360 desacoplado del commit inicial de Desarrollos.
-// import Tour360Viewer from "./tour360-viewer";
 // const InfraestructuraTool = dynamic(() => import("./infraestructura-tool"), { ssr: false });
 // const ImagenesMapaTool = dynamic(() => import("./imagenes-mapa-tool"), { ssr: false });
 import { getProjectBlueprintData } from "@/lib/actions/unidades";
@@ -232,8 +231,6 @@ export default function MasterplanMap({
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const [isMapReady, setIsMapReady] = useState(false);
     const [mapView, setMapView] = useState<"satellite" | "street">("satellite");
-    const [tooltip, setTooltip] = useState<{ x: number; y: number; unit: MasterplanUnit } | null>(null);
-
     // Overlay editor state (bounds only — no image overlay)
     const [overlayConfig, setOverlayConfig] = useState<OverlayConfig | null>(null);
     const [isEditingOverlay, setIsEditingOverlay] = useState(false);
@@ -744,18 +741,6 @@ export default function MasterplanMap({
 
                 leafletMapRef.current = map;
                 setIsMapReady(true);
-
-                // Toggle label-marker visibility on zoom — labels only readable when zoomed in
-                const MIN_LABEL_ZOOM = 17;
-                map.on("zoomend", () => {
-                    const z = map.getZoom();
-                    const labelZoom = (mapRef.current?.clientWidth ?? window.innerWidth) < 640 ? 18 : MIN_LABEL_ZOOM;
-                    polygonsRef.current.forEach((layer, key) => {
-                        if (key.startsWith("label-")) {
-                            layer.setOpacity(showNumbersRef.current && z >= labelZoom ? 1 : 0);
-                        }
-                    });
-                });
 
                 // Invalidate size via ResizeObserver — fires whenever the container actually resizes
                 if (mapRef.current) {
@@ -2014,80 +1999,6 @@ export default function MasterplanMap({
                     )}
                 </AnimatePresence>
 
-                {/* Fase futura: Tour 360 Viewer Modal y Preview Card desacoplados del commit inicial de Desarrollos. */}
-                {/* <AnimatePresence>
-                    {activeTour && (
-                        <Tour360Viewer
-                            imageUrl={activeTour.url}
-                            title={activeTour.title}
-                            onClose={() => setActiveTour(null)}
-                            sceneId={activeTour.sceneId}
-                            initialOverlay={activeTour.initialOverlay}
-                        />
-                    )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                    {tourPreview && (
-                        <motion.div
-                            key="tour-preview"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.15 }}
-                            className="absolute z-[1200] w-56"
-                            style={{
-                                left: Math.min(Math.max(8, tourPreview.screenX - 112), (mapRef.current?.clientWidth ?? 400) - 232),
-                                top: Math.max(8, tourPreview.screenY - 220),
-                            }}
-                        >
-                            <div className="bg-slate-900/95 backdrop-blur-sm border border-violet-500/40 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-                                {tourPreview.tour.thumbnail && (
-                                    <div className="h-28 overflow-hidden">
-                                        <img
-                                            src={tourPreview.tour.thumbnail}
-                                            alt={tourPreview.tour.nombre}
-                                            className="w-full h-full object-cover"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/80" />
-                                    </div>
-                                )}
-                                {!tourPreview.tour.thumbnail && (
-                                    <div className="h-16 bg-violet-500/10 flex items-center justify-center">
-                                        <Camera className="w-8 h-8 text-violet-400/50" />
-                                    </div>
-                                )}
-                                <div className="p-3">
-                                    <p className="text-xs font-bold text-white mb-0.5">{tourPreview.tour.nombre}</p>
-                                    {tourPreview.tour.sceneCount != null && (
-                                        <p className="text-[10px] text-slate-400 mb-2.5">
-                                            {tourPreview.tour.sceneCount} escena{tourPreview.tour.sceneCount !== 1 ? "s" : ""}
-                                        </p>
-                                    )}
-                                    <div className="flex gap-1.5">
-                                        {tourPreview.tour.defaultSceneUrl && (
-                                            <button
-                                                onClick={() => {
-                                                    setActiveTour({ url: tourPreview.tour.defaultSceneUrl!, title: tourPreview.tour.nombre, sceneId: tourPreview.tour.defaultSceneId, initialOverlay: tourPreview.tour.defaultSceneOverlay });
-                                                    setTourPreview(null);
-                                                }}
-                                                className="flex-1 py-1.5 bg-violet-500 hover:bg-violet-600 text-white text-xs font-bold rounded-xl transition-colors"
-                                            >
-                                                Ver en 360°
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => setTourPreview(null)}
-                                            className="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-xl transition-colors"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence> */}
             </div>
 
             {/* Custom styles */}
