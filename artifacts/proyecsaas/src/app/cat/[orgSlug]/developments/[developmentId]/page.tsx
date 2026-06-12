@@ -174,8 +174,8 @@ export default async function PublicDevelopmentDetailPage({
     id: lot.id,
     numero: lot.lotNumber,
     superficie: lot.areaSqm,
-    frente: null,
-    fondo: null,
+    frente: lot.frontMeters ?? null,
+    fondo: lot.backMeters ?? null,
     precio: lot.priceCents ? lot.priceCents / 100 : null,
     moneda: lot.currency || "USD",
     estado: (STATUS_DB_TO_UI[lot.status] || "DISPONIBLE") as any,
@@ -443,6 +443,8 @@ export default async function PublicDevelopmentDetailPage({
           slug={development.id}
           initialOverlayConfig={publicOverlayConfig}
           initialDrawableLayers={drawableLayers}
+          orgSlug={orgSlug}
+          developmentId={developmentId}
         />
       </main>
     </div>

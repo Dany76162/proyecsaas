@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X, History, Clock, MapPin, Maximize2, Bookmark, CreditCard, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { X, History, Clock, MapPin, Maximize2, Bookmark, CreditCard, Loader2, FileText } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { MasterplanUnit, useMasterplanStore } from "@/lib/masterplan-store";
 import { useState, useEffect } from "react";
@@ -50,9 +51,11 @@ interface SidePanelProps {
     modo: "admin" | "public";
     canEdit: boolean;
     onClose: () => void;
+    orgSlug?: string;
+    developmentId?: string;
 }
 
-export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: SidePanelProps) {
+export default function MasterplanSidePanel({ unit, modo, canEdit, onClose, orgSlug, developmentId }: SidePanelProps) {
     const { comparisonIds, toggleComparison, updateUnitState } = useMasterplanStore();
     const isComparing = comparisonIds.includes(unit.id);
     const [historial, setHistorial] = useState<any[]>([]);
@@ -440,6 +443,19 @@ export default function MasterplanSidePanel({ unit, modo, canEdit, onClose }: Si
                         >
                             {isComparing ? "✓ Comparando" : "+ Comparar lote"}
                         </button>
+
+                        {/* Botón ficha pública — solo cuando estén disponibles los IDs necesarios */}
+                        {orgSlug && developmentId && (
+                            <Link
+                                href={`/cat/${orgSlug}/developments/${developmentId}/lots/${unit.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-brand-500/20"
+                            >
+                                <FileText className="w-3.5 h-3.5" />
+                                Ver ficha técnica
+                            </Link>
+                        )}
                     </div>
                 )}
 

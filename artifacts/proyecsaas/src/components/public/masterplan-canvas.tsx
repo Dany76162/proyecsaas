@@ -49,6 +49,8 @@ export interface MasterplanCanvasProps {
     /** Geo-transform config for polygon rendering (from server-rendered page, avoids auth-gated API). */
     initialOverlayConfig?: PublicOverlayConfig | null;
     initialDrawableLayers?: DevelopmentDrawableLayerDto[];
+    orgSlug?: string;
+    developmentId?: string;
 }
 
 export default function MasterplanCanvas({
@@ -63,6 +65,8 @@ export default function MasterplanCanvas({
     slug,
     initialOverlayConfig,
     initialDrawableLayers = [],
+    orgSlug,
+    developmentId,
 }: MasterplanCanvasProps) {
     const [view, setView] = useState<"plano" | "mapa">("plano");
 
@@ -155,6 +159,8 @@ export default function MasterplanCanvas({
                             canEdit={false}
                             initialUnits={units}
                             backgroundAssetUrl={planAsset}
+                            orgSlug={orgSlug}
+                            developmentId={developmentId}
                         />
                     ) : (
                         <MasterplanMap

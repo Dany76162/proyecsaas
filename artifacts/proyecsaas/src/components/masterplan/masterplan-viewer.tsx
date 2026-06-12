@@ -327,6 +327,8 @@ interface MasterplanViewerProps {
     initialUnits?: MasterplanUnit[];
     backgroundAssetUrl?: string | null;
     variant?: "inventory" | "visual-editor";
+    orgSlug?: string;
+    developmentId?: string;
 }
 
 export default function MasterplanViewer({
@@ -336,6 +338,8 @@ export default function MasterplanViewer({
     initialUnits = [],
     backgroundAssetUrl = null,
     variant = "inventory",
+    orgSlug,
+    developmentId,
 }: MasterplanViewerProps) {
     const {
         setUnits,
@@ -1175,6 +1179,8 @@ export default function MasterplanViewer({
                         modo={modo}
                         canEdit={canEdit}
                         onClose={() => setSelectedUnitId(null)}
+                        orgSlug={orgSlug}
+                        developmentId={developmentId}
                     />
                 )}
             </AnimatePresence>
