@@ -25,7 +25,7 @@ const OverlayEditor = dynamic(() => import("./overlay-editor"), { ssr: false });
 // Fase futura: Tour 360 desacoplado del commit inicial de Desarrollos.
 // import Tour360Viewer from "./tour360-viewer";
 // const InfraestructuraTool = dynamic(() => import("./infraestructura-tool"), { ssr: false });
-// const ImagenesMapaTool = dynamic(() => import("./imagenes-mapa-tool"), { ssr: false });
+const ImagenesMapaTool = dynamic(() => import("./imagenes-mapa-tool"), { ssr: false });
 import { getProjectBlueprintData } from "@/lib/actions/unidades";
 import { BlueprintEmbeddedMeta } from "@/lib/blueprint-utils";
 import PlanGalleryPicker, { type PlanGalleryItem } from "@/components/plan-gallery/plan-gallery-picker";
@@ -1687,16 +1687,16 @@ export default function MasterplanMap({
                             </button>
                         )}
 
-                        {/* Fase futura: InfraestructuraTool e ImagenesMapaTool desacoplados del commit inicial de Desarrollos. */}
-                        {/* {isMapReady && leafletMapRef.current && (
+                        {/* Fase futura: InfraestructuraTool — requiere API y modelo Prisma antes de activar. */}
+                        {/* <InfraestructuraTool
+                                proyectoId={proyectoId}
+                                map={leafletMapRef.current}
+                                isOpen={activePanel === "infraestructura"}
+                                onOpenChange={(open) => setActivePanel(open ? "infraestructura" : null)}
+                            /> */}
+
+                        {isMapReady && leafletMapRef.current && variant === "editor" && (
                             <>
-                                <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />
-                                <InfraestructuraTool
-                                    proyectoId={proyectoId}
-                                    map={leafletMapRef.current}
-                                    isOpen={activePanel === "infraestructura"}
-                                    onOpenChange={(open) => setActivePanel(open ? "infraestructura" : null)}
-                                />
                                 <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />
                                 <ImagenesMapaTool
                                     proyectoId={proyectoId}
@@ -1709,7 +1709,7 @@ export default function MasterplanMap({
                                     onOpenChange={(open) => setActivePanel(open ? "imagenes" : null)}
                                 />
                             </>
-                        )} */}
+                        )}
                     </div>
                 </div>
             )}

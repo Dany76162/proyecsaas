@@ -125,6 +125,8 @@ export default function ImagenesMapaTool({
   }, [items]);
 
   useEffect(() => {
+    // Safe to use in the wizard: urlParams is built from window.location.search,
+    // so existing params (e.g. ?tab=mapa) are preserved when adding ?tour=<id>.
     const urlParams = new URLSearchParams(window.location.search);
     if (viewerItem) {
       urlParams.set("tour", viewerItem.id);
@@ -431,7 +433,7 @@ export default function ImagenesMapaTool({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="absolute top-0 right-0 bottom-0 z-40 w-72 bg-slate-900/95 backdrop-blur-xl border-l border-slate-700/50 flex flex-col shadow-2xl"
+            className="absolute top-0 right-0 bottom-0 z-[1050] w-72 bg-slate-900/95 backdrop-blur-xl border-l border-slate-700/50 flex flex-col shadow-2xl"
           >
             {/* Panel header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 flex-shrink-0">

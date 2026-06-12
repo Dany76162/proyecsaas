@@ -1,5 +1,28 @@
 import { NextResponse } from "next/server";
+import { MembershipRole } from "@prisma/client";
+
+import { assertMinimumRole, requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
+
+// ─── Shared tenant validation helper ─────────────────────────────────────────
+async function assertImageOwnership(id: string) {
+  const image = await prisma.developmentMapImage.findUnique({
+    where: { id },
+    select: {
+      Development: {
+        select: { Organization: { select: { slug: true } } },
+      },
+    },
+  });
+
+  if (!image) return null;
+
+  const { membership } = await requireOrganizationMembership(
+    image.Development.Organization.slug
+  );
+
+  return membership;
+}
 
 export async function PUT(
   req: Request,
@@ -7,6 +30,17 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+
+    // Validate tenant membership before allowing update.
+    const membership = await assertImageOwnership(id);
+    if (!membership) {
+      return NextResponse.json(
+        { success: false, error: "Imagen no encontrada" },
+        { status: 404 }
+      );
+    }
+    assertMinimumRole(membership.role, MembershipRole.AGENT);
+
     const body = await req.json();
 
     const { titulo, tipo, unidadId, altitudM, imageHeading, latOffset, lngOffset, planRotation, planScale, overlayMode, planCornerAdjustments, planCornersAbsolute } = body;
@@ -66,6 +100,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Validate tenant membership before allowing deletion.
+    const membership = await assertImageOwnership(id);
+    if (!membership) {
+      return NextResponse.json(
+        { success: false, error: "Imagen no encontrada" },
+        { status: 404 }
+      );
+    }
+    assertMinimumRole(membership.role, MembershipRole.AGENT);
 
     await prisma.developmentMapImage.delete({
       where: { id },
