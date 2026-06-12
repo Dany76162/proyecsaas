@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { MapPin, Phone, Globe, CheckCircle2, Ruler, Maximize } from "lucide-react";
+import PrintButton from "./print-button";
 
 export default async function FichaLotePage({ params }: { params: Promise<{ lotId: string }> }) {
   const { lotId } = await params;
@@ -43,12 +43,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
       <div className="bg-white w-full max-w-[794px] min-h-[1123px] shadow-2xl relative overflow-hidden print:shadow-none print:w-full print:max-w-full">
         {/* Print Button (Hidden in print) */}
         <div className="absolute top-4 right-4 print:hidden z-50">
-          <button 
-            onClick={() => { if (typeof window !== "undefined") window.print(); }}
-            className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-slate-800 transition"
-          >
-            Imprimir / Guardar PDF
-          </button>
+          <PrintButton />
         </div>
 
         {/* ── HEADER ── */}
