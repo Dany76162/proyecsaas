@@ -1603,9 +1603,36 @@ model DevelopmentReservation {
   // User relation on agentId. Full relation will be added in Fase 3.
   settledById         String?
 
+  // ── Gestión de Venta — datos del comprador (Fase F-1) ───────────────────────
+  // buyerDni: DNI, CUIT or other document number of the buyer.
+  buyerDni          String?
+  // buyerWhatsapp: buyer's WhatsApp/phone — normalized format (+54911...).
+  buyerWhatsapp     String?
+
+  // ── Operación comercial ──────────────────────────────────────────────────────
+  // paymentMethod: EFECTIVO | TRANSFERENCIA | MP | OTRO — stored as free text
+  // to avoid premature enum. Will become enum in Fase F-2 if needed.
+  paymentMethod     String?
+  // paymentReference: wire transfer number, receipt ID, or manual reference.
+  paymentReference  String?
+  // totalPriceCents: total agreed price of the operation (may differ from lot.priceCents).
+  totalPriceCents   Int?
+  // downPaymentCents: actual commercial down payment. Distinct from depositCents
+  // which tracks the Mercado Pago online deposit flow.
+  downPaymentCents  Int?
+
+  // ── Plan de cuotas ───────────────────────────────────────────────────────────
+  // installmentCount: number of monthly installments chosen.
+  installmentCount       Int?
+  // installmentAmountCents: base installment amount in cents (floor division).
+  installmentAmountCents Int?
+  // firstDueDate: due date of installment #1; subsequent dates add months.
+  firstDueDate           DateTime?
+
   User           User?                        @relation(fields: [agentId], references: [id])
   Lead           Lead?                        @relation(fields: [leadId, organizationId], references: [id, organizationId])
   DevelopmentLot DevelopmentLot               @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  Installments   DevelopmentReservationInstallment[]
 
   @@index([leadId])
   @@index([lotId])
@@ -1660,6 +1687,40 @@ enum VisualVisibility {
   ADMIN_ONLY
   PUBLIC
   BOTH
+}
+
+// ── F-1: Gestión de Venta — cronograma de cuotas ────────────────────────────
+// Each row represents one monthly installment for a DevelopmentReservation.
+// Installments are generated and stored as real rows so that individual
+// payments, receipts and overdue states can be tracked independently.
+model DevelopmentReservationInstallment {
+  id                 String                       @id @default(cuid())
+  reservationId      String
+  organizationId     String
+  installmentNumber  Int
+  dueDate            DateTime
+  amountCents        Int
+  currency           String                       @default("USD")
+  status             DevelopmentInstallmentStatus @default(PENDING)
+  paidAt             DateTime?
+  paymentMethod      String?
+  paymentReference   String?
+  receiptUrl         String?
+  notes              String?
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  Reservation DevelopmentReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([organizationId, status])
+}
+
+enum DevelopmentInstallmentStatus {
+  PENDING   // Not yet due or awaiting payment
+  PAID      // Payment confirmed
+  OVERDUE   // Past due date without payment
+  CANCELLED // Installment voided (e.g. plan was renegotiated)
 }
 
 enum ReservationSettlementStatus {
