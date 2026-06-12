@@ -1652,7 +1652,17 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-200 dark:border-slate-700">
+              <a
+                href={`/ficha/${ventaModal.unit.id}/cuotas`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold border border-brand-200 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>
+                Planilla de cuotas
+              </a>
+              <div className="flex items-center gap-3">
               <button
                 onClick={() => setVentaModal(null)}
                 className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
@@ -1669,6 +1679,7 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
                 )}
                 Guardar
               </button>
+              </div>
             </div>
           </div>
         </div>

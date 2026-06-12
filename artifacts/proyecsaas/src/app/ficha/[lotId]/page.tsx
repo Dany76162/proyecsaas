@@ -1,10 +1,11 @@
 import React from "react";
+import Link from "next/link";
 import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
 import { requireOrganizationMembership } from "@/server/auth/access";
 import {
   MapPin, Phone, Globe, CheckCircle2, Ruler, Maximize,
-  Tag, User, Briefcase, Calendar, Banknote,
+  Tag, User, Briefcase, Calendar, Banknote, FileSpreadsheet,
 } from "lucide-react";
 import PrintButton from "./print-button";
 
@@ -712,6 +713,15 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
                       <p className="text-xs text-slate-600 leading-snug line-clamp-2">{reservation.notes}</p>
                     </div>
                   )}
+                </div>
+                <div className="mt-3 print:hidden">
+                  <Link
+                    href={`/ficha/${lotId}/cuotas`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold border border-brand-200 transition-colors"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    Ver plan de cuotas
+                  </Link>
                 </div>
               </div>
             )}
