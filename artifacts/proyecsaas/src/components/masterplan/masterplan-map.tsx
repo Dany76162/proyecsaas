@@ -25,7 +25,7 @@ const OverlayEditor = dynamic(() => import("./overlay-editor"), { ssr: false });
 // Fase futura: Tour 360 desacoplado del commit inicial de Desarrollos.
 // import Tour360Viewer from "./tour360-viewer";
 // const InfraestructuraTool = dynamic(() => import("./infraestructura-tool"), { ssr: false });
-const ImagenesMapaTool = dynamic(() => import("./imagenes-mapa-tool"), { ssr: false });
+// const ImagenesMapaTool = dynamic(() => import("./imagenes-mapa-tool"), { ssr: false });
 import { getProjectBlueprintData } from "@/lib/actions/unidades";
 import { BlueprintEmbeddedMeta } from "@/lib/blueprint-utils";
 import PlanGalleryPicker, { type PlanGalleryItem } from "@/components/plan-gallery/plan-gallery-picker";
@@ -1696,7 +1696,10 @@ export default function MasterplanMap({
                                 onOpenChange={(open) => setActivePanel(open ? "infraestructura" : null)}
                             /> */}
 
-                        {isMapReady && leafletMapRef.current && variant === "editor" && (
+                        {/* ImagenesMapaTool pertenece al Paso 5, pero queda pausado temporalmente. */}
+                        {/* Se retomará después de implementar correctamente el Paso 4 — Editor Visual. */}
+                        {/* Función futura: imágenes reales, renders, avance de obra, 360/panorámicas y tours virtuales interactivos. */}
+                        {/* {isMapReady && leafletMapRef.current && variant === "editor" && (
                             <>
                                 <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />
                                 <ImagenesMapaTool
@@ -1710,7 +1713,7 @@ export default function MasterplanMap({
                                     onOpenChange={(open) => setActivePanel(open ? "imagenes" : null)}
                                 />
                             </>
-                        )}
+                        )} */}
                     </div>
                 </div>
             )}
