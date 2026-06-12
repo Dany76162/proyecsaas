@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMasterplanStore, MasterplanUnit } from "@/lib/masterplan-store";
 import { getProjectBlueprintData, autoNumberManzanas, renumberLots } from "@/lib/actions/unidades";
-import { Search, Tag, X, Check, Download, FileText, Grid3x3 } from "lucide-react";
+import { Search, Tag, X, Check, Download, FileText, Grid3x3, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -95,6 +95,23 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
   const [editingField, setEditingField] = useState<{ id: string; field: "precio" | "superficie" | "frente" | "fondo" | "observaciones" | "manzanaNombre" | "destino" | "clientName" | "sellerName" | "precioSqm"; value: string } | null>(null);
   const [savingField, setSavingField] = useState<{ id: string; field: string } | null>(null);
   const [savingEstado, setSavingEstado] = useState<string | null>(null);
+
+  // Gestión de Venta modal
+  const [ventaModal, setVentaModal] = useState<{ unit: MasterplanUnit } | null>(null);
+  const [modalTab, setModalTab] = useState<"cliente" | "operacion" | "cuotas" | "whatsapp">("cliente");
+  const [loadingVentaModal, setLoadingVentaModal] = useState(false);
+  const [isSavingVenta, setIsSavingVenta] = useState(false);
+  const [ventaForm, setVentaForm] = useState({
+    clientName: "",
+    buyerDni: "",
+    buyerWhatsapp: "",
+    totalPrice: "",
+    downPayment: "",
+    paymentMethod: "",
+    paymentReference: "",
+    installmentCount: "",
+    firstDueDate: "",
+  });
 
   // Tags — persisted in localStorage per project
   const [tagsMap, setTagsMap] = useState<Record<string, string[]>>({});
@@ -276,6 +293,79 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
     },
     [editingField, updateUnitState]
   );
+
+  // Gestión de Venta: open modal and prefill form
+  const openVentaModal = useCallback(async (unit: MasterplanUnit) => {
+    setVentaModal({ unit });
+    setModalTab("cliente");
+    setLoadingVentaModal(true);
+    try {
+      const res = await fetch(`/api/developments/lots/${unit.id}/reservation`);
+      if (res.ok) {
+        const data = await res.json();
+        const r = data.reservation;
+        setVentaForm({
+          clientName: unit.clientName || "",
+          buyerDni: r?.buyerDni || "",
+          buyerWhatsapp: r?.buyerWhatsapp || "",
+          totalPrice: r?.totalPriceCents ? String(r.totalPriceCents / 100) : (unit.precio ? String(unit.precio) : ""),
+          downPayment: r?.downPaymentCents ? String(r.downPaymentCents / 100) : "",
+          paymentMethod: r?.paymentMethod || "",
+          paymentReference: r?.paymentReference || "",
+          installmentCount: r?.installmentCount ? String(r.installmentCount) : "",
+          firstDueDate: r?.firstDueDate ? new Date(r.firstDueDate).toISOString().split("T")[0] : "",
+        });
+      }
+    } catch {}
+    setLoadingVentaModal(false);
+  }, []);
+
+  // Gestión de Venta: save
+  const saveVenta = useCallback(async () => {
+    if (!ventaModal) return;
+    setIsSavingVenta(true);
+    try {
+      const totalPriceCents = ventaForm.totalPrice ? Math.round(parseFloat(ventaForm.totalPrice) * 100) : null;
+      const downPaymentCents = ventaForm.downPayment ? Math.round(parseFloat(ventaForm.downPayment) * 100) : null;
+      const installmentCount = ventaForm.installmentCount ? parseInt(ventaForm.installmentCount) : null;
+
+      let installmentAmountCents: number | null = null;
+      if (totalPriceCents !== null && downPaymentCents !== null && installmentCount) {
+        const saldoCents = totalPriceCents - downPaymentCents;
+        installmentAmountCents = Math.floor(saldoCents / installmentCount);
+      }
+
+      const res = await fetch(`/api/developments/lots/${ventaModal.unit.id}/reservation`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: ventaForm.clientName || null,
+          buyerDni: ventaForm.buyerDni || null,
+          buyerWhatsapp: ventaForm.buyerWhatsapp || null,
+          totalPriceCents,
+          downPaymentCents,
+          paymentMethod: ventaForm.paymentMethod || null,
+          paymentReference: ventaForm.paymentReference || null,
+          installmentCount,
+          installmentAmountCents,
+          firstDueDate: ventaForm.firstDueDate || null,
+        }),
+      });
+
+      if (res.ok) {
+        updateUnitState(ventaModal.unit.id, { clientName: ventaForm.clientName || null });
+        toast.success("Gestión de venta guardada.");
+        setVentaModal(null);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Error al guardar.");
+      }
+    } catch (err: any) {
+      toast.error(`Error: ${err.message}`);
+    } finally {
+      setIsSavingVenta(false);
+    }
+  }, [ventaModal, ventaForm, updateUnitState]);
 
   // Tags
   const addTag = useCallback(
@@ -555,7 +645,7 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
                 ? ["Lote", "Estado", "Precio", "Superficie", "Frente (m)", "Fondo (m)", "Observaciones"]
                 : activeTab === "estructura"
                 ? ["Lote", "Tipo", "Etapa", "Manzana", "Etiquetas"]
-                : ["Lote", "Manzana", "Superficie", "Precio Lote", "Precio / m²", "Cliente", "Vendedor", "Ficha PDF"]
+                : ["Lote", "Manzana", "Superficie", "Precio Lote", "Precio / m²", "Cliente", "Vendedor", "Acciones"]
               ).map((h) => (
                 <th
                   key={h}
@@ -826,16 +916,24 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
                         )}
                       </td>
 
-                      {/* Ficha / Descargar documento */}
+                      {/* Acciones */}
                       <td className="px-4 py-2.5 whitespace-nowrap">
-                        <Link
-                          href={`/ficha/${unit.id}`}
-                          target="_blank"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-brand-500/10 text-brand-600 dark:text-brand-400 hover:bg-brand-500 hover:text-white rounded-lg transition-colors border border-transparent"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>PDF</span>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openVentaModal(unit)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white rounded-lg transition-colors border border-transparent"
+                          >
+                            Gestionar
+                          </button>
+                          <Link
+                            href={`/ficha/${unit.id}`}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-brand-500/10 text-brand-600 dark:text-brand-400 hover:bg-brand-500 hover:text-white rounded-lg transition-colors border border-transparent"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>PDF</span>
+                          </Link>
+                        </div>
                       </td>
                     </>
                   )}
@@ -1062,6 +1160,330 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
           );
         })}
       </div>
+
+      {/* ── Gestión de Venta Modal ── */}
+      {ventaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+              <div>
+                <h2 className="text-sm font-bold text-slate-800 dark:text-white">Gestión de Venta</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Lote {ventaModal.unit.numero}
+                  {(ventaModal.unit as any).manzanaNombre ? ` · ${(ventaModal.unit as any).manzanaNombre}` : ""}
+                </p>
+              </div>
+              <button
+                onClick={() => setVentaModal(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-slate-200 dark:border-slate-700 px-5">
+              {(["cliente", "operacion", "cuotas", "whatsapp"] as const).map((tab) => {
+                const labels = { cliente: "Cliente", operacion: "Operación", cuotas: "Plan de cuotas", whatsapp: "WhatsApp" };
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setModalTab(tab)}
+                    className={cn(
+                      "px-3 py-2.5 text-xs font-semibold border-b-2 transition-colors -mb-px",
+                      modalTab === tab
+                        ? "border-brand-500 text-brand-600 dark:text-brand-400"
+                        : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                  >
+                    {labels[tab]}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {loadingVentaModal ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <>
+                  {/* Tab: Cliente */}
+                  {modalTab === "cliente" && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nombre del comprador</label>
+                        <input
+                          type="text"
+                          value={ventaForm.clientName}
+                          onChange={(e) => setVentaForm(f => ({ ...f, clientName: e.target.value }))}
+                          placeholder="Ej. Juan García"
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">DNI / Documento</label>
+                        <input
+                          type="text"
+                          value={ventaForm.buyerDni}
+                          onChange={(e) => setVentaForm(f => ({ ...f, buyerDni: e.target.value }))}
+                          placeholder="Ej. 30123456"
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">WhatsApp del comprador</label>
+                        <input
+                          type="text"
+                          value={ventaForm.buyerWhatsapp}
+                          onChange={(e) => setVentaForm(f => ({ ...f, buyerWhatsapp: e.target.value }))}
+                          placeholder="Ej. +54 9 11 1234-5678"
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                        />
+                        <p className="mt-1 text-xs text-slate-400">Incluir código de país. Ej: +54911...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab: Operación */}
+                  {modalTab === "operacion" && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Precio total (USD)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">$</span>
+                            <input
+                              type="number"
+                              value={ventaForm.totalPrice}
+                              onChange={(e) => setVentaForm(f => ({ ...f, totalPrice: e.target.value }))}
+                              placeholder="0"
+                              className="w-full text-sm pl-6 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Anticipo / Señal (USD)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">$</span>
+                            <input
+                              type="number"
+                              value={ventaForm.downPayment}
+                              onChange={(e) => setVentaForm(f => ({ ...f, downPayment: e.target.value }))}
+                              placeholder="0"
+                              className="w-full text-sm pl-6 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {ventaForm.totalPrice && ventaForm.downPayment && (
+                        <p className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
+                          Saldo a financiar:{" "}
+                          <strong className="text-slate-700 dark:text-slate-200">
+                            ${(parseFloat(ventaForm.totalPrice || "0") - parseFloat(ventaForm.downPayment || "0")).toLocaleString()} USD
+                          </strong>
+                        </p>
+                      )}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Método de pago</label>
+                        <select
+                          value={ventaForm.paymentMethod}
+                          onChange={(e) => setVentaForm(f => ({ ...f, paymentMethod: e.target.value }))}
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value="efectivo">Efectivo</option>
+                          <option value="transferencia">Transferencia bancaria</option>
+                          <option value="cheque">Cheque</option>
+                          <option value="cripto">Criptomoneda</option>
+                          <option value="otro">Otro</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Referencia / Comprobante</label>
+                        <input
+                          type="text"
+                          value={ventaForm.paymentReference}
+                          onChange={(e) => setVentaForm(f => ({ ...f, paymentReference: e.target.value }))}
+                          placeholder="N° transferencia, recibo, etc."
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab: Plan de cuotas */}
+                  {modalTab === "cuotas" && (() => {
+                    const totalPx = parseFloat(ventaForm.totalPrice) || 0;
+                    const downPx = parseFloat(ventaForm.downPayment) || 0;
+                    const saldo = totalPx - downPx;
+                    const count = parseInt(ventaForm.installmentCount) || 0;
+                    const baseAmountCents = count > 0 ? Math.floor(Math.round(saldo * 100) / count) : 0;
+                    const baseAmount = baseAmountCents / 100;
+                    const residuoCents = count > 0 ? Math.round(saldo * 100) % count : 0;
+                    const firstDate = ventaForm.firstDueDate ? new Date(ventaForm.firstDueDate + "T12:00:00") : null;
+
+                    return (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Cantidad de cuotas</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="360"
+                              value={ventaForm.installmentCount}
+                              onChange={(e) => setVentaForm(f => ({ ...f, installmentCount: e.target.value }))}
+                              placeholder="Ej. 36"
+                              className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Primer vencimiento</label>
+                            <input
+                              type="date"
+                              value={ventaForm.firstDueDate}
+                              onChange={(e) => setVentaForm(f => ({ ...f, firstDueDate: e.target.value }))}
+                              className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500 transition-colors"
+                            />
+                          </div>
+                        </div>
+                        {count > 0 && saldo > 0 ? (
+                          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-2 flex items-center justify-between">
+                              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Vista previa</span>
+                              <span className="text-xs text-slate-500">
+                                ${baseAmount.toLocaleString()} / mes · saldo ${saldo.toLocaleString()} USD
+                              </span>
+                            </div>
+                            <div className="max-h-48 overflow-y-auto">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="border-b border-slate-100 dark:border-slate-700">
+                                    <th className="px-3 py-1.5 text-left font-semibold text-slate-500">#</th>
+                                    <th className="px-3 py-1.5 text-left font-semibold text-slate-500">Vencimiento</th>
+                                    <th className="px-3 py-1.5 text-right font-semibold text-slate-500">Monto</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                  {Array.from({ length: Math.min(count, 36) }, (_, i) => {
+                                    const isLast = i === count - 1;
+                                    const amount = isLast ? (baseAmountCents + residuoCents) / 100 : baseAmount;
+                                    let dueLabel: string | null = null;
+                                    if (firstDate) {
+                                      const d = new Date(firstDate);
+                                      d.setMonth(d.getMonth() + i);
+                                      dueLabel = d.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
+                                    }
+                                    return (
+                                      <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                        <td className="px-3 py-1.5 text-slate-500">{i + 1}</td>
+                                        <td className="px-3 py-1.5 text-slate-600 dark:text-slate-300">{dueLabel || "—"}</td>
+                                        <td className="px-3 py-1.5 text-right font-medium text-slate-700 dark:text-slate-200">
+                                          ${amount.toLocaleString()}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                  {count > 36 && (
+                                    <tr>
+                                      <td colSpan={3} className="px-3 py-1.5 text-center text-slate-400 italic">
+                                        … y {count - 36} cuotas más
+                                      </td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 italic text-center py-4">
+                            Completá el precio total, anticipo y cantidad de cuotas para ver el plan.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Tab: WhatsApp */}
+                  {modalTab === "whatsapp" && (() => {
+                    const phone = ventaForm.buyerWhatsapp.replace(/\D/g, "");
+                    const hasPhone = phone.length >= 8;
+                    const totalPx = parseFloat(ventaForm.totalPrice) || 0;
+                    const downPx = parseFloat(ventaForm.downPayment) || 0;
+                    const count = parseInt(ventaForm.installmentCount) || 0;
+                    const baseAmount = count > 0 ? Math.floor(Math.round((totalPx - downPx) * 100) / count) / 100 : 0;
+
+                    const lines = [
+                      `Hola${ventaForm.clientName ? ` ${ventaForm.clientName}` : ""}! 👋`,
+                      `Te escribimos en relación al *Lote ${ventaModal.unit.numero}*${(ventaModal.unit as any).manzanaNombre ? ` (${(ventaModal.unit as any).manzanaNombre})` : ""}.`,
+                      totalPx > 0 ? `\n💰 *Precio total:* $${totalPx.toLocaleString()} USD` : "",
+                      downPx > 0 ? `🤝 *Anticipo:* $${downPx.toLocaleString()} USD` : "",
+                      count > 0 ? `📅 *Plan:* ${count} cuotas de $${baseAmount.toLocaleString()} USD/mes` : "",
+                      "\nQuedamos a disposición para cualquier consulta.",
+                    ].filter(Boolean);
+                    const message = lines.join("\n");
+                    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+                    return (
+                      <div className="space-y-4">
+                        {!hasPhone && (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-500/30 px-4 py-3">
+                            <p className="text-xs text-amber-700 dark:text-amber-400">
+                              Completá el WhatsApp del comprador en la pestaña <strong>Cliente</strong> para habilitar el enlace.
+                            </p>
+                          </div>
+                        )}
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-3">
+                          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">Mensaje generado:</p>
+                          <pre className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-sans">{message}</pre>
+                        </div>
+                        <a
+                          href={hasPhone ? waUrl : undefined}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors",
+                            hasPhone
+                              ? "bg-[#25D366] hover:bg-[#1ebe5d] text-white"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed pointer-events-none"
+                          )}
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Abrir en WhatsApp
+                        </a>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setVentaModal(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={saveVenta}
+                disabled={isSavingVenta}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-500 hover:bg-brand-600 text-white transition-colors disabled:opacity-60 flex items-center gap-1.5"
+              >
+                {isSavingVenta && (
+                  <div className="w-3.5 h-3.5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                )}
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
