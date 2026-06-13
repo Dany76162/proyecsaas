@@ -536,6 +536,8 @@ export async function processWhatsAppInboundJob(
         propertyTypes: true,
         minBudget: true,
         maxBudget: true,
+        escalateOnKeywords: true,
+        humanHandoffMessage: true,
       },
     }),
     prisma.developmentLot.findMany({
@@ -562,7 +564,49 @@ export async function processWhatsAppInboundJob(
     }),
   ]);
 
-  const decision: AutomationDecision = await generateAutomationDecision({
+  // ── AG-4C: escalateOnKeywords early-return ───────────────────────────────
+  // If the latest inbound message matches any keyword configured in the agent,
+  // short-circuit to a deterministic handoff without calling OpenAI.
+  const latestInboundBody = [...recentMessages]
+    .reverse()
+    .find((m) => m.direction === "INBOUND")?.body ?? "";
+
+  function normalizeForKeyword(s: string) {
+    return s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  const triggeredKeyword =
+    aiAgent?.escalateOnKeywords && aiAgent.escalateOnKeywords.length > 0
+      ? aiAgent.escalateOnKeywords
+          .map((kw) => normalizeForKeyword(kw.trim()))
+          .filter(Boolean)
+          .find((kw) => normalizeForKeyword(latestInboundBody).includes(kw))
+      : undefined;
+
+  let decision: AutomationDecision;
+
+  if (triggeredKeyword) {
+    const handoffText =
+      aiAgent?.humanHandoffMessage?.trim() ||
+      "Te comunico con un asesor para que pueda ayudarte mejor.";
+
+    decision = {
+      responseText: handoffText,
+      qualificationDecision: null,
+      visitIntent: null,
+      leadTemperature: "unclear",
+      extractedPreferences: { budget: null, zones: [], rooms: null, purpose: null },
+      nextBestAction: "derivar-a-asesor",
+      requiresFollowUp: true,
+      followUpReason: "Keyword de derivación configurada por el agente.",
+      visitProposal: null,
+      internalNotes: `Escalation keyword matched: "${triggeredKeyword}". Handoff issued without calling OpenAI.`,
+    };
+  } else {
+    decision = await generateAutomationDecision({
     conversation: {
       id: result.conversation.id,
       channel: "whatsapp",
@@ -642,6 +686,7 @@ export async function processWhatsAppInboundJob(
       frontMeters: lot.frontMeters,
     })),
   });
+  } // end else (no escalation keyword)
 
   // Persist commercial signals into the Lead record (notes + conservative stage mapping)
   const nextLeadStatus =
