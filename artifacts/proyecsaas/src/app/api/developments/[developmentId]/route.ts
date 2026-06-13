@@ -28,11 +28,19 @@ export async function PATCH(
 
     if (body.mapCenterLat != null) {
       const v = parseFloat(body.mapCenterLat);
-      if (Number.isFinite(v)) data.mapCenterLat = v;
+      if (Number.isFinite(v)) {
+        data.mapCenterLat = v;
+        // Mirror to latitude (Decimal, null by default) so the public map can identify
+        // developments that have had their location explicitly set via Paso 5.
+        data.latitude = v;
+      }
     }
     if (body.mapCenterLng != null) {
       const v = parseFloat(body.mapCenterLng);
-      if (Number.isFinite(v)) data.mapCenterLng = v;
+      if (Number.isFinite(v)) {
+        data.mapCenterLng = v;
+        data.longitude = v;
+      }
     }
     if (body.mapZoom != null) {
       const v = parseInt(body.mapZoom, 10);

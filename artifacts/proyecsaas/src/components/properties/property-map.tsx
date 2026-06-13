@@ -23,6 +23,8 @@ type MarkerData = {
   latitude?: number;
   longitude?: number;
   locationLabel: string;
+  /** "development" markers link to the public development page instead of a property ficha. */
+  markerKind?: "property" | "development";
 };
 
 type PropertyMapProps = {
@@ -415,7 +417,7 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
             <p class="pmap-popup-loc">${marker.approximate ? "Zona aproximada" : marker.locationLabel}</p>
             <div class="pmap-popup-footer">
               <span class="pmap-popup-price">${formatFullPrice(priceCents, marker.currency)}</span>
-              <a href="${marker.url}" class="pmap-popup-cta">Ver ficha</a>
+              <a href="${marker.url}" class="pmap-popup-cta">${marker.markerKind === "development" ? "Ver lotes" : "Ver ficha"}</a>
             </div>
           </div>
         </div>

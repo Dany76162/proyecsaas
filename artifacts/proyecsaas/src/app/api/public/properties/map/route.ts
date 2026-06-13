@@ -117,11 +117,18 @@ function buildFilters(searchParams: URLSearchParams) {
   return filters;
 }
 
+// Default map center coordinates set by schema — developments at exactly these
+// coordinates have never had their location explicitly set by a user.
+const DEFAULT_CENTER_LAT = -34.6037;
+const DEFAULT_CENTER_LNG = -58.3816;
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
     const filters = buildFilters(searchParams);
+    const orgSlug = searchParams.get("orgSlug");
+    const bounds = searchParams.get("bounds");
 
     // Select legacy-safe. Evita P2022 en DB Railway legacy.
     // showExactLocation y province no existen en la DB legacy — se omiten del select.
@@ -166,7 +173,7 @@ export async function GET(request: Request) {
       // Safe checks for arrays
       const primaryImage = prop.images && prop.images[0] ? prop.images[0].url : null;
       const hasTour360 = prop.panoramas && prop.panoramas.length > 0;
-      
+
       // showExactLocation no existe en DB Railway legacy → siempre ofuscado.
       const realLat = Number(prop.latitude);
       const realLng = Number(prop.longitude);
@@ -201,7 +208,91 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json(markers);
+    // ── Development markers ─────────────────────────────────────────────────
+    // Include developments that have had their location explicitly set:
+    //   • latitude IS NOT NULL → set via the PATCH endpoint (current or future saves)
+    //   • OR mapCenterLat differs from schema default → set by user in Paso 5 before
+    //     the PATCH endpoint mirrored it to latitude/longitude (existing developments)
+    const devWhere: any = {
+      status: "ACTIVE",
+      publicVisible: true,
+      OR: [
+        { latitude: { not: null } },
+        { mapCenterLat: { not: DEFAULT_CENTER_LAT } },
+      ],
+    };
+    if (orgSlug) {
+      devWhere.Organization = { slug: orgSlug };
+    }
+
+    const rawDevelopments = await prisma.development.findMany({
+      where: devWhere,
+      select: {
+        id: true,
+        name: true,
+        city: true,
+        province: true,
+        latitude: true,
+        longitude: true,
+        mapCenterLat: true,
+        mapCenterLng: true,
+        logoUrl: true,
+        Organization: { select: { slug: true, name: true } },
+      },
+      take: 50,
+    });
+
+    // Parse viewport bounds for JS-side filtering of development markers
+    let boundsFilter: { swLat: number; swLng: number; neLat: number; neLng: number } | null = null;
+    if (bounds) {
+      const coords = bounds.split(",").map(Number);
+      if (coords.length === 4 && coords.every((c) => !isNaN(c))) {
+        const [swLng, swLat, neLng, neLat] = coords;
+        boundsFilter = { swLat, swLng, neLat, neLng };
+      }
+    }
+
+    const devMarkers = rawDevelopments
+      .map((dev) => {
+        // Prefer explicit latitude/longitude (Decimal); fall back to mapCenter
+        const lat = dev.latitude != null ? Number(dev.latitude) : (dev.mapCenterLat ?? null);
+        const lng = dev.longitude != null ? Number(dev.longitude) : (dev.mapCenterLng ?? null);
+        if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+        // Apply viewport bounds filter (properties are filtered by Prisma, developments by JS)
+        if (boundsFilter) {
+          const { swLat, swLng, neLat, neLng } = boundsFilter;
+          if (lat < swLat || lat > neLat || lng < swLng || lng > neLng) return null;
+        }
+
+        const locationParts = [dev.city, dev.province].filter(Boolean);
+        const locationLabel = locationParts.length > 0 ? locationParts.join(", ") : "";
+
+        return {
+          id: dev.id,
+          orgSlug: dev.Organization.slug,
+          title: dev.name,
+          priceCents: null as null,
+          currency: "USD",
+          operationType: "EMPRENDIMIENTO",
+          propertyType: "emprendimiento",
+          bedrooms: null as null,
+          bathrooms: null as null,
+          surfaceM2: null as null,
+          hasTour360: false,
+          // Developments have public general locations — no geo-privacy offset
+          approximate: false,
+          latitude: Number(lat.toFixed(6)),
+          longitude: Number(lng.toFixed(6)),
+          locationLabel,
+          imageUrl: dev.logoUrl ?? null,
+          url: `/cat/${dev.Organization.slug}/developments/${dev.id}`,
+          markerKind: "development" as const,
+        };
+      })
+      .filter((d): d is NonNullable<typeof d> => d !== null);
+
+    return NextResponse.json([...markers, ...devMarkers]);
   } catch (error: any) {
     console.error("[api/public/properties/map] Error:", error);
     return NextResponse.json(
