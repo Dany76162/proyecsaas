@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createDevelopmentSchema = z.object({
   name: z.string().min(1).max(200),
+  type: z.string().max(100).optional().nullable(),
   description: z.string().max(2000).optional(),
   address: z.string().max(300).optional(),
   city: z.string().max(100).optional(),

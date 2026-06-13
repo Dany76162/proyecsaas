@@ -1380,6 +1380,7 @@ model Development {
   id                   String                @id @default(cuid())
   organizationId       String
   name                 String
+  type                 String?
   description          String?
   address              String?
   city                 String?

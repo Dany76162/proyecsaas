@@ -122,7 +122,7 @@ export default function DevelopmentWizardClient({
     const data = {
       developmentId: development.id,
       name: formData.get("name") as string,
-      type: formData.get("type") as string || undefined,
+      type: (formData.get("type") as string) || null,
       description: formData.get("description") as string || undefined,
       address: formData.get("address") as string || undefined,
       city: formData.get("city") as string || undefined,
@@ -405,12 +405,21 @@ export default function DevelopmentWizardClient({
                     </div>
                     <div>
                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Tipo de Proyecto</label>
-                      <input
-                        type="text"
+                      <select
                         name="type"
                         defaultValue={development.type || ""}
-                        className="w-full text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl capitalize focus:outline-none focus:border-brand-500"
-                      />
+                        className="w-full text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500"
+                      >
+                        <option value="">Sin especificar</option>
+                        <option value="Loteo abierto">Loteo abierto</option>
+                        <option value="Loteo cerrado">Loteo cerrado</option>
+                        <option value="Barrio privado">Barrio privado</option>
+                        <option value="Country club">Country club</option>
+                        <option value="Chacras / Rural">Chacras / Rural</option>
+                        <option value="Parque industrial">Parque industrial</option>
+                        <option value="Desarrollo mixto">Desarrollo mixto</option>
+                        <option value="Otro">Otro</option>
+                      </select>
                     </div>
                   </div>
                 </div>
