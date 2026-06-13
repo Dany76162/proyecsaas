@@ -265,15 +265,15 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
         {/* ── HEADER ── */}
         <div
-          className="relative flex-shrink-0 h-48 md:h-56 flex items-end p-8 print:h-56"
+          className="relative flex-shrink-0 h-48 md:h-56 flex items-end p-8 print-compact-header"
           style={{ backgroundColor: themeColor }}
         >
           {dev.logoUrl && (
-            <div className="absolute top-6 left-8 bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
-              <img src={dev.logoUrl} alt={dev.name} className="h-14 md:h-16 object-contain print:h-16" />
+            <div className="absolute top-6 left-8 bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 print-header-logo-box">
+              <img src={dev.logoUrl} alt={dev.name} className="h-14 md:h-16 object-contain print:h-10" />
             </div>
           )}
-          <div className="text-white">
+          <div className="text-white print-header-title">
             <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">{dev.name}</h1>
             {(dev.address || dev.city || dev.province) && (
               <p className="text-white/80 font-medium flex items-center gap-2 mt-1.5 text-sm">
@@ -294,7 +294,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
           </p>
           {hasMiniPlan && miniPlanViewBox ? (
             <div className="rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm bg-slate-50">
-              <div className="h-[260px] flex items-center justify-center p-2">
+              <div className="h-[260px] print:h-[180px] flex items-center justify-center p-2">
                 <svg
                   viewBox={miniPlanViewBox}
                   xmlns="http://www.w3.org/2000/svg"
@@ -351,7 +351,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
           <div className="flex flex-col gap-4 print:mb-6">
 
             {/* Ficha técnica del lote */}
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm">
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm print-card">
               <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 text-center">
                 Ficha Técnica del Lote
               </h2>
@@ -413,7 +413,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
             {/* Precio */}
             {price && (
-              <div className="rounded-2xl p-5 text-white shadow-md" style={{ backgroundColor: themeColor }}>
+              <div className="rounded-2xl p-5 text-white shadow-md print-card" style={{ backgroundColor: themeColor }}>
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Precio</p>
                 <p className="text-2xl font-black tracking-tight">{price}</p>
                 {lot.currency && <p className="text-[10px] opacity-70 mt-0.5">{lot.currency}</p>}
@@ -422,7 +422,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
             {/* Servicios */}
             {dev.services && dev.services.length > 0 && (
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm">
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm print-card">
                 <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">Servicios</h3>
                 <div className="grid grid-cols-2 gap-y-2 gap-x-3">
                   {dev.services.map((s) => (
@@ -440,7 +440,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
           <div className="flex flex-col gap-4">
 
             {/* Croquis del Lote + Brújula */}
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2 print-card">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Croquis del Lote
               </p>
@@ -644,7 +644,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
             {/* ── D-2: Cliente / Reservante ── */}
             {hasClientData && (
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm print-card">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
                   <User className="w-3 h-3" />
                   Cliente / Reservante
@@ -674,7 +674,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
             {/* ── D-2: Operación / Reserva ── */}
             {reservation && (
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm print-card">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
                   <Briefcase className="w-3 h-3" />
                   Operación
@@ -728,7 +728,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
             {/* Vendedor sin reserva (fallback solo si hay sellerName en lote y no hay reserva) */}
             {!reservation && hasSellerData && (
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm print-card">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
                   <Briefcase className="w-3 h-3" />
                   Asesor
@@ -793,6 +793,32 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
             left: 0;
             right: 0;
             z-index: 9999;
+          }
+          /* Compact header: logo-left + title-right in a single row */
+          .print-compact-header {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            height: auto !important;
+            min-height: 0 !important;
+            padding: 12px 28px !important;
+            gap: 14px;
+          }
+          .print-compact-header .print-header-logo-box {
+            position: static !important;
+          }
+          .print-compact-header .print-header-title h1 {
+            font-size: 18px !important;
+            line-height: 1.25 !important;
+          }
+          .print-compact-header .print-header-title p {
+            font-size: 11px !important;
+            margin-top: 2px !important;
+          }
+          /* Prevent cards from breaking across pages */
+          .print-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
         }
       `}} />

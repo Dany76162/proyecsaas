@@ -198,22 +198,22 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
 
         {/* ── HEADER ── */}
         <div
-          className="relative flex-shrink-0 h-48 md:h-48 flex items-end p-7 print:h-48"
+          className="relative flex-shrink-0 h-48 md:h-48 flex items-end p-7 print-compact-header"
           style={{ backgroundColor: themeColor }}
         >
           {dev.logoUrl && (
-            <div className="absolute top-5 left-7 bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/20">
-              <img src={dev.logoUrl} alt={dev.name} className="h-10 object-contain" />
+            <div className="absolute top-5 left-7 bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/20 print-header-logo-box">
+              <img src={dev.logoUrl} alt={dev.name} className="h-10 object-contain print:h-8" />
             </div>
           )}
-          <div className="text-white">
+          <div className="text-white print-header-title">
             <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">
               Plan de Cuotas · Documento interno
             </p>
             <h1 className="text-2xl font-black tracking-tight leading-tight">{dev.name}</h1>
             <p className="text-white/80 text-sm font-semibold mt-0.5">{lotLabel}</p>
           </div>
-          <div className="absolute right-7 bottom-5 text-right text-white/70">
+          <div className="absolute right-7 bottom-5 text-right text-white/70 print-header-date">
             <p className="text-[10px] font-semibold">Emitido el</p>
             <p className="text-xs font-bold">{fmtEmisionDate()}</p>
           </div>
@@ -575,6 +575,34 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
             z-index: 9999;
           }
           tbody tr { break-inside: avoid; page-break-inside: avoid; }
+          /* Compact header: logo-left + title + date in a single row */
+          .print-compact-header {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            height: auto !important;
+            min-height: 0 !important;
+            padding: 12px 28px !important;
+            gap: 14px;
+          }
+          .print-compact-header .print-header-logo-box {
+            position: static !important;
+          }
+          .print-compact-header .print-header-title {
+            flex: 1;
+          }
+          .print-compact-header .print-header-title h1 {
+            font-size: 16px !important;
+            line-height: 1.25 !important;
+          }
+          .print-compact-header .print-header-title p {
+            font-size: 10px !important;
+            margin-top: 1px !important;
+          }
+          .print-compact-header .print-header-date {
+            position: static !important;
+            align-self: center;
+          }
         }
       ` }} />
     </div>
