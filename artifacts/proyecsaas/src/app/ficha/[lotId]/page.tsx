@@ -256,7 +256,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-8 print:p-0 print:bg-white print:block">
-      <div className="bg-white w-full max-w-[794px] min-h-[1123px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full print:block print-doc-wrapper">
+      <div className="bg-white w-full max-w-[794px] min-h-[1123px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full print:min-h-0 print:block print-doc-wrapper">
 
         {/* Print Button */}
         <div className="absolute top-4 right-4 print:hidden z-50">
