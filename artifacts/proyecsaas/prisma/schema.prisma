@@ -222,6 +222,7 @@ model Organization {
   billingRecords         OrgBillingRecord[]
   aiAgents               AiAgent[]
   subscription           Subscription?
+  financialVaults        DevelopmentFinancialVault[]
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 }
@@ -1427,9 +1428,96 @@ model Development {
   DevelopmentMapImage  DevelopmentMapImage[]
   DevelopmentDrawableLayer DevelopmentDrawableLayer[]
   visualObjects            DevelopmentVisualObject[]
+  financialVault           DevelopmentFinancialVault?
 
   @@index([organizationId, publicVisible])
   @@index([organizationId, status])
+}
+
+// ── Balance y Rendición — Vault financiero ────────────────────────────────────
+
+enum FinancialEntityType {
+  DEVELOPER      // Desarrollador
+  TRUST          // Fideicomiso
+  CONSTRUCTION   // Constructora
+  COMPANY        // Empresa
+  ADMINISTRATOR  // Administrador
+}
+
+enum FinancialRole {
+  OWNER        // Responsable principal — control total
+  ADMIN        // Puede aprobar/anular (fase futura)
+  CONTADOR     // Solo lectura + exportar (fase futura)
+  AUDITOR      // Solo auditoría (fase futura)
+  CARGADOR     // Solo cargar gastos (fase futura)
+  SOLO_LECTURA // Solo ver balance (fase futura)
+}
+
+enum FinancialAuditEvent {
+  VAULT_ACTIVATED      // Módulo activado por primera vez
+  MODULE_ACCESS        // Ingreso exitoso al módulo
+  MODULE_ACCESS_FAILED // Intento de ingreso con clave incorrecta
+}
+
+model DevelopmentFinancialVault {
+  id              String              @id @default(cuid())
+  developmentId   String              @unique
+  organizationId  String
+
+  ownerUserId     String
+  ownerName       String
+  ownerEmail      String
+  ownerEntityType FinancialEntityType
+
+  vaultKeyHash    String              // scrypt hash de la clave privada del módulo
+
+  activatedAt     DateTime            @default(now())
+  isActive        Boolean             @default(true)
+  lastAccessAt    DateTime?
+  accessCount     Int                 @default(0)
+
+  Development  Development              @relation(fields: [developmentId], references: [id], onDelete: Cascade)
+  Organization Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  accesses     DevelopmentFinancialAccess[]
+  auditLogs    DevelopmentFinancialAuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model DevelopmentFinancialAccess {
+  id         String        @id @default(cuid())
+  vaultId    String
+  userId     String?
+  role       FinancialRole
+  accessedAt DateTime      @default(now())
+  ipAddress  String?
+  userAgent  String?
+
+  vault DevelopmentFinancialVault @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+
+  @@index([vaultId, accessedAt])
+}
+
+model DevelopmentFinancialAuditLog {
+  id             String              @id @default(cuid())
+  vaultId        String
+  organizationId String
+  actorId        String?
+  actorEmail     String?
+  actorRole      FinancialRole?
+  event          FinancialAuditEvent
+  entityType     String?
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime            @default(now())
+
+  vault DevelopmentFinancialVault @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+
+  @@index([vaultId, createdAt])
+  @@index([vaultId, event])
 }
 
 model DevelopmentDrawableLayer {

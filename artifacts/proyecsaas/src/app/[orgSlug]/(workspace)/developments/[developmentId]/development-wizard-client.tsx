@@ -16,6 +16,7 @@ import {
   X,
   UploadCloud,
   PenLine,
+  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -360,6 +361,14 @@ export default function DevelopmentWizardClient({
               </Link>
             );
           })}
+          {/* Balance y Rendición — ruta separada */}
+          <Link
+            href={`/${orgSlug}/developments/${development.id}/balance`}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 justify-center bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 border-l border-slate-200 dark:border-slate-800"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+            Balance
+          </Link>
         </div>
       </div>
 
