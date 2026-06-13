@@ -785,8 +785,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          @page { size: A4 portrait; margin: 10mm; }
-          .print-doc-wrapper { padding-bottom: 28mm; }
+          @page { size: A4 portrait; margin: 10mm 10mm 28mm 10mm; }
           .print-footer-bar {
             position: fixed;
             bottom: 0;
