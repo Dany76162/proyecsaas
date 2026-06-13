@@ -24,7 +24,8 @@ import { logoutFinancialVaultAction } from "@/modules/developments/financial-vau
 import { FinancialEntityType, ExpenseStatus } from "@prisma/client";
 import ExpenseForm from "./expense-form";
 import ExpenseTable, { type ExpenseRow } from "./expense-table";
-import type { EconomicSummary, EconomicSummaryByCurrency } from "./page";
+import LotEconomicsTable from "./lot-economics-table";
+import type { EconomicSummary, EconomicSummaryByCurrency, LotEconomicRow } from "./page";
 
 const ENTITY_TYPE_LABELS: Record<FinancialEntityType, string> = {
   DEVELOPER: "Desarrollador",
@@ -423,6 +424,7 @@ interface Props {
   userEmail: string;
   expenses: ExpenseRow[];
   economicSummary: EconomicSummary;
+  lotEconomics: LotEconomicRow[];
 }
 
 export default function BalanceDashboard({
@@ -432,6 +434,7 @@ export default function BalanceDashboard({
   userEmail,
   expenses,
   economicSummary,
+  lotEconomics,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -585,6 +588,24 @@ export default function BalanceDashboard({
 
       {/* Resumen económico del desarrollo */}
       <EconomicSummarySection summary={economicSummary} />
+
+      {/* Vista económica por lote */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+            <BarChart3 className="w-4.5 h-4.5 text-violet-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-slate-800 dark:text-white leading-tight">
+              Vista económica por lote
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Control interno de precio, estado comercial, pagos confirmados y saldo por cobrar de cada lote.
+            </p>
+          </div>
+        </div>
+        <LotEconomicsTable lots={lotEconomics} orgSlug={orgSlug} />
+      </div>
 
       {/* KPIs de gastos */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

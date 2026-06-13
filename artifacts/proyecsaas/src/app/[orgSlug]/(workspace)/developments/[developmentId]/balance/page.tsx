@@ -121,17 +121,42 @@ export default async function BalancePage({ params }: PageProps) {
     }),
     prisma.developmentLot.findMany({
       where: { developmentId, organizationId },
+      orderBy: [{ manzana: "asc" }, { lotNumber: "asc" }],
       select: {
         id: true,
+        lotNumber: true,
+        manzana: true,
+        etapaNombre: true,
         status: true,
         priceCents: true,
         currency: true,
         areaSqm: true,
+        linkedPropertyId: true,
+        DevelopmentReservation: {
+          where: { status: { not: "CANCELLED" } },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: {
+            id: true,
+            status: true,
+            approvedAt: true,
+            depositCents: true,
+            grossAmountCents: true,
+            downPaymentCents: true,
+            totalPriceCents: true,
+            installmentCount: true,
+            Installments: {
+              where: { status: { not: "CANCELLED" } },
+              select: { amountCents: true, status: true },
+            },
+          },
+        },
       },
     }),
   ]);
 
   const economicSummary = buildEconomicSummary(lots);
+  const lotEconomics = buildLotEconomics(lots);
 
   return (
     <BalancePage_Layout orgSlug={orgSlug} development={development} backHref={backHref}>
@@ -149,6 +174,7 @@ export default async function BalancePage({ params }: PageProps) {
         userEmail={user.email}
         expenses={expenses}
         economicSummary={economicSummary}
+        lotEconomics={lotEconomics}
       />
     </BalancePage_Layout>
   );
@@ -315,4 +341,163 @@ function buildEconomicSummary(lots: RawLot[]): EconomicSummary {
   });
 
   return { totalLots, lotsWithoutPrice, lotsWithoutArea, multipleCurrencies, byCurrency };
+}
+
+// ── Lot Economics ─────────────────────────────────────────────────────────────
+
+export interface LotReservationSnap {
+  id: string;
+  status: string;            // DevelopmentReservationStatus value
+  approvedAt: Date | null;
+  depositCents: number | null;
+  grossAmountCents: number | null;
+  downPaymentCents: number | null;
+  totalPriceCents: number | null;
+  installmentCount: number | null;
+}
+
+export interface LotInstallmentSummary {
+  totalCount: number;
+  paidCount: number;
+  pendingCount: number;
+  overdueCount: number;
+}
+
+export interface LotEconomicRow {
+  id: string;
+  lotNumber: string;
+  manzana: string | null;
+  etapaNombre: string | null;
+  status: string;
+  areaSqm: number | null;
+  priceCents: number | null;
+  currency: string;
+  linkedPropertyId: string | null;
+  // Computed
+  pricePerSqm: number | null;
+  // Reservation (most relevant non-cancelled)
+  reservation: LotReservationSnap | null;
+  paymentConfirmed: boolean;
+  // Financial
+  confirmedDepositCents: number;   // grossAmountCents ?? depositCents if approvedAt
+  paidInstallmentsCents: number;
+  totalCollectedCents: number;     // deposit + paid installments
+  pendingInstallmentsCents: number; // PENDING + OVERDUE installments
+  balancePendingCents: number | null; // totalPriceCents (or priceCents) - totalCollected
+  installmentSummary: LotInstallmentSummary;
+}
+
+// Status priority for picking "most relevant" reservation
+const RESERVATION_STATUS_PRIORITY: Record<string, number> = {
+  ACTIVE: 0,
+  PENDING_APPROVAL: 1,
+  SOLD: 2,
+  CANCELLED: 3,
+};
+
+type RawLotFull = {
+  id: string;
+  lotNumber: string;
+  manzana: string | null;
+  etapaNombre: string | null;
+  status: string;
+  priceCents: number | null;
+  currency: string | null;
+  areaSqm: number | null;
+  linkedPropertyId: string | null;
+  DevelopmentReservation: Array<{
+    id: string;
+    status: string;
+    approvedAt: Date | null;
+    depositCents: number | null;
+    grossAmountCents: number | null;
+    downPaymentCents: number | null;
+    totalPriceCents: number | null;
+    installmentCount: number | null;
+    Installments: Array<{ amountCents: number; status: string }>;
+  }>;
+};
+
+function buildLotEconomics(lots: RawLotFull[]): LotEconomicRow[] {
+  return lots.map((lot) => {
+    const currency = lot.currency ?? "USD";
+    const pricePerSqm =
+      lot.priceCents && lot.priceCents > 0 && lot.areaSqm && lot.areaSqm > 0
+        ? lot.priceCents / 100 / lot.areaSqm
+        : null;
+
+    // Pick most relevant reservation
+    const sortedRes = [...lot.DevelopmentReservation].sort(
+      (a, b) =>
+        (RESERVATION_STATUS_PRIORITY[a.status] ?? 99) -
+        (RESERVATION_STATUS_PRIORITY[b.status] ?? 99),
+    );
+    const res = sortedRes[0] ?? null;
+
+    const paymentConfirmed =
+      res !== null && res.status === "ACTIVE" && res.approvedAt !== null;
+
+    // All installments from the chosen reservation
+    const installments = res?.Installments ?? [];
+
+    const confirmedDepositCents = paymentConfirmed
+      ? (res?.grossAmountCents ?? res?.depositCents ?? 0)
+      : 0;
+
+    const paidInstallmentsCents = installments
+      .filter((i) => i.status === "PAID")
+      .reduce((s, i) => s + i.amountCents, 0);
+
+    const totalCollectedCents = confirmedDepositCents + paidInstallmentsCents;
+
+    const pendingInstallmentsCents = installments
+      .filter((i) => i.status === "PENDING" || i.status === "OVERDUE")
+      .reduce((s, i) => s + i.amountCents, 0);
+
+    // Reference price: negotiated total > lot list price
+    const referencePriceCents = res?.totalPriceCents ?? lot.priceCents ?? null;
+    const balancePendingCents =
+      referencePriceCents !== null
+        ? Math.max(0, referencePriceCents - totalCollectedCents)
+        : null;
+
+    const installmentSummary: LotInstallmentSummary = {
+      totalCount: installments.length,
+      paidCount: installments.filter((i) => i.status === "PAID").length,
+      pendingCount: installments.filter((i) => i.status === "PENDING").length,
+      overdueCount: installments.filter((i) => i.status === "OVERDUE").length,
+    };
+
+    return {
+      id: lot.id,
+      lotNumber: lot.lotNumber,
+      manzana: lot.manzana,
+      etapaNombre: lot.etapaNombre,
+      status: lot.status,
+      areaSqm: lot.areaSqm,
+      priceCents: lot.priceCents,
+      currency,
+      linkedPropertyId: lot.linkedPropertyId,
+      pricePerSqm,
+      reservation: res
+        ? {
+            id: res.id,
+            status: res.status,
+            approvedAt: res.approvedAt,
+            depositCents: res.depositCents,
+            grossAmountCents: res.grossAmountCents,
+            downPaymentCents: res.downPaymentCents,
+            totalPriceCents: res.totalPriceCents,
+            installmentCount: res.installmentCount,
+          }
+        : null,
+      paymentConfirmed,
+      confirmedDepositCents,
+      paidInstallmentsCents,
+      totalCollectedCents,
+      pendingInstallmentsCents,
+      balancePendingCents,
+      installmentSummary,
+    };
+  });
 }
