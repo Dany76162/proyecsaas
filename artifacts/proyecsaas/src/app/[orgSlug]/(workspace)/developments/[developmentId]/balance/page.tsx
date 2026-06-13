@@ -98,26 +98,40 @@ export default async function BalancePage({ params }: PageProps) {
     );
   }
 
-  // ── Caso: sesión válida → cargar gastos y mostrar dashboard ─────────────
-  const expenses = await prisma.developmentFinancialExpense.findMany({
-    where: { vaultId: vault.id, organizationId },
-    orderBy: { date: "desc" },
-    select: {
-      id: true,
-      date: true,
-      category: true,
-      description: true,
-      provider: true,
-      amountCents: true,
-      currency: true,
-      status: true,
-      attachments: {
-        where: { deletedAt: null },
-        select: { id: true, filename: true, r2Key: true },
-        orderBy: { uploadedAt: "asc" },
+  // ── Caso: sesión válida → cargar gastos + lotes y mostrar dashboard ──────
+  const [expenses, lots] = await Promise.all([
+    prisma.developmentFinancialExpense.findMany({
+      where: { vaultId: vault.id, organizationId },
+      orderBy: { date: "desc" },
+      select: {
+        id: true,
+        date: true,
+        category: true,
+        description: true,
+        provider: true,
+        amountCents: true,
+        currency: true,
+        status: true,
+        attachments: {
+          where: { deletedAt: null },
+          select: { id: true, filename: true, r2Key: true },
+          orderBy: { uploadedAt: "asc" },
+        },
       },
-    },
-  });
+    }),
+    prisma.developmentLot.findMany({
+      where: { developmentId, organizationId },
+      select: {
+        id: true,
+        status: true,
+        priceCents: true,
+        currency: true,
+        areaSqm: true,
+      },
+    }),
+  ]);
+
+  const economicSummary = buildEconomicSummary(lots);
 
   return (
     <BalancePage_Layout orgSlug={orgSlug} development={development} backHref={backHref}>
@@ -134,6 +148,7 @@ export default async function BalancePage({ params }: PageProps) {
         }}
         userEmail={user.email}
         expenses={expenses}
+        economicSummary={economicSummary}
       />
     </BalancePage_Layout>
   );
@@ -184,4 +199,120 @@ function maskEmail(email: string): string {
   if (!local || !domain) return email;
   const visible = local.slice(0, 2);
   return `${visible}${"*".repeat(Math.max(2, local.length - 2))}@${domain}`;
+}
+
+// ── Economic Summary ──────────────────────────────────────────────────────────
+
+export interface LotStatusGroup {
+  count: number;
+  areaSqm: number;
+  valueCents: number;
+  percentOfGross: number;
+}
+
+export interface EconomicSummaryByCurrency {
+  currency: string;
+  totalLots: number;
+  totalAreaSqm: number;
+  grossValueCents: number;         // sum of all non-BLOCKED lots
+  availableValueCents: number;     // AVAILABLE only
+  reservedPendingValueCents: number;
+  reservedValueCents: number;
+  soldValueCents: number;
+  blockedValueCents: number;
+  averagePricePerSqm: number | null;
+  byStatus: {
+    available: LotStatusGroup;
+    reservedPending: LotStatusGroup;
+    reserved: LotStatusGroup;
+    sold: LotStatusGroup;
+    blocked: LotStatusGroup;
+  };
+}
+
+export interface EconomicSummary {
+  totalLots: number;
+  lotsWithoutPrice: number;
+  lotsWithoutArea: number;
+  multipleCurrencies: boolean;
+  byCurrency: EconomicSummaryByCurrency[];
+}
+
+type RawLot = {
+  id: string;
+  status: string;
+  priceCents: number | null;
+  currency: string | null;
+  areaSqm: number | null;
+};
+
+function buildEconomicSummary(lots: RawLot[]): EconomicSummary {
+  const totalLots = lots.length;
+  const lotsWithoutPrice = lots.filter((l) => !l.priceCents || l.priceCents <= 0).length;
+  const lotsWithoutArea = lots.filter((l) => !l.areaSqm || l.areaSqm <= 0).length;
+
+  // Normalize currency: treat null as "USD" (schema default)
+  const currencies = [...new Set(lots.map((l) => l.currency ?? "USD"))];
+  const multipleCurrencies = currencies.length > 1;
+
+  const byCurrency: EconomicSummaryByCurrency[] = currencies.map((cur) => {
+    const curLots = lots.filter((l) => (l.currency ?? "USD") === cur);
+
+    const makeGroup = (statuses: string[]): LotStatusGroup => {
+      const subset = curLots.filter((l) => statuses.includes(l.status));
+      return {
+        count: subset.length,
+        areaSqm: subset.reduce((s, l) => s + (l.areaSqm ?? 0), 0),
+        valueCents: subset.reduce((s, l) => s + (l.priceCents ?? 0), 0),
+        percentOfGross: 0, // filled in below
+      };
+    };
+
+    const available = makeGroup(["AVAILABLE"]);
+    const reservedPending = makeGroup(["RESERVED_PENDING"]);
+    const reserved = makeGroup(["RESERVED"]);
+    const sold = makeGroup(["SOLD"]);
+    const blocked = makeGroup(["BLOCKED"]);
+
+    // Gross = all lots except BLOCKED (commercial potential)
+    const grossValueCents =
+      available.valueCents +
+      reservedPending.valueCents +
+      reserved.valueCents +
+      sold.valueCents;
+
+    // Attach percentages
+    const pct = (v: number) =>
+      grossValueCents > 0 ? Math.round((v / grossValueCents) * 100) : 0;
+    available.percentOfGross = pct(available.valueCents);
+    reservedPending.percentOfGross = pct(reservedPending.valueCents);
+    reserved.percentOfGross = pct(reserved.valueCents);
+    sold.percentOfGross = pct(sold.valueCents);
+    blocked.percentOfGross = 0; // excluded from gross
+
+    const totalAreaSqm = curLots
+      .filter((l) => l.status !== "BLOCKED")
+      .reduce((s, l) => s + (l.areaSqm ?? 0), 0);
+
+    const averagePricePerSqm =
+      totalAreaSqm > 0 && grossValueCents > 0
+        ? grossValueCents / 100 / totalAreaSqm
+        : null;
+
+    return {
+      currency: cur,
+      totalLots: curLots.length,
+      totalAreaSqm,
+      grossValueCents,
+      availableValueCents: available.valueCents,
+      reservedPendingValueCents: reservedPending.valueCents,
+      reservedValueCents: reserved.valueCents,
+      soldValueCents: sold.valueCents,
+      blockedValueCents: blocked.valueCents,
+      averagePricePerSqm,
+      byStatus: { available, reservedPending, reserved, sold, blocked },
+    };
+  });
+
+  return { totalLots, lotsWithoutPrice, lotsWithoutArea, multipleCurrencies, byCurrency };
 }

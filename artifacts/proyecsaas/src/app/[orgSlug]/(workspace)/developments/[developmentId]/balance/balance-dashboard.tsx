@@ -12,12 +12,16 @@ import {
   CheckCircle2,
   Hourglass,
   DollarSign,
+  AlertTriangle,
+  BarChart3,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logoutFinancialVaultAction } from "@/modules/developments/financial-vault-actions";
 import { FinancialEntityType, ExpenseStatus } from "@prisma/client";
 import ExpenseForm from "./expense-form";
 import ExpenseTable, { type ExpenseRow } from "./expense-table";
+import type { EconomicSummary, EconomicSummaryByCurrency } from "./page";
 
 const ENTITY_TYPE_LABELS: Record<FinancialEntityType, string> = {
   DEVELOPER: "Desarrollador",
@@ -45,6 +49,227 @@ function fmtAmount(cents: number, currency: string) {
   })}`;
 }
 
+function fmtArea(sqm: number) {
+  return `${sqm.toLocaleString("es-AR", { maximumFractionDigits: 0 })} m²`;
+}
+
+function fmtPricePerSqm(value: number, currency: string) {
+  return `${currency} ${value.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²`;
+}
+
+// ── EconomicSummarySection ────────────────────────────────────────────────────
+
+function EconomicSummarySection({ summary }: { summary: EconomicSummary }) {
+  const { totalLots, lotsWithoutPrice, lotsWithoutArea, multipleCurrencies, byCurrency } = summary;
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center shrink-0">
+          <BarChart3 className="w-4.5 h-4.5 text-brand-600" />
+        </div>
+        <div>
+          <h3 className="text-sm font-black text-slate-800 dark:text-white leading-tight">
+            Resumen económico del desarrollo
+          </h3>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Valor bruto potencial, disponibilidad comercial y estado económico de los lotes.
+          </p>
+        </div>
+      </div>
+
+      {/* Warnings */}
+      {multipleCurrencies && (
+        <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2.5">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+            Este desarrollo tiene lotes en distintas monedas. Los totales se muestran separados por moneda.
+          </p>
+        </div>
+      )}
+      {(lotsWithoutPrice > 0 || lotsWithoutArea > 0) && (
+        <div className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">
+          <AlertTriangle className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            {lotsWithoutPrice > 0 && (
+              <span>Hay <strong>{lotsWithoutPrice}</strong> lote{lotsWithoutPrice !== 1 ? "s" : ""} sin precio cargado. </span>
+            )}
+            {lotsWithoutArea > 0 && (
+              <span>Hay <strong>{lotsWithoutArea}</strong> lote{lotsWithoutArea !== 1 ? "s" : ""} sin superficie cargada. </span>
+            )}
+            El cálculo económico puede estar incompleto.
+          </p>
+        </div>
+      )}
+      {totalLots === 0 && (
+        <p className="text-xs text-slate-400 text-center py-4">No hay lotes cargados en este desarrollo.</p>
+      )}
+
+      {/* One block per currency */}
+      {byCurrency.map((cur) => (
+        <EconomicCurrencyBlock key={cur.currency} data={cur} totalLots={totalLots} multipleCurrencies={multipleCurrencies} />
+      ))}
+    </div>
+  );
+}
+
+function EconomicCurrencyBlock({
+  data,
+  totalLots,
+  multipleCurrencies,
+}: {
+  data: EconomicSummaryByCurrency;
+  totalLots: number;
+  multipleCurrencies: boolean;
+}) {
+  const { currency, byStatus, grossValueCents, totalAreaSqm, averagePricePerSqm } = data;
+
+  // Top KPI cards
+  const topCards = [
+    {
+      label: "Valor bruto potencial",
+      value: fmtAmount(grossValueCents, currency),
+      sub: "Suma lotes comercializables",
+      icon: DollarSign,
+      color: "text-brand-600",
+      bg: "bg-brand-50 dark:bg-brand-900/20",
+      border: "border-brand-100 dark:border-brand-800",
+    },
+    {
+      label: "m² comercializables",
+      value: fmtArea(totalAreaSqm),
+      sub: "Excluye lotes bloqueados",
+      icon: Layers,
+      color: "text-sky-600",
+      bg: "bg-sky-50 dark:bg-sky-900/20",
+      border: "border-sky-100 dark:border-sky-800",
+    },
+    {
+      label: "Total de lotes",
+      value: String(multipleCurrencies ? data.totalLots : totalLots),
+      sub: multipleCurrencies ? `en ${currency}` : "en el desarrollo",
+      icon: BarChart3,
+      color: "text-slate-600",
+      bg: "bg-slate-50 dark:bg-slate-800/50",
+      border: "border-slate-100 dark:border-slate-700",
+    },
+    {
+      label: "Promedio por m²",
+      value: averagePricePerSqm != null ? fmtPricePerSqm(averagePricePerSqm, currency) : "—",
+      sub: averagePricePerSqm != null ? "Valor bruto / m² total" : "Sin datos suficientes",
+      icon: TrendingDown,
+      color: "text-purple-600",
+      bg: "bg-purple-50 dark:bg-purple-900/20",
+      border: "border-purple-100 dark:border-purple-800",
+    },
+  ];
+
+  // Status cards
+  const statusCards = [
+    {
+      key: "available" as const,
+      label: "Disponible",
+      color: "text-emerald-700 dark:text-emerald-400",
+      bg: "bg-emerald-50 dark:bg-emerald-900/20",
+      border: "border-emerald-200 dark:border-emerald-800",
+      dot: "bg-emerald-500",
+    },
+    {
+      key: "reservedPending" as const,
+      label: "Reserva pendiente",
+      color: "text-amber-700 dark:text-amber-400",
+      bg: "bg-amber-50 dark:bg-amber-900/20",
+      border: "border-amber-200 dark:border-amber-800",
+      dot: "bg-amber-400",
+    },
+    {
+      key: "reserved" as const,
+      label: "Reservado",
+      color: "text-orange-700 dark:text-orange-400",
+      bg: "bg-orange-50 dark:bg-orange-900/20",
+      border: "border-orange-200 dark:border-orange-800",
+      dot: "bg-orange-500",
+    },
+    {
+      key: "sold" as const,
+      label: "Vendido",
+      color: "text-sky-700 dark:text-sky-400",
+      bg: "bg-sky-50 dark:bg-sky-900/20",
+      border: "border-sky-200 dark:border-sky-800",
+      dot: "bg-sky-500",
+    },
+    {
+      key: "blocked" as const,
+      label: "Bloqueado",
+      color: "text-slate-600 dark:text-slate-400",
+      bg: "bg-slate-50 dark:bg-slate-800/50",
+      border: "border-slate-200 dark:border-slate-700",
+      dot: "bg-slate-400",
+    },
+  ];
+
+  return (
+    <div className="space-y-3">
+      {multipleCurrencies && (
+        <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+          Lotes en {currency}
+        </p>
+      )}
+
+      {/* Top KPI cards — 4 columns */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {topCards.map(({ label, value, sub, icon: Icon, color, bg, border }) => (
+          <div key={label} className={`rounded-xl border ${border} ${bg} p-3.5 flex flex-col gap-2`}>
+            <div className={`w-7 h-7 rounded-lg bg-white/70 dark:bg-white/10 flex items-center justify-center`}>
+              <Icon className={`w-3.5 h-3.5 ${color}`} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-slate-800 dark:text-white leading-tight">{value}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-medium leading-tight">{label}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Status cards — by state */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+        {statusCards.map(({ key, label, color, bg, border, dot }) => {
+          const group = byStatus[key];
+          const hasData = group.count > 0;
+          return (
+            <div key={key} className={`rounded-xl border ${border} ${bg} p-3 space-y-1.5`}>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                <span className={`text-[10px] font-black uppercase tracking-wide ${color}`}>{label}</span>
+              </div>
+              <p className="text-sm font-black text-slate-800 dark:text-white">
+                {group.count} <span className="text-xs font-semibold text-slate-400">lote{group.count !== 1 ? "s" : ""}</span>
+              </p>
+              {hasData ? (
+                <>
+                  <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 leading-tight">
+                    {fmtAmount(group.valueCents, currency)}
+                  </p>
+                  {group.areaSqm > 0 && (
+                    <p className="text-[10px] text-slate-400">{fmtArea(group.areaSqm)}</p>
+                  )}
+                  {key !== "blocked" && grossValueCents > 0 && (
+                    <p className="text-[10px] text-slate-400">{group.percentOfGross}% del bruto</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-[10px] text-slate-400">Sin lotes</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   orgSlug: string;
   developmentId: string;
@@ -58,6 +283,7 @@ interface Props {
   };
   userEmail: string;
   expenses: ExpenseRow[];
+  economicSummary: EconomicSummary;
 }
 
 export default function BalanceDashboard({
@@ -66,6 +292,7 @@ export default function BalanceDashboard({
   vault,
   userEmail,
   expenses,
+  economicSummary,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -217,7 +444,10 @@ export default function BalanceDashboard({
         </div>
       </div>
 
-      {/* KPIs */}
+      {/* Resumen económico del desarrollo */}
+      <EconomicSummarySection summary={economicSummary} />
+
+      {/* KPIs de gastos */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {kpis.map(({ icon: Icon, label, value, sub, color, bg, border }) => (
           <div key={label} className={`rounded-2xl border ${border} ${bg} p-4 flex flex-col gap-2`}>
