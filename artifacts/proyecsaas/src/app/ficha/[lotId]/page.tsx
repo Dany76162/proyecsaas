@@ -282,6 +282,37 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
               </p>
             )}
           </div>
+
+          {/* Contacto solo en impresión — aparece a la derecha del header compacto */}
+          <div className="hidden print:flex flex-col items-end gap-0.5 ml-auto shrink-0 text-white/80">
+            {dev.companyLogoUrl && (
+              <img
+                src={dev.companyLogoUrl}
+                alt="Inmobiliaria"
+                className="h-6 object-contain opacity-80 mb-1"
+                style={{ filter: "brightness(0) invert(1)" }}
+              />
+            )}
+            {dev.contactPhone && (
+              <span className="flex items-center gap-1 text-[9px] font-medium">
+                <Phone className="w-2.5 h-2.5 shrink-0" />{dev.contactPhone}
+              </span>
+            )}
+            {dev.contactWeb && (
+              <span className="flex items-center gap-1 text-[9px] font-medium">
+                <Globe className="w-2.5 h-2.5 shrink-0" />{dev.contactWeb}
+              </span>
+            )}
+            {dev.contactAddress && (
+              <span className="flex items-center gap-1 text-[9px] font-medium">
+                <MapPin className="w-2.5 h-2.5 shrink-0" />{dev.contactAddress}
+              </span>
+            )}
+            <span className="text-[8px] text-white/50 font-semibold uppercase tracking-wide mt-1">
+              {dev.organization.name}
+            </span>
+          </div>
+
           <svg className="absolute bottom-0 right-0 h-full text-white/10" viewBox="0 0 100 100" preserveAspectRatio="none">
             <polygon points="0,100 100,0 100,100" fill="currentColor" />
           </svg>
@@ -748,7 +779,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         </div>
 
         {/* ── FOOTER ── */}
-        <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-5 flex items-center justify-between gap-4 flex-wrap print:flex-nowrap print-footer-bar">
+        <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-5 flex items-center justify-between gap-4 flex-wrap print:hidden">
           <div className="flex items-center gap-5 flex-wrap">
             {dev.companyLogoUrl && (
               <img src={dev.companyLogoUrl} alt="Inmobiliaria"
@@ -785,23 +816,17 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          @page { size: A4 portrait; margin: 10mm 10mm 28mm 10mm; }
-          .print-footer-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 9999;
-          }
-          /* Compact header: logo-left + title-right in a single row */
+          @page { size: A4 portrait; margin: 10mm; }
+          /* Header premium: logo izq + título + contacto der en una fila */
           .print-compact-header {
             display: flex !important;
             flex-direction: row !important;
             align-items: center !important;
+            justify-content: space-between !important;
             height: auto !important;
-            min-height: 0 !important;
-            padding: 12px 28px !important;
-            gap: 14px;
+            min-height: 72px !important;
+            padding: 14px 28px !important;
+            gap: 16px;
           }
           .print-compact-header .print-header-logo-box {
             position: static !important;
@@ -814,7 +839,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
             font-size: 11px !important;
             margin-top: 2px !important;
           }
-          /* Prevent cards from breaking across pages */
+          /* Tarjetas: sin corte entre páginas */
           .print-card {
             break-inside: avoid;
             page-break-inside: avoid;

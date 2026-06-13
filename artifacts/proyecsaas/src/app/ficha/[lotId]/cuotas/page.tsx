@@ -213,10 +213,38 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
             <h1 className="text-2xl font-black tracking-tight leading-tight">{dev.name}</h1>
             <p className="text-white/80 text-sm font-semibold mt-0.5">{lotLabel}</p>
           </div>
-          <div className="absolute right-7 bottom-5 text-right text-white/70 print-header-date">
+          {/* Fecha — solo pantalla */}
+          <div className="absolute right-7 bottom-5 text-right text-white/70 print:hidden">
             <p className="text-[10px] font-semibold">Emitido el</p>
             <p className="text-xs font-bold">{fmtEmisionDate()}</p>
           </div>
+
+          {/* Contacto + fecha — solo impresión */}
+          <div className="hidden print:flex flex-col items-end gap-0.5 ml-auto shrink-0 text-white/80">
+            {dev.companyLogoUrl && (
+              <img
+                src={dev.companyLogoUrl}
+                alt={org.name}
+                className="h-6 object-contain opacity-80 mb-1"
+                style={{ filter: "brightness(0) invert(1)" }}
+              />
+            )}
+            {dev.contactPhone && (
+              <span className="flex items-center gap-1 text-[9px] font-medium">
+                <Phone className="w-2.5 h-2.5 shrink-0" />{dev.contactPhone}
+              </span>
+            )}
+            {dev.contactWeb && (
+              <span className="flex items-center gap-1 text-[9px] font-medium">
+                <Globe className="w-2.5 h-2.5 shrink-0" />{dev.contactWeb}
+              </span>
+            )}
+            <span className="text-[8px] text-white/50 font-semibold uppercase tracking-wide mt-0.5">
+              {org.name}
+            </span>
+            <span className="text-[9px] text-white/60 mt-0.5">Emitido el {fmtEmisionDate()}</span>
+          </div>
+
           <svg className="absolute bottom-0 right-0 h-full text-white/10 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
             <polygon points="0,100 100,0 100,100" fill="currentColor" />
           </svg>
@@ -531,7 +559,7 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
         </div>
 
         {/* ── FOOTER ── */}
-        <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-4 flex items-center justify-between gap-4 flex-wrap print:flex-nowrap print-footer-bar">
+        <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-4 flex items-center justify-between gap-4 flex-wrap print:hidden">
           <div className="flex items-center gap-4 flex-wrap">
             {dev.companyLogoUrl && (
               <img
@@ -565,22 +593,17 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          @page { size: A4 portrait; margin: 10mm 10mm 28mm 10mm; }
-          .print-footer-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 9999;
-          }
+          @page { size: A4 portrait; margin: 10mm; }
+          /* Filas de tabla: sin corte entre páginas */
           tbody tr { break-inside: avoid; page-break-inside: avoid; }
-          /* Compact header: logo-left + title + date in a single row */
+          /* Header: logo izq + título + contacto+fecha der en una fila */
           .print-compact-header {
             display: flex !important;
             flex-direction: row !important;
             align-items: center !important;
+            justify-content: space-between !important;
             height: auto !important;
-            min-height: 0 !important;
+            min-height: 64px !important;
             padding: 12px 28px !important;
             gap: 14px;
           }
@@ -597,10 +620,6 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
           .print-compact-header .print-header-title p {
             font-size: 10px !important;
             margin-top: 1px !important;
-          }
-          .print-compact-header .print-header-date {
-            position: static !important;
-            align-self: center;
           }
         }
       ` }} />
