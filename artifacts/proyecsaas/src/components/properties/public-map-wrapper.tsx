@@ -634,7 +634,7 @@ function DevelopmentFullCard({ dev }: { dev: any }) {
             </div>
           </div>
           <h3 className="line-clamp-2 font-bold text-slate-950 group-hover:text-brand-600 transition leading-snug">{dev.name}</h3>
-          
+
           <div className="mt-2 flex items-center gap-1 text-slate-500">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
             <span className="truncate text-xs">
@@ -645,7 +645,7 @@ function DevelopmentFullCard({ dev }: { dev: any }) {
           <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed">
             {dev.description}
           </p>
-          
+
           <div className="mt-3 flex items-center gap-3 border-t border-slate-100 pt-3">
              <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
                {available} / {total} libres
@@ -670,7 +670,7 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
   const detail = `/cat/${dev.organization?.slug}/developments/${dev.id}`;
   const total = dev.lots?.length || 0;
   const available = (dev.lots || []).filter((l: any) => l.status === "AVAILABLE").length;
-  
+
   const waMsg = encodeURIComponent(`Hola, vi el desarrollo "${dev.name}" en Raíces Pilot y me gustaría más detalles.`);
   const waPhone = dev.contactPhone || dev.organization?.contactWhatsapp;
   const wa = waPhone
