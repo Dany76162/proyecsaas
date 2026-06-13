@@ -1463,6 +1463,7 @@ enum FinancialAuditEvent {
   EXPENSE_VOIDED       // Gasto anulado
   ATTACHMENT_UPLOADED  // Comprobante subido
   ATTACHMENT_DELETED   // Comprobante eliminado
+  EXPORT_GENERATED     // Reporte exportado
 }
 
 enum ExpenseStatus {

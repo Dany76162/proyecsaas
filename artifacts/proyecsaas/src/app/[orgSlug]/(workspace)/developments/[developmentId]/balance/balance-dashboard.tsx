@@ -15,6 +15,9 @@ import {
   AlertTriangle,
   BarChart3,
   Layers,
+  Download,
+  FileText,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logoutFinancialVaultAction } from "@/modules/developments/financial-vault-actions";
@@ -270,6 +273,142 @@ function EconomicCurrencyBlock({
   );
 }
 
+// ── ReportsSection ────────────────────────────────────────────────────────────
+
+function ReportsSection({
+  orgSlug,
+  developmentId,
+}: {
+  orgSlug: string;
+  developmentId: string;
+}) {
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const buildUrl = (type: "expenses" | "economic-summary" | "accountant") => {
+    const params = new URLSearchParams({ orgSlug, developmentId });
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    return `/api/balance/reports/${type}?${params.toString()}`;
+  };
+
+  const reports = [
+    {
+      key: "expenses" as const,
+      label: "Gastos y comprobantes",
+      sub: "Listado detallado de todos los gastos registrados con estado y adjuntos.",
+      icon: FileText,
+      color: "text-brand-600",
+      bg: "bg-brand-50 dark:bg-brand-900/20",
+      border: "border-brand-100 dark:border-brand-800",
+    },
+    {
+      key: "economic-summary" as const,
+      label: "Resumen económico",
+      sub: "Lotes por estado, valor bruto, m² y precio promedio por moneda.",
+      icon: BarChart3,
+      color: "text-sky-600",
+      bg: "bg-sky-50 dark:bg-sky-900/20",
+      border: "border-sky-100 dark:border-sky-800",
+    },
+    {
+      key: "accountant" as const,
+      label: "Reporte contable completo",
+      sub: "Gastos + resumen económico en un único archivo. Apto para contador.",
+      icon: FileSpreadsheet,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 dark:bg-emerald-900/20",
+      border: "border-emerald-100 dark:border-emerald-800",
+    },
+  ];
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+          <Download className="w-4.5 h-4.5 text-slate-600 dark:text-slate-300" />
+        </div>
+        <div>
+          <h3 className="text-sm font-black text-slate-800 dark:text-white leading-tight">
+            Reportes y exportación
+          </h3>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Descargá reportes en CSV. Filtrá por fecha para períodos específicos.
+          </p>
+        </div>
+      </div>
+
+      {/* Date filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+            Desde
+          </label>
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-400"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+            Hasta
+          </label>
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-400"
+          />
+        </div>
+        {(from || to) && (
+          <div className="flex flex-col justify-end">
+            <button
+              onClick={() => { setFrom(""); setTo(""); }}
+              className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 underline py-1.5"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Report cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {reports.map(({ key, label, sub, icon: Icon, color, bg, border }) => (
+          <a
+            key={key}
+            href={buildUrl(key)}
+            download
+            className={`group flex flex-col gap-3 rounded-xl border ${border} ${bg} p-4 transition hover:shadow-md`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className={`w-8 h-8 rounded-lg bg-white/70 dark:bg-white/10 flex items-center justify-center shrink-0`}>
+                <Icon className={`w-4 h-4 ${color}`} />
+              </div>
+              <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition mt-1 shrink-0" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-slate-800 dark:text-white leading-tight">{label}</p>
+              <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">{sub}</p>
+            </div>
+            <span className={`text-[10px] font-bold ${color} flex items-center gap-1`}>
+              <Download className="w-3 h-3" />
+              Descargar CSV
+            </span>
+          </a>
+        ))}
+      </div>
+
+      <p className="text-[10px] text-slate-400">
+        Los archivos CSV son compatibles con Excel, Google Sheets y cualquier software contable. La descarga queda registrada en la auditoría financiera.
+      </p>
+    </div>
+  );
+}
+
 interface Props {
   orgSlug: string;
   developmentId: string;
@@ -485,6 +624,9 @@ export default function BalanceDashboard({
           expenses={expenses}
         />
       </div>
+
+      {/* Reportes y exportación */}
+      <ReportsSection orgSlug={orgSlug} developmentId={developmentId} />
 
       {/* Nota de privacidad */}
       <div className="border border-slate-100 dark:border-slate-800 rounded-xl px-4 py-3 bg-slate-50 dark:bg-slate-900/50">
