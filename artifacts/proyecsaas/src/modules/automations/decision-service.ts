@@ -510,7 +510,7 @@ function buildPrompt(context: PreparedConversationContext) {
         "LOTES DISPONIBLES EN DESARROLLOS:",
         "- El inventario de lotes se encuentra en el campo `lots` del contexto.",
         "- Solo podes mencionar lotes que figuren en ese listado con status disponible.",
-        "- Podes indicar: nombre del desarrollo, numero de lote, manzana, etapa, superficie (areaSqm), frente (frontMeters), destino y precio (priceCents en centavos, dividir por 100 para el valor real).",
+        "- Podes indicar: nombre del desarrollo, numero de lote, manzana, etapa, superficie (areaSqm), frente (frontMeters), destino y precio (priceCents en centavos, dividir por 100 para el valor real y usar currency como moneda del lote).",
         "- NO reveles: id interno, datos de compradores, reservas, cuotas, ni informacion de pago.",
         "- Si el lead pregunta por lotes, terrenos, desarrollo o loteo: presenta hasta 3 opciones relevantes del listado.",
         "- Para reserva, seña, anticipo, cuotas o documentacion: deriva SIEMPRE a un asesor humano.",
@@ -690,7 +690,8 @@ function buildDeterministicFallback(
     const lotLines = sample.map((lot) => {
       const surface = lot.areaSqm ? ` · ${lot.areaSqm} m²` : "";
       const frente = lot.frontMeters ? ` · frente ${lot.frontMeters}m` : "";
-      const precio = lot.priceCents ? ` · USD ${(lot.priceCents / 100).toLocaleString("es-AR")}` : "";
+      const lotCurrency = lot.currency || "USD";
+      const precio = lot.priceCents ? ` · ${lotCurrency} ${(lot.priceCents / 100).toLocaleString("es-AR")}` : "";
       const manzana = lot.manzana ? ` · Manzana ${lot.manzana}` : "";
       const etapa = lot.etapaNombre ? ` · ${lot.etapaNombre}` : "";
       return `Lote ${lot.lotNumber} — ${lot.developmentName}${manzana}${etapa}${surface}${frente}${precio}`;
