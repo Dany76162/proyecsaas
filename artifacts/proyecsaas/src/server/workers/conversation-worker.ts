@@ -889,6 +889,7 @@ export async function processWhatsAppInboundJob(
           followUpActiveAt: new Date(),
           nextBestAction: decision.nextBestAction,
           nextBestActionAt: new Date(),
+          isHumanControlled: true,
         },
       }),
     ]);
