@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { requireOrganizationMembership } from "@/server/auth/access";
 import { DevelopmentReservationStatus, DevelopmentInstallmentStatus, DevelopmentLotStatus } from "@prisma/client";
+import { markOverdueInstallments } from "@/modules/developments/installments";
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 // Adds `months` to `date` preserving the original day-of-month.
@@ -49,20 +50,6 @@ export async function GET(
         installmentAmountCents: true,
         firstDueDate: true,
         notes: true,
-        Installments: {
-          orderBy: { installmentNumber: "asc" },
-          select: {
-            id: true,
-            installmentNumber: true,
-            dueDate: true,
-            amountCents: true,
-            currency: true,
-            status: true,
-            paidAt: true,
-            paymentMethod: true,
-            paymentReference: true,
-          },
-        },
       },
     });
 
@@ -70,8 +57,28 @@ export async function GET(
       return NextResponse.json({ reservation: null, installments: [], summary: null });
     }
 
-    const { Installments, ...reservationData } = reservation;
-    const installments = Installments ?? [];
+    // F-7: on-demand OVERDUE transition before reading installments
+    await markOverdueInstallments(reservation.id);
+
+    // Re-fetch installments after potential OVERDUE update so summary is fresh
+    const freshInstallments = await prisma.developmentReservationInstallment.findMany({
+      where: { reservationId: reservation.id },
+      orderBy: { installmentNumber: "asc" },
+      select: {
+        id: true,
+        installmentNumber: true,
+        dueDate: true,
+        amountCents: true,
+        currency: true,
+        status: true,
+        paidAt: true,
+        paymentMethod: true,
+        paymentReference: true,
+      },
+    });
+
+    const reservationData = reservation;
+    const installments = freshInstallments;
 
     const summary =
       installments.length > 0

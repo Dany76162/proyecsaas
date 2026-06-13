@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
 import { requireOrganizationMembership } from "@/server/auth/access";
+import { markOverdueInstallments } from "@/modules/developments/installments";
 import { ArrowLeft, MapPin, Phone, Globe, User, Banknote, Calendar, Receipt } from "lucide-react";
 import Link from "next/link";
 import PrintButton from "../print-button";
@@ -107,12 +108,28 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
   });
 
   const STATUS_PRIORITY = ["ACTIVE", "PENDING_APPROVAL", "SOLD", "CANCELLED"];
-  const reservation =
+  const reservationRaw =
     reservationsRaw.length > 0
       ? [...reservationsRaw].sort(
           (a, b) => STATUS_PRIORITY.indexOf(a.status) - STATUS_PRIORITY.indexOf(b.status)
         )[0]
       : null;
+
+  // F-7: mark overdue installments on access, then re-fetch fresh data
+  if (reservationRaw) {
+    await markOverdueInstallments(reservationRaw.id);
+  }
+
+  // Re-fetch the selected reservation with fresh installment statuses
+  const reservation = reservationRaw
+    ? await prisma.developmentReservation.findUnique({
+        where: { id: reservationRaw.id },
+        include: {
+          Installments: { orderBy: { installmentNumber: "asc" } },
+          Lead: { select: { fullName: true, email: true, phone: true } },
+        },
+      })
+    : null;
 
   const dev = lotRaw.Development;
   const org = dev.Organization;
@@ -164,8 +181,8 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
   const currency = installments[0]?.currency ?? lotRaw.currency ?? "USD";
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-8 print:p-0 print:bg-white">
-      <div className="bg-white w-full max-w-[860px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full">
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-8 print:p-0 print:bg-white print:block">
+      <div className="bg-white w-full max-w-[860px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full print:block">
 
         {/* ── Acciones (ocultar al imprimir) ── */}
         <div className="print:hidden flex items-center justify-between px-6 py-3 bg-slate-50 border-b border-slate-200 gap-3 flex-wrap">
@@ -181,7 +198,7 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
 
         {/* ── HEADER ── */}
         <div
-          className="relative flex-shrink-0 h-36 flex items-end p-7 print:h-36"
+          className="relative flex-shrink-0 h-48 md:h-48 flex items-end p-7 print:h-48"
           style={{ backgroundColor: themeColor }}
         >
           {dev.logoUrl && (
@@ -244,10 +261,10 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
         )}
 
         {/* ── CUERPO PRINCIPAL ── */}
-        <div className="px-7 pt-5 pb-7 grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-5">
+        <div className="px-7 pt-5 pb-7 flex flex-col md:grid md:grid-cols-3 print:block gap-5">
 
           {/* ── Columna izquierda: cliente + lote + operación ── */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 print:grid print:grid-cols-3 print:mb-6">
 
             {/* Cliente */}
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
@@ -379,7 +396,7 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
           </div>
 
           {/* ── Columna derecha (2 cols): tabla de cuotas ── */}
-          <div className="md:col-span-2 print:col-span-2 flex flex-col gap-4">
+          <div className="md:col-span-2 print:block flex flex-col gap-4">
 
             {installments.length > 0 ? (
               <div className="border border-slate-200 rounded-xl overflow-hidden">
@@ -548,7 +565,7 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: A4 portrait; margin: 10mm; }
         }
       ` }} />
     </div>
