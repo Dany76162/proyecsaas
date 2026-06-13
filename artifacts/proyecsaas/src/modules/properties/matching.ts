@@ -292,6 +292,7 @@ export async function matchLeadToProperty(
     where: {
       organizationId: params.organizationId,
       status: PropertyStatus.AVAILABLE,
+      publicVisible: true,
     },
     select: {
       id: true,
