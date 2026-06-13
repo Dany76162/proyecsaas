@@ -175,9 +175,13 @@ export default function ExpenseTable({ orgSlug, developmentId, expenses }: Props
 
   if (expenses.length === 0) {
     return (
-      <div className="border border-slate-100 dark:border-slate-800 rounded-xl px-6 py-8 text-center bg-slate-50 dark:bg-slate-900/50">
-        <p className="text-xs text-slate-400 font-medium">No hay gastos registrados aún.</p>
-        <p className="text-[10px] text-slate-400 mt-1">Hacé clic en "Cargar gasto" para agregar el primero.</p>
+      <div className="border border-slate-100 dark:border-slate-800 rounded-xl px-6 py-10 text-center bg-slate-50 dark:bg-slate-900/50 space-y-1">
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          Todavía no hay gastos cargados.
+        </p>
+        <p className="text-[11px] text-slate-400">
+          Usá <strong>Cargar gasto</strong> para registrar el primer movimiento del desarrollo.
+        </p>
       </div>
     );
   }

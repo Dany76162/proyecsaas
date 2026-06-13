@@ -18,6 +18,10 @@ import {
   Download,
   FileText,
   FileSpreadsheet,
+  TrendingUp,
+  Wallet,
+  Receipt,
+  TableProperties,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logoutFinancialVaultAction } from "@/modules/developments/financial-vault-actions";
@@ -48,8 +52,8 @@ function fmtDate(d: Date | null | undefined): string {
 
 function fmtAmount(cents: number, currency: string) {
   return `${currency} ${(cents / 100).toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   })}`;
 }
 
@@ -61,14 +65,174 @@ function fmtPricePerSqm(value: number, currency: string) {
   return `${currency} ${value.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²`;
 }
 
-// ── EconomicSummarySection ────────────────────────────────────────────────────
+// ── Executive Summary ─────────────────────────────────────────────────────────
+
+function ExecutiveSummarySection({
+  economicSummary,
+  lotEconomics,
+  expenses,
+}: {
+  economicSummary: EconomicSummary;
+  lotEconomics: LotEconomicRow[];
+  expenses: ExpenseRow[];
+}) {
+  const { multipleCurrencies, byCurrency } = economicSummary;
+
+  // Use first (or only) currency for the executive summary
+  const primary = byCurrency[0];
+
+  if (!primary) {
+    return null;
+  }
+
+  const currency = primary.currency;
+
+  // Commercial pipeline
+  const availableCents = primary.availableValueCents;
+  const inProcessCents =
+    primary.reservedPendingValueCents +
+    primary.reservedValueCents +
+    primary.soldValueCents;
+
+  // Collected from lot economics (same currency only)
+  const sameCurrencyLots = lotEconomics.filter((l) => l.currency === currency);
+  const totalCollectedCents = sameCurrencyLots.reduce(
+    (s, l) => s + l.totalCollectedCents,
+    0,
+  );
+  const totalBalanceCents = sameCurrencyLots.reduce(
+    (s, l) => s + (l.balancePendingCents ?? 0),
+    0,
+  );
+
+  // Approved expenses
+  const approvedExpenseCents = expenses
+    .filter((e) => e.status === ExpenseStatus.APPROVED)
+    .reduce((s, e) => s + e.amountCents, 0);
+
+  const cards = [
+    {
+      label: "Valor bruto potencial",
+      value: fmtAmount(primary.grossValueCents, currency),
+      sub: "Lotes comercializables al precio lista",
+      icon: TrendingUp,
+      color: "text-brand-600",
+      bg: "bg-brand-50 dark:bg-brand-900/20",
+      border: "border-brand-100 dark:border-brand-800",
+      tag: null,
+    },
+    {
+      label: "Disponible para vender",
+      value: fmtAmount(availableCents, currency),
+      sub: `${primary.byStatus.available.count} lote${primary.byStatus.available.count !== 1 ? "s" : ""} disponibles`,
+      icon: Layers,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 dark:bg-emerald-900/20",
+      border: "border-emerald-100 dark:border-emerald-800",
+      tag: null,
+    },
+    {
+      label: "En proceso comercial",
+      value: fmtAmount(inProcessCents, currency),
+      sub: "Reservas pendientes + confirmadas + vendido",
+      icon: BarChart3,
+      color: "text-orange-600",
+      bg: "bg-orange-50 dark:bg-orange-900/20",
+      border: "border-orange-100 dark:border-orange-800",
+      tag: null,
+    },
+    {
+      label: "Cobrado confirmado",
+      value: totalCollectedCents > 0 ? fmtAmount(totalCollectedCents, currency) : "—",
+      sub: "Señas + cuotas pagas con pago aprobado",
+      icon: Wallet,
+      color: "text-sky-600",
+      bg: "bg-sky-50 dark:bg-sky-900/20",
+      border: "border-sky-100 dark:border-sky-800",
+      tag: "Según datos cargados",
+    },
+    {
+      label: "Saldo por cobrar",
+      value: totalBalanceCents > 0 ? fmtAmount(totalBalanceCents, currency) : "—",
+      sub: "Cuotas pendientes y saldos registrados",
+      icon: DollarSign,
+      color: "text-violet-600",
+      bg: "bg-violet-50 dark:bg-violet-900/20",
+      border: "border-violet-100 dark:border-violet-800",
+      tag: "Estimado",
+    },
+    {
+      label: "Gastos aprobados",
+      value: approvedExpenseCents > 0 ? fmtAmount(approvedExpenseCents, expenses[0]?.currency ?? currency) : "—",
+      sub: `${expenses.filter((e) => e.status === ExpenseStatus.APPROVED).length} gasto${expenses.filter((e) => e.status === ExpenseStatus.APPROVED).length !== 1 ? "s" : ""} aprobados`,
+      icon: Receipt,
+      color: "text-red-500",
+      bg: "bg-red-50 dark:bg-red-900/20",
+      border: "border-red-100 dark:border-red-800",
+      tag: null,
+    },
+  ];
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-slate-800 dark:bg-white flex items-center justify-center shrink-0">
+          <TrendingUp className="w-4.5 h-4.5 text-white dark:text-slate-900" />
+        </div>
+        <div>
+          <h3 className="text-sm font-black text-slate-800 dark:text-white leading-tight">
+            Resumen ejecutivo del negocio
+          </h3>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Panorama financiero consolidado del desarrollo según los datos cargados en el sistema.
+          </p>
+        </div>
+      </div>
+
+      {multipleCurrencies && (
+        <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
+            El desarrollo tiene lotes en múltiples monedas. Este resumen muestra solo los lotes en{" "}
+            <strong>{currency}</strong>. Revisá el Resumen económico para el detalle completo.
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {cards.map(({ label, value, sub, icon: Icon, color, bg, border, tag }) => (
+          <div key={label} className={`rounded-xl border ${border} ${bg} p-3.5 flex flex-col gap-2`}>
+            <div className="flex items-start justify-between gap-1">
+              <div className="w-7 h-7 rounded-lg bg-white/70 dark:bg-white/10 flex items-center justify-center shrink-0">
+                <Icon className={`w-3.5 h-3.5 ${color}`} />
+              </div>
+              {tag && (
+                <span className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full leading-tight">
+                  {tag}
+                </span>
+              )}
+            </div>
+            <div>
+              <p className={`text-sm font-black leading-tight ${value === "—" ? "text-slate-400" : "text-slate-800 dark:text-white"}`}>
+                {value}
+              </p>
+              <p className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 mt-0.5 leading-tight">{label}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Economic Summary ──────────────────────────────────────────────────────────
 
 function EconomicSummarySection({ summary }: { summary: EconomicSummary }) {
   const { totalLots, lotsWithoutPrice, lotsWithoutArea, multipleCurrencies, byCurrency } = summary;
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center shrink-0">
           <BarChart3 className="w-4.5 h-4.5 text-brand-600" />
@@ -78,17 +242,16 @@ function EconomicSummarySection({ summary }: { summary: EconomicSummary }) {
             Resumen económico del desarrollo
           </h3>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Valor bruto potencial, disponibilidad comercial y estado económico de los lotes.
+            Valor bruto potencial, m² comercializables y estado económico por categoría de lote.
           </p>
         </div>
       </div>
 
-      {/* Warnings */}
       {multipleCurrencies && (
         <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2.5">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
-            Este desarrollo tiene lotes en distintas monedas. Los totales se muestran separados por moneda.
+            Este desarrollo tiene lotes en distintas monedas. Los totales se muestran por separado para cada moneda.
           </p>
         </div>
       )}
@@ -97,22 +260,32 @@ function EconomicSummarySection({ summary }: { summary: EconomicSummary }) {
           <AlertTriangle className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
           <p className="text-[11px] text-slate-500 leading-relaxed">
             {lotsWithoutPrice > 0 && (
-              <span>Hay <strong>{lotsWithoutPrice}</strong> lote{lotsWithoutPrice !== 1 ? "s" : ""} sin precio cargado. </span>
+              <span>
+                <strong>{lotsWithoutPrice}</strong> lote{lotsWithoutPrice !== 1 ? "s" : ""} sin precio cargado.{" "}
+              </span>
             )}
             {lotsWithoutArea > 0 && (
-              <span>Hay <strong>{lotsWithoutArea}</strong> lote{lotsWithoutArea !== 1 ? "s" : ""} sin superficie cargada. </span>
+              <span>
+                <strong>{lotsWithoutArea}</strong> lote{lotsWithoutArea !== 1 ? "s" : ""} sin superficie cargada.{" "}
+              </span>
             )}
-            El cálculo económico puede estar incompleto.
+            Los cálculos pueden ser parciales.
           </p>
         </div>
       )}
       {totalLots === 0 && (
-        <p className="text-xs text-slate-400 text-center py-4">No hay lotes cargados en este desarrollo.</p>
+        <p className="text-xs text-slate-400 text-center py-4">
+          No hay lotes cargados en este desarrollo todavía.
+        </p>
       )}
 
-      {/* One block per currency */}
       {byCurrency.map((cur) => (
-        <EconomicCurrencyBlock key={cur.currency} data={cur} totalLots={totalLots} multipleCurrencies={multipleCurrencies} />
+        <EconomicCurrencyBlock
+          key={cur.currency}
+          data={cur}
+          totalLots={totalLots}
+          multipleCurrencies={multipleCurrencies}
+        />
       ))}
     </div>
   );
@@ -129,12 +302,11 @@ function EconomicCurrencyBlock({
 }) {
   const { currency, byStatus, grossValueCents, totalAreaSqm, averagePricePerSqm } = data;
 
-  // Top KPI cards
   const topCards = [
     {
       label: "Valor bruto potencial",
       value: fmtAmount(grossValueCents, currency),
-      sub: "Suma lotes comercializables",
+      sub: "Suma de lotes comercializables al precio lista",
       icon: DollarSign,
       color: "text-brand-600",
       bg: "bg-brand-50 dark:bg-brand-900/20",
@@ -152,16 +324,16 @@ function EconomicCurrencyBlock({
     {
       label: "Total de lotes",
       value: String(multipleCurrencies ? data.totalLots : totalLots),
-      sub: multipleCurrencies ? `en ${currency}` : "en el desarrollo",
+      sub: multipleCurrencies ? `lotes en ${currency}` : "lotes en el desarrollo",
       icon: BarChart3,
       color: "text-slate-600",
       bg: "bg-slate-50 dark:bg-slate-800/50",
       border: "border-slate-100 dark:border-slate-700",
     },
     {
-      label: "Promedio por m²",
+      label: "Precio promedio/m²",
       value: averagePricePerSqm != null ? fmtPricePerSqm(averagePricePerSqm, currency) : "—",
-      sub: averagePricePerSqm != null ? "Valor bruto / m² total" : "Sin datos suficientes",
+      sub: averagePricePerSqm != null ? "Valor bruto ÷ m² comercializables" : "Sin datos suficientes",
       icon: TrendingDown,
       color: "text-purple-600",
       bg: "bg-purple-50 dark:bg-purple-900/20",
@@ -169,11 +341,10 @@ function EconomicCurrencyBlock({
     },
   ];
 
-  // Status cards
   const statusCards = [
     {
       key: "available" as const,
-      label: "Disponible",
+      label: "Disponible para vender",
       color: "text-emerald-700 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-900/20",
       border: "border-emerald-200 dark:border-emerald-800",
@@ -189,7 +360,7 @@ function EconomicCurrencyBlock({
     },
     {
       key: "reserved" as const,
-      label: "Reservado",
+      label: "Reserva confirmada",
       color: "text-orange-700 dark:text-orange-400",
       bg: "bg-orange-50 dark:bg-orange-900/20",
       border: "border-orange-200 dark:border-orange-800",
@@ -221,11 +392,10 @@ function EconomicCurrencyBlock({
         </p>
       )}
 
-      {/* Top KPI cards — 4 columns */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {topCards.map(({ label, value, sub, icon: Icon, color, bg, border }) => (
           <div key={label} className={`rounded-xl border ${border} ${bg} p-3.5 flex flex-col gap-2`}>
-            <div className={`w-7 h-7 rounded-lg bg-white/70 dark:bg-white/10 flex items-center justify-center`}>
+            <div className="w-7 h-7 rounded-lg bg-white/70 dark:bg-white/10 flex items-center justify-center">
               <Icon className={`w-3.5 h-3.5 ${color}`} />
             </div>
             <div>
@@ -237,7 +407,6 @@ function EconomicCurrencyBlock({
         ))}
       </div>
 
-      {/* Status cards — by state */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
         {statusCards.map(({ key, label, color, bg, border, dot }) => {
           const group = byStatus[key];
@@ -246,10 +415,15 @@ function EconomicCurrencyBlock({
             <div key={key} className={`rounded-xl border ${border} ${bg} p-3 space-y-1.5`}>
               <div className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
-                <span className={`text-[10px] font-black uppercase tracking-wide ${color}`}>{label}</span>
+                <span className={`text-[10px] font-black uppercase tracking-wide ${color} leading-tight`}>
+                  {label}
+                </span>
               </div>
               <p className="text-sm font-black text-slate-800 dark:text-white">
-                {group.count} <span className="text-xs font-semibold text-slate-400">lote{group.count !== 1 ? "s" : ""}</span>
+                {group.count}{" "}
+                <span className="text-xs font-semibold text-slate-400">
+                  lote{group.count !== 1 ? "s" : ""}
+                </span>
               </p>
               {hasData ? (
                 <>
@@ -274,7 +448,7 @@ function EconomicCurrencyBlock({
   );
 }
 
-// ── ReportsSection ────────────────────────────────────────────────────────────
+// ── Reports Section ───────────────────────────────────────────────────────────
 
 function ReportsSection({
   orgSlug,
@@ -297,7 +471,7 @@ function ReportsSection({
     {
       key: "expenses" as const,
       label: "Gastos y comprobantes",
-      sub: "Listado detallado de todos los gastos registrados con estado y adjuntos.",
+      sub: "Listado detallado de todos los movimientos registrados, con estado y adjuntos.",
       icon: FileText,
       color: "text-brand-600",
       bg: "bg-brand-50 dark:bg-brand-900/20",
@@ -306,7 +480,7 @@ function ReportsSection({
     {
       key: "economic-summary" as const,
       label: "Resumen económico",
-      sub: "Lotes por estado, valor bruto, m² y precio promedio por moneda.",
+      sub: "Lotes por estado, valor bruto, m² totales y precio promedio por moneda.",
       icon: BarChart3,
       color: "text-sky-600",
       bg: "bg-sky-50 dark:bg-sky-900/20",
@@ -314,8 +488,8 @@ function ReportsSection({
     },
     {
       key: "accountant" as const,
-      label: "Reporte contable completo",
-      sub: "Gastos + resumen económico en un único archivo. Apto para contador.",
+      label: "Reporte para contador",
+      sub: "Gastos + resumen económico en un único archivo. Listo para enviar al estudio contable.",
       icon: FileSpreadsheet,
       color: "text-emerald-600",
       bg: "bg-emerald-50 dark:bg-emerald-900/20",
@@ -325,7 +499,6 @@ function ReportsSection({
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
           <Download className="w-4.5 h-4.5 text-slate-600 dark:text-slate-300" />
@@ -335,13 +508,13 @@ function ReportsSection({
             Reportes y exportación
           </h3>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Descargá reportes en CSV. Filtrá por fecha para períodos específicos.
+            Descargá reportes en CSV compatibles con Excel y Google Sheets. Filtrá por período si necesitás un corte de fecha.
           </p>
         </div>
       </div>
 
       {/* Date filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-black uppercase tracking-wide text-slate-400">
             Desde
@@ -365,14 +538,12 @@ function ReportsSection({
           />
         </div>
         {(from || to) && (
-          <div className="flex flex-col justify-end">
-            <button
-              onClick={() => { setFrom(""); setTo(""); }}
-              className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 underline py-1.5"
-            >
-              Limpiar filtros
-            </button>
-          </div>
+          <button
+            onClick={() => { setFrom(""); setTo(""); }}
+            className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 underline pb-1.5"
+          >
+            Limpiar
+          </button>
         )}
       </div>
 
@@ -386,7 +557,7 @@ function ReportsSection({
             className={`group flex flex-col gap-3 rounded-xl border ${border} ${bg} p-4 transition hover:shadow-md`}
           >
             <div className="flex items-start justify-between gap-2">
-              <div className={`w-8 h-8 rounded-lg bg-white/70 dark:bg-white/10 flex items-center justify-center shrink-0`}>
+              <div className="w-8 h-8 rounded-lg bg-white/70 dark:bg-white/10 flex items-center justify-center shrink-0">
                 <Icon className={`w-4 h-4 ${color}`} />
               </div>
               <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition mt-1 shrink-0" />
@@ -403,12 +574,14 @@ function ReportsSection({
         ))}
       </div>
 
-      <p className="text-[10px] text-slate-400">
-        Los archivos CSV son compatibles con Excel, Google Sheets y cualquier software contable. La descarga queda registrada en la auditoría financiera.
+      <p className="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2 leading-relaxed">
+        Los reportes se generan dentro del área protegida y quedan registrados en la auditoría financiera. No se comparten con terceros ni con la plataforma.
       </p>
     </div>
   );
 }
+
+// ── Main props ────────────────────────────────────────────────────────────────
 
 interface Props {
   orgSlug: string;
@@ -448,52 +621,42 @@ export default function BalanceDashboard({
     });
   };
 
-  // ── KPIs ──
+  // ── Expense KPIs ──
   const pendingExpenses = expenses.filter((e) => e.status === ExpenseStatus.PENDING);
   const approvedExpenses = expenses.filter((e) => e.status === ExpenseStatus.APPROVED);
-  const defaultCurrency = expenses[0]?.currency ?? "ARS";
+  const activeExpenses = expenses.filter((e) => e.status !== ExpenseStatus.VOIDED);
+  const expenseCurrency = expenses[0]?.currency ?? "ARS";
 
   const totalPendingCents = pendingExpenses.reduce((s, e) => s + e.amountCents, 0);
   const totalApprovedCents = approvedExpenses.reduce((s, e) => s + e.amountCents, 0);
+  const totalActiveCents = activeExpenses.reduce((s, e) => s + e.amountCents, 0);
 
-  const kpis = [
+  const expenseKpis = [
     {
       icon: Hourglass,
-      label: "Gastos pendientes",
+      label: "Pendientes de aprobación",
       value: String(pendingExpenses.length),
-      sub: pendingExpenses.length > 0 ? fmtAmount(totalPendingCents, defaultCurrency) : "Sin monto pendiente",
+      sub: pendingExpenses.length > 0
+        ? fmtAmount(totalPendingCents, expenseCurrency)
+        : "Sin movimientos pendientes",
       color: "text-amber-600",
       bg: "bg-amber-50 dark:bg-amber-900/20",
       border: "border-amber-100 dark:border-amber-800",
     },
     {
       icon: CheckCircle2,
-      label: "Gastos aprobados",
-      value: String(approvedExpenses.length),
-      sub: approvedExpenses.length > 0 ? fmtAmount(totalApprovedCents, defaultCurrency) : "Sin monto aprobado",
+      label: "Aprobados",
+      value: fmtAmount(totalApprovedCents, expenseCurrency),
+      sub: `${approvedExpenses.length} gasto${approvedExpenses.length !== 1 ? "s" : ""} confirmados`,
       color: "text-emerald-600",
       bg: "bg-emerald-50 dark:bg-emerald-900/20",
       border: "border-emerald-100 dark:border-emerald-800",
     },
     {
-      icon: DollarSign,
-      label: "Total aprobado",
-      value: fmtAmount(totalApprovedCents, defaultCurrency),
-      sub: `${approvedExpenses.length} gasto${approvedExpenses.length !== 1 ? "s" : ""}`,
-      color: "text-sky-600",
-      bg: "bg-sky-50 dark:bg-sky-900/20",
-      border: "border-sky-100 dark:border-sky-800",
-    },
-    {
       icon: TrendingDown,
-      label: "Total registrado",
-      value: fmtAmount(
-        expenses
-          .filter((e) => e.status !== ExpenseStatus.VOIDED)
-          .reduce((s, e) => s + e.amountCents, 0),
-        defaultCurrency
-      ),
-      sub: `${expenses.filter((e) => e.status !== ExpenseStatus.VOIDED).length} gasto${expenses.filter((e) => e.status !== ExpenseStatus.VOIDED).length !== 1 ? "s" : ""} activos`,
+      label: "Total en trámite",
+      value: fmtAmount(totalActiveCents, expenseCurrency),
+      sub: `${activeExpenses.length} gasto${activeExpenses.length !== 1 ? "s" : ""} activos (excl. anulados)`,
       color: "text-purple-600",
       bg: "bg-purple-50 dark:bg-purple-900/20",
       border: "border-purple-100 dark:border-purple-800",
@@ -514,7 +677,7 @@ export default function BalanceDashboard({
         />
       )}
 
-      {/* Header del módulo */}
+      {/* 1 — Header del vault */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
@@ -540,8 +703,7 @@ export default function BalanceDashboard({
           </button>
         </div>
 
-        {/* Responsable + Actividad */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <User className="w-3 h-3 text-slate-400" />
@@ -561,7 +723,7 @@ export default function BalanceDashboard({
             <div className="flex items-center gap-1.5 mb-1">
               <Clock className="w-3 h-3 text-slate-400" />
               <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
-                Actividad
+                Actividad del vault
               </span>
             </div>
             <p className="text-[10px] text-slate-500 leading-relaxed">
@@ -572,12 +734,14 @@ export default function BalanceDashboard({
               <span className="font-semibold text-slate-700 dark:text-slate-300">Total accesos:</span>{" "}
               {vault.accessCount}
             </p>
-            <p className="text-[10px] text-slate-400 mt-1">Activado: {fmtDate(vault.activatedAt)}</p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              Activado: {fmtDate(vault.activatedAt)}
+            </p>
           </div>
         </div>
 
         <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
           <p className="text-[10px] text-slate-500">
             Sesión activa como{" "}
             <span className="font-semibold text-slate-700 dark:text-slate-300">{userEmail}</span> · Rol:{" "}
@@ -586,58 +750,79 @@ export default function BalanceDashboard({
         </div>
       </div>
 
-      {/* Resumen económico del desarrollo */}
+      {/* 2 — Resumen ejecutivo */}
+      <ExecutiveSummarySection
+        economicSummary={economicSummary}
+        lotEconomics={lotEconomics}
+        expenses={expenses}
+      />
+
+      {/* 3 — Resumen económico del desarrollo */}
       <EconomicSummarySection summary={economicSummary} />
 
-      {/* Vista económica por lote */}
+      {/* 4 — Vista económica por lote */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-            <BarChart3 className="w-4.5 h-4.5 text-violet-600" />
+            <TableProperties className="w-4.5 h-4.5 text-violet-600" />
           </div>
           <div>
             <h3 className="text-sm font-black text-slate-800 dark:text-white leading-tight">
-              Vista económica por lote
+              Estado comercial por lote
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Control interno de precio, estado comercial, pagos confirmados y saldo por cobrar de cada lote.
+              Precio, estado de reserva, cobrado confirmado y saldo por cobrar de cada lote del desarrollo.
             </p>
           </div>
         </div>
         <LotEconomicsTable lots={lotEconomics} orgSlug={orgSlug} />
       </div>
 
-      {/* KPIs de gastos */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {kpis.map(({ icon: Icon, label, value, sub, color, bg, border }) => (
-          <div key={label} className={`rounded-2xl border ${border} ${bg} p-4 flex flex-col gap-2`}>
-            <div className="w-8 h-8 rounded-lg bg-white/60 dark:bg-white/10 flex items-center justify-center">
-              <Icon className={`w-4 h-4 ${color}`} />
+      {/* 5 — Gastos y comprobantes */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+              <Receipt className="w-4.5 h-4.5 text-red-500" />
             </div>
             <div>
-              <p className="text-xs font-black text-slate-800 dark:text-white leading-tight">{value}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5 font-medium leading-tight">{label}</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
+              <h3 className="text-sm font-black text-slate-800 dark:text-white leading-tight">
+                Gastos y comprobantes
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {expenses.length > 0
+                  ? `${expenses.length} movimiento${expenses.length !== 1 ? "s" : ""} registrado${expenses.length !== 1 ? "s" : ""}`
+                  : "Sin movimientos registrados aún"}
+              </p>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Gastos */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-black text-slate-800 dark:text-white">Gastos registrados</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">{expenses.length} gasto{expenses.length !== 1 ? "s" : ""} en total</p>
           </div>
           <button
             onClick={() => setShowExpenseForm(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             Cargar gasto
           </button>
         </div>
+
+        {/* KPI strip */}
+        {expenses.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {expenseKpis.map(({ icon: Icon, label, value, sub, color, bg, border }) => (
+              <div key={label} className={`rounded-xl border ${border} ${bg} p-3 flex items-center gap-3`}>
+                <div className="w-8 h-8 rounded-lg bg-white/60 dark:bg-white/10 flex items-center justify-center shrink-0">
+                  <Icon className={`w-4 h-4 ${color}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-slate-800 dark:text-white leading-tight truncate">{value}</p>
+                  <p className="text-[10px] text-slate-500 font-medium leading-tight">{label}</p>
+                  <p className="text-[10px] text-slate-400">{sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <ExpenseTable
           orgSlug={orgSlug}
@@ -646,14 +831,14 @@ export default function BalanceDashboard({
         />
       </div>
 
-      {/* Reportes y exportación */}
+      {/* 6 — Reportes */}
       <ReportsSection orgSlug={orgSlug} developmentId={developmentId} />
 
-      {/* Nota de privacidad */}
+      {/* 7 — Nota de privacidad */}
       <div className="border border-slate-100 dark:border-slate-800 rounded-xl px-4 py-3 bg-slate-50 dark:bg-slate-900/50">
         <p className="text-[10px] text-slate-400 leading-relaxed text-center">
-          Todo acceso y operación en este módulo queda registrado en la auditoría financiera. Los datos de
-          Balance y Rendición son privados del tenant y no son accesibles por la plataforma.
+          Todo acceso y operación en este módulo queda registrado en la auditoría financiera.
+          Los datos de Balance y Rendición son privados del tenant y no son accesibles por la plataforma.
         </p>
       </div>
     </div>

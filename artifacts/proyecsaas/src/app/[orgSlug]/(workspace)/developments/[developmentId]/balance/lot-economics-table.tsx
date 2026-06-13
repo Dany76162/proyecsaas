@@ -54,7 +54,7 @@ const LOT_STATUS_CONFIG: Record<
     dot: "bg-amber-400",
   },
   RESERVED: {
-    label: "Reservado",
+    label: "Reserva confirmada",
     cls: "bg-orange-50 text-orange-700 border-orange-200",
     dot: "bg-orange-500",
   },
@@ -149,7 +149,7 @@ export default function LotEconomicsTable({ lots, orgSlug }: Props) {
           <option value="ALL">Todos los estados</option>
           <option value="AVAILABLE">Disponible</option>
           <option value="RESERVED_PENDING">Reserva pendiente</option>
-          <option value="RESERVED">Reservado</option>
+          <option value="RESERVED">Reserva confirmada</option>
           <option value="SOLD">Vendido</option>
           <option value="BLOCKED">Bloqueado</option>
         </select>
@@ -179,17 +179,17 @@ export default function LotEconomicsTable({ lots, orgSlug }: Props) {
       {filtered.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
-            { label: "Superficie total", value: fmtSqm(totals.totalArea) },
+            { label: "m² totales", value: fmtSqm(totals.totalArea) },
             {
-              label: "Valor lista total",
+              label: "Valor lista",
               value: totals.totalPrice > 0 ? fmtCents(totals.totalPrice, defaultCurrency) : "—",
             },
             {
-              label: "Total cobrado",
+              label: "Cobrado confirmado",
               value: totals.totalCollected > 0 ? fmtCents(totals.totalCollected, defaultCurrency) : "—",
             },
             {
-              label: "Total cuotas pendientes",
+              label: "Cuotas pendientes",
               value: totals.totalPending > 0 ? fmtCents(totals.totalPending, defaultCurrency) : "—",
             },
           ].map(({ label, value }) => (
@@ -206,9 +206,12 @@ export default function LotEconomicsTable({ lots, orgSlug }: Props) {
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <p className="text-xs text-slate-400 text-center py-8">
-          No se encontraron lotes con los filtros aplicados.
-        </p>
+        <div className="border border-slate-100 dark:border-slate-800 rounded-xl px-6 py-8 text-center bg-slate-50 dark:bg-slate-900/50">
+          <p className="text-xs font-bold text-slate-500">Sin resultados</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            No hay lotes que coincidan con los filtros aplicados.
+          </p>
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
           <table className="w-full text-xs">
@@ -236,7 +239,7 @@ export default function LotEconomicsTable({ lots, orgSlug }: Props) {
                   Cobrado
                 </th>
                 <th className="text-right px-3 py-2.5 font-black text-[10px] uppercase tracking-wide text-slate-500 whitespace-nowrap">
-                  Pend. cuotas
+                  Cuotas pend.
                 </th>
                 <th className="text-right px-3 py-2.5 font-black text-[10px] uppercase tracking-wide text-slate-500 whitespace-nowrap">
                   Saldo
