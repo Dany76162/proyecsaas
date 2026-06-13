@@ -182,7 +182,7 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-8 print:p-0 print:bg-white print:block">
-      <div className="bg-white w-full max-w-[860px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full print:block">
+      <div className="bg-white w-full max-w-[860px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full print:block print-doc-wrapper">
 
         {/* ── Acciones (ocultar al imprimir) ── */}
         <div className="print:hidden flex items-center justify-between px-6 py-3 bg-slate-50 border-b border-slate-200 gap-3 flex-wrap">
@@ -531,7 +531,7 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
         </div>
 
         {/* ── FOOTER ── */}
-        <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-4 flex items-center justify-between gap-4 flex-wrap print:flex-nowrap">
+        <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-4 flex items-center justify-between gap-4 flex-wrap print:flex-nowrap print-footer-bar">
           <div className="flex items-center gap-4 flex-wrap">
             {dev.companyLogoUrl && (
               <img
@@ -566,6 +566,15 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           @page { size: A4 portrait; margin: 10mm; }
+          .print-doc-wrapper { padding-bottom: 28mm; }
+          .print-footer-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+          }
+          tbody tr { break-inside: avoid; page-break-inside: avoid; }
         }
       ` }} />
     </div>

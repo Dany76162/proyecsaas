@@ -256,7 +256,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-8 print:p-0 print:bg-white print:block">
-      <div className="bg-white w-full max-w-[794px] min-h-[1123px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full print:block">
+      <div className="bg-white w-full max-w-[794px] min-h-[1123px] shadow-2xl flex flex-col print:shadow-none print:w-full print:max-w-full print:block print-doc-wrapper">
 
         {/* Print Button */}
         <div className="absolute top-4 right-4 print:hidden z-50">
@@ -748,7 +748,7 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         </div>
 
         {/* ── FOOTER ── */}
-        <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-5 flex items-center justify-between gap-4 flex-wrap print:flex-nowrap">
+        <div className="flex-shrink-0 bg-slate-900 text-slate-300 px-7 py-5 flex items-center justify-between gap-4 flex-wrap print:flex-nowrap print-footer-bar">
           <div className="flex items-center gap-5 flex-wrap">
             {dev.companyLogoUrl && (
               <img src={dev.companyLogoUrl} alt="Inmobiliaria"
@@ -786,6 +786,14 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           @page { size: A4 portrait; margin: 10mm; }
+          .print-doc-wrapper { padding-bottom: 28mm; }
+          .print-footer-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+          }
         }
       `}} />
     </div>
