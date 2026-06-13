@@ -1,20 +1,23 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   ShieldCheck,
-  TrendingUp,
-  Receipt,
-  FileText,
-  BarChart3,
   LogOut,
   Clock,
   User,
+  Plus,
+  TrendingDown,
+  CheckCircle2,
+  Hourglass,
+  DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logoutFinancialVaultAction } from "@/modules/developments/financial-vault-actions";
-import { FinancialEntityType } from "@prisma/client";
+import { FinancialEntityType, ExpenseStatus } from "@prisma/client";
+import ExpenseForm from "./expense-form";
+import ExpenseTable, { type ExpenseRow } from "./expense-table";
 
 const ENTITY_TYPE_LABELS: Record<FinancialEntityType, string> = {
   DEVELOPER: "Desarrollador",
@@ -35,6 +38,13 @@ function fmtDate(d: Date | null | undefined): string {
   });
 }
 
+function fmtAmount(cents: number, currency: string) {
+  return `${currency} ${(cents / 100).toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 interface Props {
   orgSlug: string;
   developmentId: string;
@@ -47,11 +57,19 @@ interface Props {
     activatedAt: Date;
   };
   userEmail: string;
+  expenses: ExpenseRow[];
 }
 
-export default function BalanceDashboard({ orgSlug, developmentId, vault, userEmail }: Props) {
+export default function BalanceDashboard({
+  orgSlug,
+  developmentId,
+  vault,
+  userEmail,
+  expenses,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
 
   const handleLogout = () => {
     startTransition(async () => {
@@ -61,31 +79,52 @@ export default function BalanceDashboard({ orgSlug, developmentId, vault, userEm
     });
   };
 
-  const placeholderCards = [
+  // ── KPIs ──
+  const pendingExpenses = expenses.filter((e) => e.status === ExpenseStatus.PENDING);
+  const approvedExpenses = expenses.filter((e) => e.status === ExpenseStatus.APPROVED);
+  const defaultCurrency = expenses[0]?.currency ?? "ARS";
+
+  const totalPendingCents = pendingExpenses.reduce((s, e) => s + e.amountCents, 0);
+  const totalApprovedCents = approvedExpenses.reduce((s, e) => s + e.amountCents, 0);
+
+  const kpis = [
     {
-      icon: TrendingUp,
-      label: "Ingresos confirmados",
-      color: "text-emerald-600",
-      bg: "bg-emerald-50 dark:bg-emerald-900/20",
-      border: "border-emerald-100 dark:border-emerald-800",
-    },
-    {
-      icon: Receipt,
-      label: "Gastos registrados",
+      icon: Hourglass,
+      label: "Gastos pendientes",
+      value: String(pendingExpenses.length),
+      sub: pendingExpenses.length > 0 ? fmtAmount(totalPendingCents, defaultCurrency) : "Sin monto pendiente",
       color: "text-amber-600",
       bg: "bg-amber-50 dark:bg-amber-900/20",
       border: "border-amber-100 dark:border-amber-800",
     },
     {
-      icon: FileText,
-      label: "Comprobantes",
+      icon: CheckCircle2,
+      label: "Gastos aprobados",
+      value: String(approvedExpenses.length),
+      sub: approvedExpenses.length > 0 ? fmtAmount(totalApprovedCents, defaultCurrency) : "Sin monto aprobado",
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 dark:bg-emerald-900/20",
+      border: "border-emerald-100 dark:border-emerald-800",
+    },
+    {
+      icon: DollarSign,
+      label: "Total aprobado",
+      value: fmtAmount(totalApprovedCents, defaultCurrency),
+      sub: `${approvedExpenses.length} gasto${approvedExpenses.length !== 1 ? "s" : ""}`,
       color: "text-sky-600",
       bg: "bg-sky-50 dark:bg-sky-900/20",
       border: "border-sky-100 dark:border-sky-800",
     },
     {
-      icon: BarChart3,
-      label: "Reportes para contador",
+      icon: TrendingDown,
+      label: "Total registrado",
+      value: fmtAmount(
+        expenses
+          .filter((e) => e.status !== ExpenseStatus.VOIDED)
+          .reduce((s, e) => s + e.amountCents, 0),
+        defaultCurrency
+      ),
+      sub: `${expenses.filter((e) => e.status !== ExpenseStatus.VOIDED).length} gasto${expenses.filter((e) => e.status !== ExpenseStatus.VOIDED).length !== 1 ? "s" : ""} activos`,
       color: "text-purple-600",
       bg: "bg-purple-50 dark:bg-purple-900/20",
       border: "border-purple-100 dark:border-purple-800",
@@ -93,7 +132,19 @@ export default function BalanceDashboard({ orgSlug, developmentId, vault, userEm
   ];
 
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="space-y-5">
+      {showExpenseForm && (
+        <ExpenseForm
+          orgSlug={orgSlug}
+          developmentId={developmentId}
+          onClose={() => setShowExpenseForm(false)}
+          onCreated={() => {
+            setShowExpenseForm(false);
+            router.refresh();
+          }}
+        />
+      )}
+
       {/* Header del módulo */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -120,7 +171,7 @@ export default function BalanceDashboard({ orgSlug, developmentId, vault, userEm
           </button>
         </div>
 
-        {/* Información del responsable */}
+        {/* Responsable + Actividad */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">
             <div className="flex items-center gap-1.5 mb-1">
@@ -145,56 +196,70 @@ export default function BalanceDashboard({ orgSlug, developmentId, vault, userEm
               </span>
             </div>
             <p className="text-[10px] text-slate-500 leading-relaxed">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                Último acceso:
-              </span>{" "}
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Último acceso:</span>{" "}
               {fmtDate(vault.lastAccessAt)}
             </p>
             <p className="text-[10px] text-slate-500 mt-1">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                Total accesos:
-              </span>{" "}
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Total accesos:</span>{" "}
               {vault.accessCount}
             </p>
-            <p className="text-[10px] text-slate-400 mt-1">
-              Activado: {fmtDate(vault.activatedAt)}
-            </p>
+            <p className="text-[10px] text-slate-400 mt-1">Activado: {fmtDate(vault.activatedAt)}</p>
           </div>
         </div>
 
         <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           <p className="text-[10px] text-slate-500">
-            Sesión activa como <span className="font-semibold text-slate-700 dark:text-slate-300">{userEmail}</span> ·
-            Rol: <span className="font-semibold text-brand-600">Responsable financiero</span>
+            Sesión activa como{" "}
+            <span className="font-semibold text-slate-700 dark:text-slate-300">{userEmail}</span> · Rol:{" "}
+            <span className="font-semibold text-brand-600">Responsable financiero</span>
           </p>
         </div>
       </div>
 
-      {/* Cards placeholder */}
-      <div className="grid grid-cols-2 gap-3">
-        {placeholderCards.map(({ icon: Icon, label, color, bg, border }) => (
-          <div
-            key={label}
-            className={`rounded-2xl border ${border} ${bg} p-4 flex flex-col gap-3`}
-          >
-            <div className={`w-8 h-8 rounded-lg bg-white/60 dark:bg-white/10 flex items-center justify-center`}>
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map(({ icon: Icon, label, value, sub, color, bg, border }) => (
+          <div key={label} className={`rounded-2xl border ${border} ${bg} p-4 flex flex-col gap-2`}>
+            <div className="w-8 h-8 rounded-lg bg-white/60 dark:bg-white/10 flex items-center justify-center">
               <Icon className={`w-4 h-4 ${color}`} />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">
-                {label}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-1 font-medium">Próxima fase</p>
+              <p className="text-xs font-black text-slate-800 dark:text-white leading-tight">{value}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-medium leading-tight">{label}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
             </div>
           </div>
         ))}
       </div>
 
+      {/* Gastos */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black text-slate-800 dark:text-white">Gastos registrados</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">{expenses.length} gasto{expenses.length !== 1 ? "s" : ""} en total</p>
+          </div>
+          <button
+            onClick={() => setShowExpenseForm(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Cargar gasto
+          </button>
+        </div>
+
+        <ExpenseTable
+          orgSlug={orgSlug}
+          developmentId={developmentId}
+          expenses={expenses}
+        />
+      </div>
+
       {/* Nota de privacidad */}
       <div className="border border-slate-100 dark:border-slate-800 rounded-xl px-4 py-3 bg-slate-50 dark:bg-slate-900/50">
         <p className="text-[10px] text-slate-400 leading-relaxed text-center">
-          Todo acceso a este módulo queda registrado en la auditoría financiera. Los datos de
+          Todo acceso y operación en este módulo queda registrado en la auditoría financiera. Los datos de
           Balance y Rendición son privados del tenant y no son accesibles por la plataforma.
         </p>
       </div>

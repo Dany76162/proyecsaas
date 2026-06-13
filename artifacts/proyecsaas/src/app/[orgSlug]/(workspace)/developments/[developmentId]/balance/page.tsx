@@ -98,7 +98,27 @@ export default async function BalancePage({ params }: PageProps) {
     );
   }
 
-  // ── Caso: sesión válida → mostrar dashboard protegido ────────────────────
+  // ── Caso: sesión válida → cargar gastos y mostrar dashboard ─────────────
+  const expenses = await prisma.developmentFinancialExpense.findMany({
+    where: { vaultId: vault.id, organizationId },
+    orderBy: { date: "desc" },
+    select: {
+      id: true,
+      date: true,
+      category: true,
+      description: true,
+      provider: true,
+      amountCents: true,
+      currency: true,
+      status: true,
+      attachments: {
+        where: { deletedAt: null },
+        select: { id: true, filename: true, r2Key: true },
+        orderBy: { uploadedAt: "asc" },
+      },
+    },
+  });
+
   return (
     <BalancePage_Layout orgSlug={orgSlug} development={development} backHref={backHref}>
       <BalanceDashboard
@@ -113,6 +133,7 @@ export default async function BalancePage({ params }: PageProps) {
           activatedAt: vault.activatedAt,
         }}
         userEmail={user.email}
+        expenses={expenses}
       />
     </BalancePage_Layout>
   );

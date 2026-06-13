@@ -1457,6 +1457,39 @@ enum FinancialAuditEvent {
   VAULT_ACTIVATED      // Módulo activado por primera vez
   MODULE_ACCESS        // Ingreso exitoso al módulo
   MODULE_ACCESS_FAILED // Intento de ingreso con clave incorrecta
+  EXPENSE_CREATED      // Gasto registrado
+  EXPENSE_APPROVED     // Gasto aprobado
+  EXPENSE_REJECTED     // Gasto rechazado
+  EXPENSE_VOIDED       // Gasto anulado
+  ATTACHMENT_UPLOADED  // Comprobante subido
+  ATTACHMENT_DELETED   // Comprobante eliminado
+}
+
+enum ExpenseStatus {
+  PENDING   // Pendiente de aprobación
+  APPROVED  // Aprobado
+  REJECTED  // Rechazado
+  VOIDED    // Anulado
+}
+
+enum ExpenseCategory {
+  MENSURA
+  AGRIMENSURA
+  MUNICIPALIDAD
+  APROBACIONES
+  ESCRITURAS
+  INFRAESTRUCTURA
+  CALLES
+  LUZ
+  AGUA
+  SEGURIDAD
+  MARKETING
+  COMISIONES
+  ADMINISTRACION
+  HONORARIOS
+  IMPUESTOS
+  GASTOS_MENORES
+  OTROS
 }
 
 model DevelopmentFinancialVault {
@@ -1480,6 +1513,8 @@ model DevelopmentFinancialVault {
   Organization Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   accesses     DevelopmentFinancialAccess[]
   auditLogs    DevelopmentFinancialAuditLog[]
+  expenses     DevelopmentFinancialExpense[]
+  attachments  DevelopmentFinancialAttachment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1518,6 +1553,73 @@ model DevelopmentFinancialAuditLog {
 
   @@index([vaultId, createdAt])
   @@index([vaultId, event])
+}
+
+model DevelopmentFinancialExpense {
+  id              String          @id @default(cuid())
+  vaultId         String
+  organizationId  String
+  developmentId   String
+
+  date            DateTime
+  amountCents     Int
+  currency        String          @default("ARS")
+  category        ExpenseCategory
+  description     String
+  provider        String?
+  paidBy          String?
+  paymentMethod   String?
+  paymentReference String?
+  internalNotes   String?
+
+  status          ExpenseStatus   @default(PENDING)
+  createdById     String
+
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectedById    String?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  voidedById      String?
+  voidedAt        DateTime?
+  voidReason      String?
+
+  vault       DevelopmentFinancialVault       @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  attachments DevelopmentFinancialAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([vaultId, date])
+  @@index([vaultId, status])
+  @@index([vaultId, category])
+}
+
+model DevelopmentFinancialAttachment {
+  id           String   @id @default(cuid())
+  expenseId    String
+  vaultId      String
+  organizationId String
+
+  filename     String
+  contentType  String
+  sizeBytes    Int
+  r2Key        String
+  hash         String?
+
+  uploadedById String
+  uploadedAt   DateTime @default(now())
+  description  String?
+
+  deletedAt    DateTime?
+  deletedById  String?
+  deleteReason String?
+
+  expense DevelopmentFinancialExpense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  vault   DevelopmentFinancialVault   @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
+  @@index([vaultId])
 }
 
 model DevelopmentDrawableLayer {
