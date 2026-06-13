@@ -322,54 +322,58 @@ export default function DevelopmentWizardClient({
     <div className={cn("flex-1 flex flex-col min-h-0 overflow-hidden", isWorkspaceTab ? "space-y-2.5" : "space-y-4")}>
       {/* Tabs */}
       <div className={cn(
-        "shrink-0 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50 dark:bg-slate-900/50",
+        "shrink-0 flex items-stretch gap-2",
         "mx-4 sm:mx-6 lg:mx-8"
       )}>
-        <div className="flex overflow-x-auto divide-x divide-slate-200 dark:divide-slate-800">
-          {steps.map((step) => {
-            const isActive = activeTab === step.id;
-            return (
-              <Link
-                key={step.id}
-                href={`?tab=${step.id}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleTabChange(step.id);
-                }}
-                className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 flex-1 justify-center",
-                  isActive
-                    ? "bg-brand-500 text-white shadow-inner"
-                    : step.done
-                      ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
-                      : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
-                )}
-              >
-                <span
+        {/* Pasos 1–5: scrollable */}
+        <div className="flex-1 min-w-0 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50 dark:bg-slate-900/50">
+          <div className="flex overflow-x-auto divide-x divide-slate-200 dark:divide-slate-800 h-full">
+            {steps.map((step) => {
+              const isActive = activeTab === step.id;
+              return (
+                <Link
+                  key={step.id}
+                  href={`?tab=${step.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleTabChange(step.id);
+                  }}
                   className={cn(
-                    "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shrink-0",
+                    "flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 flex-1 justify-center",
                     isActive
-                      ? "bg-white/25 text-white"
+                      ? "bg-brand-500 text-white shadow-inner"
                       : step.done
-                        ? "bg-emerald-500/20 text-emerald-500"
-                        : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+                        ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                        : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
                   )}
                 >
-                  {step.done && !isActive ? "✓" : step.num}
-                </span>
-                {step.label}
-              </Link>
-            );
-          })}
-          {/* Balance y Rendición — ruta separada */}
-          <Link
-            href={`/${orgSlug}/developments/${development.id}/balance`}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 justify-center bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 border-l border-slate-200 dark:border-slate-800"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-            Balance
-          </Link>
+                  <span
+                    className={cn(
+                      "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shrink-0",
+                      isActive
+                        ? "bg-white/25 text-white"
+                        : step.done
+                          ? "bg-emerald-500/20 text-emerald-500"
+                          : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+                    )}
+                  >
+                    {step.done && !isActive ? "✓" : step.num}
+                  </span>
+                  {step.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Balance y Rendición — siempre visible, fuera del área scrollable */}
+        <Link
+          href={`/${orgSlug}/developments/${development.id}/balance`}
+          className="shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800"
+        >
+          <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+          Balance
+        </Link>
       </div>
 
       {/* Content Area */}
