@@ -483,7 +483,7 @@ export async function processWhatsAppInboundJob(
     result.conversation.propertyId = propertyMatch.property.id;
   }
 
-  const [availability, recentMessages, aiAgent, availableLots] = await Promise.all([
+  const [availability, recentMessages, aiAgent, availableLots, orgRecord] = await Promise.all([
     propertyMatch.property
       ? prisma.availabilitySlot.findMany({
           where: {
@@ -547,6 +547,7 @@ export async function processWhatsAppInboundJob(
       },
       select: {
         id: true,
+        developmentId: true,
         lotNumber: true,
         areaSqm: true,
         priceCents: true,
@@ -561,6 +562,10 @@ export async function processWhatsAppInboundJob(
       },
       orderBy: [{ Development: { name: "asc" } }, { lotNumber: "asc" }],
       take: 20,
+    }),
+    prisma.organization.findUnique({
+      where: { id: targetOrgId },
+      select: { slug: true },
     }),
   ]);
 
@@ -634,8 +639,12 @@ export async function processWhatsAppInboundJob(
           status: propertyMatch.property.status,
           priceCents: propertyMatch.property.priceCents,
           currency: propertyMatch.property.currency,
+          publicUrl: orgRecord?.slug
+            ? `/cat/${orgRecord.slug}/${propertyMatch.property.id}`
+            : null,
         }
       : null,
+    catalogUrl: orgRecord?.slug ? `/cat/${orgRecord.slug}` : null,
     propertyMatch: {
       status: propertyMatch.trace.status,
       score: propertyMatch.trace.score,
@@ -674,6 +683,7 @@ export async function processWhatsAppInboundJob(
       : null,
     lots: availableLots.map((lot) => ({
       id: lot.id,
+      developmentId: lot.developmentId,
       lotNumber: lot.lotNumber,
       developmentName: lot.Development.name,
       developmentCity: lot.Development.city,
@@ -684,6 +694,9 @@ export async function processWhatsAppInboundJob(
       etapaNombre: lot.etapaNombre,
       destino: lot.destino,
       frontMeters: lot.frontMeters,
+      publicUrl: orgRecord?.slug
+        ? `/cat/${orgRecord.slug}/developments/${lot.developmentId}/lots/${lot.id}`
+        : null,
     })),
   });
   } // end else (no escalation keyword)

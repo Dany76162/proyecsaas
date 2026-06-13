@@ -511,7 +511,8 @@ function buildPrompt(context: PreparedConversationContext) {
         "- El inventario de lotes se encuentra en el campo `lots` del contexto.",
         "- Solo podes mencionar lotes que figuren en ese listado con status disponible.",
         "- Podes indicar: nombre del desarrollo, numero de lote, manzana, etapa, superficie (areaSqm), frente (frontMeters), destino y precio (priceCents en centavos, dividir por 100 para el valor real y usar currency como moneda del lote).",
-        "- NO reveles: id interno, datos de compradores, reservas, cuotas, ni informacion de pago. No uses el id del lote para construir links ni rutas.",
+        "- Si el lote tiene campo `publicUrl`, podes compartirlo como link de ficha publica cuando el lead pida mas detalles o un link.",
+        "- NO reveles: id interno, datos de compradores, reservas, cuotas, ni informacion de pago. No uses el id ni developmentId del lote para construir links ni rutas.",
         "- Si el lead pregunta por lotes, terrenos, desarrollo o loteo: presenta hasta 3 opciones relevantes del listado.",
         "- Para reserva, seña, anticipo, cuotas o documentacion: deriva SIEMPRE a un asesor humano.",
       ].join("\n")
@@ -541,7 +542,7 @@ function buildPrompt(context: PreparedConversationContext) {
     "- No presiones a leads frios.",
     "- Si el lead es vago, intenta pedir zona, presupuesto o finalidad.",
     "- Deriva a humano si aparecen negociacion, temas legales, friccion repetida o pedido explicito de hablar con una persona.",
-    "- Nunca construyas, inventes ni compartas URLs, links o rutas. Solo podes compartir un link si viene explicitamente provisto como campo `publicUrl` en el contexto. Nunca compartas rutas internas como /ficha, /platform, /api ni IDs internos como identificadores de recursos.",
+    "- Nunca construyas, inventes ni compartas URLs, links o rutas. EXCEPCION: si el contexto incluye el campo `publicUrl` en una propiedad o lote, o el campo `catalogUrl` en la raiz del contexto, PODES compartir ese link exacto tal como viene — no lo modifiques ni construyas variantes. Nunca compartas rutas internas como /ficha, /platform, /api ni IDs internos como identificadores de recursos.",
     "Debes devolver SOLO JSON valido con esta forma exacta:",
     "{",
     '  "message": string,',
@@ -576,6 +577,7 @@ function buildPrompt(context: PreparedConversationContext) {
         preferredVisitOptions: doubleOptionSummary,
         recentMessages: context.recentMessages,
         lots: context.lots ?? [],
+        catalogUrl: context.catalogUrl ?? null,
       },
       null,
       2,
@@ -695,7 +697,8 @@ function buildDeterministicFallback(
       const precio = lot.priceCents ? ` · ${lotCurrency} ${(lot.priceCents / 100).toLocaleString("es-AR")}` : "";
       const manzana = lot.manzana ? ` · Manzana ${lot.manzana}` : "";
       const etapa = lot.etapaNombre ? ` · ${lot.etapaNombre}` : "";
-      return `Lote ${lot.lotNumber} — ${lot.developmentName}${manzana}${etapa}${surface}${frente}${precio}`;
+      const link = lot.publicUrl ? `\n${lot.publicUrl}` : "";
+      return `Lote ${lot.lotNumber} — ${lot.developmentName}${manzana}${etapa}${surface}${frente}${precio}${link}`;
     });
 
     return enrichDecisionWithContext({

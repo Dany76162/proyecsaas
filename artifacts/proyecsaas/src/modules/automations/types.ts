@@ -28,8 +28,10 @@ export type PreparedConversationContext = {
         status: string;
         priceCents: number | null;
         currency: string | null;
+        publicUrl?: string | null;
       }
     | null;
+  catalogUrl?: string | null;
   propertyMatch:
     | {
         status:
@@ -71,6 +73,7 @@ export type PreparedConversationContext = {
   } | null;
   lots?: Array<{
     id: string;
+    developmentId: string;
     lotNumber: string;
     developmentName: string;
     developmentCity: string | null;
@@ -81,6 +84,7 @@ export type PreparedConversationContext = {
     etapaNombre: string | null;
     destino: string | null;
     frontMeters: number | null;
+    publicUrl?: string | null;
   }> | null;
 };
 
