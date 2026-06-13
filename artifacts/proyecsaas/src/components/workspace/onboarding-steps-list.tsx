@@ -1,10 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, LayoutDashboard, Zap } from "lucide-react";
-import { StatusBadge } from "@/components/workspace/status-badge";
-import { SectionCard } from "@/components/workspace/section-card";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Step {
@@ -22,19 +19,10 @@ interface OnboardingStepsListProps {
   steps: Step[];
 }
 
-export function OnboardingStepsList({ orgSlug, steps }: OnboardingStepsListProps) {
-  const [localProgress, setLocalProgress] = useState<string[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(`onboarding_${orgSlug}`) || "[]");
-    setLocalProgress(saved);
-    setIsLoaded(true);
-  }, [orgSlug]);
-
+export function OnboardingStepsList({ orgSlug: _orgSlug, steps }: OnboardingStepsListProps) {
   const mergedSteps = steps.map((step) => ({
     ...step,
-    isCompleted: step.serverStatus === "completed" || localProgress.includes(step.key),
+    isCompleted: step.serverStatus === "completed",
   }));
 
   const completedCount = mergedSteps.filter((s) => s.isCompleted).length;
