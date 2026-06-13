@@ -51,7 +51,7 @@ function buildOnboardingSteps(
       key: "whatsapp",
       title: "Conectá tu WhatsApp Business",
       description:
-        "Vinculá el número de WhatsApp de tu inmobiliaria. A partir de ahí el sistema recibe consultas y el agente IA puede responder por vos, las 24 horas.",
+        "Vinculá el número de WhatsApp de tu inmobiliaria. El paso se completa cuando el canal queda Activo. Si ya lo conectaste y todavía figura pendiente, revisá el estado en Integraciones > WhatsApp.",
       href: `/${orgSlug}/settings/integrations/whatsapp`,
       cta: "Conectar WhatsApp",
       serverStatus: (status.whatsappReady ? "completed" : "pending") as "completed" | "pending",
@@ -71,9 +71,9 @@ function buildOnboardingSteps(
       key: "tour",
       title: "Hacé tu primer tour 360° (opcional)",
       description:
-        "Abrí una propiedad, tocá 'Escanear con celular' y seguí la guía. En 5 minutos tenés un recorrido virtual inmersivo listo para compartir. Este paso es opcional.",
+        "Abrí una propiedad existente, entrá en Medios > 360° / Panorámica y usá 'Escanear con celular' o cargá una imagen 360. Este paso es opcional, pero mejora mucho la ficha pública.",
       href: `/${orgSlug}/properties`,
-      cta: "Ir a propiedades",
+      cta: "Abrir mis propiedades",
       serverStatus: (status.tourReady ? "completed" : "pending") as "completed" | "pending",
     },
   ];
