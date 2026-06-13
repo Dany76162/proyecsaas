@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { requireOrganizationMembership } from "@/server/auth/access";
 import {
   MapPin, Phone, Globe, CheckCircle2, Ruler, Maximize,
-  Tag, User, Briefcase, Calendar, Banknote, FileSpreadsheet,
+  Tag, User, Briefcase, Calendar, Banknote, FileSpreadsheet, Lock,
 } from "lucide-react";
 import PrintButton from "./print-button";
 
@@ -187,6 +187,50 @@ export default async function FichaLotePage({ params }: { params: Promise<{ lotI
         (a, b) => STATUS_PRIORITY.indexOf(a.status) - STATUS_PRIORITY.indexOf(b.status)
       )[0]
     : null;
+
+  // ── PAY-LOCK: ficha técnica privada requiere pago confirmado ──────────────
+  const paymentConfirmed = reservation !== null && reservation.status === "ACTIVE" && reservation.approvedAt !== null;
+
+  const dev0 = lotRaw.Development;
+  const themeColor0 = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(dev0.themeColor ?? "")
+    ? dev0.themeColor!
+    : "#0D9488";
+  const lotLabel0 = lotRaw.manzana
+    ? `Manzana ${lotRaw.manzana} · Lote ${lotRaw.lotNumber}`
+    : `Lote ${lotRaw.lotNumber}`;
+
+  if (!paymentConfirmed) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-8 print:bg-white">
+        <div className="bg-white w-full max-w-[480px] shadow-2xl rounded-2xl p-10 flex flex-col items-center gap-6 text-center">
+          {dev0.logoUrl && (
+            <img src={dev0.logoUrl} alt={dev0.name} className="h-14 object-contain" />
+          )}
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: `${themeColor0}20` }}
+          >
+            <Lock className="w-7 h-7" style={{ color: themeColor0 }} />
+          </div>
+          <div>
+            <p className="text-2xl font-black mb-1" style={{ color: themeColor0 }}>{dev0.name}</p>
+            <h1 className="text-xl font-black text-slate-800 mb-1">Ficha técnica privada</h1>
+            <p className="text-slate-500 text-sm font-semibold">{lotLabel0}</p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-6 py-5 w-full">
+            <p className="text-amber-800 font-black text-sm mb-2">Pago pendiente de confirmación</p>
+            <p className="text-amber-700 text-xs leading-relaxed">
+              La ficha técnica privada se habilitará cuando el pago de reserva o seña esté confirmado por el administrador.
+            </p>
+            <p className="text-amber-600 text-xs mt-2">
+              Si ya realizaste el pago, contactá al administrador para validar el comprobante.
+            </p>
+          </div>
+          <p className="text-slate-300 text-xs">Lote {lotRaw.lotNumber} · {dev0.Organization.name}</p>
+        </div>
+      </div>
+    );
+  }
 
   // ── C-2: traer todos los lotes del desarrollo para el mini-plano SVG ─────────
   const siblingLots = await prisma.developmentLot.findMany({

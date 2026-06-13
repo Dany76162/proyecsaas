@@ -111,6 +111,10 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
     paidAmountCents: number;
     pendingAmountCents: number;
   } | null>(null);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [reservationId, setReservationId] = useState<string | null>(null);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [confirmPayStep, setConfirmPayStep] = useState<"idle" | "confirm">("idle");
   const [payModal, setPayModal] = useState<{ installment: any } | null>(null);
   const [payForm, setPayForm] = useState({ paidAt: "", paymentMethod: "", paymentReference: "", notes: "" });
   const [isSavingPay, setIsSavingPay] = useState(false);
@@ -313,12 +317,17 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
     setModalTab("cliente");
     setVentaInstallments([]);
     setVentaSummary(null);
+    setPaymentConfirmed(false);
+    setReservationId(null);
+    setConfirmPayStep("idle");
     setLoadingVentaModal(true);
     try {
       const res = await fetch(`/api/developments/lots/${unit.id}/reservation`);
       if (res.ok) {
         const data = await res.json();
         const r = data.reservation;
+        setPaymentConfirmed(!!(r?.approvedAt));
+        setReservationId(r?.id ?? null);
         setVentaForm({
           clientName: unit.clientName || "",
           buyerDni: r?.buyerDni || "",
@@ -401,6 +410,37 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
       setIsSavingVenta(false);
     }
   }, [ventaModal, ventaForm, updateUnitState]);
+
+  // Confirmar pago manual de reserva
+  const confirmPayment = useCallback(async () => {
+    if (!ventaModal) return;
+    setIsConfirmingPayment(true);
+    try {
+      const res = await fetch(`/api/developments/lots/${ventaModal.unit.id}/reservation`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "confirmPayment" }),
+      });
+      if (res.ok) {
+        setPaymentConfirmed(true);
+        setConfirmPayStep("idle");
+        toast.success("Pago confirmado. Ficha técnica y plan de cuotas habilitados.");
+        // Sync lot status in UI if needed
+        const data = await res.json().catch(() => ({}));
+        if (data.lotStatus) {
+          const uiEstado = DB_TO_UI_ESTADO[data.lotStatus];
+          if (uiEstado) updateUnitState(ventaModal.unit.id, { estado: uiEstado });
+        }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Error al confirmar pago.");
+      }
+    } catch (err: any) {
+      toast.error(`Error: ${err.message}`);
+    } finally {
+      setIsConfirmingPayment(false);
+    }
+  }, [ventaModal, updateUnitState]);
 
   // DB status → UI estado label (mirrors STATUS_DB_TO_UI in the lot API route)
   const DB_TO_UI_ESTADO: Record<string, MasterplanUnit["estado"]> = {
@@ -1654,15 +1694,53 @@ export default function InventarioClient({ proyectoId, onCountChange }: Inventar
 
             {/* Footer */}
             <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-200 dark:border-slate-700">
-              <a
-                href={`/ficha/${ventaModal.unit.id}/cuotas`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold border border-brand-200 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>
-                Planilla de cuotas
-              </a>
+              <div className="flex items-center gap-2">
+                {/* Planilla de cuotas — solo si pago confirmado */}
+                {paymentConfirmed ? (
+                  <a
+                    href={`/ficha/${ventaModal.unit.id}/cuotas`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold border border-brand-200 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>
+                    Planilla de cuotas
+                  </a>
+                ) : reservationId ? (
+                  /* Pago pendiente — botón confirmar (dos pasos) */
+                  confirmPayStep === "idle" ? (
+                    <button
+                      onClick={() => setConfirmPayStep("confirm")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold border border-amber-200 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Confirmar pago
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-amber-700 font-semibold">¿Confirmar pago de seña?</span>
+                      <button
+                        onClick={confirmPayment}
+                        disabled={isConfirmingPayment}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors disabled:opacity-60"
+                      >
+                        {isConfirmingPayment ? (
+                          <div className="w-3 h-3 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <Check className="w-3 h-3" />
+                        )}
+                        Sí, confirmar
+                      </button>
+                      <button
+                        onClick={() => setConfirmPayStep("idle")}
+                        className="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-500 text-xs font-semibold hover:bg-slate-50 transition-colors"
+                      >
+                        No
+                      </button>
+                    </div>
+                  )
+                ) : null}
+              </div>
               <div className="flex items-center gap-3">
               <button
                 onClick={() => setVentaModal(null)}

@@ -40,6 +40,7 @@ export async function GET(
       select: {
         id: true,
         status: true,
+        approvedAt: true,
         buyerDni: true,
         buyerWhatsapp: true,
         paymentMethod: true,
@@ -241,7 +242,7 @@ export async function PUT(
             ...reservationData,
             lotId: id,
             organizationId,
-            status: DevelopmentReservationStatus.ACTIVE,
+            status: DevelopmentReservationStatus.PENDING_APPROVAL,
           },
         });
       }
@@ -298,6 +299,103 @@ export async function PUT(
       lotStatusChanged: lotTransitioned,
       previousLotStatus: lotTransitioned ? previousLotStatus : undefined,
     });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 });
+  }
+}
+
+// ── PATCH /api/developments/lots/[id]/reservation ─────────────────────────────
+// action: "confirmPayment" — marks reservation ACTIVE + approvedAt = now
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const lot = await prisma.developmentLot.findUnique({
+      where: { id },
+      include: { Development: { include: { Organization: true } } },
+    });
+    if (!lot) return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
+
+    const { user } = await requireOrganizationMembership(lot.Development.Organization.slug);
+
+    const body = await request.json();
+    if (body.action !== "confirmPayment") {
+      return NextResponse.json({ error: 'action debe ser "confirmPayment"' }, { status: 400 });
+    }
+
+    const reservation = await prisma.developmentReservation.findFirst({
+      where: { lotId: id, status: { notIn: [DevelopmentReservationStatus.CANCELLED] } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!reservation) {
+      return NextResponse.json({ error: "No hay reserva activa para este lote" }, { status: 404 });
+    }
+
+    // Idempotent — already confirmed
+    if (reservation.approvedAt !== null) {
+      return NextResponse.json({ ok: true, idempotent: true, approvedAt: reservation.approvedAt });
+    }
+
+    if (reservation.status === DevelopmentReservationStatus.SOLD) {
+      return NextResponse.json({ error: "Operación ya concretada" }, { status: 409 });
+    }
+
+    const now = new Date();
+    const organizationId = lot.Development.organizationId;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.developmentReservation.update({
+        where: { id: reservation.id },
+        data: {
+          status: DevelopmentReservationStatus.ACTIVE,
+          approvedAt: now,
+          approvedById: user.id,
+          paymentMethod: body.paymentMethod ?? reservation.paymentMethod,
+          paymentReference: body.paymentReference ?? reservation.paymentReference,
+        },
+      });
+
+      // Auto-transition lot to RESERVED if still in an escalatable state
+      const escalatable: DevelopmentLotStatus[] = [
+        DevelopmentLotStatus.AVAILABLE,
+        DevelopmentLotStatus.RESERVED_PENDING,
+      ];
+      if (escalatable.includes(lot.status as DevelopmentLotStatus)) {
+        await tx.developmentLot.update({
+          where: { id },
+          data: { status: DevelopmentLotStatus.RESERVED },
+        });
+        await tx.developmentLotHistory.create({
+          data: {
+            lotId: id,
+            organizationId,
+            previousStatus: lot.status as DevelopmentLotStatus,
+            newStatus: DevelopmentLotStatus.RESERVED,
+            reason: "Pago de reserva confirmado manualmente",
+            metadata: { reservationId: reservation.id, confirmedById: user.id },
+          },
+        });
+      }
+    });
+
+    // Best-effort notification
+    try {
+      await prisma.notification.create({
+        data: {
+          organizationId,
+          type: "OPERATOR_ACTION_REQUIRED",
+          title: `Pago confirmado: Lote ${lot.lotNumber}`,
+          body: `Se confirmó el pago de seña para el Lote ${lot.lotNumber}. Ficha técnica y plan de cuotas habilitados.`,
+          entityType: "developmentReservation",
+          entityId: reservation.id,
+        },
+      });
+    } catch {}
+
+    return NextResponse.json({ ok: true, reservationId: reservation.id, approvedAt: now });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 });
   }

@@ -2,7 +2,7 @@ import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
 import { requireOrganizationMembership } from "@/server/auth/access";
 import { markOverdueInstallments } from "@/modules/developments/installments";
-import { ArrowLeft, MapPin, Phone, Globe, User, Banknote, Calendar, Receipt } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Globe, User, Banknote, Calendar, Receipt, Lock } from "lucide-react";
 import Link from "next/link";
 import PrintButton from "../print-button";
 
@@ -137,6 +137,51 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
   const themeColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(dev.themeColor ?? "")
     ? dev.themeColor!
     : "#0D9488";
+
+  // ── PAY-LOCK: plan de cuotas requiere pago confirmado ────────────────────
+  const paymentConfirmed =
+    reservation !== null &&
+    reservation.status === "ACTIVE" &&
+    reservation.approvedAt !== null;
+
+  if (!paymentConfirmed) {
+    const lotLabel0 = lotRaw.manzana
+      ? `Manzana ${lotRaw.manzana} · Lote ${lotRaw.lotNumber}`
+      : `Lote ${lotRaw.lotNumber}`;
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-8">
+        <div className="bg-white w-full max-w-[480px] shadow-2xl rounded-2xl p-10 flex flex-col items-center gap-6 text-center">
+          {dev.logoUrl && (
+            <img src={dev.logoUrl} alt={dev.name} className="h-14 object-contain" />
+          )}
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: `${themeColor}20` }}
+          >
+            <Lock className="w-7 h-7" style={{ color: themeColor }} />
+          </div>
+          <div>
+            <p className="text-2xl font-black mb-1" style={{ color: themeColor }}>{dev.name}</p>
+            <h1 className="text-xl font-black text-slate-800 mb-1">Plan de cuotas</h1>
+            <p className="text-slate-500 text-sm font-semibold">{lotLabel0}</p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-6 py-5 w-full">
+            <p className="text-amber-800 font-black text-sm mb-2">Pago pendiente de confirmación</p>
+            <p className="text-amber-700 text-xs leading-relaxed">
+              El plan de cuotas se habilitará cuando el pago de reserva o seña esté confirmado por el administrador.
+            </p>
+          </div>
+          <Link
+            href={`/ficha/${lotId}`}
+            className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline transition-colors"
+          >
+            ← Volver a la ficha del lote
+          </Link>
+          <p className="text-slate-300 text-xs">Lote {lotRaw.lotNumber} · {org.name}</p>
+        </div>
+      </div>
+    );
+  }
 
   const installments = reservation?.Installments ?? [];
 
