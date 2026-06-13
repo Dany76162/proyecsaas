@@ -1,5 +1,6 @@
 import {
   ConversationStatus,
+  DevelopmentLotStatus,
   FollowUpCategory,
   LeadStatus,
   MessageDeliveryStatus,
@@ -482,7 +483,7 @@ export async function processWhatsAppInboundJob(
     result.conversation.propertyId = propertyMatch.property.id;
   }
 
-  const [availability, recentMessages, aiAgent] = await Promise.all([
+  const [availability, recentMessages, aiAgent, availableLots] = await Promise.all([
     propertyMatch.property
       ? prisma.availabilitySlot.findMany({
           where: {
@@ -536,6 +537,28 @@ export async function processWhatsAppInboundJob(
         minBudget: true,
         maxBudget: true,
       },
+    }),
+    prisma.developmentLot.findMany({
+      where: {
+        organizationId: targetOrgId,
+        status: DevelopmentLotStatus.AVAILABLE,
+      },
+      select: {
+        id: true,
+        lotNumber: true,
+        areaSqm: true,
+        priceCents: true,
+        currency: true,
+        manzana: true,
+        etapaNombre: true,
+        destino: true,
+        frontMeters: true,
+        Development: {
+          select: { name: true, city: true },
+        },
+      },
+      orderBy: [{ Development: { name: "asc" } }, { lotNumber: "asc" }],
+      take: 20,
     }),
   ]);
 
@@ -605,6 +628,19 @@ export async function processWhatsAppInboundJob(
           maxBudget: aiAgent.maxBudget,
         }
       : null,
+    lots: availableLots.map((lot) => ({
+      id: lot.id,
+      lotNumber: lot.lotNumber,
+      developmentName: lot.Development.name,
+      developmentCity: lot.Development.city,
+      areaSqm: lot.areaSqm,
+      priceCents: lot.priceCents,
+      currency: lot.currency,
+      manzana: lot.manzana,
+      etapaNombre: lot.etapaNombre,
+      destino: lot.destino,
+      frontMeters: lot.frontMeters,
+    })),
   });
 
   // Persist commercial signals into the Lead record (notes + conservative stage mapping)

@@ -69,6 +69,19 @@ export type PreparedConversationContext = {
     minBudget: number | null;
     maxBudget: number | null;
   } | null;
+  lots?: Array<{
+    id: string;
+    lotNumber: string;
+    developmentName: string;
+    developmentCity: string | null;
+    areaSqm: number | null;
+    priceCents: number | null;
+    currency: string | null;
+    manzana: string | null;
+    etapaNombre: string | null;
+    destino: string | null;
+    frontMeters: number | null;
+  }> | null;
 };
 
 export type AutomationDecision = {

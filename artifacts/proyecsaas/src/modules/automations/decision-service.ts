@@ -16,6 +16,18 @@ const FALLBACK_VISIT_KEYWORDS = [
   "turno",
   "mostrar",
 ];
+const FALLBACK_LOT_KEYWORDS = [
+  "lote",
+  "terreno",
+  "loteo",
+  "desarrollo",
+  "manzana",
+  "seña",
+  "anticipo",
+  "reserva de lote",
+  "m2",
+  "metros cuadrados",
+];
 const FALLBACK_BUDGET_HINTS = ["usd", "ars", "$", "dolar", "presupuesto", "millon"];
 const FALLBACK_INVESTMENT_HINTS = ["inversion", "renta", "rentabilidad", "airbnb"];
 const WEEKDAY_LABELS = [
@@ -183,6 +195,11 @@ function getConcreteScheduledAt(context: PreparedConversationContext) {
 function hasVisitIntentFallback(input: string) {
   const normalized = input.toLowerCase();
   return FALLBACK_VISIT_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
+function hasLotIntentFallback(input: string) {
+  const normalized = input.toLowerCase();
+  return FALLBACK_LOT_KEYWORDS.some((keyword) => normalized.includes(keyword));
 }
 
 function extractRoomsFallback(input: string) {
@@ -487,6 +504,19 @@ function buildPrompt(context: PreparedConversationContext) {
     budgetLine = `Presupuesto maximo de las propiedades que buscas/ofreces: USD ${agent.maxBudget}.`;
   }
 
+  const hasLots = context.lots && context.lots.length > 0;
+  const lotsSystemLine = hasLots
+    ? [
+        "LOTES DISPONIBLES EN DESARROLLOS:",
+        "- El inventario de lotes se encuentra en el campo `lots` del contexto.",
+        "- Solo podes mencionar lotes que figuren en ese listado con status disponible.",
+        "- Podes indicar: nombre del desarrollo, numero de lote, manzana, etapa, superficie (areaSqm), frente (frontMeters), destino y precio (priceCents en centavos, dividir por 100 para el valor real).",
+        "- NO reveles: id interno, datos de compradores, reservas, cuotas, ni informacion de pago.",
+        "- Si el lead pregunta por lotes, terrenos, desarrollo o loteo: presenta hasta 3 opciones relevantes del listado.",
+        "- Para reserva, seña, anticipo, cuotas o documentacion: deriva SIEMPRE a un asesor humano.",
+      ].join("\n")
+    : null;
+
   const systemInstructions = [
     identityLine,
     toneLine,
@@ -496,6 +526,7 @@ function buildPrompt(context: PreparedConversationContext) {
     zoneLine,
     typeLine,
     budgetLine,
+    lotsSystemLine,
     "Comportamiento comercial esperado:",
     "- HOT: empuja directo a coordinar visita.",
     "- WARM: responde y ancla hacia visita.",
@@ -543,6 +574,7 @@ function buildPrompt(context: PreparedConversationContext) {
         availabilitySummary,
         preferredVisitOptions: doubleOptionSummary,
         recentMessages: context.recentMessages,
+        lots: context.lots ?? [],
       },
       null,
       2,
@@ -622,6 +654,65 @@ function buildDeterministicFallback(
   const availabilitySummary = getAvailabilitySummary(context);
   const doubleOptionSummary = getDoubleOptionVisitSummary(context);
   const concreteScheduledAt = getConcreteScheduledAt(context);
+
+  const lotIntentDetected = latestBody ? hasLotIntentFallback(latestBody) : false;
+
+  // Lot-intent branch: lead asks about lots/terrenos/developments
+  if (lotIntentDetected) {
+    const availableLots = context.lots ?? [];
+    const reservationKeywords = ["seña", "anticipo", "reserva", "cuota", "documentacion", "escritura", "financiacion", "pago"];
+    const needsHumanForLot = reservationKeywords.some((kw) => latestBody.toLowerCase().includes(kw));
+
+    if (needsHumanForLot || availableLots.length === 0) {
+      return enrichDecisionWithContext({
+        responseText: applyToneToFallbackResponse(
+          availableLots.length === 0
+            ? "Por el momento no tenemos lotes disponibles en nuestros desarrollos. ¿Te puedo ayudar con otra consulta?"
+            : "Para reservas, señas y financiación de lotes te comunico con un asesor. ¿Tenés alguna preferencia de horario?",
+          context,
+        ),
+        qualificationDecision: null,
+        visitIntent: null,
+        ...buildCommercialSignalDefaults(context, {
+          leadTemperature: needsHumanForLot ? "hot" : "unclear",
+          nextBestAction: "derivar-a-humano-lote",
+          requiresFollowUp: true,
+          followUpReason: needsHumanForLot
+            ? "Lead consulta reserva/pago de lote: requiere asesor humano."
+            : "Sin lotes disponibles para ofrecer.",
+        }),
+        visitProposal: null,
+        internalNotes: `Fallback activado (${reason}). Intención de lote detectada — derivando a humano.`,
+      }, context);
+    }
+
+    const sample = availableLots.slice(0, 3);
+    const lotLines = sample.map((lot) => {
+      const surface = lot.areaSqm ? ` · ${lot.areaSqm} m²` : "";
+      const frente = lot.frontMeters ? ` · frente ${lot.frontMeters}m` : "";
+      const precio = lot.priceCents ? ` · USD ${(lot.priceCents / 100).toLocaleString("es-AR")}` : "";
+      const manzana = lot.manzana ? ` · Manzana ${lot.manzana}` : "";
+      const etapa = lot.etapaNombre ? ` · ${lot.etapaNombre}` : "";
+      return `Lote ${lot.lotNumber} — ${lot.developmentName}${manzana}${etapa}${surface}${frente}${precio}`;
+    });
+
+    return enrichDecisionWithContext({
+      responseText: applyToneToFallbackResponse(
+        `Tenemos lotes disponibles. Te comparto algunas opciones:\n\n${lotLines.join("\n")}\n\n¿Alguna te interesa o buscás algo específico?`,
+        context,
+      ),
+      qualificationDecision: null,
+      visitIntent: null,
+      ...buildCommercialSignalDefaults(context, {
+        leadTemperature: "warm",
+        nextBestAction: "presentar-lotes-disponibles",
+        requiresFollowUp: true,
+        followUpReason: "Lead consultó sobre lotes; se presentaron opciones disponibles.",
+      }),
+      visitProposal: null,
+      internalNotes: `Fallback activado (${reason}). Intención de lote detectada. Se presentaron ${sample.length} lotes.`,
+    }, context);
+  }
 
   if (!context.property) {
     return enrichDecisionWithContext({
