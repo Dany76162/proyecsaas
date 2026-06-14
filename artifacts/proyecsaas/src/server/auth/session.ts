@@ -61,14 +61,12 @@ function decodeSessionToken(token: string): SessionPayload | null {
   const [encodedPayload, signature] = token.split(".");
 
   if (!encodedPayload || !signature) {
-    console.log("[AUTH_SAVE_DEBUG] token reject", { reason: "bad-format", parts: token.split(".").length });
     return null;
   }
 
   const expectedSignature = signSessionPayload(encodedPayload);
 
   if (signature.length !== expectedSignature.length) {
-    console.log("[AUTH_SAVE_DEBUG] token reject", { reason: "sig-length", sigLen: signature.length, expectedLen: expectedSignature.length });
     return null;
   }
 
@@ -76,7 +74,6 @@ function decodeSessionToken(token: string): SessionPayload | null {
   const expectedBuffer = Buffer.from(expectedSignature);
 
   if (!timingSafeEqual(signatureBuffer, expectedBuffer)) {
-    console.log("[AUTH_SAVE_DEBUG] token reject", { reason: "sig-mismatch" });
     return null;
   }
 
@@ -86,20 +83,17 @@ function decodeSessionToken(token: string): SessionPayload | null {
       | null;
 
     if (!payload?.userId || typeof payload.issuedAt !== "number") {
-      console.log("[AUTH_SAVE_DEBUG] token reject", { reason: "bad-payload" });
       return null;
     }
 
     const ageMs = Date.now() - payload.issuedAt;
 
     if (ageMs < 0 || ageMs > SESSION_DURATION_MS) {
-      console.log("[AUTH_SAVE_DEBUG] token reject", { reason: "expired", ageHours: Math.round(ageMs / 3600000), maxHours: SESSION_DURATION_MS / 3600000 });
       return null;
     }
 
     return payload;
   } catch {
-    console.log("[AUTH_SAVE_DEBUG] token reject", { reason: "parse-error" });
     return null;
   }
 }
@@ -137,12 +131,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-  console.log("[AUTH_SAVE_DEBUG] getSessionUser", {
-    hasToken: !!token,
-    tokenLen: token ? token.length : 0,
-    cookieNames: cookieStore.getAll().map((c) => c.name),
-  });
-
   if (!token) {
     return null;
   }
@@ -174,12 +162,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       isPlatformAdmin: true,
       termsAcceptedAt: true,
     },
-  });
-
-  console.log("[AUTH_SAVE_DEBUG] getSessionUser result", {
-    payloadOk: true,
-    userFound: !!user,
-    termsAccepted: user ? !!user.termsAcceptedAt : null,
   });
 
   if (!user) {

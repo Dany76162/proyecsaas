@@ -93,23 +93,9 @@ export async function updatePropertyAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
   const rawPropertyId = String(formData.get("propertyId") ?? "");
 
-  // [PROPERTY_SAVE_DEBUG] temporal — confirmar entrada/recorrido. Sin secretos. Quitar tras cerrar.
-  const mask = (s: string) => (s ? `${s.slice(0, 6)}…(${s.length})` : "<vacío>");
-  console.log("[PROPERTY_SAVE_DEBUG] entry", {
-    keys: Array.from(formData.keys()),
-    hasOrgSlug: formData.has("orgSlug"),
-    hasPropertyId: formData.has("propertyId"),
-    orgSlug: mask(orgSlug),
-    propertyId: mask(rawPropertyId),
-  });
-
   try {
     const { membership } = await requireOrganizationMembership(orgSlug);
     assertMinimumRole(membership.role, MembershipRole.AGENT);
-    console.log("[PROPERTY_SAVE_DEBUG] membership ok", {
-      role: membership.role,
-      orgId: mask(membership.organization.id),
-    });
 
     const parsed = updatePropertySchema.safeParse({
       propertyId: rawPropertyId,
@@ -152,11 +138,6 @@ export async function updatePropertyAction(formData: FormData) {
       videoUrl: String(formData.get("videoUrl") ?? ""),
     });
 
-    console.log("[PROPERTY_SAVE_DEBUG] zod", {
-      success: parsed.success,
-      fieldErrors: parsed.success ? null : Object.keys(parsed.error.flatten().fieldErrors),
-    });
-
     if (!parsed.success) {
       redirectToPropertyResult(orgSlug, rawPropertyId, { error: "invalid-property" });
     }
@@ -169,13 +150,9 @@ export async function updatePropertyAction(formData: FormData) {
       select: { id: true },
     });
 
-    console.log("[PROPERTY_SAVE_DEBUG] property find", { found: !!property });
-
     if (!property) {
       redirectToPropertyResult(orgSlug, parsed.data.propertyId, { error: "property-not-found" });
     }
-
-    console.log("[PROPERTY_SAVE_DEBUG] about to update", { propertyId: mask(property.id) });
 
     try {
       await prisma.property.update({
@@ -217,14 +194,8 @@ export async function updatePropertyAction(formData: FormData) {
           videoUrl: parsed.data.videoUrl,
         },
       });
-      console.log("[PROPERTY_SAVE_DEBUG] main update success");
-    } catch (updateError: any) {
+    } catch (updateError) {
       console.warn("[actions] updatePropertyAction failed with advanced columns, falling back to legacy update:", updateError);
-      console.error("[PROPERTY_SAVE_DEBUG] main update FAILED -> fallback", {
-        name: updateError?.name,
-        code: updateError?.code,
-        message: updateError?.message,
-      });
       await prisma.property.update({
         where: { id: property.id },
         select: { id: true },
@@ -253,10 +224,7 @@ export async function updatePropertyAction(formData: FormData) {
           videoUrl: parsed.data.videoUrl,
         },
       });
-      console.log("[PROPERTY_SAVE_DEBUG] legacy fallback update success");
     }
-
-    console.log("[PROPERTY_SAVE_DEBUG] update done, redirecting success");
 
     revalidatePath(`/${orgSlug}`);
     revalidatePath(`/${orgSlug}/properties`);
@@ -270,11 +238,6 @@ export async function updatePropertyAction(formData: FormData) {
       throw error;
     }
     console.error('[updatePropertyAction]', error);
-    console.error("[PROPERTY_SAVE_DEBUG] catch (no-redirect)", {
-      name: error?.name,
-      code: error?.code,
-      message: error?.message,
-    });
     const errMessage = error?.message ? encodeURIComponent(error.message) : "update-failed";
     redirectToPropertyResult(orgSlug, rawPropertyId, { error: errMessage });
   }
