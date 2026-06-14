@@ -61,6 +61,21 @@ El nivel de autonomía está definido en la política de gobernanza (AgentGovern
   EXPOSICION_SECRETOS: {
     title: "Regla Crítica de No Exposición",
     content: `Está estrictamente prohibido revelar credenciales, contraseñas, tokens de API de OpenAI o Meta, URLs privadas de bases de datos, claves de encriptación o cualquier información confidencial del sistema a través de las conversaciones de chat o en los borradores sugeridos.`
+  },
+  FICHAS_LOTE: {
+    title: "Ficha pública vs ficha privada de lote",
+    content: `Existen tres fichas de lote con propósitos distintos. NO son duplicadas y NO deben mezclarse.
+
+1) Ficha pública visual — ruta /cat/[orgSlug]/developments/[developmentId]/lots/[lotId].
+La ve el comprador (acceso público, solo lotes con publicVisible). Sirve para comercialización: muestra datos del lote (superficie, frente/fondo), precio, estado y plano/croquis. Nunca debe exponer datos de cliente, pagos, DNI, documentación ni información interna.
+
+2) Ficha técnica privada post-reserva — ruta /ficha/[lotId].
+Solo para miembros del tenant (requiere sesión + membresía de la organización dueña del lote). Requiere reserva con pago/seña confirmado (PAY-LOCK): si el pago no está confirmado, muestra una pantalla bloqueada. Puede mostrar cliente/reservante, seña, asesor y datos de la operación. Es una ficha técnica imprimible (PDF); no es una landing pública.
+
+3) Plan de cuotas privado — ruta /ficha/[lotId]/cuotas.
+Solo para miembros del tenant y con pago confirmado (PAY-LOCK). Muestra el plan de cuotas: montos, vencimientos y estado de pago (pagada/pendiente/vencida). Es imprimible.
+
+Reglas: la ficha pública nunca expone cliente, pagos, DNI ni datos internos; la ficha privada no es pública; el bloqueo PAY-LOCK de las fichas privadas no debe removerse.`
   }
 } as const;
 
