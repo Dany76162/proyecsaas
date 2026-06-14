@@ -67,7 +67,7 @@ export async function resolveSignedInHomePath(sessionUser: SessionUser): Promise
     },
   });
 
-  return firstMembership ? `/${firstMembership.organization.slug}` : "/map";
+  return firstMembership ? `/${firstMembership.organization.slug}` : "/propiedades";
 }
 
 export async function requireOrganizationMembership(orgSlug: string) {
