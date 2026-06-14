@@ -339,12 +339,15 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
       return `${sw.lng.toFixed(6)},${sw.lat.toFixed(6)},${ne.lng.toFixed(6)},${ne.lat.toFixed(6)}`;
     };
 
-    // Carga inicial al terminar de cargar el mapa
+    // Carga inicial al terminar de cargar el mapa.
+    // Sin bounds → devuelve todas las properties disponibles globalmente (hasta 200).
+    // Esto permite que properties fuera del viewport inicial de BA sean visibles de entrada.
+    // Las búsquedas subsiguientes ("Buscar en esta zona") usan bounds normalmente.
     map.on("load", () => {
       hasMapLoadedRef.current = true;
       const boundsStr = getBoundsStr();
       if (onBoundsChange) onBoundsChange(boundsStr);
-      fetchRef.current(boundsStr, true);
+      fetchRef.current(undefined, true);
     });
 
     // Al mover/hacer zoom: mostrar botón "Buscar en esta zona" en lugar de auto-fetch
