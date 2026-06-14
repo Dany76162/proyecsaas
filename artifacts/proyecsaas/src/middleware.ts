@@ -52,6 +52,25 @@ export function middleware(request: NextRequest) {
 
   const hasSession = request.cookies.has(SESSION_COOKIE_NAME);
 
+  // [AUTH_SAVE_DEBUG] temporal — diagnóstico de pérdida de sesión en POST de Server Actions.
+  // No imprime valores de cookie/token, solo metadatos. Quitar tras cerrar el P0.
+  const isServerAction = !!request.headers.get("next-action");
+  if (request.method !== "GET" || isServerAction) {
+    console.log("[AUTH_SAVE_DEBUG] middleware", {
+      pathname,
+      method: request.method,
+      host: request.headers.get("host"),
+      xForwardedHost: request.headers.get("x-forwarded-host"),
+      xForwardedProto: request.headers.get("x-forwarded-proto"),
+      hasOrigin: !!request.headers.get("origin"),
+      refererHost: (() => { try { return request.headers.get("referer") ? new URL(request.headers.get("referer")!).host : null; } catch { return "invalid"; } })(),
+      isServerAction,
+      hasSessionCookie: hasSession,
+      cookieNames: request.cookies.getAll().map((c) => c.name),
+      willRedirectLogin: !hasSession,
+    });
+  }
+
   if (!hasSession) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";

@@ -18,6 +18,13 @@ function buildLoginRedirectPath(nextPath: string) {
 export async function requireSessionUser(nextPath = "/", skipTermsCheck = false) {
   const sessionUser = await getSessionUser();
 
+  // [AUTH_SAVE_DEBUG] temporal — diagnóstico del P0 de guardado. Quitar tras cerrar.
+  console.log("[AUTH_SAVE_DEBUG] requireSessionUser", {
+    nextPath,
+    hasSessionUser: !!sessionUser,
+    willRedirect: !sessionUser ? "login" : (!skipTermsCheck && !sessionUser.termsAcceptedAt ? "accept-policies" : null),
+  });
+
   if (!sessionUser) {
     redirect(buildLoginRedirectPath(nextPath));
   }
