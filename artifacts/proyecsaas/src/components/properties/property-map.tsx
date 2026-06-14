@@ -53,73 +53,115 @@ const OP_LABEL: Record<string, string> = {
   EMPRENDIMIENTO: "Emprendimiento",
 };
 
-/** CSS inyectado una sola vez en el head para markers y popups. */
+/** CSS inyectado una sola vez en el head para pins y popups. */
 const PMAP_CSS = `
+  @keyframes pmap-pulse {
+    0%   { transform: scale(1);   opacity: 0.6; }
+    65%  { transform: scale(2.6); opacity: 0;   }
+    100% { transform: scale(2.6); opacity: 0;   }
+  }
+
+  /* ── Marker container ──────────────────────────────────────────────────── */
   .pmap-marker { cursor: pointer; }
-  .pmap-chip {
-    display: inline-flex; align-items: center; gap: 5px;
-    height: 26px; padding: 0 9px 0 5px;
-    background: #0f172a; color: #fff;
-    border: 2px solid #fff; border-radius: 999px;
-    font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.28);
-    transition: transform 0.12s ease, background 0.12s ease;
+
+  /* ── Pin wrapper ───────────────────────────────────────────────────────── */
+  .pmap-pin {
+    display: flex; flex-direction: column; align-items: center;
+    position: relative; width: 32px;
+  }
+
+  /* ── Pulse halo ring (behind dot) ──────────────────────────────────────── */
+  .pmap-pin-pulse {
+    position: absolute; top: 0; left: 0;
+    width: 32px; height: 32px; border-radius: 50%;
+    animation: pmap-pulse 2.2s ease-out infinite;
+    pointer-events: none; z-index: 0;
+  }
+  .pmap-pin--prop .pmap-pin-pulse { background: rgba(30, 41, 59, 0.28); }
+  .pmap-pin--dev  .pmap-pin-pulse { background: rgba(15,118,110, 0.38); }
+
+  /* ── Circle dot ────────────────────────────────────────────────────────── */
+  .pmap-pin-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,0.95);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.14);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
     position: relative; z-index: 1;
   }
-  .pmap-chip:hover { transform: scale(1.1); background: #1e293b; z-index: 5; }
-  .pmap-chip--active { background: #4f46e5 !important; border-color: #a5b4fc !important; transform: scale(1.12) !important; z-index: 10 !important; }
-  .pmap-chip--consultar { background: #334155; border-color: #cbd5e1; }
-  .pmap-chip--consultar:hover { background: #1e293b; }
-  .pmap-chip--dev { background: #0f766e; border-color: #99f6e4; box-shadow: 0 2px 10px rgba(15,118,110,0.45); }
-  .pmap-chip--dev:hover { background: #0d6b63; }
-  .pmap-chip--dev.pmap-chip--active { background: #134e4a !important; border-color: #5eead4 !important; }
-  .pmap-chip-logo {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 16px; height: 16px; flex-shrink: 0;
-    background: rgba(255,255,255,0.18); border-radius: 50%;
-    font-size: 8px; font-weight: 900; letter-spacing: -0.01em; color: #fff; line-height: 1;
+  .pmap-pin--prop .pmap-pin-dot { background: #1e293b; }
+  .pmap-pin--dev  .pmap-pin-dot { background: #0f766e; }
+  .pmap-pin-dot:hover { transform: scale(1.1); box-shadow: 0 5px 16px rgba(0,0,0,0.28); }
+
+  /* ── Triangle tip (points down toward coordinate) ──────────────────────── */
+  .pmap-pin-tip {
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    margin-top: -1px; position: relative; z-index: 1;
   }
-  .pmap-chip--active .pmap-chip-logo { background: rgba(255,255,255,0.28); }
-  .pmap-chip--consultar .pmap-chip-logo { background: rgba(255,255,255,0.12); }
-  .pmap-chip-type { opacity: 0.75; font-weight: 700; font-size: 10px; }
-  .pmap-chip-sep { opacity: 0.4; font-size: 10px; margin: 0 1px; }
-  .maplibregl-popup-content { padding: 0 !important; border-radius: 16px !important; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important; border: 1px solid #e2e8f0 !important; }
-  .maplibregl-popup-close-button { top: 7px !important; right: 7px !important; background: rgba(255,255,255,0.9) !important; border-radius: 50% !important; width: 22px !important; height: 22px !important; font-size: 15px !important; line-height: 21px !important; color: #334155 !important; border: 1px solid #e2e8f0 !important; z-index: 10; }
+  .pmap-pin--prop .pmap-pin-tip { border-top: 7px solid #1e293b; }
+  .pmap-pin--dev  .pmap-pin-tip { border-top: 7px solid #0f766e; }
+
+  /* ── Active state ──────────────────────────────────────────────────────── */
+  .pmap-pin--active .pmap-pin-dot {
+    background: #4f46e5 !important;
+    transform: scale(1.14) !important;
+    box-shadow: 0 4px 16px rgba(79,70,229,0.42) !important;
+  }
+  .pmap-pin--active .pmap-pin-tip { border-top-color: #4f46e5 !important; }
+  .pmap-pin--active .pmap-pin-pulse {
+    background: rgba(79,70,229,0.32) !important;
+    animation-duration: 1.5s;
+  }
+
+  /* ── Popup shell ───────────────────────────────────────────────────────── */
+  .maplibregl-popup-content {
+    padding: 0 !important; border-radius: 16px !important;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  .maplibregl-popup-close-button {
+    top: 7px !important; right: 7px !important;
+    background: rgba(255,255,255,0.9) !important;
+    border-radius: 50% !important;
+    width: 22px !important; height: 22px !important;
+    font-size: 15px !important; line-height: 21px !important;
+    color: #334155 !important; border: 1px solid #e2e8f0 !important; z-index: 10;
+  }
+
+  /* ── Popup content ─────────────────────────────────────────────────────── */
   .pmap-popup { width: 240px; font-family: -apple-system, system-ui, sans-serif; color: #0f172a; }
   .pmap-popup-img-wrap { position: relative; height: 130px; background: #f1f5f9; overflow: hidden; }
   .pmap-popup-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .pmap-popup-no-img { height: 44px; background: #f8fafc; display: flex; align-items: flex-end; padding: 8px; gap: 4px; }
-  .pmap-popup-badge { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 7px; border-radius: 999px; color: #fff; line-height: 1.3; }
-  .pmap-popup-badge--360 { position: absolute; bottom: 8px; right: 8px; background: #4f46e5; }
-  .pmap-popup-badge--op { position: absolute; top: 8px; left: 8px; background: rgba(15,23,42,0.82); backdrop-filter: blur(4px); }
-  .pmap-popup-badge--op-inline { position: static; background: #0f172a; }
-  .pmap-popup-body { padding: 11px 12px 12px; }
-  .pmap-popup-type { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: #94a3b8; margin: 0 0 3px; }
-  .pmap-popup-title { font-size: 13px; font-weight: 700; color: #0f172a; margin: 0 0 3px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .pmap-popup-loc { font-size: 11px; color: #64748b; margin: 0 0 9px; }
+  .pmap-popup-no-img {
+    height: 52px; display: flex; align-items: flex-end; padding: 8px; gap: 4px;
+    background: #f8fafc;
+  }
+  .pmap-popup-no-img--dev {
+    background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+  }
+  .pmap-popup-badge {
+    font-size: 9px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 3px 7px; border-radius: 999px;
+    color: #fff; line-height: 1.3;
+  }
+  .pmap-popup-badge--360  { position: absolute; bottom: 8px; right: 8px; background: #4f46e5; }
+  .pmap-popup-badge--op   { position: absolute; top: 8px; left: 8px; background: rgba(15,23,42,0.82); backdrop-filter: blur(4px); }
+  .pmap-popup-badge--op-inline  { position: static; background: rgba(255,255,255,0.22); }
+  .pmap-popup-badge--dev-inline { position: static; background: rgba(255,255,255,0.22); color: #fff; }
+  .pmap-popup-body   { padding: 11px 12px 12px; }
+  .pmap-popup-type   { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: #94a3b8; margin: 0 0 3px; }
+  .pmap-popup-title  { font-size: 13px; font-weight: 700; color: #0f172a; margin: 0 0 3px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .pmap-popup-loc    { font-size: 11px; color: #64748b; margin: 0 0 9px; }
   .pmap-popup-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 9px; border-top: 1px solid #f1f5f9; gap: 8px; }
-  .pmap-popup-price { font-size: 14px; font-weight: 800; color: #0f172a; white-space: nowrap; flex-shrink: 0; }
-  .pmap-popup-cta { background: #0f172a; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 10px; border-radius: 8px; text-decoration: none; white-space: nowrap; }
+  .pmap-popup-price  { font-size: 14px; font-weight: 800; color: #0f172a; white-space: nowrap; flex-shrink: 0; }
+  .pmap-popup-cta    { background: #0f172a; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 10px; border-radius: 8px; text-decoration: none; white-space: nowrap; }
   .pmap-popup-cta:hover { background: #1e293b; }
+  .pmap-popup-cta--dev  { background: #0f766e; }
+  .pmap-popup-cta--dev:hover { background: #0d6b63; }
 `;
-
-const TYPE_LABELS: Record<string, string> = {
-  departamento: "Depto",
-  apartment:    "Depto",
-  depto:        "Depto",
-  casa:         "Casa",
-  house:        "Casa",
-  lote:         "Lote",
-  terreno:      "Lote",
-  land:         "Lote",
-  local:        "Local",
-  oficina:      "Ofic.",
-  office:       "Ofic.",
-  loft:         "Loft",
-  ph:           "PH",
-  emprendimiento: "Empr.",
-  development:  "Empr.",
-};
 
 const TYPE_FULL_LABELS: Record<string, string> = {
   departamento:   "Departamento",
@@ -146,36 +188,6 @@ function formatTypeFullLabel(type: string | null | undefined): string | null {
   return TYPE_FULL_LABELS[key] ?? null;
 }
 
-/** Tipo compacto para el chip: "Depto", "Casa", etc. Devuelve null si no reconocido. */
-function formatTypeLabel(type: string | null | undefined): string | null {
-  if (!type) return null;
-  const key = type.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  return TYPE_LABELS[key] ?? null;
-}
-
-/** Precio compacto para el chip del marker: "USD 120K", "ARS 2,5M", "Consultar". */
-function formatChipPrice(priceCents: number | null | undefined, currency: string): string {
-  if (priceCents == null) return "Consultar";
-  const v = priceCents / 100;
-  const cur = /^[A-Z]{3}$/.test((currency ?? "").trim().toUpperCase())
-    ? currency.trim().toUpperCase()
-    : "USD";
-  if (v >= 1_000_000) {
-    const m = v / 1_000_000;
-    return `${cur} ${m % 1 === 0 ? m : parseFloat(m.toFixed(1))}M`;
-  }
-  if (v >= 1_000) {
-    const k = Math.round(v / 1_000);
-    if (k >= 1_000) {
-      // Ej: 999.500 → round(999.5K) = 1000K → mostrar como 1M
-      const m = v / 1_000_000;
-      return `${cur} ${m % 1 === 0 ? m : parseFloat(m.toFixed(1))}M`;
-    }
-    return `${cur} ${k}K`;
-  }
-  return `${cur} ${v.toLocaleString("es-AR")}`;
-}
-
 /** Precio formateado para el popup: "USD 120.000", "A consultar". */
 function formatFullPrice(priceCents: number | null | undefined, currency: string): string {
   if (priceCents == null) return "A consultar";
@@ -196,6 +208,40 @@ function normalizeToCents(marker: MarkerData): number | null {
   return null;
 }
 
+/** Crea el elemento SVG del ícono interno del pin usando DOM API (seguro, sin innerHTML). */
+function buildPinIcon(isDevMarker: boolean): SVGSVGElement {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", "14");
+  svg.setAttribute("height", "14");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "rgba(255,255,255,0.92)");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+
+  if (isDevMarker) {
+    // 2×2 grid icon → represents lots in a development
+    ([ ["3","3"], ["13","3"], ["3","13"], ["13","13"] ] as [string,string][]).forEach(([x, y]) => {
+      const rect = document.createElementNS(NS, "rect");
+      rect.setAttribute("x", x); rect.setAttribute("y", y);
+      rect.setAttribute("width", "8"); rect.setAttribute("height", "8");
+      rect.setAttribute("rx", "1.5");
+      svg.appendChild(rect);
+    });
+  } else {
+    // Home icon → property
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z");
+    const poly = document.createElementNS(NS, "polyline");
+    poly.setAttribute("points", "9,22 9,12 15,12 15,22");
+    svg.appendChild(path);
+    svg.appendChild(poly);
+  }
+  return svg;
+}
+
 export default function PropertyMap({ filters, onBoundsChange, mapClassName }: PropertyMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
@@ -213,7 +259,7 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
 
   const mapStyleUrl = process.env.NEXT_PUBLIC_PROPERTY_MAP_STYLE_URL || MAP_STYLE_DEFAULT;
 
-  // Inyectar CSS de markers/popup una sola vez en el head
+  // Inyectar CSS de pins/popup una sola vez en el head
   useEffect(() => {
     const id = "pmap-global-styles";
     if (!document.getElementById(id)) {
@@ -359,51 +405,43 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
         !Number.isFinite(lat) || !Number.isFinite(lng) ||
         lat < -90 || lat > 90 || lng < -180 || lng > 180
       ) {
-        console.warn("[PropertyMap] Ignorando propiedad con coordenadas inválidas:", marker.id, lat, lng);
+        console.warn("[PropertyMap] Ignorando marker con coordenadas inválidas:", marker.id, lat, lng);
         return;
       }
 
       const isDevMarker = marker.markerKind === "development";
       const priceCents = normalizeToCents(marker);
-      // Development markers show "Lotes" instead of "Consultar" in the chip
-      const chipLabel = isDevMarker ? "Lotes" : formatChipPrice(priceCents, marker.currency);
-      const isConsultar = !isDevMarker && chipLabel === "Consultar";
       const opLabel = OP_LABEL[marker.operationType ?? marker.operation ?? ""] ?? "";
       const typeLabel = formatTypeFullLabel(marker.propertyType) ?? "";
 
-      // Elemento del marker
+      // ── Marker element ──────────────────────────────────────────────────
       const el = document.createElement("div");
       el.className = "pmap-marker";
       el.dataset.markerId = marker.id;
 
-      const chipEl = document.createElement("div");
-      chipEl.className = `pmap-chip${isDevMarker ? " pmap-chip--dev" : isConsultar ? " pmap-chip--consultar" : ""}`;
+      // Pin wrapper
+      const pinEl = document.createElement("div");
+      pinEl.className = `pmap-pin ${isDevMarker ? "pmap-pin--dev" : "pmap-pin--prop"}`;
 
-      // Insignia de marca (elemento DOM seguro, sin innerHTML dinámico)
-      const logoEl = document.createElement("span");
-      logoEl.className = "pmap-chip-logo";
-      logoEl.textContent = "R";
-      chipEl.appendChild(logoEl);
+      // Halo pulse ring
+      const pulseEl = document.createElement("div");
+      pulseEl.className = "pmap-pin-pulse";
+      pinEl.appendChild(pulseEl);
 
-      const typeShort = formatTypeLabel(marker.propertyType);
-      if (typeShort) {
-        const typeEl = document.createElement("span");
-        typeEl.className = "pmap-chip-type";
-        typeEl.textContent = typeShort;
-        chipEl.appendChild(typeEl);
+      // Circle dot with icon
+      const dotEl = document.createElement("div");
+      dotEl.className = "pmap-pin-dot";
+      dotEl.appendChild(buildPinIcon(isDevMarker));
+      pinEl.appendChild(dotEl);
 
-        const sepEl = document.createElement("span");
-        sepEl.className = "pmap-chip-sep";
-        sepEl.textContent = "·";
-        chipEl.appendChild(sepEl);
-      }
+      // Triangle tip
+      const tipEl = document.createElement("div");
+      tipEl.className = "pmap-pin-tip";
+      pinEl.appendChild(tipEl);
 
-      const labelEl = document.createElement("span");
-      labelEl.textContent = chipLabel;
-      chipEl.appendChild(labelEl);
-      el.appendChild(chipEl);
+      el.appendChild(pinEl);
 
-      // HTML del popup
+      // ── Popup HTML ──────────────────────────────────────────────────────
       const hasImg = !!marker.imageUrl;
       const imgSection = hasImg
         ? `<div class="pmap-popup-img-wrap">
@@ -411,7 +449,14 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
              ${opLabel ? `<span class="pmap-popup-badge pmap-popup-badge--op">${opLabel}</span>` : ""}
              ${marker.hasTour360 ? `<span class="pmap-popup-badge pmap-popup-badge--360">Tour 360°</span>` : ""}
            </div>`
-        : `<div class="pmap-popup-no-img">${opLabel ? `<span class="pmap-popup-badge pmap-popup-badge--op-inline">${opLabel}</span>` : ""}</div>`;
+        : isDevMarker
+          ? `<div class="pmap-popup-no-img pmap-popup-no-img--dev">
+               <span class="pmap-popup-badge pmap-popup-badge--dev-inline">Desarrollo</span>
+             </div>`
+          : `<div class="pmap-popup-no-img">${opLabel ? `<span class="pmap-popup-badge pmap-popup-badge--op-inline">${opLabel}</span>` : ""}</div>`;
+
+      const ctaClass = isDevMarker ? "pmap-popup-cta pmap-popup-cta--dev" : "pmap-popup-cta";
+      const ctaLabel = isDevMarker ? "Ver lotes" : "Ver ficha";
 
       const popupHtml = `
         <div class="pmap-popup">
@@ -422,33 +467,34 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
             <p class="pmap-popup-loc">${marker.approximate ? "Zona aproximada" : marker.locationLabel}</p>
             <div class="pmap-popup-footer">
               <span class="pmap-popup-price">${formatFullPrice(priceCents, marker.currency)}</span>
-              <a href="${marker.url}" class="pmap-popup-cta">${marker.markerKind === "development" ? "Ver lotes" : "Ver ficha"}</a>
+              <a href="${marker.url}" class="${ctaClass}">${ctaLabel}</a>
             </div>
           </div>
         </div>
       `;
 
-      const popup = new maplibregl.Popup({ offset: 14, closeButton: true, maxWidth: "260px" })
+      const popup = new maplibregl.Popup({ offset: [0, -42], closeButton: true, maxWidth: "260px" })
         .setHTML(popupHtml);
 
       // Estado activo al hacer click en el marker
       el.addEventListener("click", () => {
         if (activeMarkerRef.current && activeMarkerRef.current !== marker.id) {
           const prev = document.querySelector(
-            `.pmap-marker[data-marker-id="${activeMarkerRef.current}"] .pmap-chip`
+            `.pmap-marker[data-marker-id="${activeMarkerRef.current}"] .pmap-pin`
           );
-          prev?.classList.remove("pmap-chip--active");
+          prev?.classList.remove("pmap-pin--active");
         }
-        chipEl.classList.add("pmap-chip--active");
+        pinEl.classList.add("pmap-pin--active");
         activeMarkerRef.current = marker.id;
       });
 
       popup.on("close", () => {
-        chipEl.classList.remove("pmap-chip--active");
+        pinEl.classList.remove("pmap-pin--active");
         if (activeMarkerRef.current === marker.id) activeMarkerRef.current = null;
       });
 
-      const m = new maplibregl.Marker({ element: el })
+      // anchor: "bottom" → el tip del pin apunta exactamente a las coordenadas
+      const m = new maplibregl.Marker({ element: el, anchor: "bottom" })
         .setLngLat([lng, lat])
         .setPopup(popup)
         .addTo(map);
