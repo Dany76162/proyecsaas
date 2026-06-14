@@ -123,10 +123,11 @@ export async function getPropertyDetail(
   orgSlug: string,
   propertyId: string,
 ): Promise<PropertyDetail | null> {
-  // Select legacy-safe. Evita P2022 en DB Railway legacy.
-  // Columnas modernas (province, country, isFeatured, coveredSurfaceM2, totalSurfaceM2,
-  // yearBuilt, petsAllowed, professionalApt, creditApt, condition, showExactLocation)
-  // retornan null/defaults via ?? en el return object hasta que se migre la DB.
+  // Las columnas "Fase 3" (province, country, isFeatured, coveredSurfaceM2,
+  // totalSurfaceM2, yearBuilt, petsAllowed, professionalApt, creditApt, condition,
+  // showExactLocation) ya existen en el schema y en producción tras la migración
+  // 20260614120000_reconcile_property_phase3_columns, por lo que se seleccionan
+  // y devuelven con sus valores reales.
   const property = await prisma.property.findFirst({
     where: {
       id: propertyId,
@@ -159,6 +160,17 @@ export async function getPropertyDetail(
       videoUrl: true,
       latitude: true,
       longitude: true,
+      province: true,
+      country: true,
+      showExactLocation: true,
+      isFeatured: true,
+      coveredSurfaceM2: true,
+      totalSurfaceM2: true,
+      yearBuilt: true,
+      petsAllowed: true,
+      professionalApt: true,
+      creditApt: true,
+      condition: true,
       organization: true,
       interestedLeads: {
         include: {
@@ -258,17 +270,17 @@ export async function getPropertyDetail(
     floorPlanUrl,
     latitude: property.latitude ? Number(property.latitude) : undefined,
     longitude: property.longitude ? Number(property.longitude) : undefined,
-    province: null,
-    country: null,
-    showExactLocation: false,
-    isFeatured: false,
-    coveredSurfaceM2: null,
-    totalSurfaceM2: null,
-    yearBuilt: null,
-    petsAllowed: true,
-    professionalApt: false,
-    creditApt: false,
-    condition: null,
+    province: property.province,
+    country: property.country,
+    showExactLocation: property.showExactLocation,
+    isFeatured: property.isFeatured,
+    coveredSurfaceM2: property.coveredSurfaceM2,
+    totalSurfaceM2: property.totalSurfaceM2,
+    yearBuilt: property.yearBuilt,
+    petsAllowed: property.petsAllowed,
+    professionalApt: property.professionalApt,
+    creditApt: property.creditApt,
+    condition: property.condition,
     interestedLeads,
     visits,
     images,
