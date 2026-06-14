@@ -18,6 +18,13 @@ const SESSION_COOKIE_NAME = "proyecsaas_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
 const SESSION_DURATION_MS = SESSION_DURATION_SECONDS * 1000;
 
+// Optional cookie domain so the session is shared across apex and www hostnames.
+// Set SESSION_COOKIE_DOMAIN=".raicespilot.com" in production. Unset → host-only.
+function getSessionCookieDomain(): string | undefined {
+  const domain = process.env.SESSION_COOKIE_DOMAIN?.trim();
+  return domain ? domain : undefined;
+}
+
 type SessionPayload = {
   userId: string;
   issuedAt: number;
@@ -104,12 +111,20 @@ export async function createSession(userId: string) {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_DURATION_SECONDS,
+    // Shares the session cookie across apex + www (e.g. ".raicespilot.com") so
+    // Server Action POSTs carry it regardless of which hostname is used. Unset
+    // (e.g. local dev) keeps the previous host-only behavior.
+    domain: getSessionCookieDomain(),
   });
 }
 
 export async function clearSession() {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  cookieStore.delete({
+    name: SESSION_COOKIE_NAME,
+    path: "/",
+    domain: getSessionCookieDomain(),
+  });
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
