@@ -128,7 +128,6 @@ export async function GET(request: Request) {
 
     const filters = buildFilters(searchParams);
     const orgSlug = searchParams.get("orgSlug");
-    const bounds = searchParams.get("bounds");
 
     // Select legacy-safe. Evita P2022 en DB Railway legacy.
     // showExactLocation y province no existen en la DB legacy — se omiten del select.
@@ -242,28 +241,18 @@ export async function GET(request: Request) {
       take: 50,
     });
 
-    // Parse viewport bounds for JS-side filtering of development markers
-    let boundsFilter: { swLat: number; swLng: number; neLat: number; neLng: number } | null = null;
-    if (bounds) {
-      const coords = bounds.split(",").map(Number);
-      if (coords.length === 4 && coords.every((c) => !isNaN(c))) {
-        const [swLng, swLat, neLng, neLat] = coords;
-        boundsFilter = { swLat, swLng, neLat, neLng };
-      }
-    }
-
+    // Development markers are NOT filtered by viewport bounds.
+    // Unlike properties (which can number in the hundreds), there are typically very few
+    // developments (≤50). MapLibre places their markers at the exact coordinates and
+    // renders them naturally as the user pans — no "Buscar en esta zona" click required.
+    // Filtering by bounds here would hide them from the initial load, causing them to
+    // never appear until an explicit search action.
     const devMarkers = rawDevelopments
       .map((dev) => {
         // Prefer explicit latitude/longitude (Decimal); fall back to mapCenter
         const lat = dev.latitude != null ? Number(dev.latitude) : (dev.mapCenterLat ?? null);
         const lng = dev.longitude != null ? Number(dev.longitude) : (dev.mapCenterLng ?? null);
         if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-
-        // Apply viewport bounds filter (properties are filtered by Prisma, developments by JS)
-        if (boundsFilter) {
-          const { swLat, swLng, neLat, neLng } = boundsFilter;
-          if (lat < swLat || lat > neLat || lng < swLng || lng > neLng) return null;
-        }
 
         const locationParts = [dev.city, dev.province].filter(Boolean);
         const locationLabel = locationParts.length > 0 ? locationParts.join(", ") : "";

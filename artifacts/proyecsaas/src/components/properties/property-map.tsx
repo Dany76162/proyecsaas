@@ -70,6 +70,9 @@ const PMAP_CSS = `
   .pmap-chip--active { background: #4f46e5 !important; border-color: #a5b4fc !important; transform: scale(1.12) !important; z-index: 10 !important; }
   .pmap-chip--consultar { background: #334155; border-color: #cbd5e1; }
   .pmap-chip--consultar:hover { background: #1e293b; }
+  .pmap-chip--dev { background: #0f766e; border-color: #99f6e4; box-shadow: 0 2px 10px rgba(15,118,110,0.45); }
+  .pmap-chip--dev:hover { background: #0d6b63; }
+  .pmap-chip--dev.pmap-chip--active { background: #134e4a !important; border-color: #5eead4 !important; }
   .pmap-chip-logo {
     display: inline-flex; align-items: center; justify-content: center;
     width: 16px; height: 16px; flex-shrink: 0;
@@ -360,9 +363,11 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
         return;
       }
 
+      const isDevMarker = marker.markerKind === "development";
       const priceCents = normalizeToCents(marker);
-      const chipLabel = formatChipPrice(priceCents, marker.currency);
-      const isConsultar = chipLabel === "Consultar";
+      // Development markers show "Lotes" instead of "Consultar" in the chip
+      const chipLabel = isDevMarker ? "Lotes" : formatChipPrice(priceCents, marker.currency);
+      const isConsultar = !isDevMarker && chipLabel === "Consultar";
       const opLabel = OP_LABEL[marker.operationType ?? marker.operation ?? ""] ?? "";
       const typeLabel = formatTypeFullLabel(marker.propertyType) ?? "";
 
@@ -372,7 +377,7 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
       el.dataset.markerId = marker.id;
 
       const chipEl = document.createElement("div");
-      chipEl.className = `pmap-chip${isConsultar ? " pmap-chip--consultar" : ""}`;
+      chipEl.className = `pmap-chip${isDevMarker ? " pmap-chip--dev" : isConsultar ? " pmap-chip--consultar" : ""}`;
 
       // Insignia de marca (elemento DOM seguro, sin innerHTML dinámico)
       const logoEl = document.createElement("span");
