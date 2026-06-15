@@ -124,6 +124,65 @@ function computeLotSketchData(
   };
 }
 
+// ── SEO ────────────────────────────────────────────────────────────────────
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; developmentId: string; lotId: string }>;
+}) {
+  const { orgSlug, developmentId, lotId } = await params;
+
+  try {
+    const dev = await prisma.development.findFirst({
+      where: {
+        id: developmentId,
+        Organization: { slug: orgSlug },
+        status: "ACTIVE",
+        publicVisible: true,
+      },
+      select: { name: true },
+    });
+    if (!dev) return { title: "Lote — Catálogo" };
+
+    const lot = await prisma.developmentLot.findFirst({
+      where: { id: lotId, developmentId },
+      select: {
+        lotNumber: true, manzana: true, areaSqm: true,
+        status: true, priceCents: true, currency: true,
+      },
+    });
+    if (!lot) return { title: `Lote — ${dev.name}` };
+
+    const statusLabels: Record<string, string> = {
+      AVAILABLE: "Disponible",
+      RESERVED: "Reservado",
+      RESERVED_PENDING: "Reservado",
+      SOLD: "Vendido",
+      BLOCKED: "No disponible",
+    };
+
+    const lotLabel = `Lote ${lot.lotNumber}${lot.manzana ? ` · Mz ${lot.manzana}` : ""}`;
+    const detailParts = [
+      lot.areaSqm != null ? `${Number(lot.areaSqm).toLocaleString("es-AR")} m²` : null,
+      formatPrice(lot.priceCents, lot.currency),
+      statusLabels[lot.status] ?? null,
+    ].filter(Boolean);
+
+    const title = `${lotLabel} — ${dev.name}`;
+    const description = `${lotLabel} en ${dev.name}. ${detailParts.join(" · ")}. Consultá disponibilidad y detalles en tiempo real.`;
+
+    return {
+      title,
+      description,
+      openGraph: { title, description },
+    };
+  } catch (error) {
+    console.error("[generateMetadata] Failed to fetch lot metadata safely:", error);
+    return { title: "Lote — Catálogo" };
+  }
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function PublicLotFichaPage({
