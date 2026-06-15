@@ -24,6 +24,7 @@ import {
   Briefcase,
   ClipboardCheck,
   LandPlot,
+  Gauge,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ const PLATFORM_NAV = [
   { name: "Onboarding", href: "/platform/onboarding", icon: UserPlus },
   { name: "Activación", href: "/platform/activation", icon: TrendingUp },
   { name: "Salud del sistema", href: "/platform/health", icon: ActivitySquare },
+  { name: "Operaciones IA", href: "/platform/ai-operations", icon: Gauge, exact: true },
   { name: "Manual Vivo", href: "/platform/manual-operativo", icon: BookOpen },
   { name: "Manual Maestro", href: "/platform/master-manual", icon: BookOpen },
   { name: "Comercial", href: "/platform/billing", icon: CreditCard, exact: true },
