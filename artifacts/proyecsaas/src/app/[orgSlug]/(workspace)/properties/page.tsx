@@ -2,10 +2,11 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, Globe, Lock } from "lucide-react";
+import { ArrowUpRight, Globe, Lock, Building2 } from "lucide-react";
 
 import { CatalogSharingActions } from "@/components/properties/catalog-sharing-actions";
 import { CreatePropertyDialog } from "@/components/properties/create-property-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DeletePropertyButton } from "@/components/properties/delete-property-button";
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
@@ -203,11 +204,13 @@ export default async function PropertiesPage({
           </table>
 
           {properties.length === 0 && (
-            <div className="px-5 py-16 text-center">
-              <p className="text-sm font-medium text-slate-400">
-                No hay propiedades registradas aún.
-              </p>
-            </div>
+            <EmptyState
+              icon={Building2}
+              title="Todavía no cargaste propiedades"
+              description="Cargá tu primera propiedad para publicarla en tu catálogo y que el agente IA pueda ofrecerla a tus clientes."
+              action={<CreatePropertyDialog orgSlug={orgSlug} />}
+              className="m-5 border-0 bg-transparent"
+            />
           )}
 
           {properties.length < summary.total && (

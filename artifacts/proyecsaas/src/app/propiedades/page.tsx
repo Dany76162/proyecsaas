@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { prisma } from "@/server/db/prisma";
 import { PublicMapWrapper } from "@/components/properties/public-map-wrapper";
+import { getSessionUser } from "@/server/auth/session";
+import { resolveSignedInHomePath } from "@/server/auth/access";
 
 export const metadata: Metadata = {
   title: "Buscador de Propiedades | Raíces Pilot",
@@ -65,6 +67,12 @@ export default async function PublicPortalPropertiesPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = (await searchParams) || {};
+
+  // Si el visitante está autenticado y tiene panel propio (tenant o platform),
+  // ofrecemos un CTA extra en el empty state. Se omite si su home sería /propiedades.
+  const sessionUser = await getSessionUser();
+  const signedInHome = sessionUser ? await resolveSignedInHomePath(sessionUser) : null;
+  const adminHomeHref = signedInHome && signedInHome !== "/propiedades" ? signedInHome : null;
 
   // 1. Orgs activas para el select de inmobiliaria
   let activeOrgs: Array<{ name: string; slug: string }> = [];
@@ -570,6 +578,7 @@ export default async function PublicPortalPropertiesPage({
           filtersBar={filtersBar}
           activeOrgs={activeOrgs}
           developments={developments}
+          adminHomeHref={adminHomeHref}
         />
       </main>
     </div>

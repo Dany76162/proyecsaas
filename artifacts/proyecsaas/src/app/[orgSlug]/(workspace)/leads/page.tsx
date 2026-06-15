@@ -1,7 +1,9 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Users, Search } from "lucide-react";
+
+import { EmptyState } from "@/components/ui/empty-state";
 
 import { MetricCard } from "@/components/workspace/metric-card";
 import { SectionCard } from "@/components/workspace/section-card";
@@ -97,7 +99,7 @@ export default async function LeadsPage({
       </section>
 
       {/* ── Quick Create + Search ── */}
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <section id="registro-lead" className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard eyebrow="Operación" title="Registro rápido de lead">
           <form action={createLeadAction} className="grid gap-4 md:grid-cols-2">
             <input type="hidden" name="orgSlug" value={orgSlug} />
@@ -304,11 +306,39 @@ export default async function LeadsPage({
           </table>
 
           {leads.length === 0 && (
-            <div className="px-5 py-16 text-center">
-              <p className="text-sm font-medium text-slate-400">
-                {query ? `Sin resultados para "${query}".` : "No hay leads registrados aún."}
-              </p>
-            </div>
+            query ? (
+              <EmptyState
+                icon={Search}
+                title={`Sin resultados para "${query}"`}
+                description="Probá con otro nombre, teléfono o email."
+                action={
+                  <Link
+                    href={`/${orgSlug}/leads`}
+                    className="text-sm font-semibold text-brand-600 hover:text-brand-700"
+                  >
+                    Limpiar búsqueda
+                  </Link>
+                }
+                className="m-5 border-0 bg-transparent"
+              />
+            ) : (
+              <EmptyState
+                icon={Users}
+                title="Todavía no tenés leads"
+                description="Los leads entran solos cuando un cliente te escribe por WhatsApp. También podés cargar uno manualmente."
+                action={
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Button asChild variant="primary">
+                      <Link href={`/${orgSlug}/captacion`}>Generar link de WhatsApp</Link>
+                    </Button>
+                    <Button asChild variant="outline">
+                      <Link href="#registro-lead">Crear lead manual</Link>
+                    </Button>
+                  </div>
+                }
+                className="m-5 border-0 bg-transparent"
+              />
+            )
           )}
         </div>
       </SectionCard>

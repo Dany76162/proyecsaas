@@ -52,6 +52,7 @@ type PublicMapWrapperProps = {
   filtersBar: React.ReactNode;
   activeOrgs?: Array<{ name: string; slug: string }>;
   developments?: any[];
+  adminHomeHref?: string | null;
 };
 
 type DesktopViewMode = "list" | "hybrid" | "map";
@@ -521,17 +522,24 @@ function MoreFiltersDropdown({ filters, activeOrgs, onClose }: { filters: any; a
 }
 
 // ── Empty states ─────────────────────────────────────────────────────────────
-function EmptyFull() {
+function EmptyFull({ adminHomeHref }: { adminHomeHref?: string | null }) {
   return (
     <div className="rounded-3xl border border-dashed border-slate-200 p-12 text-center bg-white shadow-sm">
       <Building2 className="mx-auto h-12 w-12 text-slate-300" />
-      <h3 className="mt-4 text-lg font-bold text-slate-950">No encontramos propiedades</h3>
+      <h3 className="mt-4 text-lg font-bold text-slate-950">Todavía no hay propiedades publicadas</h3>
       <p className="mt-2 text-sm text-slate-400 max-w-sm mx-auto">
-        Probá ajustando o limpiando los filtros para ver más resultados.
+        Por ahora no encontramos propiedades para mostrar. Probá ajustando los filtros o volvé en unos días: el catálogo se actualiza constantemente.
       </p>
-      <Link href="/propiedades" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition px-6 h-11">
-        Ver todas las propiedades
-      </Link>
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <Link href="/propiedades" className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition px-6 h-11">
+          Ver todas las propiedades
+        </Link>
+        {adminHomeHref && (
+          <Link href={adminHomeHref} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold transition px-6 h-11">
+            Ir a mi panel para publicar
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
@@ -726,7 +734,7 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
 }
 
 // ── Wrapper ──────────────────────────────────────────────────────────────────
-export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersBar, activeOrgs = [], developments = [] }: PublicMapWrapperProps) {
+export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersBar, activeOrgs = [], developments = [], adminHomeHref = null }: PublicMapWrapperProps) {
   const [viewMode, setViewMode] = useState<DesktopViewMode>("hybrid");
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -789,7 +797,7 @@ export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersB
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {properties.map((p) => <FullCard key={p.id} prop={p} />)}
               </div>
-            ) : <EmptyFull />}
+            ) : <EmptyFull adminHomeHref={adminHomeHref} />}
           </section>
         </div>
       </div>
@@ -817,7 +825,7 @@ export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersB
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {properties.map((p) => <FullCard key={p.id} prop={p} />)}
               </div>
-            ) : <EmptyFull />}
+            ) : <EmptyFull adminHomeHref={adminHomeHref} />}
           </section>
         </div>
       </div>
@@ -915,7 +923,7 @@ export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersB
         {mobileView === "list" ? (
           <div className="px-4 pt-3 space-y-3">
             {developments.length === 0 && count === 0 ? (
-              <EmptyFull />
+              <EmptyFull adminHomeHref={adminHomeHref} />
             ) : (
               <>
                 {/* Desarrollos — misma card oscura que desktop */}
@@ -975,7 +983,7 @@ export function PublicMapWrapper({ filters, properties, filtersSidebar, filtersB
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {properties.map((p) => <FullCard key={p.id} prop={p} />)}
             </div>
-          ) : <EmptyFull />}
+          ) : <EmptyFull adminHomeHref={adminHomeHref} />}
         </div>
       )}
 
