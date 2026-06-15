@@ -11,7 +11,9 @@ import { resolveEffectiveCommercialState } from "@/server/billing/commercial-acc
 
 function buildLoginRedirectPath(nextPath: string) {
   const safePath = nextPath.startsWith("/") ? nextPath : "/";
-  const search = new URLSearchParams({ next: safePath });
+  // reason=session-expired lets /login mostrar un aviso claro cuando una acción
+  // (Server Action o navegación) se interrumpe por falta de sesión válida.
+  const search = new URLSearchParams({ next: safePath, reason: "session-expired" });
   return `/login?${search.toString()}`;
 }
 

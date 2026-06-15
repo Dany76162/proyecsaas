@@ -23,6 +23,7 @@ type LoginPageProps = {
     error?: string;
     next?: string;
     signedOut?: string;
+    reason?: string;
   }>;
 };
 
@@ -188,6 +189,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               {resolvedSearchParams?.signedOut && (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-3.5 text-xs font-bold text-emerald-600 shadow-sm">
                   La sesión se cerró correctamente.
+                </div>
+              )}
+
+              {resolvedSearchParams?.reason === "session-expired" && !resolvedSearchParams?.signedOut && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3.5 text-xs font-bold text-amber-700 shadow-sm animate-in fade-in slide-in-from-top-1">
+                  Tu sesión expiró. Volvé a iniciar sesión para guardar tus cambios.
                 </div>
               )}
 
