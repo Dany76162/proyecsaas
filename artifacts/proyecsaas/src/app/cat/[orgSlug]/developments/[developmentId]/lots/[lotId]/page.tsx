@@ -7,6 +7,7 @@ import {
   MapPin, Phone, Globe, CheckCircle2,
   Ruler, Maximize, ArrowLeft, Tag,
 } from "lucide-react";
+import { LotStatusBadge, type LotStatus } from "@/components/developments/lot-status-badge";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -24,20 +25,6 @@ function formatPrice(priceCents: number | null | undefined, currency: string | n
   } catch {
     return `${cur} ${amount.toLocaleString("es-AR")}`;
   }
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    AVAILABLE:        { label: "Disponible", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-    RESERVED_PENDING: { label: "Reservada",  cls: "bg-amber-100 text-amber-700 border-amber-200" },
-    RESERVED:         { label: "Reservada",  cls: "bg-amber-100 text-amber-700 border-amber-200" },
-    SOLD:             { label: "Vendida",    cls: "bg-red-100 text-red-700 border-red-200" },
-    BLOCKED:          { label: "No disponible", cls: "bg-slate-100 text-slate-500 border-slate-200" },
-  };
-  const { label, cls } = map[status] ?? { label: "—", cls: "bg-slate-100 text-slate-500 border-slate-200" };
-  return (
-    <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${cls}`}>{label}</span>
-  );
 }
 
 // ── SVG helpers ───────────────────────────────────────────────────────────────
@@ -429,7 +416,7 @@ export default async function PublicLotFichaPage({
                   <span className="text-2xl font-black leading-tight">{lot.lotNumber}</span>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <StatusBadge status={lot.status} />
+                  <LotStatusBadge status={lot.status as LotStatus} audience="public" />
                   {lot.etapaNombre && (
                     <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: etapaColor }} />
