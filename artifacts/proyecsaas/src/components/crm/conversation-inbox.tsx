@@ -468,7 +468,7 @@ export function ConversationInbox({
                 href={`/${orgSlug}/captacion`}
                 className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-[11px] font-bold uppercase tracking-widest text-white transition hover:bg-slate-800"
               >
-                Ir a Captación de Leads
+                Ir a Links de WhatsApp
               </Link>
             </div>
           </div>

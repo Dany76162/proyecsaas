@@ -196,7 +196,7 @@ export default async function VisitsPage({
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Desde el CRM</p>
                   <p className="mt-2 text-xs font-semibold text-slate-600 leading-relaxed">
-                    Podés programar una visita en cualquier momento ingresando a la ficha del Lead interesado en la sección de Prospectos.
+                    Podés programar una visita en cualquier momento ingresando a la ficha del Lead interesado en la sección de Oportunidades.
                   </p>
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default async function VisitsPage({
                   href={`/${orgSlug}/leads`}
                   className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-6 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-slate-800"
                 >
-                  Ir a Prospectos
+                  Ir a Oportunidades
                   <ArrowRight className="ml-2 h-3.5 w-3.5" />
                 </Link>
                 <Link

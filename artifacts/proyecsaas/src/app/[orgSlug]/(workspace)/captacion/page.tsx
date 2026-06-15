@@ -67,7 +67,7 @@ export default async function WorkspaceCaptacionPage({
               <span className="text-sm font-semibold text-brand-700">Links y QR de Captación</span>
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-              Captación de Leads
+              Links de WhatsApp
             </h1>
             <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
               Aquí encontrás el enlace y código QR para compartir con clientes desde tus redes, anuncios o sitio web. Para <strong>conectar tu número de WhatsApp</strong> al sistema, usá la sección de Integraciones.

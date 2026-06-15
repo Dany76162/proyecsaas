@@ -145,7 +145,7 @@ export default async function LeadDetailPage({
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Prospecto no encontrado</h2>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Oportunidad no encontrada</h2>
           <p className="text-slate-500 max-w-sm mx-auto text-[15px] leading-relaxed font-medium">
             El prospecto que estás intentando ver no existe en este espacio de trabajo o ha sido archivado.
           </p>
@@ -157,7 +157,7 @@ export default async function LeadDetailPage({
             className="inline-flex items-center gap-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition h-12 px-6 shadow-md"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver a Prospectos
+            Volver a Oportunidades
           </Link>
         </div>
       </div>

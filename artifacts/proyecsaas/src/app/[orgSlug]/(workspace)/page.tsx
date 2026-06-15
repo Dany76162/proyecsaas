@@ -118,7 +118,7 @@ export default async function OrganizationHomePage({
         <MetricCard
           label="Demanda entrante"
           value={String(leadSummary.newCount)}
-          hint="Prospectos sin procesar hoy."
+          hint="Oportunidades sin procesar hoy."
           tone="brand"
         />
         <MetricCard
@@ -177,7 +177,7 @@ export default async function OrganizationHomePage({
               <div className="flex flex-col rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
                 <div className="flex items-center gap-2 text-slate-400">
                   <Users className="h-3.5 w-3.5" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Prospectos</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Oportunidades</span>
                 </div>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{leadSummary.total}</p>
                 <p className="mt-1 text-[10px] font-medium text-slate-400">Total acumulado</p>
@@ -256,7 +256,7 @@ export default async function OrganizationHomePage({
 
             {/* Prospectos Prioritarios */}
             <div className="mt-6 border-t border-slate-100 pt-5">
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-4">Prospectos con prioridad alta</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-4">Oportunidades con prioridad alta</h4>
               {leads.length > 0 ? (
                 <div className="space-y-2">
                   {leads.slice(0, 3).map((lead) => (

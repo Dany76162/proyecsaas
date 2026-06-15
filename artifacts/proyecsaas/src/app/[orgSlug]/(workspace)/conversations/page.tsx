@@ -37,7 +37,7 @@ export default async function ConversationsPage({
               <span className="text-sm font-semibold text-emerald-700">Chat Centralizado</span>
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-              Conversaciones
+              Inbox IA
             </h1>
             <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
               Seguí en tiempo real las charlas de tus clientes con la IA e intervení cuando sea necesario.
@@ -47,7 +47,7 @@ export default async function ConversationsPage({
       </section>
       {success === "property-linked" ? (
         <section className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-soft">
-          Propiedad vinculada actualizada desde Conversaciones.
+          Propiedad vinculada actualizada desde el Inbox IA.
         </section>
       ) : null}
 
@@ -59,7 +59,7 @@ export default async function ConversationsPage({
               href={`/${orgSlug}/conversations`}
               className="font-medium text-brand-600 hover:text-brand-700"
             >
-              ← Conversaciones recientes
+              ← Volver al Inbox
             </Link>
           ) : (
             <span />

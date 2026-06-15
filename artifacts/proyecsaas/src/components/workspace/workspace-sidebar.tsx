@@ -40,9 +40,9 @@ type WorkspaceSidebarProps = {
 const OPERATION_NAV = [
   { label: "Inicio",         path: "",              icon: LayoutDashboard },
   { label: "Bienvenida",     path: "/onboarding",   icon: Rocket },
-  { label: "Captación",      path: "/captacion",    icon: Megaphone },
-  { label: "Prospectos",     path: "/leads",        icon: Users },
-  { label: "Conversaciones", path: "/conversations",icon: MessageSquare },
+  { label: "Links de WhatsApp", path: "/captacion",    icon: Megaphone },
+  { label: "Oportunidades",     path: "/leads",        icon: Users },
+  { label: "Inbox IA",          path: "/conversations",icon: MessageSquare },
   { label: "Visitas",        path: "/visits",       icon: Calendar },
   { label: "Propiedades",    path: "/properties",   icon: Building2 },
   { label: "Desarrollos",    path: "/developments",   icon: LandPlot },

@@ -80,7 +80,7 @@ export default async function LeadsPage({
               <span className="text-sm font-semibold text-brand-700">Embudo Comercial</span>
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-              Prospectos
+              Oportunidades
             </h1>
             <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
               Gestioná tu pipeline de ventas y hacé seguimiento de cada oportunidad desde el primer contacto.
