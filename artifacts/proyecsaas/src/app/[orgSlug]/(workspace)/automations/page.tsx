@@ -235,10 +235,10 @@ export default async function AutomationsPage({
               </span>
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-              Panel de Automatizaciones
+              Actividad automática
             </h1>
             <p className="mt-2 text-base text-slate-500">
-              Estado en tiempo real del agente IA, conversaciones procesadas y visitas agendadas automáticamente.
+              Panel de estado en tiempo real de lo que el agente IA hace automáticamente: conversaciones procesadas, seguimientos y visitas agendadas.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

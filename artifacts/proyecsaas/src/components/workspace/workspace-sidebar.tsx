@@ -49,7 +49,7 @@ const OPERATION_NAV = [
 
 const AUTOMATION_NAV = [
   { label: "Agentes IA",       path: "/agents",      icon: Bot },
-  { label: "Automatizaciones", path: "/automations", icon: Zap },
+  { label: "Actividad automática", path: "/automations", icon: Zap },
 ] as const;
 
 const MANAGEMENT_NAV = [
