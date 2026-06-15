@@ -144,15 +144,7 @@ export default async function OrganizationHomePage({
           <SectionCard
             eyebrow="Configuración"
             title="Tu cuenta requiere atención"
-            description="Completa los pasos de configuración para habilitar todas las funciones de IA y sincronización."
-            actions={
-              <Link
-                href={`/${orgSlug}/onboarding`}
-                className="inline-flex h-9 items-center rounded-lg bg-brand-500 px-4 text-xs font-semibold text-white transition-all duration-150 hover:bg-brand-600 shadow-sm shadow-brand-500/10"
-              >
-                Continuar configuración
-              </Link>
-            }
+            description="Completa los pasos de configuración para habilitar todas las funciones de IA y sincronización. Usá el botón “Continuar configuración” del encabezado para retomar donde quedaste."
           >
             <div className="flex flex-wrap gap-2">
               <StatusBadge

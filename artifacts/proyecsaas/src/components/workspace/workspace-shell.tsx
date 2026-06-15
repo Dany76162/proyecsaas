@@ -14,12 +14,14 @@ export function WorkspaceShell({
   role,
   userName,
   userEmail,
+  onboardingComplete = false,
   children,
 }: {
   organization: OrganizationSummary;
   role: MembershipRole;
   userName: string;
   userEmail: string;
+  onboardingComplete?: boolean;
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -58,6 +60,7 @@ export function WorkspaceShell({
         organization={organization}
         role={role}
         userName={userName}
+        onboardingComplete={onboardingComplete}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

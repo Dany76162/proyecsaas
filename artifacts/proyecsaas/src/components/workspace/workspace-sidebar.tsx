@@ -32,6 +32,7 @@ type WorkspaceSidebarProps = {
   organization: OrganizationSummary;
   role: MembershipRole;
   userName: string;
+  onboardingComplete?: boolean;
   isOpen: boolean;
   onClose: () => void;
 };
@@ -79,10 +80,17 @@ export function WorkspaceSidebar({
   organization,
   role,
   userName,
+  onboardingComplete = false,
   isOpen,
   onClose,
 }: WorkspaceSidebarProps) {
   const currentPath = usePathname();
+
+  // Una vez completado el onboarding, el atajo "Bienvenida" deja de ser útil:
+  // se oculta del menú (la página sigue accesible por URL).
+  const operationNav = OPERATION_NAV.filter(
+    (item) => !(onboardingComplete && item.path === "/onboarding"),
+  );
 
   function isActive(orgSlug: string, path: string): boolean {
     const href = `/${orgSlug}${path}`;
@@ -142,7 +150,7 @@ export function WorkspaceSidebar({
             Operación
           </p>
           <div className="space-y-0.5">
-            {OPERATION_NAV.map((item) => {
+            {operationNav.map((item) => {
               const active = isActive(organization.slug, item.path);
               const Icon = item.icon;
               return (
