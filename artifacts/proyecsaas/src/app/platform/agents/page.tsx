@@ -9,11 +9,15 @@ import {
   Plus, 
   ShieldCheck, 
   AlertCircle, 
-  Target, 
-  Zap, 
-  Calendar, 
+  Target,
+  Zap,
+  Calendar,
   Share2,
-  Rocket
+  Rocket,
+  Link2,
+  FileText,
+  ListChecks,
+  BookOpen
 } from "lucide-react";
 import { getAgentDashboardSummary, getDirectorAgentStatus } from "@/modules/agents/service";
 import { cn } from "@/lib/utils";
@@ -260,6 +264,86 @@ export default async function PlatformAgentsPage() {
             Abrir Prospecting Center <ArrowRight className="h-4 w-4" />
           </div>
         </Link>
+      </div>
+
+      {/* ── Contenido y herramientas ── */}
+      <div>
+        <p className="mb-4 px-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+          Contenido y herramientas
+        </p>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
+          <Link
+            href="/platform/agents/content"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+          >
+            <div className="space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                <FileText className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Contenido</h3>
+              <p className="text-xs leading-relaxed text-slate-500 font-medium">
+                Borradores de contenido generados por los agentes para redes y publicación.
+              </p>
+            </div>
+            <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
+              Ver borradores <ArrowRight className="h-4 w-4" />
+            </div>
+          </Link>
+
+          <Link
+            href="/platform/agents/integrations"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+          >
+            <div className="space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+                <Link2 className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Integraciones</h3>
+              <p className="text-xs leading-relaxed text-slate-500 font-medium">
+                Conexión con Meta (Facebook/Instagram) para publicación de contenido.
+              </p>
+            </div>
+            <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
+              Conectar <ArrowRight className="h-4 w-4" />
+            </div>
+          </Link>
+
+          <Link
+            href="/platform/agents/tasks"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+          >
+            <div className="space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <ListChecks className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Tareas</h3>
+              <p className="text-xs leading-relaxed text-slate-500 font-medium">
+                Tareas accionables que el Director IA asigna a partir de los objetivos.
+              </p>
+            </div>
+            <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
+              Ver tareas <ArrowRight className="h-4 w-4" />
+            </div>
+          </Link>
+
+          <Link
+            href="/platform/agents/library"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm transition-all hover:border-brand-200 hover:shadow-xl"
+          >
+            <div className="space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+                <BookOpen className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight">Biblioteca</h3>
+              <p className="text-xs leading-relaxed text-slate-500 font-medium">
+                Catálogo de agentes disponibles y próximos a habilitar.
+              </p>
+            </div>
+            <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-600 group-hover:translate-x-1 transition-transform">
+              Ver catálogo <ArrowRight className="h-4 w-4" />
+            </div>
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

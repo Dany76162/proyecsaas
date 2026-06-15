@@ -16,11 +16,7 @@ import {
   X,
   Bot,
   Megaphone,
-  Network,
   Target,
-  Zap,
-  Calendar,
-  Link2,
   Briefcase,
   ClipboardCheck,
   LandPlot,
@@ -52,13 +48,12 @@ const PLATFORM_NAV_GROUPS = [
   },
   {
     section: "IA (AgentOS)",
+    // AgentOS es la puerta única: sus sub-áreas (Automatizaciones, Calendario,
+    // Integraciones, Canvas, etc.) se acceden desde el hub /platform/agents.
+    // En el sidebar solo quedan el hub + lo comercial/observabilidad.
     items: [
-      { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/canvas", "/platform/agents/automations", "/platform/agents/prospecting"] },
-      { name: "Automatizaciones", href: "/platform/agents/automations", icon: Zap },
+      { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/prospecting"] },
       { name: "Prospección", href: "/platform/agents/prospecting", icon: Target },
-      { name: "Calendario", href: "/platform/agents/calendar", icon: Calendar },
-      { name: "Integraciones", href: "/platform/agents/integrations", icon: Link2 },
-      { name: "Canvas", href: "/platform/agents/canvas", icon: Network },
       { name: "Operaciones IA", href: "/platform/ai-operations", icon: Gauge, exact: true },
     ],
   },
