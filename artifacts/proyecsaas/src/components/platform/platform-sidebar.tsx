@@ -30,28 +30,61 @@ import {
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/server/auth/actions";
 
-const PLATFORM_NAV = [
-  { name: "Resumen", href: "/platform", icon: LayoutDashboard, exact: true },
-  { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/canvas", "/platform/agents/automations", "/platform/agents/prospecting"] },
-  { name: "Automatizaciones", href: "/platform/agents/automations", icon: Zap },
-  { name: "Prospección", href: "/platform/agents/prospecting", icon: Target },
-  { name: "Calendario", href: "/platform/agents/calendar", icon: Calendar },
-  { name: "Integraciones", href: "/platform/agents/integrations", icon: Link2 },
-  { name: "Canvas", href: "/platform/agents/canvas", icon: Network },
-  { name: "Clientes", href: "/platform/organizations", icon: Building2 },
-  { name: "Atención a Clientes", href: "/platform/support", icon: MessageSquare },
-  { name: "Captación", href: "/platform/captacion", icon: Megaphone },
-  { name: "Onboarding", href: "/platform/onboarding", icon: UserPlus },
-  { name: "Activación", href: "/platform/activation", icon: TrendingUp },
-  { name: "Salud del sistema", href: "/platform/health", icon: ActivitySquare },
-  { name: "Operaciones IA", href: "/platform/ai-operations", icon: Gauge, exact: true },
-  { name: "Manual Vivo", href: "/platform/manual-operativo", icon: BookOpen },
-  { name: "Manual Maestro", href: "/platform/master-manual", icon: BookOpen },
-  { name: "Comercial", href: "/platform/billing", icon: CreditCard, exact: true },
-  { name: "Cobros de reservas", href: "/platform/billing/reservations", icon: LandPlot },
-  { name: "Modelo de Negocio", href: "/platform/business-model", icon: Briefcase },
-  { name: "QA Operativo", href: "/platform/qa", icon: ClipboardCheck },
-  { name: "Configuración", href: "/platform/settings", icon: Settings },
+// Agrupación visual del menú Superadmin. Solo presentación: las rutas (href),
+// permisos (requirePlatformAdmin en cada página) y la lógica de active state se
+// mantienen idénticas.
+const PLATFORM_NAV_GROUPS = [
+  {
+    section: "Resumen",
+    items: [
+      { name: "Resumen", href: "/platform", icon: LayoutDashboard, exact: true },
+    ],
+  },
+  {
+    section: "Clientes",
+    items: [
+      { name: "Clientes", href: "/platform/organizations", icon: Building2 },
+      { name: "Onboarding", href: "/platform/onboarding", icon: UserPlus },
+      { name: "Activación", href: "/platform/activation", icon: TrendingUp },
+      { name: "Captación", href: "/platform/captacion", icon: Megaphone },
+      { name: "Atención a Clientes", href: "/platform/support", icon: MessageSquare },
+    ],
+  },
+  {
+    section: "IA (AgentOS)",
+    items: [
+      { name: "AgentOS", href: "/platform/agents", icon: Bot, exclude: ["/platform/agents/canvas", "/platform/agents/automations", "/platform/agents/prospecting"] },
+      { name: "Automatizaciones", href: "/platform/agents/automations", icon: Zap },
+      { name: "Prospección", href: "/platform/agents/prospecting", icon: Target },
+      { name: "Calendario", href: "/platform/agents/calendar", icon: Calendar },
+      { name: "Integraciones", href: "/platform/agents/integrations", icon: Link2 },
+      { name: "Canvas", href: "/platform/agents/canvas", icon: Network },
+      { name: "Operaciones IA", href: "/platform/ai-operations", icon: Gauge, exact: true },
+    ],
+  },
+  {
+    section: "Observabilidad",
+    items: [
+      { name: "Salud del sistema", href: "/platform/health", icon: ActivitySquare },
+      { name: "QA Operativo", href: "/platform/qa", icon: ClipboardCheck },
+    ],
+  },
+  {
+    section: "Negocio",
+    items: [
+      { name: "Facturación", href: "/platform/billing", icon: CreditCard, exact: true },
+      { name: "Cobros de reservas", href: "/platform/billing/reservations", icon: LandPlot },
+      { name: "Modelo de Negocio", href: "/platform/business-model", icon: Briefcase },
+    ],
+  },
+  {
+    section: "Administración",
+    items: [
+      { name: "Configuración", href: "/platform/settings", icon: Settings },
+      { name: "Manual Vivo", href: "/platform/manual-operativo", icon: BookOpen },
+      { name: "Manual Maestro", href: "/platform/master-manual", icon: BookOpen },
+    ],
+  },
 ];
 
 type PlatformSidebarProps = {
@@ -104,45 +137,49 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
         </div>
       </Link>
 
-      <nav className="flex-1 px-4 pb-4">
-        <p className="mb-3 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
-          Administración
-        </p>
-        <ul className="space-y-0.5">
-          {PLATFORM_NAV.map((item) => {
-            const isActive = item.exact
-              ? pathname === item.href
-              : pathname.startsWith(item.href) &&
-                !item.exclude?.some((excludedPath) => pathname.startsWith(excludedPath));
+      <nav className="flex-1 px-4 pb-4 space-y-5">
+        {PLATFORM_NAV_GROUPS.map((group) => (
+          <div key={group.section}>
+            <p className="mb-3 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
+              {group.section}
+            </p>
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = item.exact
+                  ? pathname === item.href
+                  : pathname.startsWith(item.href) &&
+                    !item.exclude?.some((excludedPath) => pathname.startsWith(excludedPath));
 
-            const Icon = item.icon;
+                const Icon = item.icon;
 
-            return (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "group flex items-center gap-3.5 rounded-lg px-3.5 py-2.5 text-[15px] font-semibold transition-all duration-200",
-                    isActive
-                      ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
-                      : "text-slate-400 hover:bg-white/5 hover:text-white",
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      "h-5 w-5 shrink-0",
-                      isActive
-                        ? "text-white"
-                        : "text-slate-500 group-hover:text-slate-300",
-                    )}
-                  />
-                  {item.name}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      onClick={onClose}
+                      className={cn(
+                        "group flex items-center gap-3.5 rounded-lg px-3.5 py-2.5 text-[15px] font-semibold transition-all duration-200",
+                        isActive
+                          ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
+                          : "text-slate-400 hover:bg-white/5 hover:text-white",
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-5 w-5 shrink-0",
+                          isActive
+                            ? "text-white"
+                            : "text-slate-500 group-hover:text-slate-300",
+                        )}
+                      />
+                      {item.name}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       <div className="p-4 border-t border-white/5">
