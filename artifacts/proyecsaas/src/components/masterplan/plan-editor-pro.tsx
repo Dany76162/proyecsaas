@@ -10,7 +10,6 @@ import {
   Maximize2,
   MousePointer2,
   Route,
-  Navigation,
   Waves,
   TreePine,
   Trees,
@@ -46,14 +45,16 @@ type Tool = {
   strokeWidth: number;
   opacity: number;
   smooth?: boolean;
-  /** Si está, el ancho se calcula como vb.h * widthFactor (ocupa el ancho real de la calle). */
+  /** Si está, el ancho por defecto se calcula como vb.h * widthFactor. */
   widthFactor?: number;
+  /** Calles: no piden nombre y la herramienta queda activa para dibujar varias. */
+  autoName?: boolean;
   icon: React.ComponentType<{ className?: string }>;
 };
 
 const TOOLS: Tool[] = [
-  { id: "calle", label: "Calle", kind: "POLYLINE", fill: "none", stroke: "#6B7280", strokeWidth: 6, widthFactor: 0.016, opacity: 0.95, icon: Route },
-  { id: "avenida", label: "Avenida", kind: "POLYLINE", fill: "none", stroke: "#374151", strokeWidth: 12, widthFactor: 0.03, opacity: 0.95, icon: Navigation },
+  { id: "calle_tierra", label: "Calle de tierra", kind: "POLYLINE", fill: "none", stroke: "#8B5E34", strokeWidth: 6, widthFactor: 0.018, opacity: 1, autoName: true, icon: Route },
+  { id: "calle_asfalto", label: "Calle de asfalto", kind: "POLYLINE", fill: "none", stroke: "#6B7280", strokeWidth: 6, widthFactor: 0.018, opacity: 1, autoName: true, icon: Route },
   { id: "laguna", label: "Lago", kind: "POLYGON", fill: "#3B82F6", stroke: "#1D4ED8", strokeWidth: 2, opacity: 0.5, smooth: true, icon: Waves },
   { id: "area_verde", label: "Área verde", kind: "POLYGON", fill: "#22C55E", stroke: "#15803D", strokeWidth: 2, opacity: 0.4, icon: TreePine },
   { id: "plaza", label: "Plaza", kind: "POLYGON", fill: "#4ADE80", stroke: "#166534", strokeWidth: 2, opacity: 0.5, icon: Trees },
@@ -143,6 +144,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("#22c55e");
   const [editWidth, setEditWidth] = useState(2);
+  const [drawWidth, setDrawWidth] = useState(8);
   const [busy, setBusy] = useState(false);
   const [editGeometry, setEditGeometry] = useState<Point[] | null>(null);
   const [draggingVertex, setDraggingVertex] = useState<number | null>(null);
@@ -219,6 +221,40 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
 
   const undoPoint = useCallback(() => setDraftPoints((prev) => prev.slice(0, -1)), []);
 
+  const postObject = useCallback(
+    async (tool: Tool, points: Point[], name: string, strokeWidth: number): Promise<boolean> => {
+      const geometry = tool.kind === "TEXT" ? { x: points[0].x, y: points[0].y, text: name } : { points };
+      try {
+        const res = await fetch(`/api/developments/${developmentId}/visual-objects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            type: tool.id,
+            geometryKind: tool.kind,
+            geometry,
+            coordinateSpace: "PLAN_VIEWBOX",
+            fillColor: tool.fill === "none" ? null : tool.fill,
+            strokeColor: tool.stroke,
+            opacity: tool.opacity,
+            strokeWidth,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.error || "No se pudo guardar.");
+          return false;
+        }
+        await loadObjects();
+        return true;
+      } catch {
+        toast.error("Error de red al guardar.");
+        return false;
+      }
+    },
+    [developmentId, loadObjects],
+  );
+
   const finishShape = useCallback(() => {
     if (!activeTool || activeTool.kind === "TEXT") return;
     const min = activeTool.kind === "POLYGON" ? 3 : 2;
@@ -226,12 +262,20 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
       toast.error(`Marcá al menos ${min} puntos.`);
       return;
     }
+    if (activeTool.autoName) {
+      const idx = objects.filter((o) => o.type === activeTool.id).length + 1;
+      void postObject(activeTool, draftPoints, `${activeTool.label} ${idx}`, drawWidth);
+      setDraftPoints([]);
+      setCursor(null);
+      // La herramienta queda activa para seguir dibujando calles.
+      return;
+    }
     setPending({ tool: activeTool, points: draftPoints });
     setNameValue("");
     setDraftPoints([]);
     setCursor(null);
     setActiveToolId(null);
-  }, [activeTool, draftPoints]);
+  }, [activeTool, draftPoints, objects, postObject, drawWidth]);
 
   const cancelDraft = useCallback(() => {
     setDraftPoints([]);
@@ -318,41 +362,16 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
       return;
     }
     const { tool, points } = pending;
-    const geometry = tool.kind === "TEXT" ? { x: points[0].x, y: points[0].y, text: name } : { points };
     const strokeWidth = tool.widthFactor ? Math.max(1, Math.round(vb.h * tool.widthFactor)) : tool.strokeWidth;
-
     setSaving(true);
-    try {
-      const res = await fetch(`/api/developments/${developmentId}/visual-objects`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          type: tool.id,
-          geometryKind: tool.kind,
-          geometry,
-          coordinateSpace: "PLAN_VIEWBOX",
-          fillColor: tool.fill === "none" ? null : tool.fill,
-          strokeColor: tool.stroke,
-          opacity: tool.opacity,
-          strokeWidth,
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.error || "No se pudo guardar.");
-        return;
-      }
+    const ok = await postObject(tool, points, name, strokeWidth);
+    setSaving(false);
+    if (ok) {
       toast.success(`"${name}" agregado.`);
       setPending(null);
       setNameValue("");
-      await loadObjects();
-    } catch {
-      toast.error("Error de red al guardar.");
-    } finally {
-      setSaving(false);
     }
-  }, [pending, nameValue, developmentId, loadObjects]);
+  }, [pending, nameValue, postObject, vb.h]);
 
   // Inicializa las manijas de vértices al seleccionar un objeto editable.
   useEffect(() => {
@@ -465,7 +484,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
               <button
                 key={tool.id}
                 type="button"
-                onClick={() => { setActiveToolId(tool.id); setDraftPoints([]); setCursor(null); setSelectedId(null); }}
+                onClick={() => { setActiveToolId(tool.id); setDraftPoints([]); setCursor(null); setSelectedId(null); if (tool.widthFactor) setDrawWidth(Math.max(1, Math.round(vb.h * tool.widthFactor))); }}
                 title={tool.label}
                 className={cn("flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-bold transition", active ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-white dark:hover:bg-slate-700")}
               >
@@ -483,8 +502,22 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
           <span>
             {activeTool?.kind === "TEXT"
               ? "Hacé clic donde querés poner la etiqueta."
-              : `"${activeTool?.label}": clic = punto · doble clic / Enter = terminar · Esc = cancelar`}
+              : `"${activeTool?.label}": clic = punto · doble clic / Enter = terminar · Esc = cancelar · no pide nombre`}
           </span>
+          {activeTool?.autoName && (
+            <label className="flex items-center gap-1.5">
+              Ancho
+              <input
+                type="range"
+                min={2}
+                max={Math.max(40, Math.round(vb.h * 0.08))}
+                value={drawWidth}
+                onChange={(e) => setDrawWidth(Number(e.target.value))}
+                className="w-28 accent-white"
+              />
+              <span className="tabular-nums">{Math.round(drawWidth)}</span>
+            </label>
+          )}
           {draftPoints.length > 0 && activeTool?.kind !== "TEXT" && (
             <button type="button" onClick={undoPoint} className="inline-flex items-center gap-1 rounded-md bg-white/20 px-2 py-0.5 hover:bg-white/30">
               <Undo2 className="h-3 w-3" /> Deshacer punto
@@ -581,7 +614,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
                           <polygon points={pointsToStr(cursor ? [...draftPoints, cursor] : draftPoints)} fill={activeTool.fill} fillOpacity={0.3} stroke={activeTool.stroke} strokeWidth={activeTool.strokeWidth} strokeDasharray={dash} />
                         )
                       ) : (
-                        <polyline points={pointsToStr(cursor ? [...draftPoints, cursor] : draftPoints)} fill="none" stroke={activeTool.stroke} strokeWidth={activeTool.widthFactor ? Math.max(1, vb.h * activeTool.widthFactor) : activeTool.strokeWidth} strokeLinecap="butt" strokeLinejoin="round" opacity={0.7} />
+                        <polyline points={pointsToStr(cursor ? [...draftPoints, cursor] : draftPoints)} fill="none" stroke={activeTool.stroke} strokeWidth={activeTool.autoName ? drawWidth : (activeTool.widthFactor ? Math.max(1, vb.h * activeTool.widthFactor) : activeTool.strokeWidth)} strokeLinecap="butt" strokeLinejoin="round" opacity={0.85} />
                       )}
                       {draftPoints.map((p, i) => (
                         <circle key={i} cx={p.x} cy={p.y} r={vb.h / 200} fill="#fff" stroke="#2356d9" strokeWidth={vb.h / 600} />
