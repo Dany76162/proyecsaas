@@ -216,18 +216,19 @@ function lotMetrics(points: Pt[], proj: Proj) {
 
 // Casa simple (paredes + techo) para los lotes vendidos.
 function House({ wx, wz, lotSize }: { wx: number; wz: number; lotSize: number }) {
-  const s = Math.max(0.6, Math.min(lotSize * 0.55, 7));
-  const wallH = s * 0.7;
-  const roofH = s * 0.5;
+  // Footprint chico relativo al lote (deja jardín alrededor) y perfil bajo (1 planta).
+  const s = Math.max(0.4, lotSize * 0.4);
+  const wallH = s * 0.48;
+  const roofH = s * 0.32;
   return (
     <group position={[wx, 0, wz]}>
-      <mesh position={[0, wallH / 2 + 0.05, 0]} castShadow receiveShadow>
-        <boxGeometry args={[s, wallH, s * 0.85]} />
-        <meshStandardMaterial color="#ece4d6" roughness={0.85} />
+      <mesh position={[0, wallH / 2 + 0.04, 0]} castShadow receiveShadow>
+        <boxGeometry args={[s, wallH, s * 0.8]} />
+        <meshStandardMaterial color="#f1ece3" roughness={0.85} />
       </mesh>
-      <mesh position={[0, wallH + roofH / 2 + 0.05, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-        <coneGeometry args={[s * 0.72, roofH, 4]} />
-        <meshStandardMaterial color="#9b3d2e" roughness={0.7} />
+      <mesh position={[0, wallH + roofH / 2 + 0.04, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
+        <coneGeometry args={[s * 0.7, roofH, 4]} />
+        <meshStandardMaterial color="#8a4a3a" roughness={0.75} />
       </mesh>
     </group>
   );
