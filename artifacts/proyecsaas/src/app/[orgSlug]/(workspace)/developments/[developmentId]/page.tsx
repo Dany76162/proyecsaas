@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, PencilRuler } from "lucide-react";
 
 import { requireOrganizationMembership } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
@@ -129,8 +129,18 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
           </div>
         </div>
 
-        {/* Progress */}
-        <div className="flex items-center gap-2">
+        {/* Acceso al Editor de Plano Pro + Progress */}
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/${orgSlug}/developments/${developmentId}/plan-editor`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-brand-700 shrink-0"
+            title="Editor de plano (Pro)"
+          >
+            <PencilRuler className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Editor de plano</span>
+            <span className="rounded bg-white/20 px-1 text-[9px] font-black uppercase tracking-wider">Pro</span>
+          </Link>
+          <div className="flex items-center gap-2">
           <div className="text-right hidden sm:block">
             <div className="text-sm font-black text-slate-800 dark:text-white tabular-nums leading-tight">
               {completedCount}
@@ -147,6 +157,7 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
               }}
             />
           </div>
+        </div>
         </div>
       </div>
 
