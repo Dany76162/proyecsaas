@@ -20,7 +20,7 @@ export default async function PlanEditorPage({ params }: PageProps) {
       id: true,
       name: true,
       masterplanSVG: true,
-      DevelopmentLot: { select: { id: true, status: true, pathData: true } },
+      DevelopmentLot: { select: { id: true, status: true, pathData: true, areaSqm: true } },
     },
   });
 

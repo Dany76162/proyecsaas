@@ -37,7 +37,7 @@ const Plan3DView = dynamic(() => import("./plan-3d-view"), {
   ),
 });
 
-type LotInput = { id: string; status: string; pathData: string | null };
+type LotInput = { id: string; status: string; pathData: string | null; areaSqm?: number | null };
 
 type PlanEditorProProps = {
   orgSlug: string;

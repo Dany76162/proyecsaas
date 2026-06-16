@@ -17,7 +17,32 @@ type VisualObject = {
   strokeWidth: number | null;
 };
 
-type Lot = { id: string; status: string; pathData: string | null };
+type Lot = { id: string; status: string; pathData: string | null; areaSqm?: number | null };
+
+// Área (shoelace) de un polígono en unidades del plano.
+function polygonArea(pts: Pt[]): number {
+  let a = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    a += (pts[j].x + pts[i].x) * (pts[j].y - pts[i].y);
+  }
+  return Math.abs(a / 2);
+}
+
+// Metros por unidad del plano, estimado con el área real (m²) de los lotes.
+function computeMetersPerUnit(lots: Lot[]): number | null {
+  const samples: number[] = [];
+  for (const l of lots) {
+    if (!l.areaSqm || l.areaSqm <= 0) continue;
+    const pts = pathToPoints(l.pathData);
+    if (pts.length < 3) continue;
+    const areaUnits = polygonArea(pts);
+    if (areaUnits <= 0) continue;
+    samples.push(Math.sqrt(l.areaSqm / areaUnits));
+  }
+  if (!samples.length) return null;
+  samples.sort((a, b) => a - b);
+  return samples[Math.floor(samples.length / 2)];
+}
 
 type ViewBox = { x: number; y: number; w: number; h: number };
 
@@ -297,7 +322,7 @@ function Tree({ wx, wz, s }: { wx: number; wz: number; s: number }) {
   );
 }
 
-function Trees({ objects, proj }: { objects: VisualObject[]; proj: Proj }) {
+function Trees({ objects, proj, worldPerMeter }: { objects: VisualObject[]; proj: Proj; worldPerMeter?: number | null }) {
   const trees = useMemo(() => {
     const green = new Set(["area_verde", "plaza"]);
     const out: { wx: number; wz: number; s: number }[] = [];
@@ -319,13 +344,21 @@ function Trees({ objects, proj }: { objects: VisualObject[]; proj: Proj }) {
         const px = minX + rng() * (maxX - minX);
         const py = minY + rng() * (maxY - minY);
         if (pointInPolygon(px, py, pts)) {
-          out.push({ wx: proj.X(px), wz: proj.Z(py), s: 0.6 + rng() * 0.5 });
+          let s: number;
+          if (worldPerMeter && worldPerMeter > 0) {
+            // Altura real entre ~2.4 y 4 m (tope 4 m). Altura total del árbol = s * 1.6.
+            const heightM = Math.min(4, 2.4 + rng() * 1.6);
+            s = (heightM * worldPerMeter) / 1.6;
+          } else {
+            s = 0.6 + rng() * 0.5;
+          }
+          out.push({ wx: proj.X(px), wz: proj.Z(py), s });
           placed++;
         }
       }
     }
     return out;
-  }, [objects, proj]);
+  }, [objects, proj, worldPerMeter]);
 
   return <>{trees.map((t, i) => <Tree key={i} wx={t.wx} wz={t.wz} s={t.s} />)}</>;
 }
@@ -397,6 +430,10 @@ function CinematicCamera({ playing }: { playing: boolean }) {
 export default function Plan3DView({ objects, lots = [], viewBox }: { objects: VisualObject[]; lots?: Lot[]; viewBox: ViewBox }) {
   const [playing, setPlaying] = useState(false);
   const proj = useMemo(() => makeProjector(viewBox), [viewBox]);
+  const worldPerMeter = useMemo(() => {
+    const mpu = computeMetersPerUnit(lots);
+    return mpu ? proj.scale / mpu : null;
+  }, [lots, proj]);
   const groundSize = 100 * 1.6;
 
   return (
@@ -427,7 +464,7 @@ export default function Plan3DView({ objects, lots = [], viewBox }: { objects: V
 
         <Lots lots={lots} proj={proj} />
         <SceneObjects objects={objects} proj={proj} />
-        <Trees objects={objects} proj={proj} />
+        <Trees objects={objects} proj={proj} worldPerMeter={worldPerMeter} />
 
         <ContactShadows position={[0, 0.02, 0]} opacity={0.35} scale={groundSize} blur={2.4} far={20} />
         <CinematicCamera playing={playing} />
