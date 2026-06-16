@@ -242,6 +242,7 @@ model Organization {
   deletedAt              DateTime?
   maxAiAgents            Int?
   agentQuotaNote         String?
+  aiMonthlyCostLimitUsd  Float?
   memberships            Membership[]
   inviteTokens           InviteToken[]
   pushSubscriptions      PushSubscription[]
