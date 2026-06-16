@@ -204,6 +204,22 @@ model PushSubscription {
   @@index([organizationId])
 }
 
+model AiUsageEvent {
+  id               String        @id @default(cuid())
+  organizationId   String?
+  model            String
+  source           String
+  promptTokens     Int           @default(0)
+  completionTokens Int           @default(0)
+  totalTokens      Int           @default(0)
+  costUsd          Float         @default(0)
+  createdAt        DateTime      @default(now())
+  organization     Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([createdAt])
+}
+
 model Organization {
   Development            Development[]
   id                     String             @id @default(cuid())
@@ -229,6 +245,7 @@ model Organization {
   memberships            Membership[]
   inviteTokens           InviteToken[]
   pushSubscriptions      PushSubscription[]
+  aiUsageEvents          AiUsageEvent[]
   leads                  Lead[]
   properties             Property[]
   conversations          Conversation[]

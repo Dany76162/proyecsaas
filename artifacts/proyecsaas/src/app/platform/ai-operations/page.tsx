@@ -5,6 +5,8 @@ import { requirePlatformAdmin } from "@/server/auth/access";
 
 import { getTenantsAiHealth } from "./actions";
 import { AiOperationsTable } from "./AiOperationsTable";
+import { getAiUsageSummary } from "./ai-cost";
+import { AiCostPanel } from "./AiCostPanel";
 
 export const metadata: Metadata = {
   title: "Operaciones IA | Superadmin",
@@ -12,7 +14,10 @@ export const metadata: Metadata = {
 
 export default async function AiOperationsPage() {
   await requirePlatformAdmin();
-  const data = await getTenantsAiHealth();
+  const [data, usageSummary] = await Promise.all([
+    getTenantsAiHealth(),
+    getAiUsageSummary(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -32,6 +37,8 @@ export default async function AiOperationsPage() {
           </p>
         </div>
       </div>
+
+      <AiCostPanel summary={usageSummary} />
 
       <AiOperationsTable data={data} />
     </div>

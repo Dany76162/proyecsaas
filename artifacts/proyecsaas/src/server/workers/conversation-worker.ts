@@ -706,7 +706,7 @@ export async function processWhatsAppInboundJob(
         ? `/cat/${orgRecord.slug}/developments/${lot.developmentId}/lots/${lot.id}`
         : null,
     })),
-  });
+  }, { organizationId: targetOrgId, db: prisma });
   } // end else (no escalation keyword)
 
   // Persist commercial signals into the Lead record (notes + conservative stage mapping)

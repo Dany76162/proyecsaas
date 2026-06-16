@@ -1,8 +1,17 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { getOpenAIClient as getSharedOpenAIClient } from "@/lib/ai/openai";
+import { logAiUsage } from "@/lib/ai/usage";
 
 import type { AutomationDecision, PreparedConversationContext } from "@/modules/automations/types";
+
+// Metadatos opcionales para atribuir el costo de IA a una organización.
+// `db` permite usar el cliente Prisma correcto (en el worker, prismaWorker).
+export type AiDecisionMeta = {
+  organizationId?: string | null;
+  db?: PrismaClient | Prisma.TransactionClient;
+};
 
 const AI_REQUEST_TIMEOUT_MS = 15_000;
 const FALLBACK_VISIT_KEYWORDS = [
@@ -803,7 +812,7 @@ function buildDeterministicFallback(
   }, context);
 }
 
-async function generateAiDecision(context: PreparedConversationContext) {
+async function generateAiDecision(context: PreparedConversationContext, meta?: AiDecisionMeta) {
   const client = getOpenAiClient();
 
   if (!client) {
@@ -840,6 +849,15 @@ async function generateAiDecision(context: PreparedConversationContext) {
     clearTimeout(timeout);
   }
 
+  if (meta?.db) {
+    await logAiUsage(meta.db, {
+      organizationId: meta.organizationId ?? null,
+      model: getDecisionModel(),
+      source: "conversation-decision",
+      usage: completion.usage,
+    });
+  }
+
   const content = completion.choices[0]?.message?.content;
 
   if (!content) {
@@ -857,9 +875,10 @@ async function generateAiDecision(context: PreparedConversationContext) {
 
 export async function generateAutomationDecision(
   context: PreparedConversationContext,
+  meta?: AiDecisionMeta,
 ): Promise<AutomationDecision> {
   try {
-    const aiDecision = await generateAiDecision(context);
+    const aiDecision = await generateAiDecision(context, meta);
 
     if (!aiDecision) {
       return buildDeterministicFallback(context, "openai-not-configured");
