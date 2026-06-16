@@ -42,11 +42,10 @@ const systemSteps = [
 ] as const;
 
 const tourSteps = [
-  { step: "1", title: "Abrí la propiedad", description: "Entrá a la ficha de la propiedad en el panel y tocá la pestaña '360° / Panorámica' en la sección de Medios." },
-  { step: "2", title: "Elegí el ambiente", description: "Tocá 'Escanear con celular' y seleccioná el ambiente que vas a capturar: Living, Cocina, Habitación, Baño, etc." },
-  { step: "3", title: "Seguí la guía visual", description: "El celular te va a indicar con bordes verdes cuándo estás en la posición correcta. Mantené el celular quieto y la foto se saca sola." },
-  { step: "4", title: "Completá los 18 puntos", description: "El sistema te guía por 6 posiciones × 3 alturas (piso, frente, techo). Tarda entre 5 y 10 minutos por ambiente." },
-  { step: "5", title: "Agregá más ambientes", description: "Al terminar un ambiente podés seguir con el siguiente. Cada ambiente queda como una escena navegable dentro del tour." },
+  { step: "1", title: "Conseguí imágenes 360° reales", description: "Capturá cada ambiente con una cámara 360° profesional (imagen equirectangular, relación 2:1)." },
+  { step: "2", title: "Abrí la propiedad", description: "Entrá a la ficha de la propiedad en el panel y tocá la pestaña '360° / Panorámica' en la sección de Medios." },
+  { step: "3", title: "Subí cada escena", description: "Usá 'Subir imagen panorámica' para cargar cada ambiente. Cada imagen queda como una escena navegable del tour." },
+  { step: "4", title: "Organizá el recorrido", description: "Ordená las escenas y, si querés, sumá el plano del tour. El recorrido aparece en la ficha pública de la propiedad." },
 ] as const;
 
 const leadChecklist = [
@@ -204,8 +203,8 @@ export default async function WorkspaceManualUsoPage({
         <div className="[break-inside:avoid] [page-break-inside:avoid]">
           <SectionCard
             eyebrow="Tour virtual"
-            title="Cómo hacer un tour 360° con tu celular"
-            description="Cualquier agente puede crear un recorrido inmersivo profesional en minutos, sin equipos especiales."
+            title="Tours 360° de tus propiedades"
+            description="Subí imágenes 360° reales y convertilas en un recorrido inmersivo en la ficha pública. La captura directa desde el celular (panorámica y video) llegará próximamente."
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5 print:grid-cols-1">
               {tourSteps.map((item) => (

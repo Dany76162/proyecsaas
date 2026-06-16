@@ -71,7 +71,7 @@ function buildOnboardingSteps(
       key: "tour",
       title: "Hacé tu primer tour 360° (opcional)",
       description:
-        "Abrí una propiedad existente, entrá en Medios > 360° / Panorámica y usá 'Escanear con celular' o cargá una imagen 360. Este paso es opcional, pero mejora mucho la ficha pública.",
+        "Abrí una propiedad existente, entrá en Medios > 360° / Panorámica y subí una imagen 360° real (cámara 360° profesional). Este paso es opcional, pero mejora mucho la ficha pública. La captura desde el celular llegará próximamente.",
       href: `/${orgSlug}/properties`,
       cta: "Abrir mis propiedades",
       serverStatus: (status.tourReady ? "completed" : "pending") as "completed" | "pending",
