@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { href: "#beneficios", label: "Beneficios", isAnchor: true },
   { href: "#contacto", label: "Contacto", isAnchor: true },
   { href: "/propiedades", label: "Propiedades", isAnchor: false },
+  { href: "/app-movil", label: "App", isAnchor: false },
 ] as const;
 
 export function Navbar() {
