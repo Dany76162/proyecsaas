@@ -10,6 +10,7 @@ import {
   Maximize2,
   MousePointer2,
   Route,
+  Navigation,
   Waves,
   TreePine,
   Trees,
@@ -45,11 +46,14 @@ type Tool = {
   strokeWidth: number;
   opacity: number;
   smooth?: boolean;
+  /** Si está, el ancho se calcula como vb.h * widthFactor (ocupa el ancho real de la calle). */
+  widthFactor?: number;
   icon: React.ComponentType<{ className?: string }>;
 };
 
 const TOOLS: Tool[] = [
-  { id: "calle", label: "Calle", kind: "POLYLINE", fill: "none", stroke: "#475569", strokeWidth: 6, opacity: 0.9, icon: Route },
+  { id: "calle", label: "Calle", kind: "POLYLINE", fill: "none", stroke: "#6B7280", strokeWidth: 6, widthFactor: 0.016, opacity: 0.95, icon: Route },
+  { id: "avenida", label: "Avenida", kind: "POLYLINE", fill: "none", stroke: "#374151", strokeWidth: 12, widthFactor: 0.03, opacity: 0.95, icon: Navigation },
   { id: "laguna", label: "Lago", kind: "POLYGON", fill: "#3B82F6", stroke: "#1D4ED8", strokeWidth: 2, opacity: 0.5, smooth: true, icon: Waves },
   { id: "area_verde", label: "Área verde", kind: "POLYGON", fill: "#22C55E", stroke: "#15803D", strokeWidth: 2, opacity: 0.4, icon: TreePine },
   { id: "plaza", label: "Plaza", kind: "POLYGON", fill: "#4ADE80", stroke: "#166534", strokeWidth: 2, opacity: 0.5, icon: Trees },
@@ -138,6 +142,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("#22c55e");
+  const [editWidth, setEditWidth] = useState(2);
   const [busy, setBusy] = useState(false);
   const [editGeometry, setEditGeometry] = useState<Point[] | null>(null);
   const [draggingVertex, setDraggingVertex] = useState<number | null>(null);
@@ -171,6 +176,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
           ? selectedObject.strokeColor
           : selectedObject.fillColor) ?? "#22c55e",
       );
+      setEditWidth(selectedObject.strokeWidth ?? 2);
     }
   }, [selectedObject]);
 
@@ -268,7 +274,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
       const res = await fetch(`/api/developments/${developmentId}/visual-objects/${selectedObject.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, [colorField]: editColor }),
+        body: JSON.stringify({ name, [colorField]: editColor, strokeWidth: editWidth }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -313,6 +319,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
     }
     const { tool, points } = pending;
     const geometry = tool.kind === "TEXT" ? { x: points[0].x, y: points[0].y, text: name } : { points };
+    const strokeWidth = tool.widthFactor ? Math.max(1, Math.round(vb.h * tool.widthFactor)) : tool.strokeWidth;
 
     setSaving(true);
     try {
@@ -328,7 +335,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
           fillColor: tool.fill === "none" ? null : tool.fill,
           strokeColor: tool.stroke,
           opacity: tool.opacity,
-          strokeWidth: tool.strokeWidth,
+          strokeWidth,
         }),
       });
       if (!res.ok) {
@@ -530,7 +537,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
                       return <polygon key={o.id} points={pointsToStr(pts)} fill={fill} stroke={selStroke} strokeWidth={selSw} fillOpacity={op} {...common} />;
                     }
                     if (o.geometryKind === "POLYLINE" && pts.length) {
-                      return <polyline key={o.id} points={pointsToStr(pts)} fill="none" stroke={selStroke} strokeWidth={selSw} strokeLinecap="round" strokeLinejoin="round" opacity={op} {...common} />;
+                      return <polyline key={o.id} points={pointsToStr(pts)} fill="none" stroke={selStroke} strokeWidth={isSel ? editWidth : sw} strokeLinecap="butt" strokeLinejoin="round" opacity={op} {...common} />;
                     }
                     if (o.geometryKind === "TEXT" && o.geometry) {
                       const tx = isSel && editGeometry ? editGeometry[0].x : o.geometry.x;
@@ -574,7 +581,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
                           <polygon points={pointsToStr(cursor ? [...draftPoints, cursor] : draftPoints)} fill={activeTool.fill} fillOpacity={0.3} stroke={activeTool.stroke} strokeWidth={activeTool.strokeWidth} strokeDasharray={dash} />
                         )
                       ) : (
-                        <polyline points={pointsToStr(cursor ? [...draftPoints, cursor] : draftPoints)} fill="none" stroke={activeTool.stroke} strokeWidth={activeTool.strokeWidth} strokeDasharray={dash} />
+                        <polyline points={pointsToStr(cursor ? [...draftPoints, cursor] : draftPoints)} fill="none" stroke={activeTool.stroke} strokeWidth={activeTool.widthFactor ? Math.max(1, vb.h * activeTool.widthFactor) : activeTool.strokeWidth} strokeLinecap="butt" strokeLinejoin="round" opacity={0.7} />
                       )}
                       {draftPoints.map((p, i) => (
                         <circle key={i} cx={p.x} cy={p.y} r={vb.h / 200} fill="#fff" stroke="#2356d9" strokeWidth={vb.h / 600} />
@@ -610,6 +617,22 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
             <input value={editName} onChange={(e) => setEditName(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
             <label className="mt-3 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Color</label>
             <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)} className="mt-1 h-9 w-full cursor-pointer rounded-lg border border-slate-200 dark:border-slate-700" />
+            {selectedObject.geometryKind === "POLYLINE" && (
+              <>
+                <label className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <span>Ancho de la calle</span>
+                  <span className="tabular-nums text-slate-500">{Math.round(editWidth)}</span>
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={Math.max(40, Math.round(vb.h * 0.08))}
+                  value={editWidth}
+                  onChange={(e) => setEditWidth(Number(e.target.value))}
+                  className="mt-1 w-full accent-brand-600"
+                />
+              </>
+            )}
             {editGeometry && editGeometry.length > 1 && (
               <p className="mt-3 text-[11px] font-medium leading-relaxed text-slate-400">
                 Arrastrá los <span className="font-bold text-brand-600">puntos azules</span> sobre el plano para acomodar las líneas.

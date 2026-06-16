@@ -133,7 +133,7 @@ export async function PATCH(
     if ("fillColor" in body) data.fillColor = isHexColor(body.fillColor) ? body.fillColor.trim() : null;
     if ("strokeColor" in body) data.strokeColor = isHexColor(body.strokeColor) ? body.strokeColor.trim() : null;
     if ("opacity" in body) data.opacity = optionalNumber(body.opacity, 0, 1);
-    if ("strokeWidth" in body) data.strokeWidth = optionalNumber(body.strokeWidth, 0.5, 32);
+    if ("strokeWidth" in body) data.strokeWidth = optionalNumber(body.strokeWidth, 0.5, 5000);
     if ("zIndex" in body) data.zIndex = optionalNumber(body.zIndex, -1000, 1000);
     if ("interactive" in body && typeof body.interactive === "boolean") data.interactive = body.interactive;
     if ("locked" in body && typeof body.locked === "boolean") data.locked = body.locked;

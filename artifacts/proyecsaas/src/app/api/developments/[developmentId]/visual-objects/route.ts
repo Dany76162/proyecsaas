@@ -108,7 +108,7 @@ function parseCreatePayload(body: any) {
       fillColor: optionalColor(body.fillColor, DEFAULTS.fillColor),
       strokeColor: optionalColor(body.strokeColor, DEFAULTS.strokeColor),
       opacity: optionalNumber(body.opacity, 0, 1, DEFAULTS.opacity),
-      strokeWidth: optionalNumber(body.strokeWidth, 0.5, 32, DEFAULTS.strokeWidth),
+      strokeWidth: optionalNumber(body.strokeWidth, 0.5, 5000, DEFAULTS.strokeWidth),
       zIndex: optionalNumber(body.zIndex, -1000, 1000, DEFAULTS.zIndex),
       visibility,
       interactive: optionalBoolean(body.interactive, true),
