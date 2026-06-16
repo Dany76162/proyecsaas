@@ -1,8 +1,9 @@
 {
-  "name": "Raíces Pilot",
-  "short_name": "RaícesPilot",
-  "id": "/",
-  "start_url": "/",
+  "name": "Raíces Pilot Inmuebles",
+  "short_name": "Inmuebles",
+  "id": "/propiedades",
+  "start_url": "/propiedades",
+  "scope": "/propiedades",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#FFFFFF",

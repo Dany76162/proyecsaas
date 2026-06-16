@@ -13,6 +13,7 @@ import { prisma } from "@/server/db/prisma";
 import { PublicMapWrapper } from "@/components/properties/public-map-wrapper";
 import { getSessionUser } from "@/server/auth/session";
 import { resolveSignedInHomePath } from "@/server/auth/access";
+import { InstallAppNavbarButton } from "@/components/pwa/install-app-navbar";
 
 export const metadata: Metadata = {
   title: "Buscador de Propiedades | Raíces Pilot",
@@ -558,8 +559,9 @@ export default async function PublicPortalPropertiesPage({
               <span className="font-light">Pilot</span>
             </span>
           </Link>
-          <nav className="flex items-center gap-6">
-            <Link href="/" className="inline-flex items-center gap-1 text-sm font-medium text-slate-350 hover:text-white transition">
+          <nav className="flex items-center gap-4 sm:gap-6">
+            <InstallAppNavbarButton />
+            <Link href="/" className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-slate-350 hover:text-white transition">
               <ArrowLeft className="h-4 w-4" /> Volver al Inicio
             </Link>
             <Link href="/login" className="rounded-full bg-brand-500 hover:bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm">
