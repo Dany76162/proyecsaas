@@ -51,15 +51,15 @@ type Tool = {
 const TOOLS: Tool[] = [
   { id: "calle", label: "Calle", kind: "POLYLINE", fill: "none", stroke: "#475569", strokeWidth: 6, opacity: 0.9, icon: Route },
   { id: "laguna", label: "Lago", kind: "POLYGON", fill: "#3B82F6", stroke: "#1D4ED8", strokeWidth: 2, opacity: 0.5, smooth: true, icon: Waves },
-  { id: "area_verde", label: "Área verde", kind: "POLYGON", fill: "#22C55E", stroke: "#15803D", strokeWidth: 2, opacity: 0.4, smooth: true, icon: TreePine },
-  { id: "plaza", label: "Plaza", kind: "POLYGON", fill: "#4ADE80", stroke: "#166534", strokeWidth: 2, opacity: 0.5, smooth: true, icon: Trees },
+  { id: "area_verde", label: "Área verde", kind: "POLYGON", fill: "#22C55E", stroke: "#15803D", strokeWidth: 2, opacity: 0.4, icon: TreePine },
+  { id: "plaza", label: "Plaza", kind: "POLYGON", fill: "#4ADE80", stroke: "#166534", strokeWidth: 2, opacity: 0.5, icon: Trees },
   { id: "cancha", label: "Cancha", kind: "POLYGON", fill: "#16A34A", stroke: "#14532D", strokeWidth: 2, opacity: 0.6, icon: Goal },
   { id: "amenity", label: "Amenity", kind: "POLYGON", fill: "#D97706", stroke: "#92400E", strokeWidth: 2, opacity: 0.6, icon: Building2 },
   { id: "etiqueta", label: "Etiqueta", kind: "TEXT", fill: "#0f172a", stroke: "#ffffff", strokeWidth: 1, opacity: 1, icon: Tag },
 ];
 
-// Tipos cuyo contorno se dibuja con curvas suaves (orgánico) en vez de rectas.
-const SMOOTH_TYPES = new Set(["laguna", "area_verde", "plaza"]);
+// Color de la "arena"/playa que rodea al lago.
+const SAND_COLOR = "#E8D8A0";
 
 type VisualObject = {
   id: string;
@@ -445,8 +445,15 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
                       onPointerDown: (e: React.PointerEvent) => { if (!drawing) { e.stopPropagation(); setSelectedId(o.id); } },
                     };
                     if (o.geometryKind === "POLYGON" && o.geometry?.points) {
-                      if (SMOOTH_TYPES.has(o.type)) {
-                        return <path key={o.id} d={smoothClosedPath(o.geometry.points)} fill={fill} stroke={selStroke} strokeWidth={selSw} fillOpacity={op} {...common} />;
+                      if (o.type === "laguna") {
+                        const d = smoothClosedPath(o.geometry.points);
+                        const sandW = Math.max((o.strokeWidth ?? 2) * 2, vb.h / 90);
+                        return (
+                          <g key={o.id} {...common}>
+                            <path d={d} fill="none" stroke={SAND_COLOR} strokeWidth={sandW} strokeLinejoin="round" strokeLinecap="round" />
+                            <path d={d} fill={fill} fillOpacity={op} stroke={selStroke} strokeWidth={selSw} />
+                          </g>
+                        );
                       }
                       return <polygon key={o.id} points={pointsToStr(o.geometry.points)} fill={fill} stroke={selStroke} strokeWidth={selSw} fillOpacity={op} {...common} />;
                     }
@@ -470,7 +477,10 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
                     <>
                       {activeTool.kind === "POLYGON" ? (
                         activeTool.smooth ? (
-                          <path d={smoothClosedPath(cursor ? [...draftPoints, cursor] : draftPoints)} fill={activeTool.fill} fillOpacity={0.3} stroke={activeTool.stroke} strokeWidth={activeTool.strokeWidth} strokeDasharray={dash} />
+                          <>
+                            <path d={smoothClosedPath(cursor ? [...draftPoints, cursor] : draftPoints)} fill="none" stroke={SAND_COLOR} strokeWidth={Math.max(activeTool.strokeWidth * 2, vb.h / 90)} strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
+                            <path d={smoothClosedPath(cursor ? [...draftPoints, cursor] : draftPoints)} fill={activeTool.fill} fillOpacity={0.3} stroke={activeTool.stroke} strokeWidth={activeTool.strokeWidth} strokeDasharray={dash} />
+                          </>
                         ) : (
                           <polygon points={pointsToStr(cursor ? [...draftPoints, cursor] : draftPoints)} fill={activeTool.fill} fillOpacity={0.3} stroke={activeTool.stroke} strokeWidth={activeTool.strokeWidth} strokeDasharray={dash} />
                         )
