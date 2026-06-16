@@ -197,13 +197,56 @@ function LotParcel({ points, proj, color }: { points: Pt[]; proj: Proj; color: s
   );
 }
 
+// Centro y tamaño (mundo) de un lote a partir de sus vértices.
+function lotMetrics(points: Pt[], proj: Proj) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, cx = 0, cy = 0;
+  for (const p of points) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+    cx += p.x;
+    cy += p.y;
+  }
+  cx /= points.length;
+  cy /= points.length;
+  const minDim = Math.min(maxX - minX, maxY - minY) * proj.scale;
+  return { wx: proj.X(cx), wz: proj.Z(cy), minDim };
+}
+
+// Casa simple (paredes + techo) para los lotes vendidos.
+function House({ wx, wz, lotSize }: { wx: number; wz: number; lotSize: number }) {
+  const s = Math.max(0.6, Math.min(lotSize * 0.55, 7));
+  const wallH = s * 0.7;
+  const roofH = s * 0.5;
+  return (
+    <group position={[wx, 0, wz]}>
+      <mesh position={[0, wallH / 2 + 0.05, 0]} castShadow receiveShadow>
+        <boxGeometry args={[s, wallH, s * 0.85]} />
+        <meshStandardMaterial color="#ece4d6" roughness={0.85} />
+      </mesh>
+      <mesh position={[0, wallH + roofH / 2 + 0.05, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
+        <coneGeometry args={[s * 0.72, roofH, 4]} />
+        <meshStandardMaterial color="#9b3d2e" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
 function Lots({ lots, proj }: { lots: Lot[]; proj: Proj }) {
   return (
     <>
       {lots.map((l) => {
         const pts = pathToPoints(l.pathData);
         if (pts.length < 3) return null;
-        return <LotParcel key={l.id} points={pts} proj={proj} color={LOT_STATUS_COLOR[l.status] ?? "#e5e7eb"} />;
+        const built = l.status === "SOLD";
+        const m = built ? lotMetrics(pts, proj) : null;
+        return (
+          <group key={l.id}>
+            <LotParcel points={pts} proj={proj} color={LOT_STATUS_COLOR[l.status] ?? "#e5e7eb"} />
+            {m && <House wx={m.wx} wz={m.wz} lotSize={m.minDim} />}
+          </group>
+        );
       })}
     </>
   );
