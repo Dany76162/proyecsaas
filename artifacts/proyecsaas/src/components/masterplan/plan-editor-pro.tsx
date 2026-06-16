@@ -139,6 +139,9 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("#22c55e");
   const [busy, setBusy] = useState(false);
+  const [editGeometry, setEditGeometry] = useState<Point[] | null>(null);
+  const [draggingVertex, setDraggingVertex] = useState<number | null>(null);
+  const editGeometryRef = useRef<Point[] | null>(null);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const activeTool = TOOLS.find((t) => t.id === activeToolId) ?? null;
@@ -344,6 +347,74 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
     }
   }, [pending, nameValue, developmentId, loadObjects]);
 
+  // Inicializa las manijas de vértices al seleccionar un objeto editable.
+  useEffect(() => {
+    if (!selectedObject) {
+      setEditGeometry(null);
+      return;
+    }
+    if (
+      (selectedObject.geometryKind === "POLYGON" || selectedObject.geometryKind === "POLYLINE") &&
+      selectedObject.geometry?.points
+    ) {
+      setEditGeometry(selectedObject.geometry.points.map((p: any) => ({ x: p.x, y: p.y })));
+    } else if (selectedObject.geometryKind === "TEXT" && selectedObject.geometry) {
+      setEditGeometry([{ x: selectedObject.geometry.x, y: selectedObject.geometry.y }]);
+    } else {
+      setEditGeometry(null);
+    }
+  }, [selectedObject]);
+
+  useEffect(() => {
+    editGeometryRef.current = editGeometry;
+  }, [editGeometry]);
+
+  const persistGeometry = useCallback(
+    async (obj: VisualObject, pts: Point[]) => {
+      const geometry =
+        obj.geometryKind === "TEXT"
+          ? { x: pts[0].x, y: pts[0].y, text: obj.geometry?.text ?? "" }
+          : { points: pts };
+      setObjects((prev) => prev.map((o) => (o.id === obj.id ? { ...o, geometry } : o)));
+      try {
+        const res = await fetch(`/api/developments/${developmentId}/visual-objects/${obj.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ geometry }),
+        });
+        if (!res.ok) {
+          toast.error("No se pudo mover el punto.");
+          await loadObjects();
+        }
+      } catch {
+        toast.error("Error de red al mover.");
+        await loadObjects();
+      }
+    },
+    [developmentId, loadObjects],
+  );
+
+  // Arrastre de un vértice: actualiza en vivo y persiste al soltar.
+  useEffect(() => {
+    if (draggingVertex === null) return;
+    const onMove = (e: PointerEvent) => {
+      const p = toSvgPoint(e.clientX, e.clientY);
+      if (!p) return;
+      setEditGeometry((prev) => (prev ? prev.map((pt, idx) => (idx === draggingVertex ? p : pt)) : prev));
+    };
+    const onUp = () => {
+      setDraggingVertex(null);
+      const pts = editGeometryRef.current;
+      if (selectedObject && pts) persistGeometry(selectedObject, pts);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [draggingVertex, toSvgPoint, selectedObject, persistGeometry]);
+
   if (!masterplanSVG) {
     return (
       <div className="flex h-[calc(100dvh-3.5rem)] -mx-4 -my-5 flex-col items-center justify-center gap-3 bg-slate-100 p-8 text-center sm:-mx-6 sm:-my-6 lg:-mx-8 lg:-my-8 dark:bg-slate-950">
@@ -417,7 +488,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
 
       {/* Canvas */}
       <div className="relative flex-1 overflow-hidden">
-        <TransformWrapper minScale={0.2} maxScale={10} limitToBounds={false} centerOnInit panning={{ disabled: drawing }} doubleClick={{ disabled: drawing }} wheel={{ step: 0.15 }}>
+        <TransformWrapper minScale={0.2} maxScale={10} limitToBounds={false} centerOnInit panning={{ disabled: drawing || draggingVertex !== null }} doubleClick={{ disabled: drawing }} wheel={{ step: 0.15 }}>
           <ZoomControls />
           <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: "100%", height: "100%" }}>
             <div className="flex h-full w-full items-center justify-center p-6">
@@ -440,13 +511,14 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
                     const isSel = o.id === selectedId;
                     const selStroke = isSel ? "#2356d9" : stroke;
                     const selSw = isSel ? sw + vb.h / 300 : sw;
+                    const pts: Point[] = isSel && editGeometry ? editGeometry : (o.geometry?.points ?? []);
                     const common = {
                       style: { pointerEvents: (drawing ? "none" : "auto") as React.CSSProperties["pointerEvents"], cursor: "pointer" },
                       onPointerDown: (e: React.PointerEvent) => { if (!drawing) { e.stopPropagation(); setSelectedId(o.id); } },
                     };
-                    if (o.geometryKind === "POLYGON" && o.geometry?.points) {
+                    if (o.geometryKind === "POLYGON" && pts.length) {
                       if (o.type === "laguna") {
-                        const d = smoothClosedPath(o.geometry.points);
+                        const d = smoothClosedPath(pts);
                         const sandW = Math.max((o.strokeWidth ?? 2) * 2, vb.h / 90);
                         return (
                           <g key={o.id} {...common}>
@@ -455,13 +527,15 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
                           </g>
                         );
                       }
-                      return <polygon key={o.id} points={pointsToStr(o.geometry.points)} fill={fill} stroke={selStroke} strokeWidth={selSw} fillOpacity={op} {...common} />;
+                      return <polygon key={o.id} points={pointsToStr(pts)} fill={fill} stroke={selStroke} strokeWidth={selSw} fillOpacity={op} {...common} />;
                     }
-                    if (o.geometryKind === "POLYLINE" && o.geometry?.points) {
-                      return <polyline key={o.id} points={pointsToStr(o.geometry.points)} fill="none" stroke={selStroke} strokeWidth={selSw} strokeLinecap="round" strokeLinejoin="round" opacity={op} {...common} />;
+                    if (o.geometryKind === "POLYLINE" && pts.length) {
+                      return <polyline key={o.id} points={pointsToStr(pts)} fill="none" stroke={selStroke} strokeWidth={selSw} strokeLinecap="round" strokeLinejoin="round" opacity={op} {...common} />;
                     }
                     if (o.geometryKind === "TEXT" && o.geometry) {
-                      return <text key={o.id} x={o.geometry.x} y={o.geometry.y} fontSize={vb.h / 40} fontWeight="700" fill={o.fillColor ?? "#0f172a"} stroke={isSel ? "#2356d9" : (o.strokeColor ?? "#fff")} strokeWidth={vb.h / 800} paintOrder="stroke" {...common}>{o.geometry.text}</text>;
+                      const tx = isSel && editGeometry ? editGeometry[0].x : o.geometry.x;
+                      const ty = isSel && editGeometry ? editGeometry[0].y : o.geometry.y;
+                      return <text key={o.id} x={tx} y={ty} fontSize={vb.h / 40} fontWeight="700" fill={o.fillColor ?? "#0f172a"} stroke={isSel ? "#2356d9" : (o.strokeColor ?? "#fff")} strokeWidth={vb.h / 800} paintOrder="stroke" {...common}>{o.geometry.text}</text>;
                     }
                     if (o.geometryKind === "RECT" && o.geometry) {
                       return <rect key={o.id} x={o.geometry.x} y={o.geometry.y} width={o.geometry.width} height={o.geometry.height} fill={fill} stroke={selStroke} strokeWidth={selSw} fillOpacity={op} {...common} />;
@@ -471,6 +545,21 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
                     }
                     return null;
                   })}
+
+                  {/* Manijas de vértices del objeto seleccionado (arrastrables) */}
+                  {!drawing && selectedObject && editGeometry && editGeometry.map((p, i) => (
+                    <circle
+                      key={`handle-${i}`}
+                      cx={p.x}
+                      cy={p.y}
+                      r={draggingVertex === i ? vb.h / 110 : vb.h / 140}
+                      fill="#ffffff"
+                      stroke="#2356d9"
+                      strokeWidth={vb.h / 500}
+                      style={{ pointerEvents: "auto", cursor: "grab" }}
+                      onPointerDown={(e) => { e.stopPropagation(); setDraggingVertex(i); }}
+                    />
+                  ))}
 
                   {/* Borrador en curso */}
                   {draftPoints.length > 0 && activeTool && (
@@ -521,6 +610,11 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
             <input value={editName} onChange={(e) => setEditName(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
             <label className="mt-3 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Color</label>
             <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)} className="mt-1 h-9 w-full cursor-pointer rounded-lg border border-slate-200 dark:border-slate-700" />
+            {editGeometry && editGeometry.length > 1 && (
+              <p className="mt-3 text-[11px] font-medium leading-relaxed text-slate-400">
+                Arrastrá los <span className="font-bold text-brand-600">puntos azules</span> sobre el plano para acomodar las líneas.
+              </p>
+            )}
             <div className="mt-4 flex items-center justify-between gap-2">
               <button type="button" onClick={() => deleteObject(selectedObject.id)} disabled={busy} className="inline-flex h-9 items-center gap-1 rounded-lg border border-red-200 px-3 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /> Borrar</button>
               <button type="button" onClick={saveEdit} disabled={busy} className="inline-flex h-9 items-center gap-1 rounded-lg bg-brand-600 px-4 text-xs font-bold text-white hover:bg-brand-700 disabled:opacity-50">{busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Guardar</button>
