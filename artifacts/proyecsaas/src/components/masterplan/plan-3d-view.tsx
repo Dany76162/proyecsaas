@@ -152,6 +152,35 @@ function ribbonGeometry(points: Pt[], proj: Proj, worldWidth: number): THREE.Buf
   return geom;
 }
 
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number) {
+  let a = seed;
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function pointInPolygon(x: number, y: number, pts: Pt[]): boolean {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const xi = pts[i].x, yi = pts[i].y, xj = pts[j].x, yj = pts[j].y;
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 function FlatShape({ points, proj, color, y, roughness = 0.9, opacity = 1, metalness = 0 }: { points: Pt[]; proj: Proj; color: string; y: number; roughness?: number; opacity?: number; metalness?: number }) {
   const geom = useMemo(() => new THREE.ShapeGeometry(shapeFromPoints(points, proj)), [points, proj]);
   return (
@@ -253,6 +282,54 @@ function Lots({ lots, proj }: { lots: Lot[]; proj: Proj }) {
   );
 }
 
+function Tree({ wx, wz, s }: { wx: number; wz: number; s: number }) {
+  return (
+    <group position={[wx, 0, wz]}>
+      <mesh position={[0, s * 0.4, 0]} castShadow>
+        <cylinderGeometry args={[s * 0.08, s * 0.11, s * 0.8, 6]} />
+        <meshStandardMaterial color="#7a5230" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, s * 1.05, 0]} castShadow>
+        <icosahedronGeometry args={[s * 0.55, 0]} />
+        <meshStandardMaterial color="#3f8a3f" roughness={0.85} flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function Trees({ objects, proj }: { objects: VisualObject[]; proj: Proj }) {
+  const trees = useMemo(() => {
+    const green = new Set(["area_verde", "plaza"]);
+    const out: { wx: number; wz: number; s: number }[] = [];
+    for (const o of objects) {
+      if (!green.has(o.type)) continue;
+      const pts: Pt[] | undefined = o.geometry?.points;
+      if (!pts || pts.length < 3) continue;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const p of pts) {
+        minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+      }
+      const areaWorld = (maxX - minX) * (maxY - minY) * proj.scale * proj.scale;
+      const count = Math.min(48, Math.max(3, Math.round(areaWorld / 18)));
+      const rng = mulberry32(hashStr(o.id));
+      let placed = 0, tries = 0;
+      while (placed < count && tries < count * 25) {
+        tries++;
+        const px = minX + rng() * (maxX - minX);
+        const py = minY + rng() * (maxY - minY);
+        if (pointInPolygon(px, py, pts)) {
+          out.push({ wx: proj.X(px), wz: proj.Z(py), s: 0.6 + rng() * 0.5 });
+          placed++;
+        }
+      }
+    }
+    return out;
+  }, [objects, proj]);
+
+  return <>{trees.map((t, i) => <Tree key={i} wx={t.wx} wz={t.wz} s={t.s} />)}</>;
+}
+
 function SceneObjects({ objects, proj }: { objects: VisualObject[]; proj: Proj }) {
   return (
     <>
@@ -350,6 +427,7 @@ export default function Plan3DView({ objects, lots = [], viewBox }: { objects: V
 
         <Lots lots={lots} proj={proj} />
         <SceneObjects objects={objects} proj={proj} />
+        <Trees objects={objects} proj={proj} />
 
         <ContactShadows position={[0, 0.02, 0]} opacity={0.35} scale={groundSize} blur={2.4} far={20} />
         <CinematicCamera playing={playing} />
