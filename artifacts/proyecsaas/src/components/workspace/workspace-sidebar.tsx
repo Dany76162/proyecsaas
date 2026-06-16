@@ -307,6 +307,14 @@ export function WorkspaceSidebar({
                 </Link>
               );
             })}
+            <Link
+              href="/app-movil"
+              onClick={onClose}
+              className="group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-[15px] font-semibold text-slate-400 transition-all duration-150 hover:bg-white/[0.05] hover:text-slate-200"
+            >
+              <Smartphone className="h-4.5 w-4.5 shrink-0 transition-colors duration-150 text-slate-600 group-hover:text-slate-400" />
+              App móvil y alertas
+            </Link>
           </div>
         </div>
       </nav>
