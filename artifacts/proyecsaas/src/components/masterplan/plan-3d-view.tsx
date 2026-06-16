@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, ContactShadows, Sky } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -293,12 +293,37 @@ function SceneObjects({ objects, proj }: { objects: VisualObject[]; proj: Proj }
   );
 }
 
+function CinematicCamera({ playing }: { playing: boolean }) {
+  const { camera } = useThree();
+  const angle = useRef(0);
+  const radius = useRef(140);
+
+  useEffect(() => {
+    if (playing) {
+      angle.current = Math.atan2(camera.position.z, camera.position.x);
+      radius.current = Math.max(60, Math.hypot(camera.position.x, camera.position.z));
+    }
+  }, [playing, camera]);
+
+  useFrame((_, delta) => {
+    if (!playing) return;
+    angle.current += Math.min(delta, 0.05) * 0.2;
+    const r = radius.current + Math.sin(angle.current * 0.6) * (radius.current * 0.12);
+    const h = 55 + Math.sin(angle.current * 0.8) * 22;
+    camera.position.set(Math.cos(angle.current) * r, h, Math.sin(angle.current) * r);
+    camera.lookAt(0, 0, 0);
+  });
+
+  return null;
+}
+
 export default function Plan3DView({ objects, lots = [], viewBox }: { objects: VisualObject[]; lots?: Lot[]; viewBox: ViewBox }) {
+  const [playing, setPlaying] = useState(false);
   const proj = useMemo(() => makeProjector(viewBox), [viewBox]);
   const groundSize = 100 * 1.6;
 
   return (
-    <div className="h-full w-full bg-gradient-to-b from-sky-200 to-slate-100 dark:from-slate-800 dark:to-slate-950">
+    <div className="relative h-full w-full bg-gradient-to-b from-sky-200 to-slate-100 dark:from-slate-800 dark:to-slate-950">
       <Canvas shadows camera={{ position: [70, 60, 90], fov: 45 }} dpr={[1, 2]} gl={{ antialias: true, toneMappingExposure: 1.05 }}>
         <fog attach="fog" args={["#d4dEea", 240, 680]} />
         <Sky sunPosition={[60, 40, 30]} turbidity={6} rayleigh={1.2} />
@@ -327,8 +352,19 @@ export default function Plan3DView({ objects, lots = [], viewBox }: { objects: V
         <SceneObjects objects={objects} proj={proj} />
 
         <ContactShadows position={[0, 0.02, 0]} opacity={0.35} scale={groundSize} blur={2.4} far={20} />
-        <OrbitControls enableDamping dampingFactor={0.08} maxPolarAngle={Math.PI / 2.05} minDistance={20} maxDistance={400} target={[0, 0, 0]} />
+        <CinematicCamera playing={playing} />
+        <OrbitControls enabled={!playing} enableDamping dampingFactor={0.08} maxPolarAngle={Math.PI / 2.05} minDistance={20} maxDistance={400} target={[0, 0, 0]} />
       </Canvas>
+
+      <div className="absolute bottom-5 left-5 z-10">
+        <button
+          type="button"
+          onClick={() => setPlaying((p) => !p)}
+          className="inline-flex items-center gap-2 rounded-full bg-slate-900/85 px-4 py-2 text-xs font-bold text-white shadow-lg backdrop-blur transition hover:bg-slate-900"
+        >
+          {playing ? "⏸ Detener recorrido" : "▶ Recorrido cinematográfico"}
+        </button>
+      </div>
     </div>
   );
 }
