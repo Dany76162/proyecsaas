@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { injectVisualObjectsIntoSvg } from "@/lib/visual-objects-svg";
 import {
   ArrowLeft,
   MapPin,
@@ -74,6 +75,10 @@ export default async function PublicDevelopmentDetailPage({
       DevelopmentDrawableLayer: {
         where: { visible: true },
         orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+      },
+      visualObjects: {
+        where: { visibility: { in: ["BOTH", "PUBLIC"] } },
+        orderBy: [{ zIndex: "asc" }, { createdAt: "asc" }],
       },
     },
   });
@@ -242,14 +247,23 @@ export default async function PublicDevelopmentDetailPage({
   }
 
   const { bounds: overlayBounds, corners: overlayCorners } = parsePublicOverlayBounds(development.overlayBounds);
+  const masterplanViewBox = extractSvgViewBoxServer(development.masterplanSVG);
   const publicOverlayConfig = overlayBounds
     ? {
         bounds: overlayBounds,
         corners: overlayCorners,
         rotation: development.overlayRotation ?? 0,
-        svgViewBox: extractSvgViewBoxServer(development.masterplanSVG),
+        svgViewBox: masterplanViewBox,
       }
     : null;
+
+  // Inyecta los objetos visuales del editor (calles, lago, áreas...) en el SVG
+  // del plano para que se proyecten coloreados sobre el mapa público.
+  const planAssetWithObjects = injectVisualObjectsIntoSvg(
+    development.masterplanSVG,
+    (developmentRaw.visualObjects ?? []) as any[],
+    masterplanViewBox?.h ?? 1000,
+  );
 
   return (
     <div className="min-h-screen bg-slate-50/50 text-slate-900 font-sans antialiased">
@@ -434,7 +448,7 @@ export default async function PublicDevelopmentDetailPage({
         <MasterplanCanvas
           proyectoId={development.id}
           units={mappedUnits}
-          planAsset={development.masterplanSVG}
+          planAsset={planAssetWithObjects}
           mapCenterLat={development.mapCenterLat}
           mapCenterLng={development.mapCenterLng}
           mapZoom={development.mapZoom}
