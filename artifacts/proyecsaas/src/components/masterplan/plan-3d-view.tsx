@@ -152,11 +152,11 @@ function ribbonGeometry(points: Pt[], proj: Proj, worldWidth: number): THREE.Buf
   return geom;
 }
 
-function FlatShape({ points, proj, color, y, roughness = 0.9, opacity = 1 }: { points: Pt[]; proj: Proj; color: string; y: number; roughness?: number; opacity?: number }) {
+function FlatShape({ points, proj, color, y, roughness = 0.9, opacity = 1, metalness = 0 }: { points: Pt[]; proj: Proj; color: string; y: number; roughness?: number; opacity?: number; metalness?: number }) {
   const geom = useMemo(() => new THREE.ShapeGeometry(shapeFromPoints(points, proj)), [points, proj]);
   return (
     <mesh geometry={geom} rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} receiveShadow>
-      <meshStandardMaterial color={color} roughness={roughness} metalness={0} transparent={opacity < 1} opacity={opacity} side={THREE.DoubleSide} />
+      <meshStandardMaterial color={color} roughness={roughness} metalness={metalness} envMapIntensity={1.1} transparent={opacity < 1} opacity={opacity} side={THREE.DoubleSide} />
     </mesh>
   );
 }
@@ -272,7 +272,7 @@ function SceneObjects({ objects, proj }: { objects: VisualObject[]; proj: Proj }
           return (
             <group key={o.id}>
               <FlatShape points={pts} proj={proj} color="#E8D8A0" y={0.04} roughness={1} />
-              <FlatShape points={insetPoints(pts, 0.82)} proj={proj} color="#3B82F6" y={0.12} roughness={0.08} opacity={0.85} />
+              <FlatShape points={insetPoints(pts, 0.82)} proj={proj} color="#2F6FD6" y={0.12} roughness={0.04} metalness={0.25} opacity={0.92} />
             </group>
           );
         }
@@ -299,12 +299,14 @@ export default function Plan3DView({ objects, lots = [], viewBox }: { objects: V
 
   return (
     <div className="h-full w-full bg-gradient-to-b from-sky-200 to-slate-100 dark:from-slate-800 dark:to-slate-950">
-      <Canvas shadows camera={{ position: [70, 60, 90], fov: 45 }} dpr={[1, 2]}>
+      <Canvas shadows camera={{ position: [70, 60, 90], fov: 45 }} dpr={[1, 2]} gl={{ antialias: true, toneMappingExposure: 1.05 }}>
+        <fog attach="fog" args={["#d4dEea", 240, 680]} />
         <Sky sunPosition={[60, 40, 30]} turbidity={6} rayleigh={1.2} />
-        <ambientLight intensity={0.55} />
+        <ambientLight intensity={0.45} />
+        <hemisphereLight args={["#cfe0ff", "#b9a98a", 0.55]} />
         <directionalLight
           position={[60, 90, 40]}
-          intensity={1.5}
+          intensity={1.6}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
