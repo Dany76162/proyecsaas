@@ -269,11 +269,8 @@ function lotMetrics(points: Pt[], proj: Proj) {
 }
 
 // Casa simple (paredes + techo) para los lotes vendidos.
-function House({ wx, wz, lotSize }: { wx: number; wz: number; lotSize: number }) {
-  // Footprint chico relativo al lote (deja jardín alrededor) y perfil bajo (1 planta).
-  const s = Math.max(0.4, lotSize * 0.4);
-  const wallH = s * 0.48;
-  const roofH = s * 0.32;
+function House({ wx, wz, footprint, wallH, roofH }: { wx: number; wz: number; footprint: number; wallH: number; roofH: number }) {
+  const s = footprint;
   return (
     <group position={[wx, 0, wz]}>
       <mesh position={[0, wallH / 2 + 0.04, 0]} castShadow receiveShadow>
@@ -281,25 +278,40 @@ function House({ wx, wz, lotSize }: { wx: number; wz: number; lotSize: number })
         <meshStandardMaterial color="#f1ece3" roughness={0.85} />
       </mesh>
       <mesh position={[0, wallH + roofH / 2 + 0.04, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-        <coneGeometry args={[s * 0.7, roofH, 4]} />
+        <coneGeometry args={[s * 0.72, roofH, 4]} />
         <meshStandardMaterial color="#8a4a3a" roughness={0.75} />
       </mesh>
     </group>
   );
 }
 
-function Lots({ lots, proj }: { lots: Lot[]; proj: Proj }) {
+function Lots({ lots, proj, worldPerMeter }: { lots: Lot[]; proj: Proj; worldPerMeter?: number | null }) {
   return (
     <>
       {lots.map((l) => {
         const pts = pathToPoints(l.pathData);
         if (pts.length < 3) return null;
         const built = l.status === "SOLD";
-        const m = built ? lotMetrics(pts, proj) : null;
+        let house = null;
+        if (built) {
+          const m = lotMetrics(pts, proj);
+          let footprint: number, wallH: number, roofH: number;
+          if (worldPerMeter && worldPerMeter > 0) {
+            // Casa de 1 planta: ~9 m de frente (acotado al lote), 3 m de pared, 2 m de techo.
+            footprint = Math.min(9 * worldPerMeter, m.minDim * 0.6);
+            wallH = 3 * worldPerMeter;
+            roofH = 2 * worldPerMeter;
+          } else {
+            footprint = Math.max(0.4, m.minDim * 0.4);
+            wallH = footprint * 0.48;
+            roofH = footprint * 0.32;
+          }
+          house = <House wx={m.wx} wz={m.wz} footprint={footprint} wallH={wallH} roofH={roofH} />;
+        }
         return (
           <group key={l.id}>
             <LotParcel points={pts} proj={proj} color={LOT_STATUS_COLOR[l.status] ?? "#e5e7eb"} />
-            {m && <House wx={m.wx} wz={m.wz} lotSize={m.minDim} />}
+            {house}
           </group>
         );
       })}
@@ -462,7 +474,7 @@ export default function Plan3DView({ objects, lots = [], viewBox }: { objects: V
           <meshStandardMaterial color="#cdbf9a" roughness={1} />
         </mesh>
 
-        <Lots lots={lots} proj={proj} />
+        <Lots lots={lots} proj={proj} worldPerMeter={worldPerMeter} />
         <SceneObjects objects={objects} proj={proj} />
         <Trees objects={objects} proj={proj} worldPerMeter={worldPerMeter} />
 
