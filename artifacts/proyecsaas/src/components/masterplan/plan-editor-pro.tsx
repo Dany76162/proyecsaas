@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 import {
   ArrowLeft,
@@ -26,6 +27,15 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import type { VisualGeometryKind } from "@/types/development-visual-objects";
+
+const Plan3DView = dynamic(() => import("./plan-3d-view"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center text-sm font-medium text-slate-400">
+      Cargando maqueta 3D…
+    </div>
+  ),
+});
 
 type PlanEditorProProps = {
   orgSlug: string;
@@ -149,6 +159,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
   const [editGeometry, setEditGeometry] = useState<Point[] | null>(null);
   const [draggingVertex, setDraggingVertex] = useState<number | null>(null);
   const editGeometryRef = useRef<Point[] | null>(null);
+  const [view, setView] = useState<"2d" | "3d">("2d");
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const activeTool = TOOLS.find((t) => t.id === activeToolId) ?? null;
@@ -465,8 +476,13 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
             <h1 className="text-sm font-bold text-slate-900 dark:text-white">{developmentName}</h1>
             <p className="text-[11px] font-medium text-slate-500">Editor de plano — Pro</p>
           </div>
+          <div className="ml-1 flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-700">
+            <button type="button" onClick={() => setView("2d")} className={cn("rounded-md px-3 py-1 text-[11px] font-bold transition", view === "2d" ? "bg-brand-600 text-white" : "text-slate-500 hover:text-slate-800")}>2D</button>
+            <button type="button" onClick={() => setView("3d")} className={cn("rounded-md px-3 py-1 text-[11px] font-bold transition", view === "3d" ? "bg-brand-600 text-white" : "text-slate-500 hover:text-slate-800")}>3D</button>
+          </div>
         </div>
 
+        {view === "2d" && (
         <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
           <button
             type="button"
@@ -494,6 +510,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
             );
           })}
         </div>
+        )}
       </header>
 
       {/* Hint de dibujo */}
@@ -528,6 +545,11 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
 
       {/* Canvas */}
       <div className="relative flex-1 overflow-hidden">
+        {view === "3d" && (
+          <div className="absolute inset-0 z-50">
+            <Plan3DView objects={objects} viewBox={vb} />
+          </div>
+        )}
         <TransformWrapper minScale={0.2} maxScale={10} limitToBounds={false} centerOnInit panning={{ disabled: drawing || draggingVertex !== null }} doubleClick={{ disabled: drawing }} wheel={{ step: 0.15 }}>
           <ZoomControls />
           <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: "100%", height: "100%" }}>
