@@ -154,6 +154,7 @@ model User {
   automations      AgentAutomation[]
   inviteTokens      InviteToken[]
   passwordResetTokens PasswordResetToken[]
+  pushSubscriptions PushSubscription[]
   termsAcceptedAt   DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -186,6 +187,23 @@ model PasswordResetToken {
   @@index([userId])
 }
 
+model PushSubscription {
+  id             String        @id @default(cuid())
+  endpoint       String        @unique
+  p256dh         String
+  auth           String
+  userId         String
+  organizationId String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
 model Organization {
   Development            Development[]
   id                     String             @id @default(cuid())
@@ -210,6 +228,7 @@ model Organization {
   agentQuotaNote         String?
   memberships            Membership[]
   inviteTokens           InviteToken[]
+  pushSubscriptions      PushSubscription[]
   leads                  Lead[]
   properties             Property[]
   conversations          Conversation[]

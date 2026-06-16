@@ -5,6 +5,18 @@ import { motion } from "framer-motion";
 import { Download, BellRing, Smartphone, ShieldAlert, CheckCircle2, Calendar, MessageSquare, Apple, ArrowDownToLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/landing/Navbar";
+import { savePushSubscriptionAction, sendTestPushAction } from "@/server/push/actions";
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 export default function AppMovilPage() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -40,15 +52,64 @@ export default function AppMovilPage() {
   };
 
   const handleNotificationRequest = async () => {
-    if ("Notification" in window) {
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        alert("¡Permiso concedido! Recibirás alertas en tiempo real.");
-      } else {
-        alert("Permiso denegado. Puedes cambiarlo en la configuración de tu navegador.");
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        alert("Tu navegador no soporta notificaciones push.");
+        return;
       }
-    } else {
-      alert("Tu navegador no soporta notificaciones push.");
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) {
+        alert("Las notificaciones todavía no están configuradas. Probá más tarde.");
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        alert("Permiso denegado. Podés cambiarlo en la configuración de tu navegador.");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const existing = await registration.pushManager.getSubscription();
+      const subscription =
+        existing ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
+        }));
+
+      const json = subscription.toJSON();
+      if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
+        alert("No se pudo crear la suscripción.");
+        return;
+      }
+
+      const res = await savePushSubscriptionAction(
+        { endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } },
+        navigator.userAgent,
+      );
+
+      if (!res.ok) {
+        if (res.reason === "auth") {
+          await subscription.unsubscribe().catch(() => {});
+          alert("Iniciá sesión con tu cuenta de inmobiliaria para activar las alertas.");
+        } else {
+          alert("No se pudo guardar la suscripción. Intentá de nuevo.");
+        }
+        return;
+      }
+
+      const test = await sendTestPushAction();
+      if (test.ok) {
+        alert("¡Alertas activadas! Te enviamos una notificación de prueba.");
+      } else if (test.reason === "not-configured") {
+        alert("Alertas guardadas. El envío del servidor todavía no está configurado.");
+      } else {
+        alert("¡Alertas activadas!");
+      }
+    } catch (err) {
+      console.error("[push] activar alertas falló:", err);
+      alert("Ocurrió un error activando las alertas.");
     }
   };
 
