@@ -29,18 +29,55 @@ const LOT_STATUS_COLOR: Record<string, string> = {
   BLOCKED: "#cbd5e1",
 };
 
-// Extrae los vértices de un path SVG (lotes detectados: M/L/Z).
+// ¿El path tiene comandos distintos de M/L/Z absolutos? (curvas, arcos, H/V, relativos)
+function hasComplexCommands(d: string): boolean {
+  return /[CcSsQqTtAaHhVvmlz]/.test(d);
+}
+
+// Muestrea la geometría REAL del path usando el motor SVG del navegador.
+// Robusto ante curvas, arcos y comandos relativos.
+function sampleSvgPath(d: string): Pt[] {
+  if (typeof document === "undefined") return [];
+  let svg: SVGSVGElement | null = null;
+  try {
+    svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("style", "position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    svg.appendChild(path);
+    document.body.appendChild(svg);
+    const len = path.getTotalLength();
+    if (!len || !Number.isFinite(len)) return [];
+    const n = Math.min(220, Math.max(12, Math.round(len)));
+    const pts: Pt[] = [];
+    for (let i = 0; i < n; i++) {
+      const p = path.getPointAtLength((i / n) * len);
+      pts.push({ x: p.x, y: p.y });
+    }
+    return pts;
+  } catch {
+    return [];
+  } finally {
+    if (svg) svg.remove();
+  }
+}
+
+// Extrae los vértices de un path SVG. Vértices exactos para M/L/Z; muestreo para el resto.
 function pathToPoints(d: string | null): Pt[] {
   if (!d) return [];
-  const nums = d.match(/-?\d*\.?\d+(?:e[+-]?\d+)?/gi);
-  if (!nums) return [];
-  const pts: Pt[] = [];
-  for (let i = 0; i + 1 < nums.length; i += 2) {
-    const x = parseFloat(nums[i]);
-    const y = parseFloat(nums[i + 1]);
-    if (Number.isFinite(x) && Number.isFinite(y)) pts.push({ x, y });
+  if (!hasComplexCommands(d)) {
+    const nums = d.match(/-?\d*\.?\d+(?:e[+-]?\d+)?/gi);
+    if (nums) {
+      const pts: Pt[] = [];
+      for (let i = 0; i + 1 < nums.length; i += 2) {
+        const x = parseFloat(nums[i]);
+        const y = parseFloat(nums[i + 1]);
+        if (Number.isFinite(x) && Number.isFinite(y)) pts.push({ x, y });
+      }
+      if (pts.length >= 3) return pts;
+    }
   }
-  return pts;
+  return sampleSvgPath(d);
 }
 
 // Proyección plano (viewBox, y-abajo) -> mundo 3D (XZ, y = altura).
