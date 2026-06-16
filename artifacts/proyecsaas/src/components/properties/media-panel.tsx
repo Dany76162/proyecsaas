@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Camera, Check, Compass, FileUp, ImagePlus, MapPinned, Save, Sparkles, Trash2, X } from "lucide-react";
+import { Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import {
   removePropertyMediaBatchAction,
   setPropertyFloorPlanAction,
@@ -391,6 +390,11 @@ export function MediaPanel({
             >
               <span className="flex items-center gap-1.5">
                 {category.label}
+                {category.value === "PANORAMA" && (
+                  <span className="rounded bg-amber-500/20 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-400">
+                    Pronto
+                  </span>
+                )}
               </span>
             </button>
           ))}
@@ -421,39 +425,16 @@ export function MediaPanel({
         {activeCategory === "PANORAMA" && (
           <div className="mt-2 space-y-2">
             <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px] font-medium leading-normal text-white/60">
-              Subí fotos tomadas con cámaras 360° profesionales o con el modo "Panorámica" nativo de tu celular.
+              Subí imágenes 360° reales tomadas con una cámara 360° profesional.
             </p>
-            {FEATURE_FLAGS.enableExperimentalAiTourGenerator && (
-              <div className="mt-6 space-y-2 border-t border-white/10 pt-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                  Laboratorio Experimental (Beta)
-                </h4>
-                <Button
-                  type="button"
-                  onClick={() => setIsAiTourOpen(true)}
-                  className="w-full gap-2 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Crear escena desde video (IA)
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setIsVideo360Open(true)}
-                  className="w-full gap-2 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
-                >
-                  <Camera className="h-4 w-4" />
-                  Cámara web (Experimental)
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setIsCameraOpen(true)}
-                  className="w-full gap-2 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
-                >
-                  <Camera className="h-4 w-4" />
-                  Captura por fotos (Alternativa)
-                </Button>
-              </div>
-            )}
+            <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                Próximamente
+              </p>
+              <p className="mt-1 text-[10px] font-medium leading-normal text-white/60">
+                Crear tours 360° desde el celular (panorámica y video) estará disponible próximamente.
+              </p>
+            </div>
           </div>
         )}
         <Button
