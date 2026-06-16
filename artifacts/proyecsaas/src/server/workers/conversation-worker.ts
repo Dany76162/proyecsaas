@@ -44,6 +44,8 @@ import {
   VisitAutomationError,
 } from "@/modules/visits/service";
 
+import { notifyNewLead } from "@/server/push/notify";
+
 import { getQueueConnection } from "@/server/queues/connection";
 import {
   resolveInboundByPhoneNumberId,
@@ -205,6 +207,7 @@ export async function processWhatsAppInboundJob(
 
   // 2. Persistencia atómica (Conversation + Inbound Message)
   let createdFirstLead = false;
+  let leadWasCreated = false;
 
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     let conversation = await tx.conversation.findFirst({
@@ -262,6 +265,7 @@ export async function processWhatsAppInboundJob(
       });
 
       createdFirstLead = leadCountBefore === 0;
+      leadWasCreated = true;
     }
 
     let message = data.message.externalId
@@ -286,6 +290,10 @@ export async function processWhatsAppInboundJob(
 
     return { conversation, lead, message };
   });
+
+  if (leadWasCreated) {
+    await notifyNewLead(targetOrgId, result.lead.fullName);
+  }
 
   if (createdFirstLead) {
     await trackActivationEventOnce(prisma, {

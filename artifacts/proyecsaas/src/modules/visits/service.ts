@@ -1,6 +1,7 @@
 ﻿import { LeadStatus, NotificationType, VisitStatus, Prisma, PrismaClient } from "@prisma/client";
 
 import type { VisitListItem, VisitSummary } from "@/modules/visits/types";
+import { notifyVisitScheduled } from "@/server/push/notify";
 
 export type CreateVisitForAutomationParams = {
   organizationId: string;
@@ -232,9 +233,19 @@ export async function createVisitForAutomation(
     return { visit, notification, reusedExisting: false };
   };
 
-  const result = ('$transaction' in prisma) 
+  const result = ('$transaction' in prisma)
     ? await (prisma as PrismaClient).$transaction(runInTransaction)
     : await runInTransaction(prisma as Prisma.TransactionClient);
+
+  if (!result.reusedExisting) {
+    await notifyVisitScheduled(
+      organization.id,
+      organization.slug,
+      lead.fullName,
+      property.title,
+      scheduledAt,
+    );
+  }
 
   return {
     ...result,
