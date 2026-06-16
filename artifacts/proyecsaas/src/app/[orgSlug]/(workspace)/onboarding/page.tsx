@@ -19,10 +19,10 @@ function buildOnboardingSteps(
   orgSlug: string,
   status: {
     profileReady: boolean;
-    propertiesReady: boolean;
     whatsappReady: boolean;
     agentReady: boolean;
-    tourReady: boolean;
+    propertiesReady: boolean;
+    tested: boolean;
   },
 ) {
   return [
@@ -38,43 +38,43 @@ function buildOnboardingSteps(
     },
     {
       number: 2,
-      key: "propiedad",
-      title: "Cargá tu primera propiedad",
-      description:
-        "Creá una propiedad con precio, tipo y dirección. Activala como disponible y marcala como pública para que aparezca en tu catálogo.",
-      href: `/${orgSlug}/properties`,
-      cta: "Ir a propiedades",
-      serverStatus: (status.propertiesReady ? "completed" : "pending") as "completed" | "pending",
-    },
-    {
-      number: 3,
       key: "whatsapp",
-      title: "Conectá tu WhatsApp Business",
+      title: "Conectá tu WhatsApp",
       description:
-        "Vinculá el número de WhatsApp de tu inmobiliaria. El paso se completa cuando el canal queda Activo. Si ya lo conectaste y todavía figura pendiente, revisá el estado en Integraciones > WhatsApp.",
+        "Vinculá el número de WhatsApp de tu inmobiliaria: es el canal por donde la IA atiende a tus clientes. El paso se completa cuando el canal queda Activo.",
       href: `/${orgSlug}/settings/integrations/whatsapp`,
       cta: "Conectar WhatsApp",
       serverStatus: (status.whatsappReady ? "completed" : "pending") as "completed" | "pending",
     },
     {
-      number: 4,
+      number: 3,
       key: "agente",
       title: "Activá tu agente IA",
       description:
-        "Creá el agente, asignale el número de WhatsApp conectado y activalo. El paso se considera completo cuando el agente tiene un canal de WhatsApp asignado y puede responder consultas.",
+        "Creá el agente, asignale el número de WhatsApp conectado y activalo. Es el que responde, califica y agenda visitas de forma automática.",
       href: `/${orgSlug}/agents`,
       cta: "Configurar agente",
       serverStatus: (status.agentReady ? "completed" : "pending") as "completed" | "pending",
     },
     {
-      number: 5,
-      key: "tour",
-      title: "Hacé tu primer tour 360° (opcional)",
+      number: 4,
+      key: "propiedad",
+      title: "Cargá tu primera propiedad",
       description:
-        "Abrí una propiedad existente, entrá en Medios > 360° / Panorámica y subí una imagen 360° real (cámara 360° profesional). Este paso es opcional, pero mejora mucho la ficha pública. La captura desde el celular llegará próximamente.",
+        "Creá una propiedad con precio, tipo y dirección. Activala como disponible y pública para que la IA pueda ofrecerla en las conversaciones.",
       href: `/${orgSlug}/properties`,
-      cta: "Abrir mis propiedades",
-      serverStatus: (status.tourReady ? "completed" : "pending") as "completed" | "pending",
+      cta: "Cargar propiedad",
+      serverStatus: (status.propertiesReady ? "completed" : "pending") as "completed" | "pending",
+    },
+    {
+      number: 5,
+      key: "prueba",
+      title: "Probá tu agente",
+      description:
+        "Enviá un mensaje de prueba a tu WhatsApp y mirá cómo la IA responde y crea la oportunidad sola. Lo vas a ver en el Inbox IA. Este es el momento clave del sistema.",
+      href: `/${orgSlug}/conversations`,
+      cta: "Ir al Inbox IA",
+      serverStatus: (status.tested ? "completed" : "pending") as "completed" | "pending",
     },
   ];
 }
@@ -105,16 +105,16 @@ export default async function WorkspaceOnboardingPage({
     actorEmail: sessionUser?.email,
   });
 
-  const hasTour = await prisma.propertyPanorama.count({
-    where: { property: { organization: { slug: orgSlug } } },
+  const hasConversation = await prisma.conversation.count({
+    where: { organization: { slug: orgSlug } },
   }) > 0;
 
   const steps = buildOnboardingSteps(orgSlug, {
     profileReady: setupStatus.profileComplete,
-    propertiesReady: setupStatus.propertiesLoaded,
     whatsappReady: setupStatus.whatsappConnected,
     agentReady: setupStatus.agentConfigured,
-    tourReady: hasTour,
+    propertiesReady: setupStatus.propertiesLoaded,
+    tested: hasConversation,
   });
 
   return (

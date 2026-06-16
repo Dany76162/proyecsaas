@@ -175,7 +175,7 @@ export async function getSetupChecklistStatus(
       whatsappConnected: false,
       readyToOperate: false,
       completedCount: 0,
-      totalCount: 5,
+      totalCount: 4,
       isComplete: false,
     };
   }
@@ -188,7 +188,7 @@ export async function getSetupChecklistStatus(
       whatsappConnected: false,
       readyToOperate: false,
       completedCount: 0,
-      totalCount: 5,
+      totalCount: 4,
       isComplete: false,
     };
   }
@@ -202,18 +202,16 @@ export async function getSetupChecklistStatus(
   );
   const whatsappConnected = org.whatsappChannels.length > 0;
 
-  const panoramasCount = await prisma.propertyPanorama.count({
-    where: { property: { organization: { slug: orgSlug } } },
-  });
-  const tourReady = panoramasCount > 0;
-  const readyToOperate = tourReady;
+  // El onboarding se considera completo con los 4 pasos de activación reales.
+  // El tour 360° (opcional) ya no bloquea la finalización.
+  const readyToOperate =
+    profileComplete && propertiesLoaded && agentConfigured && whatsappConnected;
 
   const completedCount = [
     profileComplete,
     propertiesLoaded,
     agentConfigured,
     whatsappConnected,
-    tourReady,
   ].filter(Boolean).length;
 
   return {
@@ -223,8 +221,8 @@ export async function getSetupChecklistStatus(
     whatsappConnected,
     readyToOperate,
     completedCount,
-    totalCount: 5,
-    isComplete: completedCount === 5,
+    totalCount: 4,
+    isComplete: completedCount === 4,
   };
 }
 
