@@ -16,7 +16,12 @@ export default async function PlanEditorPage({ params }: PageProps) {
 
   const development = await prisma.development.findFirst({
     where: { id: developmentId, organizationId: membership.organization.id },
-    select: { id: true, name: true, masterplanSVG: true },
+    select: {
+      id: true,
+      name: true,
+      masterplanSVG: true,
+      DevelopmentLot: { select: { id: true, status: true, pathData: true } },
+    },
   });
 
   if (!development) notFound();
@@ -27,6 +32,7 @@ export default async function PlanEditorPage({ params }: PageProps) {
       developmentId={development.id}
       developmentName={development.name}
       masterplanSVG={development.masterplanSVG}
+      lots={development.DevelopmentLot}
     />
   );
 }

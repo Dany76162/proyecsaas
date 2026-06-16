@@ -17,7 +17,31 @@ type VisualObject = {
   strokeWidth: number | null;
 };
 
+type Lot = { id: string; status: string; pathData: string | null };
+
 type ViewBox = { x: number; y: number; w: number; h: number };
+
+const LOT_STATUS_COLOR: Record<string, string> = {
+  AVAILABLE: "#a7f3d0",
+  RESERVED: "#fcd34d",
+  RESERVED_PENDING: "#fcd34d",
+  SOLD: "#fca5a5",
+  BLOCKED: "#cbd5e1",
+};
+
+// Extrae los vértices de un path SVG (lotes detectados: M/L/Z).
+function pathToPoints(d: string | null): Pt[] {
+  if (!d) return [];
+  const nums = d.match(/-?\d*\.?\d+(?:e[+-]?\d+)?/gi);
+  if (!nums) return [];
+  const pts: Pt[] = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    const x = parseFloat(nums[i]);
+    const y = parseFloat(nums[i + 1]);
+    if (Number.isFinite(x) && Number.isFinite(y)) pts.push({ x, y });
+  }
+  return pts;
+}
 
 // Proyección plano (viewBox, y-abajo) -> mundo 3D (XZ, y = altura).
 function makeProjector(vb: ViewBox) {
@@ -121,6 +145,33 @@ function Ribbon({ points, proj, color, width, y }: { points: Pt[]; proj: Proj; c
   );
 }
 
+function LotParcel({ points, proj, color }: { points: Pt[]; proj: Proj; color: string }) {
+  const shapeGeom = useMemo(() => new THREE.ShapeGeometry(shapeFromPoints(points, proj)), [points, proj]);
+  const edgeGeom = useMemo(() => new THREE.EdgesGeometry(shapeGeom), [shapeGeom]);
+  return (
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+      <mesh geometry={shapeGeom} receiveShadow>
+        <meshStandardMaterial color={color} roughness={0.9} side={THREE.DoubleSide} />
+      </mesh>
+      <lineSegments geometry={edgeGeom}>
+        <lineBasicMaterial color="#475569" />
+      </lineSegments>
+    </group>
+  );
+}
+
+function Lots({ lots, proj }: { lots: Lot[]; proj: Proj }) {
+  return (
+    <>
+      {lots.map((l) => {
+        const pts = pathToPoints(l.pathData);
+        if (pts.length < 3) return null;
+        return <LotParcel key={l.id} points={pts} proj={proj} color={LOT_STATUS_COLOR[l.status] ?? "#e5e7eb"} />;
+      })}
+    </>
+  );
+}
+
 function SceneObjects({ objects, proj }: { objects: VisualObject[]; proj: Proj }) {
   return (
     <>
@@ -161,7 +212,7 @@ function SceneObjects({ objects, proj }: { objects: VisualObject[]; proj: Proj }
   );
 }
 
-export default function Plan3DView({ objects, viewBox }: { objects: VisualObject[]; viewBox: ViewBox }) {
+export default function Plan3DView({ objects, lots = [], viewBox }: { objects: VisualObject[]; lots?: Lot[]; viewBox: ViewBox }) {
   const proj = useMemo(() => makeProjector(viewBox), [viewBox]);
   const groundSize = 100 * 1.6;
 
@@ -189,6 +240,7 @@ export default function Plan3DView({ objects, viewBox }: { objects: VisualObject
           <meshStandardMaterial color="#cdbf9a" roughness={1} />
         </mesh>
 
+        <Lots lots={lots} proj={proj} />
         <SceneObjects objects={objects} proj={proj} />
 
         <ContactShadows position={[0, 0.02, 0]} opacity={0.35} scale={groundSize} blur={2.4} far={20} />

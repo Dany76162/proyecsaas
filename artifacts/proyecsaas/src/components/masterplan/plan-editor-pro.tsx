@@ -37,11 +37,14 @@ const Plan3DView = dynamic(() => import("./plan-3d-view"), {
   ),
 });
 
+type LotInput = { id: string; status: string; pathData: string | null };
+
 type PlanEditorProProps = {
   orgSlug: string;
   developmentId: string;
   developmentName: string;
   masterplanSVG: string | null;
+  lots?: LotInput[];
 };
 
 type Point = { x: number; y: number };
@@ -139,7 +142,7 @@ function ZoomControls() {
   );
 }
 
-export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterplanSVG }: PlanEditorProProps) {
+export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterplanSVG, lots = [] }: PlanEditorProProps) {
   const backHref = `/${orgSlug}/developments/${developmentId}?tab=blueprint`;
   const vb = useMemo(() => parseViewBox(masterplanSVG), [masterplanSVG]);
 
@@ -547,7 +550,7 @@ export function PlanEditorPro({ orgSlug, developmentId, developmentName, masterp
       <div className="relative flex-1 overflow-hidden">
         {view === "3d" && (
           <div className="absolute inset-0 z-50">
-            <Plan3DView objects={objects} viewBox={vb} />
+            <Plan3DView objects={objects} lots={lots} viewBox={vb} />
           </div>
         )}
         <TransformWrapper minScale={0.2} maxScale={10} limitToBounds={false} centerOnInit panning={{ disabled: drawing || draggingVertex !== null }} doubleClick={{ disabled: drawing }} wheel={{ step: 0.15 }}>
