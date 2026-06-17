@@ -491,7 +491,7 @@ export async function processWhatsAppInboundJob(
     result.conversation.propertyId = propertyMatch.property.id;
   }
 
-  const [availability, recentMessages, aiAgent, availableLots, orgRecord] = await Promise.all([
+  const [availability, recentMessages, aiAgent, availableLots, orgRecord, propertyDetail] = await Promise.all([
     propertyMatch.property
       ? prisma.availabilitySlot.findMany({
           where: {
@@ -576,6 +576,26 @@ export async function processWhatsAppInboundJob(
       where: { id: targetOrgId },
       select: { slug: true },
     }),
+    // Detalle completo de la propiedad matcheada para que la IA pueda responder
+    // ambientes/baños/superficie/amenities/descripción sin tener que derivar.
+    // Best-effort (.catch) por si faltan columnas en una DB legacy.
+    propertyMatch.property
+      ? prisma.property
+          .findUnique({
+            where: { id: propertyMatch.property.id },
+            select: {
+              rooms: true,
+              bedrooms: true,
+              bathrooms: true,
+              surfaceM2: true,
+              parkingSpots: true,
+              amenities: true,
+              description: true,
+              operationType: true,
+            },
+          })
+          .catch(() => null)
+      : Promise.resolve(null),
   ]);
 
   // ── AG-4C: escalateOnKeywords early-return ───────────────────────────────
@@ -655,6 +675,14 @@ export async function processWhatsAppInboundJob(
           status: propertyMatch.property.status,
           priceCents: propertyMatch.property.priceCents,
           currency: propertyMatch.property.currency,
+          operationType: propertyDetail?.operationType ?? null,
+          rooms: propertyDetail?.rooms ?? null,
+          bedrooms: propertyDetail?.bedrooms ?? propertyMatch.property.bedrooms ?? null,
+          bathrooms: propertyDetail?.bathrooms ?? null,
+          surfaceM2: roundM2(propertyDetail?.surfaceM2 ?? null),
+          parkingSpots: propertyDetail?.parkingSpots ?? null,
+          amenities: propertyDetail?.amenities ?? null,
+          description: propertyDetail?.description ?? null,
           publicUrl: absUrl(orgRecord?.slug ? `/cat/${orgRecord.slug}/${propertyMatch.property.id}` : null),
         }
       : null,

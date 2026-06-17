@@ -28,6 +28,14 @@ export type PreparedConversationContext = {
         status: string;
         priceCents: number | null;
         currency: string | null;
+        operationType?: string | null;
+        rooms?: number | null;
+        bedrooms?: number | null;
+        bathrooms?: number | null;
+        surfaceM2?: number | null;
+        parkingSpots?: number | null;
+        amenities?: string | null;
+        description?: string | null;
         publicUrl?: string | null;
       }
     | null;
@@ -84,6 +92,7 @@ export type PreparedConversationContext = {
     etapaNombre: string | null;
     destino: string | null;
     frontMeters: number | null;
+    backMeters?: number | null;
     publicUrl?: string | null;
   }> | null;
 };
