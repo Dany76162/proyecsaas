@@ -7,6 +7,7 @@ import type { AgentDetail } from "@/modules/agents/types";
 
 type Channel = {
   id: string;
+  provider?: string | null;
   displayPhoneNumber: string | null;
   verifiedDisplayName: string | null;
   status: string;
@@ -159,8 +160,17 @@ export function AgentForm({
                   <input type="radio" name="whatsappChannelId" value={ch.id} defaultChecked={agent?.whatsappChannelId === ch.id} className="h-4 w-4 accent-brand-500" />
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white text-sm">📱</div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-950">{ch.verifiedDisplayName ?? ch.displayPhoneNumber ?? "Canal sin nombre"}</p>
-                    <p className="text-xs text-slate-400">{ch.displayPhoneNumber ?? "Sin número"}</p>
+                    <p className="text-sm font-semibold text-slate-950">
+                      {ch.verifiedDisplayName ??
+                        ch.displayPhoneNumber ??
+                        (ch.provider === "EVOLUTION_API" ? "WhatsApp conectado por QR" : "Canal de WhatsApp")}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {ch.displayPhoneNumber ??
+                        (ch.provider === "EVOLUTION_API"
+                          ? "Conectado por código QR — listo para asignar"
+                          : "Sin número")}
+                    </p>
                   </div>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ch.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                     {ch.status === "ACTIVE" ? "Activo" : "Inactivo"}

@@ -778,6 +778,7 @@ export async function getAvailableChannels(orgId: string) {
       select: {
         id: true,
         name: true,
+        provider: true,
         displayPhoneNumber: true,
         verifiedDisplayName: true,
         status: true,
@@ -791,6 +792,7 @@ export async function getAvailableChannels(orgId: string) {
         select: {
           id: true,
           name: true,
+          provider: true,
           displayPhoneNumber: true,
           verifiedDisplayName: true,
           status: true,
