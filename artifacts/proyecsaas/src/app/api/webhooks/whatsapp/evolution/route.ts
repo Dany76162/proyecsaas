@@ -100,6 +100,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, ignoredEmpty: true });
   }
 
+  // Registrar que llegó un mensaje entrante (señal real de recepción).
+  await prisma.whatsAppChannel
+    .update({ where: { instanceName }, data: { lastInboundAt: new Date() } })
+    .catch(() => null);
+
   // Platform Routing (same logic as Meta)
   const routingSlug = extractOrgSlugFromMessage(body);
   let targetOrgId = channel.organizationId;

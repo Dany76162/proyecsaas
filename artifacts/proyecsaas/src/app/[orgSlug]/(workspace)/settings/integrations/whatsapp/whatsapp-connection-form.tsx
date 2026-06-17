@@ -136,7 +136,7 @@ export function WhatsAppConnectionForm({
                   (activeTenantChannel.phoneNumberId?.startsWith("evolution_")
                     ? activeTenantChannel.phoneNumberId.replace(/^evolution_/, "")
                     : null);
-                return phone ? `📱 +${phone}` : "📱 Canal activo — número pendiente de sincronización";
+                return phone ? `📱 +${phone.replace(/\D/g, "")}` : "📱 Canal activo — número pendiente de sincronización";
               })()}
             </p>
           </div>

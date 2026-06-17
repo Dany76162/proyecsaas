@@ -470,16 +470,18 @@ export async function setWhatsappNumberAction(
       return { success: false, message: "No encontramos un WhatsApp conectado por QR para esta cuenta." };
     }
 
+    // Guardamos solo dígitos (sin "+"): el panel ya antepone el "+" al mostrar
+    // y el enlace wa.me usa solo dígitos.
     let display: string | null = null;
     if (manualPhone && manualPhone.trim()) {
       const digits = manualPhone.replace(/\D/g, "");
       if (digits.length < 8) {
         return { success: false, message: "El número no parece válido. Incluí código de país y área." };
       }
-      display = `+${digits}`;
+      display = digits;
     } else {
       const auto = await fetchEvolutionNumber(channel.instanceName);
-      if (auto.phone) display = `+${auto.phone}`;
+      if (auto.phone) display = auto.phone;
     }
 
     if (!display) {

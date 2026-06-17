@@ -153,7 +153,7 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE", i
               {/* Número propio — necesario para el enlace/QR para compartir */}
               <div className="mt-1 text-xs">
                 {number ? (
-                  <span className="font-semibold text-emerald-800">📞 Tu número: {number}</span>
+                  <span className="font-semibold text-emerald-800">📞 Tu número: +{number.replace(/\D/g, "")}</span>
                 ) : numberState === "loading" ? (
                   <span className="text-slate-500">Detectando tu número…</span>
                 ) : (

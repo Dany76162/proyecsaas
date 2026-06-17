@@ -90,7 +90,7 @@ export async function createEvolutionInstance(instanceName: string) {
         qrcode: true,
         ...(webhookUrl && {
           webhook_url: webhookUrl,
-          webhook_by_events: true,
+          webhook_by_events: false,
           webhook_events: [
             "MESSAGES_UPSERT",
             "CONNECTION_UPDATE",
@@ -212,7 +212,10 @@ export async function setEvolutionWebhook(instanceName: string) {
       webhook: {
         enabled: true,
         url: webhookUrl,
-        webhookByEvents: true,
+        // false → Evolution postea TODOS los eventos a la URL base (con el
+        // nombre del evento en el body). Nuestra ruta única los maneja así.
+        // Con true postearía a sub-rutas por evento (/messages-upsert) → 404.
+        webhookByEvents: false,
         events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "QRCODE_UPDATED"],
       },
     }),
