@@ -5,9 +5,10 @@ import { prisma } from "@/server/db/prisma";
 import { getAvailableChannels } from "@/modules/agents/service";
 
 /**
- * Diagnóstico read-only del estado de los canales de WhatsApp del usuario.
- * Sirve para entender por qué un canal conectado no aparece en la lista de
- * asignación del agente. No modifica nada. Requiere sesión.
+ * Diagnóstico read-only del estado de WhatsApp + agentes del usuario.
+ * Sirve para entender por qué un canal no aparece para asignar o por qué el
+ * agente no responde mensajes (asignación, llegada de inbound, errores de envío).
+ * No modifica nada. Requiere sesión.
  */
 export async function GET() {
   const user = await getSessionUser();
@@ -27,7 +28,6 @@ export async function GET() {
   for (const m of memberships) {
     const orgId = m.organization.id;
 
-    // Todos los canales del org, con los campos que importan para el filtro.
     const rawChannels = await prisma.whatsAppChannel
       .findMany({
         where: { organizationId: orgId },
@@ -40,23 +40,44 @@ export async function GET() {
           displayPhoneNumber: true,
           verifiedDisplayName: true,
           instanceName: true,
+          webhookSubscribed: true,
+          lastInboundAt: true,
+          lastDeliveryAt: true,
+          lastErrorAt: true,
+          lastErrorCode: true,
+          lastErrorMessage: true,
         },
       })
       .catch((e) => ({ error: String(e?.message ?? e) }));
 
-    // Lo que efectivamente devuelve la función que alimenta la asignación.
+    const agents = await prisma.aiAgent
+      .findMany({
+        where: { organizationId: orgId },
+        select: { id: true, name: true, status: true, whatsappChannelId: true },
+      })
+      .catch((e) => ({ error: String(e?.message ?? e) }));
+
     const available = await getAvailableChannels(orgId).catch((e) => ({
       error: String(e?.message ?? e),
     }));
+
+    const conversations = await prisma.conversation
+      .count({ where: { organizationId: orgId } })
+      .catch(() => null);
 
     orgs.push({
       slug: m.organization.slug,
       role: m.role,
       isManager: m.role === "OWNER" || m.role === "ADMIN",
+      agents,
       rawChannels,
       availableChannels: available,
+      conversationCount: conversations,
     });
   }
 
-  return NextResponse.json({ userEmail: user.email, orgs }, { status: 200 });
+  return NextResponse.json(
+    { userEmail: user.email, now: new Date().toISOString(), orgs },
+    { status: 200 },
+  );
 }
