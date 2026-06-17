@@ -5,6 +5,7 @@ import { markOverdueInstallments } from "@/modules/developments/installments";
 import { ArrowLeft, MapPin, Phone, Globe, User, Banknote, Calendar, Receipt, Lock } from "lucide-react";
 import Link from "next/link";
 import PrintButton from "../print-button";
+import { LotStatusBadge, type LotStatus } from "@/components/developments/lot-status-badge";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,18 +42,6 @@ function fmtEmisionDate(): string {
 }
 
 // ── Status badges ─────────────────────────────────────────────────────────────
-
-function LotStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    AVAILABLE:        { label: "Disponible", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-    RESERVED_PENDING: { label: "Reservada",  cls: "bg-amber-100 text-amber-700 border-amber-200" },
-    RESERVED:         { label: "Reservada",  cls: "bg-amber-100 text-amber-700 border-amber-200" },
-    SOLD:             { label: "Vendida",    cls: "bg-red-100 text-red-700 border-red-200" },
-    BLOCKED:          { label: "Bloqueada",  cls: "bg-slate-100 text-slate-500 border-slate-200" },
-  };
-  const { label, cls } = map[status] ?? { label: status, cls: "bg-slate-100 text-slate-500 border-slate-200" };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border ${cls}`}>{label}</span>;
-}
 
 function ReservationStatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -405,7 +394,7 @@ export default async function CuotasPage({ params }: { params: Promise<{ lotId: 
                 )}
                 <div className="flex justify-between items-center py-1.5 gap-2">
                   <span className="text-slate-500 font-semibold">Estado</span>
-                  <LotStatusBadge status={lotRaw.status} />
+                  <LotStatusBadge status={lotRaw.status as LotStatus} audience="public" />
                 </div>
               </div>
             </div>
