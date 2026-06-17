@@ -142,8 +142,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const queue = getAutomationQueue();
+    // Dedup: Evolution puede disparar el mismo MESSAGES_UPSERT más de una vez.
+    // Usamos el id del mensaje como jobId para que BullMQ descarte el duplicado
+    // y no se procese/envíe la respuesta dos veces.
+    const dedupeId = messageData.key?.id ? `evo_${messageData.key.id}` : undefined;
     await withTimeout(
-      queue.add("whatsapp-inbound", jobPayload),
+      queue.add("whatsapp-inbound", jobPayload, dedupeId ? { jobId: dedupeId } : undefined),
       ENQUEUE_TIMEOUT_MS
     );
 

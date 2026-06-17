@@ -941,6 +941,12 @@ export async function processWhatsAppInboundJob(
     const followUpReason =
       decision.followUpReason ?? "Automation flagged this conversation for follow-up.";
 
+    // Solo el handoff EXPLÍCITO ("derivar-a-asesor": el cliente pidió una persona
+    // o matcheó una palabra clave de derivación) pausa la IA. Los demás follow-ups
+    // (pedir horario, confirmar interés, lead caliente) NO la callan: la IA sigue
+    // respondiendo y calificando, y la alerta/notificación se manda igual.
+    const isExplicitHandoff = decision.nextBestAction === "derivar-a-asesor";
+
     const [org] = await Promise.all([
       prisma.organization.findUnique({
         where: { id: targetOrgId },
@@ -955,10 +961,7 @@ export async function processWhatsAppInboundJob(
           followUpActiveAt: new Date(),
           nextBestAction: decision.nextBestAction,
           nextBestActionAt: new Date(),
-          // NO pausar la IA acá: "sugerir intervención" ≠ "callar la IA".
-          // La IA sigue respondiendo/calificando; isHumanControlled se setea
-          // solo cuando un humano toca "Tomar control", o ante un [ESCALATE]
-          // explícito (cliente pide persona) en el agent-pipeline.
+          isHumanControlled: isExplicitHandoff,
         },
       }),
     ]);
