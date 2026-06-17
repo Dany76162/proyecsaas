@@ -31,8 +31,12 @@ export type SetupChecklistStatus = {
   propertiesLoaded: boolean;
   agentConfigured: boolean;
   whatsappConnected: boolean;
+  /** Listo para operar = los 4 pasos de setup. No incluye la prueba del agente. */
   readyToOperate: boolean;
+  /** El usuario ya probó el agente (existe al menos una conversación). */
+  tested: boolean;
   completedCount: number;
   totalCount: number;
+  /** Onboarding 100% terminado = setup + prueba del agente (el WOW). */
   isComplete: boolean;
 };

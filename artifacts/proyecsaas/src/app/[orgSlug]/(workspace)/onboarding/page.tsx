@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ShieldAlert, ArrowRight } from "lucide-react";
 
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
@@ -167,12 +168,44 @@ export default async function WorkspaceOnboardingPage({
     businessType,
   );
 
+  // Gate suave: con el setup listo pero sin probar, la prueba es el paso clave
+  // pendiente (el WOW). El onboarding no se considera terminado hasta probarlo.
+  const setupDone =
+    setupStatus.profileComplete &&
+    setupStatus.whatsappConnected &&
+    setupStatus.agentConfigured &&
+    inventoryReady;
+  const needsTest = setupDone && !hasConversation;
+
   return (
     <div className="mt-3 pb-20">
       {!businessType && (
         <div className="mb-6">
           <BusinessTypePrompt orgSlug={orgSlug} />
         </div>
+      )}
+
+      {needsTest && (
+        <Link
+          href={`/${orgSlug}/onboarding/probar`}
+          className="mb-6 flex flex-col gap-4 rounded-[1.75rem] border border-amber-300 bg-gradient-to-br from-amber-50 to-white p-6 shadow-soft transition hover:border-amber-400 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+              <ShieldAlert className="h-6 w-6" />
+            </span>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500">Falta el paso clave</p>
+              <h2 className="mt-1 text-lg font-bold text-slate-950">Probá tu agente para terminar</h2>
+              <p className="mt-1 max-w-xl text-sm font-medium leading-relaxed text-slate-500">
+                Tenés todo configurado. Enviá un WhatsApp de prueba y mirá a la IA responder y crear la oportunidad sola: ese es el momento que confirma que todo funciona.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white sm:self-auto">
+            Probar ahora <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
       )}
 
       <OnboardingStepsList orgSlug={orgSlug} steps={steps} />

@@ -155,7 +155,7 @@ export async function getSetupChecklistStatus(
       name: true,
       city: true,
       deletedAt: true,
-      _count: { select: { properties: true } },
+      _count: { select: { properties: true, conversations: true } },
       aiAgents: {
         select: { id: true, status: true, whatsappChannelId: true },
       },
@@ -174,6 +174,7 @@ export async function getSetupChecklistStatus(
       agentConfigured: false,
       whatsappConnected: false,
       readyToOperate: false,
+      tested: false,
       completedCount: 0,
       totalCount: 4,
       isComplete: false,
@@ -187,6 +188,7 @@ export async function getSetupChecklistStatus(
       agentConfigured: false,
       whatsappConnected: false,
       readyToOperate: false,
+      tested: false,
       completedCount: 0,
       totalCount: 4,
       isComplete: false,
@@ -202,10 +204,14 @@ export async function getSetupChecklistStatus(
   );
   const whatsappConnected = org.whatsappChannels.length > 0;
 
-  // El onboarding se considera completo con los 4 pasos de activación reales.
+  // "Listo para operar" = los 4 pasos de setup (perfil, propiedad, agente, WhatsApp).
   // El tour 360° (opcional) ya no bloquea la finalización.
   const readyToOperate =
     profileComplete && propertiesLoaded && agentConfigured && whatsappConnected;
+
+  // La prueba del agente (primera conversación) es el paso clave del WOW: el
+  // onboarding no se considera 100% terminado hasta que el usuario la realiza.
+  const tested = org._count.conversations > 0;
 
   const completedCount = [
     profileComplete,
@@ -220,9 +226,10 @@ export async function getSetupChecklistStatus(
     agentConfigured,
     whatsappConnected,
     readyToOperate,
+    tested,
     completedCount,
     totalCount: 4,
-    isComplete: completedCount === 4,
+    isComplete: readyToOperate && tested,
   };
 }
 
