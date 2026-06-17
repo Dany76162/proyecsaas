@@ -66,6 +66,12 @@ export async function GET() {
       .count({ where: { organizationId: orgId } })
       .catch(() => null);
 
+    // ¿Hay dispositivos suscriptos al push para este org? (si 0, hay que activar
+    // alertas en la app móvil logueado como este org).
+    const pushSubscriptions = await prisma.pushSubscription
+      .count({ where: { organizationId: orgId } })
+      .catch(() => null);
+
     // Estado de la suscripción: las 3 compuertas que pueden frenar la respuesta
     // de la IA aunque el mensaje entre (suspendida / IA pausada / cupo agotado).
     const subscription = await prisma.subscription
@@ -101,6 +107,7 @@ export async function GET() {
       rawChannels,
       availableChannels: available,
       conversationCount: conversations,
+      pushSubscriptions,
       subscription,
       evolutionWebhooks,
       evolutionNumbers,
@@ -113,6 +120,10 @@ export async function GET() {
     webhookGlobalUrlSet: Boolean(process.env.WEBHOOK_GLOBAL_URL?.trim()),
     evolutionConfigured:
       Boolean(process.env.EVOLUTION_API_URL?.trim()) && Boolean(process.env.EVOLUTION_API_KEY?.trim()),
+    // OJO: esto refleja el proceso WEB. El push de lead/caliente lo dispara el
+    // WORKER (proceso aparte) — si el worker no tiene estas VAPID, el push no sale.
+    vapidConfiguredWeb:
+      Boolean(process.env.VAPID_PUBLIC_KEY?.trim()) && Boolean(process.env.VAPID_PRIVATE_KEY?.trim()),
   };
 
   return NextResponse.json(
