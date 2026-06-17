@@ -19,8 +19,11 @@ export async function POST(request: NextRequest) {
   // Validation: In a production environment, we should validate a custom token 
   // or use the Global Key if sent in headers by Evolution API.
   // Evolution sends 'apikey' header if configured.
+  // Evolution no siempre reenvía el apikey en sus webhooks salientes. Solo
+  // rechazamos si llega un apikey y es incorrecto; si no llega, aceptamos
+  // (el endpoint igual queda scopeado por instanceName al resolver el canal).
   const apiKey = request.headers.get("apikey");
-  if (process.env.EVOLUTION_API_KEY && apiKey !== process.env.EVOLUTION_API_KEY) {
+  if (process.env.EVOLUTION_API_KEY && apiKey && apiKey !== process.env.EVOLUTION_API_KEY) {
      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 

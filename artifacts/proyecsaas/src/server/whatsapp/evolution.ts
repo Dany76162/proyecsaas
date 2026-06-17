@@ -188,6 +188,7 @@ export async function getEvolutionWebhook(instanceName: string) {
       ok: true as const,
       url: data?.url ?? data?.webhook?.url ?? null,
       enabled: data?.enabled ?? data?.webhook?.enabled ?? null,
+      webhookByEvents: data?.webhookByEvents ?? data?.webhook?.webhookByEvents ?? null,
       events: data?.events ?? data?.webhook?.events ?? null,
     };
   } catch (error: any) {
@@ -216,6 +217,8 @@ export async function setEvolutionWebhook(instanceName: string) {
         // nombre del evento en el body). Nuestra ruta única los maneja así.
         // Con true postearía a sub-rutas por evento (/messages-upsert) → 404.
         webhookByEvents: false,
+        // Reenviar el apikey para que el handler valide el origen.
+        ...(EVOLUTION_KEY ? { headers: { apikey: EVOLUTION_KEY, "Content-Type": "application/json" } } : {}),
         events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "QRCODE_UPDATED"],
       },
     }),
