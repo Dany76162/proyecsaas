@@ -24,7 +24,7 @@ export default async function AgentDetailPage({
   const isManager = membership.role === "OWNER" || membership.role === "ADMIN";
 
   const [agent, channels, connectionRequests, orgData] = await Promise.all([
-    getAgentDetail(agentId, orgId),
+    getAgentDetail(orgId, agentId),
     isManager ? getAvailableChannels(orgId) : Promise.resolve([]),
     prisma.whatsAppChannelConnectionRequest.findMany({
       where: { organizationId: orgId },

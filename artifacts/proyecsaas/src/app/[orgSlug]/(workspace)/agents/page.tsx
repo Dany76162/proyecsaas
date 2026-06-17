@@ -259,7 +259,7 @@ function AgentCard({
             <p className="mt-0.5 text-sm font-medium text-emerald-700">✓ Asignado</p>
           ) : (
             <Link
-              href={`/${orgSlug}/settings/integrations/whatsapp`}
+              href={`/${orgSlug}/agents/${agent.id}`}
               className="mt-0.5 text-sm font-medium text-amber-600 hover:underline"
             >
               Asignar WhatsApp →
