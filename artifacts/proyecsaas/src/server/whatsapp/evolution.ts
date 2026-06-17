@@ -231,19 +231,17 @@ export async function setEvolutionWebhook(instanceName: string) {
 export async function sendEvolutionMessage(instanceName: string, to: string, text: string) {
   // Normalize phone number (ensure no + and correct format for Evolution)
   const cleanTo = to.replace(/\D/g, "");
-  
+
+  // Evolution v2: payload plano. El texto va en `text` (no en textContent) y
+  // delay/linkPreview al nivel raíz (no en `options`). El formato v1 anidado
+  // hacía que Evolution v2 respondiera 400.
   return await request(`/message/sendText/${instanceName}`, {
     method: "POST",
     body: JSON.stringify({
       number: cleanTo,
-      options: {
-        delay: 1200,
-        presence: "composing",
-        linkPreview: true,
-      },
-      textContent: {
-        text,
-      },
+      text,
+      delay: 1200,
+      linkPreview: false,
     }),
   });
 }
