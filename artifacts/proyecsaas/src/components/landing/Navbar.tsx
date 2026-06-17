@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "#producto", label: "Producto", isAnchor: true },
   { href: "#como-funciona", label: "Cómo funciona", isAnchor: true },
   { href: "#tour-360", label: "Tour 360°", isAnchor: true },
+  { href: "#desarrollos", label: "Desarrollos", isAnchor: true },
   { href: "#beneficios", label: "Beneficios", isAnchor: true },
   { href: "#contacto", label: "Contacto", isAnchor: true },
   { href: "/propiedades", label: "Propiedades", isAnchor: false },

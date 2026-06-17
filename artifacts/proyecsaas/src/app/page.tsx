@@ -29,6 +29,7 @@ import { ClientMarquee } from "@/components/landing/client-marquee";
 import { LandingHeroCarousel } from "@/components/landing/LandingHeroCarousel";
 import { MobilitySection } from "@/components/landing/MobilitySection";
 import { Tour360Section } from "@/components/landing/Tour360Section";
+import { DevelopersSection } from "@/components/landing/DevelopersSection";
 import Image from "next/image";
 import { prisma } from "@/server/db/prisma";
 import { Navbar } from "@/components/landing/Navbar";
@@ -222,7 +223,8 @@ export default async function HomePage() {
         {/* 360 VIRTUAL TOURS MOBILE FEATURE */}
         <Tour360Section />
 
-        {/* PRODUCT PREVIEW / INFRASTRUCTURE (Dark Section) */}
+        {/* DESARROLLADORAS / LOTEOS */}
+        <DevelopersSection />
 
         {/* PRODUCT PREVIEW / INFRASTRUCTURE (Dark Section) */}
         <section id="producto" className="bg-slate-950 py-20 text-slate-50">
