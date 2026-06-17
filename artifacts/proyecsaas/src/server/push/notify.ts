@@ -7,17 +7,26 @@ import { sendPushToOrganization } from "@/server/push/web-push";
  * Notifica (web push) a los miembros suscriptos de la organización que entró
  * un nuevo lead. Best-effort: nunca lanza ni bloquea el flujo que lo invoca.
  */
-export async function notifyNewLead(organizationId: string, leadName: string): Promise<void> {
+export async function notifyNewLead(
+  organizationId: string,
+  leadName: string,
+  conversationId?: string,
+): Promise<void> {
   try {
     const org = await prisma.organization.findUnique({
       where: { id: organizationId },
       select: { slug: true },
     });
     if (!org) return;
+    // Al tocar la notificación: toma control (pausa la IA) y abre WhatsApp con
+    // el prospecto. Si no hay conversación, cae al Inbox.
+    const url = conversationId
+      ? `/${org.slug}/conversations/${conversationId}/handoff`
+      : `/${org.slug}/conversations`;
     await sendPushToOrganization(organizationId, {
       title: "🔔 Nuevo lead",
-      body: `${leadName || "Un interesado"} escribió por WhatsApp. La IA ya está respondiendo.`,
-      url: `/${org.slug}/conversations`,
+      body: `${leadName || "Un interesado"} escribió por WhatsApp. Tocá para responderle.`,
+      url,
     });
   } catch {
     /* best-effort */
@@ -34,12 +43,17 @@ export async function notifyHotLead(
   orgSlug: string,
   leadName: string,
   summary: string,
+  conversationId?: string,
 ): Promise<void> {
   try {
+    // Al tocar: toma control (pausa la IA) y abre WhatsApp con el prospecto.
+    const url = conversationId
+      ? `/${orgSlug}/conversations/${conversationId}/handoff`
+      : `/${orgSlug}/conversations`;
     await sendPushToOrganization(organizationId, {
       title: "🔥 Prospecto caliente",
       body: `${leadName || "Un interesado"} — ${summary}`,
-      url: `/${orgSlug}/conversations`,
+      url,
     });
   } catch {
     /* best-effort */

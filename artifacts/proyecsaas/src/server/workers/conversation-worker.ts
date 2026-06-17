@@ -292,7 +292,7 @@ export async function processWhatsAppInboundJob(
   });
 
   if (leadWasCreated) {
-    await notifyNewLead(targetOrgId, result.lead.fullName);
+    await notifyNewLead(targetOrgId, result.lead.fullName, result.conversation.id);
   }
 
   if (createdFirstLead) {
@@ -1030,6 +1030,7 @@ export async function processWhatsAppInboundJob(
         org.slug,
         result.conversation.participantName || participantPhone,
         summary,
+        result.conversation.id,
       ).catch(() => {});
     }
   }
