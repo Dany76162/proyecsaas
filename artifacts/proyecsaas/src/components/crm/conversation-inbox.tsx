@@ -32,6 +32,7 @@ import type { ConversationListItem } from "@/modules/conversations/types";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { Button } from "@/components/ui/button";
 import { ConversationRow } from "@/components/inbox/conversation-row";
+import { DeleteConversationButton } from "@/components/inbox/delete-conversation-button";
 import { IaAssistantPanel } from "@/components/inbox/ia-assistant-panel";
 import { HandoffBanner } from "@/components/inbox/handoff-banner";
 import { SectionCard } from "@/components/workspace/section-card";
@@ -66,10 +67,12 @@ function ConversationDetail({
   conv,
   orgSlug,
   currentCursor,
+  isManager = false,
 }: {
   conv: ConversationListItem;
   orgSlug: string;
   currentCursor?: string;
+  isManager?: boolean;
 }) {
   const shortlist = conv.propertyMatch?.shortlist ?? [];
 
@@ -112,6 +115,7 @@ function ConversationDetail({
               <Link href={`/${orgSlug}/leads/${conv.leadId}`}>Ficha Lead</Link>
             </Button>
           )}
+          {isManager && <DeleteConversationButton orgSlug={orgSlug} conversationId={conv.id} />}
           <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -316,11 +320,13 @@ export function ConversationInbox({
   orgSlug,
   currentCursor,
   initialSelectedId,
+  isManager = false,
 }: {
   conversations: ConversationListItem[];
   orgSlug: string;
   currentCursor?: string;
   initialSelectedId?: string;
+  isManager?: boolean;
 }) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -455,7 +461,7 @@ export function ConversationInbox({
               <ArrowLeft className="h-3.5 w-3.5" />
               Volver a conversaciones
             </button>
-            <ConversationDetail conv={selected} orgSlug={orgSlug} currentCursor={currentCursor} />
+            <ConversationDetail conv={selected} orgSlug={orgSlug} currentCursor={currentCursor} isManager={isManager} />
           </>
         ) : filtered.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center p-8 max-w-md mx-auto space-y-6">

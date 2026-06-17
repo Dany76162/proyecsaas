@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ConversationInbox } from "@/components/crm/conversation-inbox";
 import { listOrganizationConversations } from "@/modules/conversations/service";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
+import { requireOrganizationMembership } from "@/server/auth/access";
 
 export default async function ConversationsPage({
   params,
@@ -16,15 +17,17 @@ export default async function ConversationsPage({
   const { orgSlug } = await params;
   const { cursor, success, selected } = await searchParams;
 
-  const [organization, { items: conversations, nextCursor }] = await Promise.all([
+  const [organization, { items: conversations, nextCursor }, { membership }] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     listOrganizationConversations(orgSlug, cursor),
+    requireOrganizationMembership(orgSlug),
   ]);
 
   if (!organization) {
     notFound();
   }
 
+  const isManager = membership.role === "OWNER" || membership.role === "ADMIN";
   const isFirstPage = !cursor;
 
   return (
@@ -82,6 +85,7 @@ export default async function ConversationsPage({
         orgSlug={orgSlug}
         currentCursor={cursor}
         initialSelectedId={selected}
+        isManager={isManager}
       />
     </>
   );

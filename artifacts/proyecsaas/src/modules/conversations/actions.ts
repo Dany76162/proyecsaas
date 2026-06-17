@@ -53,6 +53,40 @@ export async function resolveConversationFollowUpAction(formData: FormData) {
   }
 }
 
+/**
+ * Borra MANUALMENTE una conversación y sus mensajes (cascade). Nada se borra
+ * solo: las conversaciones quedan de registro hasta que un manager las elimina
+ * desde acá. Requiere rol ADMIN/OWNER.
+ */
+export async function deleteConversationAction(
+  orgSlug: string,
+  conversationId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    const { membership } = await requireOrganizationMembership(orgSlug);
+    assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+    const conversation = await prisma.conversation.findFirst({
+      where: { id: conversationId, organizationId: membership.organization.id },
+      select: { id: true },
+    });
+    if (!conversation) {
+      return { ok: false, message: "Conversación no encontrada." };
+    }
+
+    // Los mensajes se borran en cascada (Message.onDelete: Cascade).
+    await prisma.conversation.delete({ where: { id: conversation.id } });
+
+    revalidatePath(`/${orgSlug}/conversations`);
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "No se pudo eliminar la conversación.",
+    };
+  }
+}
+
 export async function sendManualMessageAction(formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "");
   const conversationId = String(formData.get("conversationId") ?? "");
