@@ -19,6 +19,7 @@ import {
   getEvolutionInstanceDetails,
   getEvolutionWebhook,
   setEvolutionWebhook,
+  fetchEvolutionNumber,
   logoutEvolutionInstance
 } from "@/server/whatsapp/evolution";
 
@@ -438,6 +439,67 @@ export async function resubscribeWhatsappWebhookAction(
     return {
       success: false,
       message: error instanceof Error ? error.message : "No se pudo activar la recepción de mensajes.",
+    };
+  }
+}
+
+/**
+ * Setea el número propio del WhatsApp conectado por QR (displayPhoneNumber).
+ * Sin esto, el panel muestra "+org_..." y el enlace/QR para compartir queda
+ * sin número (no sirve para los clientes). Si se pasa `manualPhone` lo usa;
+ * si no, intenta capturarlo automáticamente desde Evolution.
+ */
+export async function setWhatsappNumberAction(
+  orgSlug: string,
+  manualPhone?: string,
+): Promise<{ success: boolean; message: string; number?: string }> {
+  try {
+    const { membership } = await requireOrganizationMembership(orgSlug);
+    assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+    const channel = await prisma.whatsAppChannel.findFirst({
+      where: {
+        organizationId: membership.organization.id,
+        provider: "EVOLUTION_API",
+        instanceName: { not: null },
+      },
+      select: { id: true, instanceName: true },
+    });
+
+    if (!channel?.instanceName) {
+      return { success: false, message: "No encontramos un WhatsApp conectado por QR para esta cuenta." };
+    }
+
+    let display: string | null = null;
+    if (manualPhone && manualPhone.trim()) {
+      const digits = manualPhone.replace(/\D/g, "");
+      if (digits.length < 8) {
+        return { success: false, message: "El número no parece válido. Incluí código de país y área." };
+      }
+      display = `+${digits}`;
+    } else {
+      const auto = await fetchEvolutionNumber(channel.instanceName);
+      if (auto.phone) display = `+${auto.phone}`;
+    }
+
+    if (!display) {
+      return {
+        success: false,
+        message: "No pudimos detectar el número automáticamente. Ingresalo a mano y guardalo.",
+      };
+    }
+
+    await prisma.whatsAppChannel.update({
+      where: { id: channel.id },
+      data: { displayPhoneNumber: display },
+    });
+
+    revalidatePath(`/${orgSlug}/settings/integrations/whatsapp`);
+    return { success: true, message: "Número guardado.", number: display };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "No se pudo guardar el número.",
     };
   }
 }

@@ -145,6 +145,39 @@ export async function logoutEvolutionInstance(instanceName: string) {
 }
 
 /**
+ * Intenta obtener el número propio (owner) de la instancia desde Evolution.
+ * connectionState no lo trae; el número vive en /instance/fetchInstances.
+ * Best-effort: devuelve solo dígitos o null. Incluye el raw para diagnóstico.
+ */
+export async function fetchEvolutionNumber(instanceName: string): Promise<{
+  phone: string | null;
+  raw?: unknown;
+  error?: string;
+}> {
+  try {
+    const data = await request(`/instance/fetchInstances?instanceName=${encodeURIComponent(instanceName)}`);
+    const inst = Array.isArray(data) ? data[0] : data?.instance ?? data;
+    const candidate =
+      inst?.ownerJid ??
+      inst?.owner ??
+      inst?.number ??
+      inst?.wuid ??
+      inst?.instance?.owner ??
+      inst?.instance?.wuid ??
+      null;
+    let phone: string | null = null;
+    if (candidate && typeof candidate === "string") {
+      const beforeAt = candidate.split("@")[0];
+      const digits = beforeAt.split(":")[0].replace(/\D/g, "");
+      phone = digits.length >= 8 ? digits : null;
+    }
+    return { phone, raw: data };
+  } catch (error: any) {
+    return { phone: null, error: error?.message ?? String(error) };
+  }
+}
+
+/**
  * Lee la configuración de webhook que Evolution tiene para una instancia.
  * Read-only: sirve para diagnosticar si los mensajes entrantes se reenvían.
  */

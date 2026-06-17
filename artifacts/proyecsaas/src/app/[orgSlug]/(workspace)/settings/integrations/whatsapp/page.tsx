@@ -103,9 +103,10 @@ export default async function WhatsAppIntegrationPage({
           title="Conexión Rápida (QR Scan)"
           description="Vinculá tu WhatsApp personal o comercial en segundos escaneando un código QR. Es la forma más fácil de empezar."
         >
-          <EvolutionConnectionForm 
-            orgSlug={orgSlug} 
-            initialStatus={evolutionChannel?.status} 
+          <EvolutionConnectionForm
+            orgSlug={orgSlug}
+            initialStatus={evolutionChannel?.status}
+            initialNumber={evolutionChannel?.displayPhoneNumber ?? null}
           />
         </SectionCard>
 

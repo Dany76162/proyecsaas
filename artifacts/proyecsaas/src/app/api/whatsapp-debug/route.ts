@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/server/auth/session";
 import { prisma } from "@/server/db/prisma";
 import { getAvailableChannels } from "@/modules/agents/service";
-import { getEvolutionWebhook } from "@/server/whatsapp/evolution";
+import { getEvolutionWebhook, fetchEvolutionNumber } from "@/server/whatsapp/evolution";
 
 /**
  * Diagnóstico read-only del estado de WhatsApp + agentes del usuario.
@@ -68,10 +68,12 @@ export async function GET() {
 
     // Estado real del webhook en Evolution para cada instancia (read-only).
     const evolutionWebhooks: Record<string, unknown> = {};
+    const evolutionNumbers: Record<string, unknown> = {};
     if (Array.isArray(rawChannels)) {
       for (const ch of rawChannels) {
         if (ch.provider === "EVOLUTION_API" && ch.instanceName) {
           evolutionWebhooks[ch.instanceName] = await getEvolutionWebhook(ch.instanceName);
+          evolutionNumbers[ch.instanceName] = await fetchEvolutionNumber(ch.instanceName);
         }
       }
     }
@@ -85,6 +87,7 @@ export async function GET() {
       availableChannels: available,
       conversationCount: conversations,
       evolutionWebhooks,
+      evolutionNumbers,
     });
   }
 

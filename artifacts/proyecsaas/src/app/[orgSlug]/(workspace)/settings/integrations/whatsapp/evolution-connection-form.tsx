@@ -5,15 +5,22 @@ import {
   getEvolutionQrAction,
   checkEvolutionStatusAction,
   disconnectEvolutionAction,
-  resubscribeWhatsappWebhookAction
+  resubscribeWhatsappWebhookAction,
+  setWhatsappNumberAction
 } from "./actions";
 
 type Props = {
   orgSlug: string;
   initialStatus?: string;
+  initialNumber?: string | null;
 };
 
-export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }: Props) {
+// Un número válido tiene dígitos (no el id falso "org_...").
+function isValidNumber(n?: string | null): boolean {
+  return Boolean(n && /\d/.test(n) && !n.includes("org_"));
+}
+
+export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE", initialNumber = null }: Props) {
   const [status, setStatus] = useState(initialStatus);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,6 +28,28 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [webhookState, setWebhookState] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [webhookMsg, setWebhookMsg] = useState<string | null>(null);
+  const [number, setNumber] = useState<string | null>(isValidNumber(initialNumber) ? initialNumber! : null);
+  const [numberInput, setNumberInput] = useState("");
+  const [numberState, setNumberState] = useState<"idle" | "loading" | "saving">("idle");
+  const [numberAutoTried, setNumberAutoTried] = useState(false);
+
+  const captureNumber = useCallback(async (manual?: string) => {
+    setNumberState(manual ? "saving" : "loading");
+    try {
+      const res = await setWhatsappNumberAction(orgSlug, manual);
+      if (res.success && res.number) setNumber(res.number);
+    } finally {
+      setNumberState("idle");
+    }
+  }, [orgSlug]);
+
+  // Si está conectado pero sin número válido, intentar capturarlo automáticamente una vez.
+  useEffect(() => {
+    if (status === "ACTIVE" && !number && !numberAutoTried) {
+      setNumberAutoTried(true);
+      void captureNumber();
+    }
+  }, [status, number, numberAutoTried, captureNumber]);
 
   const activateWebhook = useCallback(async () => {
     setWebhookState("loading");
@@ -118,6 +147,32 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
                     <button onClick={activateWebhook} className="underline hover:text-rose-700">Reintentar</button>
                     {webhookMsg ? <span className="block font-normal text-rose-500">{webhookMsg}</span> : null}
                   </span>
+                )}
+              </div>
+
+              {/* Número propio — necesario para el enlace/QR para compartir */}
+              <div className="mt-1 text-xs">
+                {number ? (
+                  <span className="font-semibold text-emerald-800">📞 Tu número: {number}</span>
+                ) : numberState === "loading" ? (
+                  <span className="text-slate-500">Detectando tu número…</span>
+                ) : (
+                  <div className="mt-1 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
+                    <span className="font-semibold text-amber-800">Confirmá tu número para que el enlace y el QR funcionen:</span>
+                    <input
+                      value={numberInput}
+                      onChange={(e) => setNumberInput(e.target.value)}
+                      placeholder="+54 9 11 2577-7901"
+                      className="w-44 rounded-md border border-amber-300 px-2 py-1 text-xs text-slate-800 focus:border-amber-500 focus:outline-none"
+                    />
+                    <button
+                      onClick={() => captureNumber(numberInput)}
+                      disabled={numberState === "saving" || !numberInput.trim()}
+                      className="rounded-md bg-amber-500 px-3 py-1 text-xs font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
+                    >
+                      {numberState === "saving" ? "Guardando…" : "Guardar número"}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
