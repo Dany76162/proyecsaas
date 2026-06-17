@@ -25,6 +25,12 @@ function getStageUi(stage: string) {
   return "bg-slate-100 text-slate-700";
 }
 
+function formatWowTime(minutes: number | null): string {
+  if (minutes === null) return "Sin dato";
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.round((minutes / 60) * 10) / 10} h`;
+}
+
 function YesNoBadge({ value }: { value: boolean }) {
   return (
     <span
@@ -92,6 +98,40 @@ export default async function PlatformActivationPage() {
         </div>
       </section>
 
+      {/* Time-to-WOW: del onboarding al primer lead (el momento WOW) */}
+      <section className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-6 shadow-sm">
+        <div className="flex flex-col gap-1.5">
+          <h2 className="text-lg font-bold text-slate-900">Tiempo al WOW</h2>
+          <p className="text-sm text-slate-500">
+            Del momento en que ven el onboarding al primer lead que crea la IA. Objetivo: menos de 10 minutos.
+          </p>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Llegaron al WOW</p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">{snapshot.summary.wowReachedCount}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Mediana</p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">
+              {formatWowTime(snapshot.summary.medianTimeToWowMinutes)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">En menos de 10 min</p>
+            <p className="mt-2 text-3xl font-extrabold text-emerald-700">
+              {snapshot.summary.wowUnder10MinCount}
+              {snapshot.summary.wowReachedCount > 0 && (
+                <span className="ml-1 text-base font-bold text-emerald-600">
+                  / {snapshot.summary.wowReachedCount}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-1.5">
           <h2 className="text-lg font-bold text-slate-900">Funnel de activación</h2>
@@ -142,6 +182,7 @@ export default async function PlatformActivationPage() {
                 <th className="px-5 py-3.5">Estado</th>
                 <th className="px-5 py-3.5">Onboarding</th>
                 <th className="px-5 py-3.5">Primer lead</th>
+                <th className="px-5 py-3.5">Tiempo al WOW</th>
                 <th className="px-5 py-3.5">Intervención</th>
                 <th className="px-5 py-3.5">Última actividad</th>
                 <th className="px-5 py-3.5">Tiempo a activación</th>
@@ -171,6 +212,15 @@ export default async function PlatformActivationPage() {
                   <td className="px-5 py-4">
                     <YesNoBadge value={org.firstLead} />
                   </td>
+                  <td className="px-5 py-4 text-xs font-semibold">
+                    {org.timeToWowMinutes === null ? (
+                      <span className="text-slate-400">Sin dato</span>
+                    ) : (
+                      <span className={org.timeToWowMinutes <= 10 ? "text-emerald-600" : "text-slate-600"}>
+                        {formatWowTime(org.timeToWowMinutes)}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-5 py-4">
                     <YesNoBadge value={org.firstHumanIntervention} />
                   </td>
@@ -195,7 +245,7 @@ export default async function PlatformActivationPage() {
 
               {snapshot.organizations.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center">
+                  <td colSpan={9} className="px-5 py-12 text-center">
                     <p className="text-base font-semibold text-slate-900">
                       Sin organizaciones para analizar
                     </p>

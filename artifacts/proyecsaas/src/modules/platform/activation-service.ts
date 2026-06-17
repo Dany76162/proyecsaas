@@ -26,6 +26,8 @@ export type ActivationOrgItem = {
   firstHumanInterventionAt: string | null;
   activated: boolean;
   timeToActivationHours: number | null;
+  /** Minutos entre "onboarding visto" y el primer lead (el momento WOW). */
+  timeToWowMinutes: number | null;
   lastActivityAt: string | null;
   actionLabel: string;
   actionHref: string;
@@ -38,6 +40,12 @@ export type PlatformActivationSnapshot = {
     firstLeadCount: number;
     firstHumanInterventionCount: number;
     activatedCount: number;
+    /** Orgs que llegaron al WOW (primer lead luego de ver el onboarding). */
+    wowReachedCount: number;
+    /** De esas, cuántas en menos de 10 minutos. */
+    wowUnder10MinCount: number;
+    /** Mediana del time-to-WOW en minutos (null si nadie llegó). */
+    medianTimeToWowMinutes: number | null;
   };
   funnel: Array<{
     key: "onboarding" | "lead" | "human";
@@ -63,6 +71,29 @@ function hoursBetween(start: Date | null, end: Date | null): number | null {
   }
 
   return Math.round((diffMs / 36e5) * 10) / 10;
+}
+
+function minutesBetween(start: Date | null, end: Date | null): number | null {
+  if (!start || !end) {
+    return null;
+  }
+
+  const diffMs = end.getTime() - start.getTime();
+  if (diffMs < 0) {
+    return null;
+  }
+
+  return Math.round((diffMs / 6e4) * 10) / 10;
+}
+
+function median(values: number[]): number | null {
+  if (values.length === 0) {
+    return null;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const value = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  return Math.round(value * 10) / 10;
 }
 
 function getActivationStage(input: {
@@ -281,6 +312,7 @@ export async function getPlatformActivationSnapshot(): Promise<PlatformActivatio
         firstHumanInterventionAt: toIsoString(firstHumanInterventionAt),
         activated: Boolean(firstHumanInterventionAt),
         timeToActivationHours: hoursBetween(onboardingViewedAt, firstHumanInterventionAt),
+        timeToWowMinutes: minutesBetween(onboardingViewedAt, firstLeadAt),
         lastActivityAt: toIsoString(lastActivityAt),
         actionLabel: action.actionLabel,
         actionHref: action.actionHref,
@@ -305,6 +337,13 @@ export async function getPlatformActivationSnapshot(): Promise<PlatformActivatio
   ).length;
   const activatedCount = organizationItems.filter((item) => item.activated).length;
 
+  const wowTimes = organizationItems
+    .map((item) => item.timeToWowMinutes)
+    .filter((value): value is number => value !== null);
+  const wowReachedCount = wowTimes.length;
+  const wowUnder10MinCount = wowTimes.filter((value) => value <= 10).length;
+  const medianTimeToWowMinutes = median(wowTimes);
+
   const toPercent = (count: number) =>
     totalOrganizations > 0 ? Math.round((count / totalOrganizations) * 100) : 0;
 
@@ -315,6 +354,9 @@ export async function getPlatformActivationSnapshot(): Promise<PlatformActivatio
       firstLeadCount,
       firstHumanInterventionCount,
       activatedCount,
+      wowReachedCount,
+      wowUnder10MinCount,
+      medianTimeToWowMinutes,
     },
     funnel: [
       {
