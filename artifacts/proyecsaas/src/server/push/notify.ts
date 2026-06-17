@@ -25,6 +25,28 @@ export async function notifyNewLead(organizationId: string, leadName: string): P
 }
 
 /**
+ * Notifica (web push) que un prospecto se calificó como caliente / muy
+ * interesado, para que la inmobiliaria pueda intervenir. Best-effort.
+ * No pausa la IA: es solo un aviso (la IA sigue atendiendo).
+ */
+export async function notifyHotLead(
+  organizationId: string,
+  orgSlug: string,
+  leadName: string,
+  summary: string,
+): Promise<void> {
+  try {
+    await sendPushToOrganization(organizationId, {
+      title: "🔥 Prospecto caliente",
+      body: `${leadName || "Un interesado"} — ${summary}`,
+      url: `/${orgSlug}/conversations`,
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
+/**
  * Notifica (web push) que se agendó una visita. Best-effort.
  */
 export async function notifyVisitScheduled(

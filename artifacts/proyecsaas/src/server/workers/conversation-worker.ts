@@ -44,7 +44,7 @@ import {
   VisitAutomationError,
 } from "@/modules/visits/service";
 
-import { notifyNewLead } from "@/server/push/notify";
+import { notifyNewLead, notifyHotLead } from "@/server/push/notify";
 
 import { getQueueConnection } from "@/server/queues/connection";
 import {
@@ -1012,6 +1012,26 @@ export async function processWhatsAppInboundJob(
         entityId: result.conversation.id,
       },
     });
+
+    // Push de "prospecto caliente" a la app móvil — solo la primera vez que la
+    // conversación se flaguea (evita spam). No pausa la IA.
+    if (!result.conversation.followUpActive && org?.slug) {
+      const prefs = decision.extractedPreferences;
+      const summary =
+        [
+          prefs?.zones?.[0] || null,
+          prefs?.budget ? `presup. ${prefs.budget}` : null,
+          decision.leadTemperature === "hot" ? "muy interesado" : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || followUpReason;
+      await notifyHotLead(
+        targetOrgId,
+        org.slug,
+        result.conversation.participantName || participantPhone,
+        summary,
+      ).catch(() => {});
+    }
   }
 
   return {
