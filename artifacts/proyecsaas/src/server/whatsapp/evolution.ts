@@ -145,6 +145,48 @@ export async function logoutEvolutionInstance(instanceName: string) {
 }
 
 /**
+ * Lee la configuración de webhook que Evolution tiene para una instancia.
+ * Read-only: sirve para diagnosticar si los mensajes entrantes se reenvían.
+ */
+export async function getEvolutionWebhook(instanceName: string) {
+  try {
+    const data = await request(`/webhook/find/${instanceName}`);
+    return {
+      ok: true as const,
+      url: data?.url ?? data?.webhook?.url ?? null,
+      enabled: data?.enabled ?? data?.webhook?.enabled ?? null,
+      events: data?.events ?? data?.webhook?.events ?? null,
+    };
+  } catch (error: any) {
+    return { ok: false as const, error: error?.message ?? String(error) };
+  }
+}
+
+/**
+ * (Re)configura el webhook de una instancia existente para que Evolution
+ * reenvíe los mensajes entrantes a la app. Formato Evolution v2.
+ */
+export async function setEvolutionWebhook(instanceName: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.WEBHOOK_GLOBAL_URL;
+  if (!appUrl) {
+    throw new EvolutionApiError("NEXT_PUBLIC_APP_URL no está configurada; no se puede armar la URL del webhook.");
+  }
+  const webhookUrl = `${appUrl.replace(/\/$/, "")}/api/webhooks/whatsapp/evolution`;
+
+  return await request(`/webhook/set/${instanceName}`, {
+    method: "POST",
+    body: JSON.stringify({
+      webhook: {
+        enabled: true,
+        url: webhookUrl,
+        webhookByEvents: true,
+        events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "QRCODE_UPDATED"],
+      },
+    }),
+  });
+}
+
+/**
  * Sends a text message via Evolution API.
  */
 export async function sendEvolutionMessage(instanceName: string, to: string, text: string) {

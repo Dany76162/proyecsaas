@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/server/auth/session";
 import { prisma } from "@/server/db/prisma";
 import { getAvailableChannels } from "@/modules/agents/service";
+import { getEvolutionWebhook } from "@/server/whatsapp/evolution";
 
 /**
  * Diagnóstico read-only del estado de WhatsApp + agentes del usuario.
@@ -65,6 +66,16 @@ export async function GET() {
       .count({ where: { organizationId: orgId } })
       .catch(() => null);
 
+    // Estado real del webhook en Evolution para cada instancia (read-only).
+    const evolutionWebhooks: Record<string, unknown> = {};
+    if (Array.isArray(rawChannels)) {
+      for (const ch of rawChannels) {
+        if (ch.provider === "EVOLUTION_API" && ch.instanceName) {
+          evolutionWebhooks[ch.instanceName] = await getEvolutionWebhook(ch.instanceName);
+        }
+      }
+    }
+
     orgs.push({
       slug: m.organization.slug,
       role: m.role,
@@ -73,11 +84,20 @@ export async function GET() {
       rawChannels,
       availableChannels: available,
       conversationCount: conversations,
+      evolutionWebhooks,
     });
   }
 
+  const env = {
+    appUrlSet: Boolean(process.env.NEXT_PUBLIC_APP_URL?.trim()),
+    appUrl: process.env.NEXT_PUBLIC_APP_URL?.trim() ?? null,
+    webhookGlobalUrlSet: Boolean(process.env.WEBHOOK_GLOBAL_URL?.trim()),
+    evolutionConfigured:
+      Boolean(process.env.EVOLUTION_API_URL?.trim()) && Boolean(process.env.EVOLUTION_API_KEY?.trim()),
+  };
+
   return NextResponse.json(
-    { userEmail: user.email, now: new Date().toISOString(), orgs },
+    { userEmail: user.email, now: new Date().toISOString(), env, orgs },
     { status: 200 },
   );
 }
