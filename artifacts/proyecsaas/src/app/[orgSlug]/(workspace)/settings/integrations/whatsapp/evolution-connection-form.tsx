@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { 
-  getEvolutionQrAction, 
-  checkEvolutionStatusAction, 
-  disconnectEvolutionAction 
+import {
+  getEvolutionQrAction,
+  checkEvolutionStatusAction,
+  disconnectEvolutionAction,
+  resubscribeWhatsappWebhookAction
 } from "./actions";
 
 type Props = {
@@ -18,6 +19,29 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [webhookState, setWebhookState] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [webhookMsg, setWebhookMsg] = useState<string | null>(null);
+
+  const activateWebhook = useCallback(async () => {
+    setWebhookState("loading");
+    setWebhookMsg(null);
+    try {
+      const res = await resubscribeWhatsappWebhookAction(orgSlug);
+      setWebhookState(res.success ? "ok" : "error");
+      setWebhookMsg(res.message);
+    } catch {
+      setWebhookState("error");
+      setWebhookMsg("No se pudo activar la recepción de mensajes.");
+    }
+  }, [orgSlug]);
+
+  // Al abrir la página con el WhatsApp ya conectado, asegurar el webhook de
+  // recepción (autorrepara instancias conectadas que quedaron sin webhook).
+  useEffect(() => {
+    if (status === "ACTIVE" && webhookState === "idle") {
+      void activateWebhook();
+    }
+  }, [status, webhookState, activateWebhook]);
 
   const fetchQr = useCallback(async () => {
     setLoading(true);
@@ -85,6 +109,17 @@ export function EvolutionConnectionForm({ orgSlug, initialStatus = "INACTIVE" }:
             <div>
               <p className="text-sm font-bold text-emerald-950">WhatsApp Conectado</p>
               <p className="text-xs text-emerald-700">Tu número personal está vinculado y la IA está activa.</p>
+              <div className="mt-1.5 text-xs font-semibold">
+                {webhookState === "loading" && <span className="text-slate-500">Activando recepción de mensajes…</span>}
+                {webhookState === "ok" && <span className="text-emerald-700">✓ Recepción de mensajes activa</span>}
+                {webhookState === "error" && (
+                  <span className="text-rose-600">
+                    ⚠ La recepción de mensajes no quedó activa.{" "}
+                    <button onClick={activateWebhook} className="underline hover:text-rose-700">Reintentar</button>
+                    {webhookMsg ? <span className="block font-normal text-rose-500">{webhookMsg}</span> : null}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           {!showDisconnectConfirm ? (

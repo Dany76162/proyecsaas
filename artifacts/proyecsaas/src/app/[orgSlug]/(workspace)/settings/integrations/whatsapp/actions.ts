@@ -12,12 +12,14 @@ import {
   MetaWhatsAppValidationError,
   validateWhatsAppCloudNumber,
 } from "@/server/whatsapp/meta";
-import { 
-  createEvolutionInstance, 
-  getEvolutionQrCode, 
+import {
+  createEvolutionInstance,
+  getEvolutionQrCode,
   getEvolutionInstanceStatus,
   getEvolutionInstanceDetails,
-  logoutEvolutionInstance 
+  getEvolutionWebhook,
+  setEvolutionWebhook,
+  logoutEvolutionInstance
 } from "@/server/whatsapp/evolution";
 
 
@@ -357,15 +359,27 @@ export async function checkEvolutionStatusAction(orgSlug: string) {
       
       // Mark others as inactive
       await prisma.whatsAppChannel.updateMany({
-        where: { 
+        where: {
           organizationId: membership.organization.id,
           NOT: { instanceName }
         },
-        data: { 
+        data: {
           status: "INACTIVE",
-          isPrimary: false 
+          isPrimary: false
         }
       });
+
+      // Asegurar el webhook para que Evolution reenvíe los mensajes entrantes
+      // (sin esto, el agente nunca recibe los mensajes). Best-effort.
+      try {
+        await setEvolutionWebhook(instanceName);
+        await prisma.whatsAppChannel.update({
+          where: { instanceName },
+          data: { webhookSubscribed: true },
+        });
+      } catch (webhookError) {
+        console.error("[checkEvolutionStatusAction] No se pudo configurar el webhook:", webhookError);
+      }
 
       revalidatePath(`/${orgSlug}/settings/integrations/whatsapp`);
     }
@@ -373,6 +387,58 @@ export async function checkEvolutionStatusAction(orgSlug: string) {
     return { success: true, status };
   } catch (error) {
     return { success: false, status: "ERROR" };
+  }
+}
+
+/**
+ * (Re)activa el webhook de la instancia Evolution conectada para que los
+ * mensajes entrantes lleguen a la app (Inbox IA + respuesta del agente).
+ * Para canales ya conectados que quedaron sin webhook. Confirma leyendo el
+ * webhook de vuelta antes de marcar webhookSubscribed.
+ */
+export async function resubscribeWhatsappWebhookAction(
+  orgSlug: string,
+): Promise<{ success: boolean; message: string; url?: string | null }> {
+  try {
+    const { membership } = await requireOrganizationMembership(orgSlug);
+    assertMinimumRole(membership.role, MembershipRole.ADMIN);
+
+    const channel = await prisma.whatsAppChannel.findFirst({
+      where: {
+        organizationId: membership.organization.id,
+        provider: "EVOLUTION_API",
+        instanceName: { not: null },
+      },
+      select: { instanceName: true },
+    });
+
+    if (!channel?.instanceName) {
+      return { success: false, message: "No encontramos un WhatsApp conectado por QR para esta cuenta." };
+    }
+
+    await setEvolutionWebhook(channel.instanceName);
+
+    // Confirmar que Evolution efectivamente quedó con el webhook configurado.
+    const check = await getEvolutionWebhook(channel.instanceName);
+    if (!check.ok || !check.url) {
+      return {
+        success: false,
+        message: "Se intentó configurar el webhook pero Evolution no lo confirmó. Reintentá en unos segundos.",
+      };
+    }
+
+    await prisma.whatsAppChannel.updateMany({
+      where: { organizationId: membership.organization.id, instanceName: channel.instanceName },
+      data: { webhookSubscribed: true },
+    });
+
+    revalidatePath(`/${orgSlug}/settings/integrations/whatsapp`);
+    return { success: true, message: "Recepción de mensajes activada.", url: check.url };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "No se pudo activar la recepción de mensajes.",
+    };
   }
 }
 
