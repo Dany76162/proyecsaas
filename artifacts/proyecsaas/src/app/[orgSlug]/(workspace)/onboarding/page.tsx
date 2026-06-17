@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
 import { BusinessTypePrompt } from "@/components/onboarding/business-type-prompt";
+import { ExpressPropertyDialog } from "@/components/onboarding/express-property-dialog";
 import { getLeadSummary } from "@/modules/leads/service";
 import {
   getOrganizationWorkspace,
@@ -175,6 +176,19 @@ export default async function WorkspaceOnboardingPage({
       )}
 
       <OnboardingStepsList orgSlug={orgSlug} steps={steps} />
+
+      {!inventoryReady && businessType !== "DESARROLLADORA" && (
+        <section className="mt-6 flex flex-col gap-4 rounded-[1.75rem] border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-soft lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500">Atajo</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-950">Publicá tu primera propiedad en 1 minuto</h2>
+            <p className="mt-1 max-w-xl text-sm font-medium leading-relaxed text-slate-500">
+              Cargá lo mínimo y queda disponible al instante para que tu agente IA la ofrezca. Las fotos y el resto los completás después.
+            </p>
+          </div>
+          <ExpressPropertyDialog orgSlug={orgSlug} />
+        </section>
+      )}
 
       <section className="mt-12 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
