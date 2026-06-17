@@ -955,7 +955,10 @@ export async function processWhatsAppInboundJob(
           followUpActiveAt: new Date(),
           nextBestAction: decision.nextBestAction,
           nextBestActionAt: new Date(),
-          isHumanControlled: true,
+          // NO pausar la IA acá: "sugerir intervención" ≠ "callar la IA".
+          // La IA sigue respondiendo/calificando; isHumanControlled se setea
+          // solo cuando un humano toca "Tomar control", o ante un [ESCALATE]
+          // explícito (cliente pide persona) en el agent-pipeline.
         },
       }),
     ]);
