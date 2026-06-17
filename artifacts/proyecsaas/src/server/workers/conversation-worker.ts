@@ -564,6 +564,7 @@ export async function processWhatsAppInboundJob(
         etapaNombre: true,
         destino: true,
         frontMeters: true,
+        backMeters: true,
         Development: {
           select: { name: true, city: true },
         },
@@ -598,6 +599,13 @@ export async function processWhatsAppInboundJob(
           .filter(Boolean)
           .find((kw) => normalizeForKeyword(latestInboundBody).includes(kw))
       : undefined;
+
+  // Base pública para links absolutos (WhatsApp necesita la URL completa) y
+  // helpers para redondear medidas (evitar decimales largos tipo 550.00000005).
+  const appBase = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+  const absUrl = (path: string | null) => (path ? `${appBase}${path}` : null);
+  const roundM2 = (v: number | null) => (v != null ? Math.round(v) : null);
+  const roundM = (v: number | null) => (v != null ? Math.round(v * 10) / 10 : null);
 
   let decision: AutomationDecision;
 
@@ -647,12 +655,10 @@ export async function processWhatsAppInboundJob(
           status: propertyMatch.property.status,
           priceCents: propertyMatch.property.priceCents,
           currency: propertyMatch.property.currency,
-          publicUrl: orgRecord?.slug
-            ? `/cat/${orgRecord.slug}/${propertyMatch.property.id}`
-            : null,
+          publicUrl: absUrl(orgRecord?.slug ? `/cat/${orgRecord.slug}/${propertyMatch.property.id}` : null),
         }
       : null,
-    catalogUrl: orgRecord?.slug ? `/cat/${orgRecord.slug}` : null,
+    catalogUrl: absUrl(orgRecord?.slug ? `/cat/${orgRecord.slug}` : null),
     propertyMatch: {
       status: propertyMatch.trace.status,
       score: propertyMatch.trace.score,
@@ -695,16 +701,15 @@ export async function processWhatsAppInboundJob(
       lotNumber: lot.lotNumber,
       developmentName: lot.Development.name,
       developmentCity: lot.Development.city,
-      areaSqm: lot.areaSqm,
+      areaSqm: roundM2(lot.areaSqm),
       priceCents: lot.priceCents,
       currency: lot.currency,
       manzana: lot.manzana,
       etapaNombre: lot.etapaNombre,
       destino: lot.destino,
-      frontMeters: lot.frontMeters,
-      publicUrl: orgRecord?.slug
-        ? `/cat/${orgRecord.slug}/developments/${lot.developmentId}/lots/${lot.id}`
-        : null,
+      frontMeters: roundM(lot.frontMeters),
+      backMeters: roundM(lot.backMeters),
+      publicUrl: absUrl(orgRecord?.slug ? `/cat/${orgRecord.slug}/developments/${lot.developmentId}/lots/${lot.id}` : null),
     })),
   }, { organizationId: targetOrgId, db: prisma });
   } // end else (no escalation keyword)
