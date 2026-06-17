@@ -592,6 +592,7 @@ export async function processWhatsAppInboundJob(
               amenities: true,
               description: true,
               operationType: true,
+              services: true,
             },
           })
           .catch(() => null)
@@ -683,6 +684,7 @@ export async function processWhatsAppInboundJob(
           parkingSpots: propertyDetail?.parkingSpots ?? null,
           amenities: propertyDetail?.amenities ?? null,
           description: propertyDetail?.description ?? null,
+          services: propertyDetail?.services ?? null,
           publicUrl: absUrl(orgRecord?.slug ? `/cat/${orgRecord.slug}/${propertyMatch.property.id}` : null),
         }
       : null,

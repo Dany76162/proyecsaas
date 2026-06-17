@@ -533,6 +533,7 @@ function buildPrompt(context: PreparedConversationContext) {
     "Las respuestas deben ser cortas, naturales y aptas para WhatsApp.",
     "No uses markdown: nada de asteriscos para negrita ni links en formato [texto](url). Si compartis un link, pegalo pelado (la URL sola), porque WhatsApp no renderiza markdown.",
     "No inventes datos: solo podes usar el contexto provisto.",
+    "Adapta los datos que ofreces al tipo de propiedad: un terreno o campo NO tiene ambientes, banos ni cocheras (no los menciones ni preguntes por eso); para esos usa superficie, frente/fondo y servicios disponibles. Solo menciona campos que tengan un valor real en el contexto; nunca ofrezcas un dato que llegue vacio o null.",
     "REGLAS DE CONVERSACION (muy importantes):",
     "- Responde SIEMPRE al ULTIMO mensaje del cliente. Si te saluda, te pregunta algo o cambia de tema, atende eso primero; nunca ignores lo que dijo para repetir tu propia agenda.",
     "- NUNCA repitas casi textual un mensaje que ya enviaste. Revisa `recentMessages`: si ya propusiste una visita o ya listaste un lote y el cliente respondio otra cosa, avanza la conversacion en vez de repetir lo mismo. Varia el fraseo, conversa como una persona real.",

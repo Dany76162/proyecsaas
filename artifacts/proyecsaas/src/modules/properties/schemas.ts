@@ -80,6 +80,7 @@ export const updatePropertySchema = z.object({
   professionalApt: z.boolean(),
   creditApt: z.boolean(),
   condition: z.preprocess(emptyStringToNull, z.string().trim().max(50).nullable()),
+  services: z.preprocess(emptyStringToNull, z.string().trim().max(300).nullable()),
   // Descripción y multimedia
   description: z.preprocess(emptyStringToNull, z.string().trim().max(4000).nullable()),
   amenities: z.preprocess(emptyStringToNull, z.string().trim().max(500).nullable()),

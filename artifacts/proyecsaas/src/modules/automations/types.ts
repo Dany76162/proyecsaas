@@ -36,6 +36,7 @@ export type PreparedConversationContext = {
         parkingSpots?: number | null;
         amenities?: string | null;
         description?: string | null;
+        services?: string | null;
         publicUrl?: string | null;
       }
     | null;

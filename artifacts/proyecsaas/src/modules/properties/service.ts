@@ -171,6 +171,7 @@ export async function getPropertyDetail(
       professionalApt: true,
       creditApt: true,
       condition: true,
+      services: true,
       organization: true,
       interestedLeads: {
         include: {

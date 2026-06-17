@@ -2,20 +2,37 @@
 
 import { useEffect, useState } from 'react';
 
-// Tipos que ocultan ambientes/dorm/banos/mascotas
-const NON_RESIDENTIAL = new Set([
-  'Terreno', 'Campo', 'Garage', 'Boveda, nicho o parcela', 'Cama nautica',
-  'Bóveda, nicho o parcela', 'Cama náutica',
-  'Bodega-Galpon', 'Bodega-Galpón', 'Deposito', 'Depósito',
-  'Local comercial', 'Oficina comercial', 'Consultorio', 'Fondo de comercio',
-]);
+// ── Perfiles de campos por tipo de propiedad ─────────────────────────────────
+// Cada tipo entra en un perfil y cada perfil muestra solo los campos que le
+// corresponden. Asi un terreno no muestra baños/cocheras, un campo va en
+// hectareas, un local no muestra dormitorios, etc.
+type Profile = 'RESIDENCIAL' | 'COMERCIAL' | 'SUELO' | 'CAMPO' | 'ESPECIAL';
 
-// Tipos que son puro suelo (ocultan ademas sup cubierta, año, estado)
-const LAND = new Set([
-  'Terreno', 'Campo',
-  'Boveda, nicho o parcela', 'Bóveda, nicho o parcela',
-  'Cama nautica', 'Cama náutica',
-]);
+const PROFILE_BY_TYPE: Record<string, Profile> = {
+  'Departamento': 'RESIDENCIAL',
+  'Casa': 'RESIDENCIAL',
+  'PH': 'RESIDENCIAL',
+  'Quinta vacacional': 'RESIDENCIAL',
+  'Hotel': 'RESIDENCIAL',
+  'Edificio': 'RESIDENCIAL',
+  'Desarrollo horizontal': 'RESIDENCIAL',
+  'Desarrollo vertical': 'RESIDENCIAL',
+  'Local comercial': 'COMERCIAL',
+  'Oficina comercial': 'COMERCIAL',
+  'Consultorio': 'COMERCIAL',
+  'Fondo de comercio': 'COMERCIAL',
+  'Bodega-Galpón': 'COMERCIAL',
+  'Depósito': 'COMERCIAL',
+  'Terreno': 'SUELO',
+  'Campo': 'CAMPO',
+  'Garage': 'ESPECIAL',
+  'Bóveda, nicho o parcela': 'ESPECIAL',
+  'Cama náutica': 'ESPECIAL',
+};
+
+function getProfile(propType: string): Profile {
+  return PROFILE_BY_TYPE[propType] ?? 'RESIDENCIAL';
+}
 
 type Props = {
   initialPropertyType: string;
@@ -31,6 +48,7 @@ type Props = {
   professionalApt: boolean;
   creditApt: boolean;
   condition: string | null;
+  services: string | null;
   inputClass: string;
   labelClass: string;
 };
@@ -49,13 +67,17 @@ export function PropertyCharacteristicsSection({
   professionalApt,
   creditApt,
   condition,
+  services,
   inputClass,
   labelClass,
 }: Props) {
   const [propType, setPropType] = useState(initialPropertyType || '');
+  // Para CAMPO: el usuario carga hectareas; guardamos m² (1 ha = 10.000 m²).
+  const [hectares, setHectares] = useState<string>(
+    surfaceM2 != null ? String(surfaceM2 / 10000) : '',
+  );
 
   useEffect(() => {
-    // Leer el select de tipo de propiedad del formulario del Server Component
     const sel = document.getElementById('property-type-select') as HTMLSelectElement | null;
     if (!sel) return;
     setPropType(sel.value);
@@ -64,131 +86,106 @@ export function PropertyCharacteristicsSection({
     return () => sel.removeEventListener('change', handler);
   }, []);
 
-  const isLand = LAND.has(propType);
-  const isNonResidential = NON_RESIDENTIAL.has(propType);
+  const profile = getProfile(propType);
+  const isResidencial = profile === 'RESIDENCIAL';
+  const isComercial = profile === 'COMERCIAL';
+  const isSuelo = profile === 'SUELO';
+  const isCampo = profile === 'CAMPO';
 
-  const surfaceLabel = isLand
-    ? 'Superficie (m²) — 1 ha = 10.000 m²'
-    : 'Superficie (m²)';
-  const totalLabel = isLand
-    ? 'Superficie Total del Lote (m²)'
-    : 'Superficie Total (m²)';
+  const showRoomsBeds = isResidencial; // ambientes/dormitorios
+  const showBathrooms = isResidencial || isComercial;
+  const showParking = isResidencial || isComercial;
+  const showCovered = isResidencial || isComercial;
+  const showYearCondition = isResidencial || isComercial;
+  const showServices = isSuelo || isCampo;
+  const showPets = isResidencial;
+  const showProfessional = isComercial;
 
   return (
     <>
       <div className='grid gap-4 sm:grid-cols-3'>
-        {/* Ambientes — solo residencial */}
-        {!isNonResidential && (
-          <div>
-            <label className={labelClass}>Ambientes</label>
-            <input
-              name='rooms'
-              type='number'
-              min='0'
-              defaultValue={rooms ?? ''}
-              className={inputClass}
-              placeholder='Ej. 3'
-            />
-          </div>
+        {showRoomsBeds && (
+          <>
+            <div>
+              <label className={labelClass}>Ambientes</label>
+              <input name='rooms' type='number' min='0' defaultValue={rooms ?? ''} className={inputClass} placeholder='Ej. 3' />
+            </div>
+            <div>
+              <label className={labelClass}>Dormitorios</label>
+              <input name='bedrooms' type='number' min='0' defaultValue={bedrooms ?? ''} className={inputClass} placeholder='Ej. 2' />
+            </div>
+          </>
         )}
 
-        {/* Dormitorios — solo residencial */}
-        {!isNonResidential && (
-          <div>
-            <label className={labelClass}>Dormitorios</label>
-            <input
-              name='bedrooms'
-              type='number'
-              min='0'
-              defaultValue={bedrooms ?? ''}
-              className={inputClass}
-              placeholder='Ej. 2'
-            />
-          </div>
-        )}
-
-        {/* Baños — solo residencial */}
-        {!isNonResidential && (
+        {showBathrooms && (
           <div>
             <label className={labelClass}>Baños</label>
-            <input
-              name='bathrooms'
-              type='number'
-              min='0'
-              defaultValue={bathrooms ?? ''}
-              className={inputClass}
-              placeholder='Ej. 1'
-            />
+            <input name='bathrooms' type='number' min='0' defaultValue={bathrooms ?? ''} className={inputClass} placeholder='Ej. 1' />
           </div>
         )}
 
-        {/* Superficie — siempre, label cambia */}
-        <div>
-          <label className={labelClass}>{surfaceLabel}</label>
-          <input
-            name='surfaceM2'
-            type='number'
-            min='0'
-            defaultValue={surfaceM2 ?? ''}
-            className={inputClass}
-            placeholder='Ej. 65'
-          />
-        </div>
+        {/* Superficie */}
+        {isCampo ? (
+          <div>
+            <label className={labelClass}>Superficie (hectáreas)</label>
+            <input
+              type='number'
+              min='0'
+              step='0.01'
+              value={hectares}
+              onChange={(e) => setHectares(e.target.value)}
+              className={inputClass}
+              placeholder='Ej. 50'
+            />
+            <input
+              type='hidden'
+              name='surfaceM2'
+              value={hectares ? String(Math.round(parseFloat(hectares) * 10000)) : ''}
+            />
+            <p className='mt-1 text-[10px] text-slate-400'>1 ha = 10.000 m²</p>
+          </div>
+        ) : (
+          <div>
+            <label className={labelClass}>Superficie (m²)</label>
+            <input name='surfaceM2' type='number' min='0' defaultValue={surfaceM2 ?? ''} className={inputClass} placeholder='Ej. 65' />
+          </div>
+        )}
 
-        {/* Superficie Cubierta — no aplica para terrenos/campos */}
-        {!isLand && (
+        {showCovered && (
           <div>
             <label className={labelClass}>Superficie Cubierta (m²)</label>
-            <input
-              name='coveredSurfaceM2'
-              type='number'
-              min='0'
-              defaultValue={coveredSurfaceM2 ?? ''}
-              className={inputClass}
-              placeholder='Ej. 60'
-            />
+            <input name='coveredSurfaceM2' type='number' min='0' defaultValue={coveredSurfaceM2 ?? ''} className={inputClass} placeholder='Ej. 60' />
           </div>
         )}
 
-        {/* Superficie Total — siempre, label cambia */}
-        <div>
-          <label className={labelClass}>{totalLabel}</label>
-          <input
-            name='totalSurfaceM2'
-            type='number'
-            min='0'
-            defaultValue={totalSurfaceM2 ?? ''}
-            className={inputClass}
-            placeholder='Ej. 65'
-          />
-        </div>
+        {/* Superficie total — para residencial/comercial/suelo (en campo va por hectareas) */}
+        {!isCampo && (
+          <div>
+            <label className={labelClass}>{isSuelo ? 'Superficie Total del Lote (m²)' : 'Superficie Total (m²)'}</label>
+            <input name='totalSurfaceM2' type='number' min='0' defaultValue={totalSurfaceM2 ?? ''} className={inputClass} placeholder='Ej. 65' />
+          </div>
+        )}
 
-        {/* Cocheras — siempre visible */}
-        <div>
-          <label className={labelClass}>Cocheras</label>
-          <input
-            name='parkingSpots'
-            type='number'
-            min='0'
-            defaultValue={parkingSpots ?? ''}
-            className={inputClass}
-            placeholder='Ej. 1'
-          />
-        </div>
+        {showParking && (
+          <div>
+            <label className={labelClass}>Cocheras</label>
+            <input name='parkingSpots' type='number' min='0' defaultValue={parkingSpots ?? ''} className={inputClass} placeholder='Ej. 1' />
+          </div>
+        )}
 
-        {/* Año de Construcción — no aplica para terrenos/campos */}
-        {!isLand && (
+        {showYearCondition && (
           <div>
             <label className={labelClass}>Año de Construcción</label>
-            <input
-              name='yearBuilt'
-              type='number'
-              min='1800'
-              max='2100'
-              defaultValue={yearBuilt ?? ''}
-              className={inputClass}
-              placeholder='Ej. 2015'
-            />
+            <input name='yearBuilt' type='number' min='1800' max='2100' defaultValue={yearBuilt ?? ''} className={inputClass} placeholder='Ej. 2015' />
+          </div>
+        )}
+
+        {/* Servicios — terrenos y campos */}
+        {showServices && (
+          <div className='sm:col-span-3'>
+            <label className={labelClass}>Servicios disponibles</label>
+            <input name='services' type='text' defaultValue={services ?? ''} className={inputClass} placeholder='Ej. Agua, luz, gas natural, cloacas, asfalto' />
+            <p className='mt-1 text-[10px] text-slate-400'>Separá con comas los servicios que llegan al lote.</p>
           </div>
         )}
       </div>
@@ -198,66 +195,40 @@ export function PropertyCharacteristicsSection({
           Aptitudes y Condiciones
         </h4>
         <div className='grid gap-4 sm:grid-cols-3'>
-          {/* Admite Mascotas — solo residencial */}
-          {!isNonResidential && (
+          {showPets && (
             <label className='flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50'>
-              <input
-                name='petsAllowed'
-                type='checkbox'
-                defaultChecked={petsAllowed}
-                className='mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500'
-              />
+              <input name='petsAllowed' type='checkbox' defaultChecked={petsAllowed} className='mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500' />
               <div>
                 <span className='font-medium'>Admite Mascotas</span>
-                <p className='text-xs text-slate-400 mt-0.5'>
-                  Permite animales domésticos en la propiedad.
-                </p>
+                <p className='text-xs text-slate-400 mt-0.5'>Permite animales domésticos en la propiedad.</p>
               </div>
             </label>
           )}
 
-          {/* Apto Profesional — siempre */}
-          <label className='flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50'>
-            <input
-              name='professionalApt'
-              type='checkbox'
-              defaultChecked={professionalApt}
-              className='mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500'
-            />
-            <div>
-              <span className='font-medium'>Apto Profesional</span>
-              <p className='text-xs text-slate-400 mt-0.5'>
-                Habilitado para uso comercial u oficina.
-              </p>
-            </div>
-          </label>
+          {showProfessional && (
+            <label className='flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50'>
+              <input name='professionalApt' type='checkbox' defaultChecked={professionalApt} className='mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500' />
+              <div>
+                <span className='font-medium'>Apto Profesional</span>
+                <p className='text-xs text-slate-400 mt-0.5'>Habilitado para uso comercial u oficina.</p>
+              </div>
+            </label>
+          )}
 
-          {/* Apto Crédito — siempre */}
+          {/* Apto Crédito — aplica a casi todo (compra con crédito) */}
           <label className='flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50'>
-            <input
-              name='creditApt'
-              type='checkbox'
-              defaultChecked={creditApt}
-              className='mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500'
-            />
+            <input name='creditApt' type='checkbox' defaultChecked={creditApt} className='mt-1 h-4 w-4 rounded border-slate-300 accent-brand-500' />
             <div>
               <span className='font-medium'>Apto Crédito</span>
-              <p className='text-xs text-slate-400 mt-0.5'>
-                Acepta compra mediante crédito hipotecario bancario.
-              </p>
+              <p className='text-xs text-slate-400 mt-0.5'>Acepta compra mediante crédito hipotecario bancario.</p>
             </div>
           </label>
         </div>
 
-        {/* Estado / Antigüedad — no aplica para terrenos/campos */}
-        {!isLand && (
+        {showYearCondition && (
           <div className='mt-4'>
             <label className={labelClass}>Estado / Antigüedad</label>
-            <select
-              name='condition'
-              defaultValue={condition ?? ''}
-              className={inputClass}
-            >
+            <select name='condition' defaultValue={condition ?? ''} className={inputClass}>
               <option value=''>Sin especificar</option>
               <option value='UNDER_CONSTRUCTION'>En construcción</option>
               <option value='NEW'>A estrenar</option>
@@ -269,7 +240,7 @@ export function PropertyCharacteristicsSection({
         )}
 
         <p className='mt-4 text-xs text-slate-400 text-center bg-slate-50 rounded-xl p-3 border border-slate-100/60'>
-          💡 Completar estos datos físicos y geográficos robustece la ficha pública, optimiza las búsquedas inteligentes del Agente IA en WhatsApp y garantiza una correcta categorización de cara al futuro mapa interactivo.
+          💡 Los campos se adaptan al tipo de propiedad. Completar estos datos robustece la ficha pública y optimiza las búsquedas del Agente IA en WhatsApp.
         </p>
       </div>
     </>

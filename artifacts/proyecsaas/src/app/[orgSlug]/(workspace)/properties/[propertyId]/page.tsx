@@ -434,6 +434,7 @@ export default async function PropertyDetailPage({
             professionalApt={property.professionalApt ?? false}
             creditApt={property.creditApt ?? false}
             condition={(property as any).condition ?? null}
+            services={(property as any).services ?? null}
             inputClass={inputClass}
             labelClass={labelClass}
           />

@@ -347,6 +347,8 @@ model Property {
   professionalApt   Boolean            @default(false)
   creditApt         Boolean            @default(false)
   condition         String?
+  // Servicios disponibles para terrenos/campos (agua, luz, gas, cloacas, etc.)
+  services          String?
 
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   conversations     Conversation[]     @relation("ConversationPropertyContext")
