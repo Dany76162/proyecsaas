@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
 import { 
   ArrowLeft, 
   MoreHorizontal, 
@@ -328,6 +329,14 @@ export function ConversationInbox({
       : conversations[0]?.id ?? null,
   );
   const [mobileShowDetail, setMobileShowDetail] = useState(false);
+
+  // Auto-refresco: re-trae las conversaciones cada 12s sin recargar la página
+  // ni perder la conversación seleccionada o lo que estés escribiendo.
+  const router = useRouter();
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 12000);
+    return () => clearInterval(id);
+  }, [router]);
 
   const prioritized = useMemo(() => {
     return [...conversations].sort((a, b) => {
