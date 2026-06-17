@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { SectionCard } from "@/components/workspace/section-card";
 import { StatusBadge } from "@/components/workspace/status-badge";
+import { BusinessTypePrompt } from "@/components/onboarding/business-type-prompt";
 import { getLeadSummary } from "@/modules/leads/service";
 import {
   getOrganizationWorkspace,
@@ -24,7 +25,36 @@ function buildOnboardingSteps(
     propertiesReady: boolean;
     tested: boolean;
   },
+  businessType: string | null,
 ) {
+  const isDeveloper = businessType === "DESARROLLADORA";
+  const isBoth = businessType === "AMBAS";
+
+  // Paso 4 adaptado al tipo de negocio (propiedad vs. desarrollo/loteo).
+  const inventoryStep = isDeveloper
+    ? {
+        title: "Cargá tu primer desarrollo",
+        description:
+          "Creá tu emprendimiento o loteo con su plano e inventario de lotes. Es lo que la IA va a ofrecer y mostrar en el masterplan público.",
+        href: `/${orgSlug}/developments`,
+        cta: "Cargar desarrollo",
+      }
+    : isBoth
+      ? {
+          title: "Cargá tu primera propiedad o desarrollo",
+          description:
+            "Creá una propiedad (precio, tipo y dirección) o un desarrollo con su plano. Activala como disponible y pública para que la IA la ofrezca en las conversaciones.",
+          href: `/${orgSlug}/properties`,
+          cta: "Cargar inventario",
+        }
+      : {
+          title: "Cargá tu primera propiedad",
+          description:
+            "Creá una propiedad con precio, tipo y dirección. Activala como disponible y pública para que la IA pueda ofrecerla en las conversaciones.",
+          href: `/${orgSlug}/properties`,
+          cta: "Cargar propiedad",
+        };
+
   return [
     {
       number: 1,
@@ -59,11 +89,10 @@ function buildOnboardingSteps(
     {
       number: 4,
       key: "propiedad",
-      title: "Cargá tu primera propiedad",
-      description:
-        "Creá una propiedad con precio, tipo y dirección. Activala como disponible y pública para que la IA pueda ofrecerla en las conversaciones.",
-      href: `/${orgSlug}/properties`,
-      cta: "Cargar propiedad",
+      title: inventoryStep.title,
+      description: inventoryStep.description,
+      href: inventoryStep.href,
+      cta: inventoryStep.cta,
       serverStatus: (status.propertiesReady ? "completed" : "pending") as "completed" | "pending",
     },
     {
@@ -71,9 +100,9 @@ function buildOnboardingSteps(
       key: "prueba",
       title: "Probá tu agente",
       description:
-        "Enviá un mensaje de prueba a tu WhatsApp y mirá cómo la IA responde y crea la oportunidad sola. Lo vas a ver en el Inbox IA. Este es el momento clave del sistema.",
-      href: `/${orgSlug}/conversations`,
-      cta: "Ir al Inbox IA",
+        "Enviá un mensaje de prueba a tu WhatsApp y mirá cómo la IA responde y crea la oportunidad sola. Te llevamos al Inbox IA apenas llegue el primer mensaje. Este es el momento clave del sistema.",
+      href: `/${orgSlug}/onboarding/probar`,
+      cta: "Probar mi agente",
       serverStatus: (status.tested ? "completed" : "pending") as "completed" | "pending",
     },
   ];
@@ -105,20 +134,46 @@ export default async function WorkspaceOnboardingPage({
     actorEmail: sessionUser?.email,
   });
 
-  const hasConversation = await prisma.conversation.count({
-    where: { organization: { slug: orgSlug } },
-  }) > 0;
-
-  const steps = buildOnboardingSteps(orgSlug, {
-    profileReady: setupStatus.profileComplete,
-    whatsappReady: setupStatus.whatsappConnected,
-    agentReady: setupStatus.agentConfigured,
-    propertiesReady: setupStatus.propertiesLoaded,
-    tested: hasConversation,
+  const orgMeta = await prisma.organization.findUnique({
+    where: { slug: orgSlug },
+    select: {
+      marketFocus: true,
+      _count: { select: { conversations: true, Development: true } },
+    },
   });
+
+  const businessType = orgMeta?.marketFocus ?? null;
+  const hasConversation = (orgMeta?._count.conversations ?? 0) > 0;
+  const hasDevelopment = (orgMeta?._count.Development ?? 0) > 0;
+
+  // El paso 4 se completa con propiedades o desarrollos según el tipo de negocio.
+  const inventoryReady =
+    businessType === "DESARROLLADORA"
+      ? hasDevelopment
+      : businessType === "AMBAS"
+        ? setupStatus.propertiesLoaded || hasDevelopment
+        : setupStatus.propertiesLoaded;
+
+  const steps = buildOnboardingSteps(
+    orgSlug,
+    {
+      profileReady: setupStatus.profileComplete,
+      whatsappReady: setupStatus.whatsappConnected,
+      agentReady: setupStatus.agentConfigured,
+      propertiesReady: inventoryReady,
+      tested: hasConversation,
+    },
+    businessType,
+  );
 
   return (
     <div className="mt-3 pb-20">
+      {!businessType && (
+        <div className="mb-6">
+          <BusinessTypePrompt orgSlug={orgSlug} />
+        </div>
+      )}
+
       <OnboardingStepsList orgSlug={orgSlug} steps={steps} />
 
       <section className="mt-12 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft">
