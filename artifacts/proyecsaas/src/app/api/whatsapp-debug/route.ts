@@ -66,6 +66,21 @@ export async function GET() {
       .count({ where: { organizationId: orgId } })
       .catch(() => null);
 
+    // Estado de la suscripción: las 3 compuertas que pueden frenar la respuesta
+    // de la IA aunque el mensaje entre (suspendida / IA pausada / cupo agotado).
+    const subscription = await prisma.subscription
+      .findUnique({
+        where: { organizationId: orgId },
+        select: {
+          status: true,
+          aiStatus: true,
+          aiMonthlyConversationLimit: true,
+          aiMonthlyConversationsUsed: true,
+          currentPeriodEnd: true,
+        },
+      })
+      .catch((e) => ({ error: String(e?.message ?? e) }));
+
     // Estado real del webhook en Evolution para cada instancia (read-only).
     const evolutionWebhooks: Record<string, unknown> = {};
     const evolutionNumbers: Record<string, unknown> = {};
@@ -86,6 +101,7 @@ export async function GET() {
       rawChannels,
       availableChannels: available,
       conversationCount: conversations,
+      subscription,
       evolutionWebhooks,
       evolutionNumbers,
     });
