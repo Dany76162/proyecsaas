@@ -106,9 +106,10 @@ export async function sendManualMessageAction(formData: FormData) {
       select: { id: true, participantPhone: true, leadId: true },
     }),
     prisma.whatsAppChannel.findFirst({
-      where: { organizationId: organization.id, status: "ACTIVE", provider: "WHATSAPP_CLOUD" },
+      // Cualquier canal activo (Evolution/QR o Meta Cloud), no solo Cloud.
+      where: { organizationId: organization.id, status: "ACTIVE" },
       orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-      select: { phoneNumberId: true, accessTokenEncrypted: true },
+      select: { provider: true, phoneNumberId: true, instanceName: true, accessTokenEncrypted: true },
     }),
   ]);
 
@@ -157,13 +158,19 @@ export async function sendManualMessageAction(formData: FormData) {
     recipientPhone: conversation.participantPhone ?? "",
     senderKind: "human",
     deliveryLink: `/${orgSlug}/conversations`,
-    channel: {
-      provider: "whatsapp",
-      phoneNumberId: whatsappChannel?.phoneNumberId ?? "",
-      accessToken: whatsappChannel?.accessTokenEncrypted
-        ? decryptToken(whatsappChannel.accessTokenEncrypted)
-        : undefined,
-    },
+    channel:
+      whatsappChannel?.provider === "EVOLUTION_API"
+        ? {
+            provider: "evolution",
+            instanceName: whatsappChannel.instanceName ?? "",
+          }
+        : {
+            provider: "whatsapp",
+            phoneNumberId: whatsappChannel?.phoneNumberId ?? "",
+            accessToken: whatsappChannel?.accessTokenEncrypted
+              ? decryptToken(whatsappChannel.accessTokenEncrypted)
+              : undefined,
+          },
   });
 
   await prisma.message.update({
