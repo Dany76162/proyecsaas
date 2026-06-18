@@ -92,12 +92,12 @@ export function WhatsAppTestPanel({
         {initialHasConversation ? (
           <span className="flex items-center gap-3 text-emerald-600">
             <CheckCircle2 className="h-5 w-5" />
-            Ya recibiste mensajes. Entrá al Inbox IA cuando quieras.
+            Ya recibiste mensajes. Entrá a la Bandeja IA cuando quieras.
           </span>
         ) : detected ? (
           <span className="flex items-center gap-3 text-emerald-600">
             <CheckCircle2 className="h-5 w-5" />
-            ¡Llegó tu primer mensaje! Llevándote al Inbox IA…
+            ¡Llegó tu primer mensaje! Llevándote a la Bandeja IA…
           </span>
         ) : (
           <span className="flex items-center gap-3 text-slate-500">
@@ -112,7 +112,7 @@ export function WhatsAppTestPanel({
           href={`/${orgSlug}/conversations`}
           className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-slate-800"
         >
-          Ir al Inbox IA ahora <ArrowRight className="h-4 w-4" />
+          Ir a la Bandeja IA ahora <ArrowRight className="h-4 w-4" />
         </Link>
         <Link
           href={`/${orgSlug}/onboarding`}

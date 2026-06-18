@@ -112,7 +112,7 @@ function ConversationDetail({
         <div className="flex items-center gap-2">
           {conv.leadId && (
             <Button asChild variant="outline" size="sm" className="text-[11px] font-extrabold uppercase tracking-widest h-9 px-4">
-              <Link href={`/${orgSlug}/leads/${conv.leadId}`}>Ficha Lead</Link>
+              <Link href={`/${orgSlug}/leads/${conv.leadId}`}>Ver oportunidad</Link>
             </Button>
           )}
           {isManager && <DeleteConversationButton orgSlug={orgSlug} conversationId={conv.id} />}

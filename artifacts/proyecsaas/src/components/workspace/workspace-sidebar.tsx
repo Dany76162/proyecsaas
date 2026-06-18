@@ -42,7 +42,7 @@ const OPERATION_NAV = [
   { label: "Bienvenida",     path: "/onboarding",   icon: Rocket },
   { label: "Enlaces de WhatsApp", path: "/captacion",    icon: Megaphone },
   { label: "Oportunidades",     path: "/leads",        icon: Users },
-  { label: "Inbox IA",          path: "/conversations",icon: MessageSquare },
+  { label: "Bandeja IA",        path: "/conversations",icon: MessageSquare },
   { label: "Visitas",        path: "/visits",       icon: Calendar },
   { label: "Propiedades",    path: "/properties",   icon: Building2 },
   { label: "Desarrollos",    path: "/developments",   icon: LandPlot },

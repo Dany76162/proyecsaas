@@ -102,7 +102,7 @@ function buildOnboardingSteps(
       key: "prueba",
       title: "Probá tu agente",
       description:
-        "Enviá un mensaje de prueba a tu WhatsApp y mirá cómo la IA responde y crea la oportunidad sola. Te llevamos al Inbox IA apenas llegue el primer mensaje. Este es el momento clave del sistema.",
+        "Enviá un mensaje de prueba a tu WhatsApp y mirá cómo la IA responde y crea la oportunidad sola. Te llevamos a la Bandeja IA apenas llegue el primer mensaje. Este es el momento clave del sistema.",
       href: `/${orgSlug}/onboarding/probar`,
       cta: "Probar mi agente",
       serverStatus: (status.tested ? "completed" : "pending") as "completed" | "pending",

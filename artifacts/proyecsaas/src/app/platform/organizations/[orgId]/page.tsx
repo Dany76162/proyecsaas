@@ -533,7 +533,7 @@ export default async function OrgAuditPage({
                     target="_blank"
                     className="inline-flex items-center gap-2 rounded-lg bg-indigo-50 border border-indigo-200 px-3.5 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 whitespace-nowrap shadow-sm"
                   >
-                    Ver en Inbox
+                    Ver en Bandeja
                     <ExternalLink className="w-3 h-3" />
                   </Link>
                 </div>
