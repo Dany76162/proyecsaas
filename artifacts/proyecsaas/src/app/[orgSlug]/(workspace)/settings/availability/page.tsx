@@ -340,14 +340,17 @@ export default async function AvailabilitySettingsPage({
           <div>
             <label className={labelClass}>Desarrollo / Loteo <span className="text-slate-400 font-normal">(opcional)</span></label>
             <select name="developmentId" defaultValue="" className={inputClass}>
-              <option value="">General – todos los desarrollos</option>
+              <option value="">General – aplica a TODOS los desarrollos</option>
               {developments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-[11px] text-slate-400">Para visitas a los lotes de un loteo (ej. Valles del Pino los sáb/dom).</p>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Elegí el desarrollo para que este horario aplique <strong>solo</strong> a sus lotes (ej. Valles del Pino los sáb/dom).{" "}
+              <span className="text-amber-500">«General» significa que el agente lo ofrece para cualquier desarrollo</span> — usalo solo si querés que valga en todos lados.
+            </p>
           </div>
 
           <div className="lg:col-span-3">
