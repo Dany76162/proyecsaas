@@ -213,7 +213,7 @@ export default async function HomePage() {
                 <div className="relative aspect-square overflow-hidden rounded-[2.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 shadow-2xl shadow-brand-500/10 dark:shadow-slate-950/50">
                   <Image
                     src="/landing/brand_final.png"
-                    alt="Identidad corporativa de Raices Pilot - Real Estate Company"
+                    alt="Identidad corporativa de Raíces Pilot"
                     fill
                     className="object-cover rounded-[2rem]"
                   />
@@ -349,7 +349,7 @@ export default async function HomePage() {
               {/* Texto explicativo */}
               <div className="max-w-xl">
                 <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-700 dark:text-brand-400 mb-6">
-                  Comienza Hoy
+                  Empezá hoy
                 </div>
                 <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl lg:text-5xl mb-6 leading-tight">
                   ¿Estás listo para modernizar tu inmobiliaria?

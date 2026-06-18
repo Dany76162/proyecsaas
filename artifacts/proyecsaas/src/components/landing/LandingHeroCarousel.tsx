@@ -62,7 +62,7 @@ const CHAT_SEQUENCE_1: Message[] = [
   {
     id: 4,
     sender: "ai",
-    text: "¡Sí, tiene cochera cubierta fija! Excelente noticia: acabo de agendar tu visita para el sábado a las 11:00 AM. Tu asesor comercial Daniel ya tiene agendado esperarte en la propiedad. ¿Te gustaría que te envíe la ubicación exacta por mapa?",
+    text: "¡Sí, tiene cochera cubierta fija! Te reservé el sábado a las 11:00 AM y tu asesor Daniel confirma la visita: te va a estar esperando en la propiedad. ¿Te paso la ubicación exacta por mapa?",
     timestamp: "17:41",
   },
   {
@@ -306,7 +306,7 @@ export function LandingHeroCarousel() {
             <div className="flex flex-col sm:flex-row items-center gap-4 pt-2 w-full max-w-full overflow-hidden">
               <Button size="lg" asChild className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold tracking-wide shadow-lg shadow-emerald-600/20 transform hover:scale-[1.01] active:scale-[0.99] transition duration-200 shrink-0 max-w-full">
                 <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full text-center py-3">
-                  <MessageSquare className="h-5 w-5 shrink-0" /> Probar Demo en WhatsApp
+                  <MessageSquare className="h-5 w-5 shrink-0" /> Probar demo por WhatsApp
                 </a>
               </Button>
               <Button variant="outline" size="lg" asChild className="w-full sm:w-auto border-white/10 hover:border-white/20 bg-white/[0.03] text-white hover:bg-white/[0.07] shrink-0 max-w-full">

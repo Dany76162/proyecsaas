@@ -154,7 +154,7 @@ Datos de la inmobiliaria:
       </div>
 
       <p className="text-[13px] text-slate-500 leading-relaxed max-w-lg mx-auto">
-        El acceso a la plataforma se habilita de forma controlada. Una vez aprobada la solicitud, el equipo podrá enviarte el link correspondiente para configurar tu cuenta.
+        El acceso a la plataforma se habilita de forma controlada. Una vez aprobada la solicitud, el equipo podrá enviarte el enlace correspondiente para configurar tu cuenta.
       </p>
     </div>
   );

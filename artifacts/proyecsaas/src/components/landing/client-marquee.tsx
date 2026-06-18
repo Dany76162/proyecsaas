@@ -87,7 +87,7 @@ export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientM
             </div>
             <div>
               <p className="text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase">Lanzamiento Oficial</p>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-0.5">Lunes, 25 de Mayo de 2026</p>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-0.5">Lunes, 25 de mayo de 2026</p>
             </div>
           </div>
 

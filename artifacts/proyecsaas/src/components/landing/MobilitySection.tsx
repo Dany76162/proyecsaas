@@ -37,9 +37,9 @@ export function MobilitySection() {
                           alt="Logo" 
                           className="h-4 w-4 object-contain brightness-0 invert" 
                         />
-                        RAICESPILOT
+                        RAÍCESPILOT
                       </div>
-                      <div className="text-[5px] opacity-60">Real Estate</div>
+                      <div className="text-[5px] opacity-60">Inmobiliaria</div>
                     </div>
                     
                     <div className="flex-1 py-3 px-2 space-y-4">
@@ -102,8 +102,8 @@ export function MobilitySection() {
                             Puesta en marcha <span className="opacity-60">4/5 completados</span>
                           </div>
                           <div className="space-y-1">
-                            <h4 className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Primeros pasos en Raices Pilot</h4>
-                            <h3 className="text-sm font-bold leading-tight max-w-[70%]">Configura tu inmobiliaria y empeza a convertir consultas en visitas</h3>
+                            <h4 className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Primeros pasos en Raíces Pilot</h4>
+                            <h3 className="text-sm font-bold leading-tight max-w-[70%]">Configurá tu inmobiliaria y empezá a convertir consultas en visitas</h3>
                           </div>
                           <div className="space-y-1">
                             <div className="flex justify-between text-[6px] font-bold">
@@ -135,7 +135,7 @@ export function MobilitySection() {
                                <div className="h-1.5 w-48 bg-slate-100 dark:bg-slate-800 rounded" />
                              </div>
                            </div>
-                           <div className="h-5 w-16 bg-brand-600 rounded flex items-center justify-center text-[6px] text-white font-bold">A configuración</div>
+                           <div className="h-5 w-16 bg-brand-600 rounded flex items-center justify-center text-[6px] text-white font-bold">Ir a configurar</div>
                         </div>
                       </div>
 
