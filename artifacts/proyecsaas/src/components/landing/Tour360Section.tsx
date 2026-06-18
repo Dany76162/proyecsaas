@@ -10,7 +10,7 @@ const TOUR_SCENES = [
   {
     kind: "Vivienda",
     label: "Casa modelo · Living",
-    img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop",
+    img: "/landing/tour/vivienda-360.jpg",
     chips: ["Living", "Cocina", "Dormitorio", "Exterior"],
   },
   {
