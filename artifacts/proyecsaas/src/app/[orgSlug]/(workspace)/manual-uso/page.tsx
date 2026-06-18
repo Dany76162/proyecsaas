@@ -29,9 +29,9 @@ const systemSteps = [
   },
   {
     step: "4",
-    title: "Agendado de visitas",
+    title: "Coordinación de visitas",
     description:
-      "Si el cliente quiere ver una propiedad, la IA propone turnos basados en tu disponibilidad configurada.",
+      "Si el cliente quiere visitar, la IA le ofrece SOLO los horarios que cargaste en Disponibilidad (por propiedad o por desarrollo). Cuando el cliente acepta un horario, la IA no confirma sola: te avisa, se pausa, y vos das el OK final. La visita queda agendada en la sección Visitas y en el CRM.",
   },
   {
     step: "5",
@@ -60,7 +60,7 @@ const commonErrors = [
   "No llegan mensajes: revisar integraciones de WhatsApp y estado del canal.",
   "La IA no responde: validar que el canal y el agente estén activos.",
   "No veo leads: revisar conversaciones recientes y filtros del panel.",
-  "El tour no se ve: verificar que el servicio de stitching esté activo y que la captura se haya completado correctamente (18 fotos).",
+  "El tour 360° no se ve: la imagen debe ser una panorámica equirectangular real (relación 2:1) subida desde 'Subir imagen panorámica'. En el celular el visor reescala solo las imágenes grandes para que carguen.",
   "La propiedad no aparece en el catálogo: verificar que el estado sea 'Disponible' y que 'Publicar esta propiedad' esté activado.",
   "El link del tour no funciona: la propiedad debe ser pública. Cambiar visibilidad desde la ficha de la propiedad.",
 ] as const;
