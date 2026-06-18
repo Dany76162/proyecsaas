@@ -145,7 +145,7 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - **Ficha del desarrollo (tab Info)**: secciones nuevas **"Oportunidades vinculadas"** + **"Agenda de visitas"** (como en la ficha de propiedad). Server page trae `Lead`/`Visit` por `developmentId`.
 - **Oportunidades**: muestra el nombre del desarrollo en vez de "Sin propiedad vinculada" para leads de loteo.
 - ✅ **Verificado runtime**: una visita coordinada vincula el lead al desarrollo (`developmentId` seteado), aparece en Oportunidades con el nombre del loteo, y la visita queda atada al desarrollo para su ficha.
-- Pendiente menor: en `getLeadDetail` (ficha de la oportunidad) todavía dice "Sin propiedad vinculada" cuando es desarrollo; mostrar el loteo ahí también (bajo impacto).
+- ✅ **Ficha de la oportunidad** (`getLeadDetail`): resuelve el nombre del desarrollo → botón "Ver desarrollo relacionado", el título cae al nombre del loteo (no "Sin propiedad vinculada") y suma actividad "Desarrollo vinculado". `developmentId/developmentName` agregados a `LeadListItem`/`LeadDetail`. Verificado runtime. + inglés residual del historial traducido ("Lead" → "Oportunidad", "Sin email asignado" → "Sin correo asignado").
 
 ---
 
