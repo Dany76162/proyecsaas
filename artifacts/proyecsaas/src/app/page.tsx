@@ -141,7 +141,7 @@ export default async function HomePage() {
               {
                 icon: Compass,
                 title: "Catálogo y fichas que venden",
-                desc: "Catálogo público, fotos, tours 360° y fichas completas para mostrar cada propiedad como se merece."
+                desc: "Catálogo público con fotos, tours 360° y ubicación en mapa interactivo —con zona aproximada opcional para proteger la operación—. Mostrás cada propiedad como se merece."
               },
               {
                 icon: Building,
