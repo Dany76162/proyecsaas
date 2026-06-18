@@ -261,11 +261,20 @@ export default async function PublicOrganizationCatalogPage({
                     key={dev.id} 
                     className="group overflow-hidden rounded-[2.2rem] border-2 border-blue-500/10 bg-[#0f172a] text-white shadow-lg transition-all duration-300 hover:shadow-2xl hover:border-blue-500/30 flex flex-col h-full hover:-translate-y-1.5"
                   >
-                    {/* Map/Satellite Image Placeholder */}
+                    {/* Imagen de portada del desarrollo (foto/render) o fallback visual */}
                     <div className="relative aspect-[4/3] bg-slate-950 overflow-hidden shrink-0 flex items-center justify-center">
+                      {dev.coverImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={dev.coverImageUrl}
+                          alt={dev.name}
+                          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="text-5xl opacity-40 group-hover:scale-110 transition duration-500 select-none">🗺️</div>
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent opacity-60 z-10" />
-                      <div className="text-5xl opacity-40 group-hover:scale-110 transition duration-500 select-none">🗺️</div>
-                      
+
                       {/* Active Masterplan Badge */}
                       <div className="absolute top-4 left-4 z-20">
                         <span className="rounded-full bg-blue-600 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-sm flex items-center gap-1.5">
