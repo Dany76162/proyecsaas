@@ -169,6 +169,12 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - ✅ Data real; las secciones CRM (Oportunidades + Agenda de visitas) de la paridad CRM ya se ven en la ficha.
 - 🖼️ **Imagen de portada elegible para la tarjeta** (`Development.coverImageUrl` + migración `20260618190000`): uploader "Imagen de portada (tarjeta) — foto, render o logo" en la ficha (Identidad de Marca). El card de la lista la muestra a sangre completa; fallback al logo sobre el color de marca, y luego gradiente + ícono. (Horarios de visita en ficha quedaron como ver + link, por decisión del usuario.)
 
+**Auditoría panel AGENTES IA (2026-06-18):**
+- ✅ Data real (`getAgentsForOrg`, `getAgentStatsForOrg`), form de edición y simulador "Probar agente" funcionales, todo en castellano. Sin componentes temporales.
+- 🔎 **Hallazgo de arquitectura — UN agente por inmobiliaria**: `AiAgent.organizationId @unique` + el worker lo busca por organización + la API hace `upsert`. O sea **el multi-agente NO está construido** (crear un 2º agente chocaría con la restricción). La cuota `maxAiAgents` y el cartel "contactá a soporte para habilitar más" eran **engañosos**.
+- 🩹 **Copy honesto**: reemplazado "Límite alcanzado. Para habilitar más agentes, contactá al soporte" → "Tu inmobiliaria opera con un agente IA que atiende todo tu inventario. Manejar varios agentes por zona o sector llegará próximamente."
+- 💡 **Respuesta al usuario**: un agente se banca 200+ propiedades sin confundirse (no las lee todas: matchea por zona/tipo/presupuesto y ofrece ~3 relevantes; nunca lo reservado/vendido). Multi-agente por sector solo tendría sentido con números de WhatsApp distintos por marca → es feature a construir (agente por canal): pendiente si el usuario lo pide.
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
