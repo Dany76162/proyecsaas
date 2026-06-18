@@ -998,11 +998,14 @@ export async function processWhatsAppInboundJob(
     const followUpReason =
       decision.followUpReason ?? "Automation flagged this conversation for follow-up.";
 
-    // Solo el handoff EXPLÍCITO ("derivar-a-asesor": el cliente pidió una persona
-    // o matcheó una palabra clave de derivación) pausa la IA. Los demás follow-ups
-    // (pedir horario, confirmar interés, lead caliente) NO la callan: la IA sigue
-    // respondiendo y calificando, y la alerta/notificación se manda igual.
+    // Pausan la IA: (a) handoff EXPLÍCITO ("derivar-a-asesor": el cliente pidió una
+    // persona o matcheó una palabra clave de derivación) y (b) confirmación de
+    // visita ("confirmar-visita-con-humano": el cliente aceptó un horario y el OK
+    // final lo da el humano). Los demás follow-ups (lead caliente, falta de info)
+    // NO la callan: la IA sigue respondiendo y calificando, y la alerta se manda igual.
     const isExplicitHandoff = decision.nextBestAction === "derivar-a-asesor";
+    const isVisitConfirm = decision.nextBestAction === "confirmar-visita-con-humano";
+    const pausesAi = isExplicitHandoff || isVisitConfirm;
 
     const [org] = await Promise.all([
       prisma.organization.findUnique({
@@ -1018,7 +1021,7 @@ export async function processWhatsAppInboundJob(
           followUpActiveAt: new Date(),
           nextBestAction: decision.nextBestAction,
           nextBestActionAt: new Date(),
-          isHumanControlled: isExplicitHandoff,
+          isHumanControlled: pausesAi,
         },
       }),
     ]);
@@ -1039,21 +1042,29 @@ export async function processWhatsAppInboundJob(
     // que la conversación se flaguea para follow-up, o (b) en el momento del
     // handoff (derivación) aunque ya estuviera flagueada. Deduplicado por la
     // transición de estado para no spamear.
-    const isHandoffTransition = isExplicitHandoff && !result.conversation.isHumanControlled;
+    const isHandoffTransition = pausesAi && !result.conversation.isHumanControlled;
     if ((!result.conversation.followUpActive || isHandoffTransition) && org?.slug) {
       const prefs = decision.extractedPreferences;
       const isHot = decision.leadTemperature === "hot";
-      const summary =
-        [
-          prefs?.zones?.[0] || null,
-          prefs?.budget ? `presup. ${prefs.budget}` : null,
-          isHot ? "muy interesado" : null,
-        ]
-          .filter(Boolean)
-          .join(" · ") || followUpReason;
-      // Dos motivos para que la app avise: prospecto caliente, o el cliente
-      // pregunta algo que la IA no puede responder y necesita un humano.
-      const pushTitle = isHot ? "🔥 Prospecto caliente" : "❓ Un prospecto necesita tu respuesta";
+      // Para confirmación de visita, el resumen es el día/horario pedido
+      // (followUpReason). Para los demás, zona/presupuesto/interés.
+      const summary = isVisitConfirm
+        ? followUpReason
+        : [
+            prefs?.zones?.[0] || null,
+            prefs?.budget ? `presup. ${prefs.budget}` : null,
+            isHot ? "muy interesado" : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || followUpReason;
+      // Motivos para que la app avise: el cliente aceptó un horario y tenés que
+      // confirmar la visita; prospecto caliente; o el cliente pregunta algo que
+      // la IA no puede responder y necesita un humano.
+      const pushTitle = isVisitConfirm
+        ? "📅 Confirmá la visita"
+        : isHot
+          ? "🔥 Prospecto caliente"
+          : "❓ Un prospecto necesita tu respuesta";
       await notifyHotLead(
         targetOrgId,
         org.slug,
