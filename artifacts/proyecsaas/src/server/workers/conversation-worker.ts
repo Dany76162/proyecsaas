@@ -1005,6 +1005,7 @@ export async function processWhatsAppInboundJob(
     // NO la callan: la IA sigue respondiendo y calificando, y la alerta se manda igual.
     const isExplicitHandoff = decision.nextBestAction === "derivar-a-asesor";
     const isVisitConfirm = decision.nextBestAction === "confirmar-visita-con-humano";
+    const isVisitCancel = decision.nextBestAction === "cancelar-visita-con-humano";
     const pausesAi = isExplicitHandoff || isVisitConfirm;
 
     const [org] = await Promise.all([
@@ -1043,28 +1044,37 @@ export async function processWhatsAppInboundJob(
     // handoff (derivación) aunque ya estuviera flagueada. Deduplicado por la
     // transición de estado para no spamear.
     const isHandoffTransition = pausesAi && !result.conversation.isHumanControlled;
-    if ((!result.conversation.followUpActive || isHandoffTransition) && org?.slug) {
+    // La cancelación es un evento puntual accionable: avisá aunque la
+    // conversación ya estuviera flagueada para follow-up.
+    if (
+      (!result.conversation.followUpActive || isHandoffTransition || isVisitCancel) &&
+      org?.slug
+    ) {
       const prefs = decision.extractedPreferences;
       const isHot = decision.leadTemperature === "hot";
       // Para confirmación de visita, el resumen es el día/horario pedido
       // (followUpReason). Para los demás, zona/presupuesto/interés.
-      const summary = isVisitConfirm
-        ? followUpReason
-        : [
-            prefs?.zones?.[0] || null,
-            prefs?.budget ? `presup. ${prefs.budget}` : null,
-            isHot ? "muy interesado" : null,
-          ]
-            .filter(Boolean)
-            .join(" · ") || followUpReason;
+      const summary =
+        isVisitConfirm || isVisitCancel
+          ? followUpReason
+          : [
+              prefs?.zones?.[0] || null,
+              prefs?.budget ? `presup. ${prefs.budget}` : null,
+              isHot ? "muy interesado" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || followUpReason;
       // Motivos para que la app avise: el cliente aceptó un horario y tenés que
-      // confirmar la visita; prospecto caliente; o el cliente pregunta algo que
-      // la IA no puede responder y necesita un humano.
+      // confirmar la visita; el cliente canceló una visita y hay que sacarla del
+      // CRM; prospecto caliente; o el cliente pregunta algo que la IA no puede
+      // responder y necesita un humano.
       const pushTitle = isVisitConfirm
         ? "📅 Confirmá la visita"
-        : isHot
-          ? "🔥 Prospecto caliente"
-          : "❓ Un prospecto necesita tu respuesta";
+        : isVisitCancel
+          ? "❌ Visita cancelada — sacala del CRM"
+          : isHot
+            ? "🔥 Prospecto caliente"
+            : "❓ Un prospecto necesita tu respuesta";
       await notifyHotLead(
         targetOrgId,
         org.slug,

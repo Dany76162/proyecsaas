@@ -363,6 +363,23 @@ function enrichDecisionWithContext(
     );
   }
 
+  // El cliente cancela una visita ya coordinada (la IA ya intentó retenerlo).
+  // Se avisa al humano para que la saque de la agenda/CRM. La IA NO borra nada.
+  if (decision.nextBestAction === "cancelar-visita-con-humano") {
+    return appendInternalNotes(
+      {
+        ...decision,
+        visitIntent: null,
+        visitProposal: null,
+        requiresFollowUp: true,
+        followUpReason:
+          decision.followUpReason ??
+          "El prospecto canceló una visita coordinada; sacala de la agenda/CRM.",
+      },
+      ["Client canceled a coordinated visit; human must remove it from the agenda/CRM."],
+    );
+  }
+
   // Solo "modo aclaración" si NO hay ni propiedad matcheada NI lotes. Si hay
   // lotes (desarrollos/loteos), son inventario válido: el agente puede ofrecerlos
   // y proponer visita con la disponibilidad, sin quedarse pidiendo aclaración.
@@ -592,6 +609,7 @@ function buildPrompt(context: PreparedConversationContext) {
     "- COORDINAR VISITAS ES PARTE DE TU TRABAJO: NUNCA derives a un asesor por eso ni digas 'te conecto con un asesor' cuando el cliente quiere visitar o pregunta por dias/horarios.",
     "- HORARIOS DE VISITA: cuando el cliente quiera visitar, OFRECE EXCLUSIVAMENTE los dias y horarios que figuran en `availabilitySummary` / `availability` del contexto (son los unicos que el equipo tiene cargados para esa propiedad o desarrollo). NUNCA inventes dias ni horarios ni digas 'a partir de las 8' si ese horario no esta en la agenda. Si `availability` viene vacio, no propongas un horario inventado: preguntale al cliente que dia y franja le queda comoda para coordinarlo con el equipo.",
     "- VOS NO CONFIRMAS NI AGENDAS LA VISITA: el horario final lo confirma una persona del equipo (puede que ese turno ya este ocupado). Por eso NUNCA digas 'ya te agende', 'quedo reservada' ni des la visita por cerrada. Cuando el cliente elige/acepta un dia y horario concretos, tu mensaje debe decir que lo vas a coordinar con el equipo y le confirmas a la brevedad (ej. 'Genial, lo coordino con el equipo y te confirmo el horario a la brevedad'). En ESE caso (cliente acepto un dia/hora concretos): poné shouldScheduleVisit=false, requiresFollowUp=true y nextBestAction='confirmar-visita-con-humano', y en followUpReason escribi el dia, horario y desarrollo/propiedad que pidio (ej. 'Quiere visitar Valles del Pino el sabado a las 9'). NO listes mas inventario ni links en ese mensaje de cierre: que sea corto.",
+    "- CANCELACION DE VISITA (retencion antes de cancelar): si el cliente quiere cancelar, no puede ir o se arrepiente de una visita ya coordinada, NO la des de baja de una. Primero, con tacto y sin ser molesto, intenta retenerlo: preguntale el motivo, ofrecele cambiar a otro dia/horario de los disponibles, o proponele reprogramar para mas adelante (que te confirme otro dia cuando le quede comodo). Hace UNA sola pregunta o propuesta por mensaje. Si despues de ese intento el cliente igual quiere cancelar definitivamente: aceptalo con amabilidad y sin presionar, deci que queda cancelada y que quedas a disposicion para cuando quiera retomar, y poné requiresFollowUp=true y nextBestAction='cancelar-visita-con-humano', y en followUpReason escribi el dia/horario que se cancela y el motivo si lo dio (ej. 'Cancela la visita del sabado a las 9 en Valles del Pino — motivo: le surgio un viaje'). Si en cambio acepto reprogramar a un nuevo dia/hora concretos, tratalo como una visita aceptada (nextBestAction='confirmar-visita-con-humano').",
     "- Deriva a un asesor SOLO si aparecen: negociacion de precio, sena/reserva/anticipo/cuotas/pago, temas legales o de documentacion, friccion repetida, o pedido EXPLICITO del cliente de hablar con una persona. En esos casos si podes decir que lo conectas con un asesor. En ningun otro caso uses esa frase.",
     "- Si el cliente pide algo que NO tenes en tu inventario/contexto (otro tipo de propiedad, otra zona, una propiedad puntual que no esta publicada, o un dato que no tenes): respondé con naturalidad y, si podes, ofrecé una alternativa de lo que SI tenes. PERO, en TODOS esos casos, marca SIEMPRE needsHumanHandoff=true para avisarle al equipo que hay un interesado por algo que no tenemos (demanda no cubierta), aunque le hayas ofrecido una alternativa. Ejemplo: si pide 'una casa en Capital' y vos solo tenes lotes, ofrecé los lotes Y poné needsHumanHandoff=true. (Esto NO es derivar a un asesor: no uses la frase 'te conecto con un asesor'; es solo un aviso interno.)",
     "- Nunca construyas, inventes ni compartas URLs, links o rutas. EXCEPCION: si el contexto incluye el campo `publicUrl` en una propiedad o lote, o el campo `catalogUrl` en la raiz del contexto, PODES compartir ese link exacto tal como viene — no lo modifiques ni construyas variantes. Nunca compartas rutas internas como /ficha, /platform, /api ni IDs internos como identificadores de recursos.",
