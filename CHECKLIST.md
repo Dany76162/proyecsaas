@@ -167,6 +167,7 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🤖 **Hueco funcional cerrado — el agente IA ahora recibe info del DESARROLLO**: antes solo recibía datos por lote (nombre/ciudad/precio/superficie), NO los servicios ni la descripción del loteo. Ahora cada lote trae `developmentServices` (agua/luz/gas/cloacas/pavimento/seguridad…) y `developmentDescription`, y el prompt indica usarlos para responder "¿tiene agua/luz/gas?", "¿cómo es el barrio?" en vez de derivar.
 - 📅 **Ficha del desarrollo → tarjeta "Horarios de visita"**: muestra los `AvailabilitySlot` atados a ese desarrollo + botón "Configurar →" (a *Configuración → Disponibilidad*), aclarando que el agente IA usa esos horarios para coordinar visitas a los lotes del loteo. (Cómo el agente toma la info: lotes disponibles + servicios/descripción del desarrollo + horarios de disponibilidad por desarrollo.)
 - ✅ Data real; las secciones CRM (Oportunidades + Agenda de visitas) de la paridad CRM ya se ven en la ficha.
+- 🖼️ **Imagen de portada elegible para la tarjeta** (`Development.coverImageUrl` + migración `20260618190000`): uploader "Imagen de portada (tarjeta) — foto, render o logo" en la ficha (Identidad de Marca). El card de la lista la muestra a sangre completa; fallback al logo sobre el color de marca, y luego gradiente + ícono. (Horarios de visita en ficha quedaron como ver + link, por decisión del usuario.)
 
 ---
 
