@@ -64,14 +64,14 @@ export async function resolveConversationFollowUp(
       data: {
         organizationId: input.organizationId,
         type: NotificationType.FOLLOW_UP_RESOLVED,
-        title: "Conversation follow-up resolved",
+        title: "Seguimiento resuelto",
         body: conversation.followUpReason
-          ? `${conversation.subject ?? "Conversation"}: ${conversation.followUpReason}`
+          ? `${conversation.subject ?? "Conversación"}: ${conversation.followUpReason}`
           : input.resolutionMethod === "AUTO_REPLY"
-            ? `${conversation.subject ?? "Conversation"} was auto-resolved after a human reply.`
+            ? `${conversation.subject ?? "Conversación"} se resolvió automáticamente tras una respuesta humana.`
             : input.resolutionMethod === "AUTO_SYSTEM"
-              ? `${conversation.subject ?? "Conversation"} was auto-resolved after the underlying issue cleared.`
-            : `${conversation.subject ?? "Conversation"} was marked as resolved by an operator.`,
+              ? `${conversation.subject ?? "Conversación"} se resolvió automáticamente al despejarse el motivo.`
+            : `${conversation.subject ?? "Conversación"} fue marcada como resuelta por un operador.`,
         metadata: {
           resolutionMethod: input.resolutionMethod,
           previousCategory: conversation.followUpCategory,

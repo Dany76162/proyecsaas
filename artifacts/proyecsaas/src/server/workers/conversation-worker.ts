@@ -228,7 +228,7 @@ export async function processWhatsAppInboundJob(
           participantName,
           participantPhone,
           channel: "whatsapp",
-          subject: "WhatsApp chat",
+          subject: "Chat de WhatsApp",
           status: ConversationStatus.OPEN,
           lastMessageAt: sentAt,
         },
@@ -1034,7 +1034,7 @@ export async function processWhatsAppInboundJob(
       data: {
         organizationId: targetOrgId,
         type: NotificationType.OPERATOR_ACTION_REQUIRED,
-        title: `Follow-up needed: ${result.conversation.participantName || participantPhone}`,
+        title: `Seguimiento requerido: ${result.conversation.participantName || participantPhone}`,
         body: followUpReason,
         link: org ? `/${org.slug}/conversations` : undefined,
         entityType: "conversation",

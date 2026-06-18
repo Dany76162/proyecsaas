@@ -128,14 +128,14 @@ export default async function OrganizationHomePage({
           tone="warning"
         />
         <MetricCard
-          label="Stock disponible"
+          label="Inventario disponible"
           value={String(propertySummary.availableCount)}
-          hint="Inventario para asignar."
+          hint="Propiedades para asignar."
         />
         <MetricCard
           label="Tasa de conversión"
           value={conversionRate}
-          hint={leadSummary.total > 0 ? `${leadSummary.closedCount} de ${leadSummary.total} leads cerrados.` : "Aún no hay leads registrados."}
+          hint={leadSummary.total > 0 ? `${leadSummary.closedCount} de ${leadSummary.total} oportunidades cerradas.` : "Aún no hay oportunidades registradas."}
         />
       </section>
 
@@ -351,7 +351,7 @@ export default async function OrganizationHomePage({
           <SectionCard
             eyebrow="Recursos"
             title="Equipo Activo"
-            description="Composición del staff en este workspace."
+            description="Composición del equipo en este espacio de trabajo."
             actions={
               <Link href={`/${orgSlug}/settings/users`} className="text-slate-400 hover:text-slate-600 transition">
                 <LayoutGrid className="h-4 w-4" />
