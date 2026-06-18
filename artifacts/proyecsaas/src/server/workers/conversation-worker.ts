@@ -578,8 +578,8 @@ export async function processWhatsAppInboundJob(
   // Horarios para proponer visitas. Se traen: (a) los GENERALES de la org
   // (propertyId y developmentId null) — sirven para todo; (b) los de la
   // PROPIEDAD matcheada; (c) los del/los DESARROLLO(S) de los lotes ofrecidos.
-  // Así una loteadora puede tener agenda por desarrollo (ej. Valles del Pino los
-  // sáb/dom) sin que aplique a otras zonas.
+  // Así un desarrollo/urbanización puede tener agenda propia (ej. Valles del Pino
+  // los sáb/dom) sin que aplique a otras zonas.
   const lotDevelopmentIds = [
     ...new Set(availableLots.map((l) => l.developmentId).filter((id): id is string => Boolean(id))),
   ];
