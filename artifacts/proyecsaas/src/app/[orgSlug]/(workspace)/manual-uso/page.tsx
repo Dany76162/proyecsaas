@@ -23,7 +23,7 @@ const systemSteps = [
   },
   {
     step: "3",
-    title: "Se clasifica el lead",
+    title: "Se clasifica la oportunidad",
     description:
       "El sistema identifica interés, contexto y prioridad para que el equipo actúe mejor.",
   },
@@ -50,7 +50,7 @@ const tourSteps = [
 
 const leadChecklist = [
   "Revisar la conversación y entender qué pidió el cliente.",
-  "Configurar tu Disponibilidad para que la IA pueda agendar visitas por vos.",
+  "Configurar tu Disponibilidad para que la IA pueda ofrecer horarios de visita (vos confirmás el horario final).",
   "Identificar si busca una propiedad puntual, información general o una visita.",
   "Responder manualmente solo si hace falta destrabar la conversación.",
   "Llevar el contacto hacia una visita o siguiente paso concreto.",
@@ -59,7 +59,7 @@ const leadChecklist = [
 const commonErrors = [
   "No llegan mensajes: revisar integraciones de WhatsApp y estado del canal.",
   "La IA no responde: validar que el canal y el agente estén activos.",
-  "No veo leads: revisar conversaciones recientes y filtros del panel.",
+  "No veo oportunidades: revisar conversaciones recientes y filtros del panel.",
   "El tour 360° no se ve: la imagen debe ser una panorámica equirectangular real (relación 2:1) subida desde 'Subir imagen panorámica'. En el celular el visor reescala solo las imágenes grandes para que carguen.",
   "La propiedad no aparece en el catálogo: verificar que el estado sea 'Disponible' y que 'Publicar esta propiedad' esté activado.",
   "El link del tour no funciona: la propiedad debe ser pública. Cambiar visibilidad desde la ficha de la propiedad.",
@@ -68,7 +68,7 @@ const commonErrors = [
 const bestPractices = [
   "Responder rápido cuando el cliente ya está listo para avanzar.",
   "No interrumpir la automatización si la conversación todavía avanza bien sola.",
-  "Revisar todos los días los leads activos y las conversaciones abiertas.",
+  "Revisar todos los días las oportunidades activas y las conversaciones abiertas.",
   "Hacé el tour 360° antes de publicar la propiedad — los clientes que ven el tour tienen el doble de chances de pedir visita.",
   "Compartí el link del catálogo en tu bio de Instagram y en tu perfil de Zonaprop o Argenprop.",
   "Capturá al menos 2 ambientes por propiedad (living + dormitorio principal) para que el tour sea más convincente.",
@@ -273,9 +273,9 @@ export default async function WorkspaceManualUsoPage({
         <div className="grid gap-5 xl:grid-cols-2 print:grid-cols-1">
           <div className="[break-inside:avoid] [page-break-inside:avoid]">
             <SectionCard
-              eyebrow="Lead entrante"
-              title="Qué hacer cuando entra un lead"
-              description="Checklist rápido para no perder contexto ni oportunidades."
+              eyebrow="Oportunidad entrante"
+              title="Qué hacer cuando entra una oportunidad"
+              description="Lista rápida para no perder contexto ni oportunidades."
             >
               <div className="space-y-3">
                 {leadChecklist.map((item) => (
@@ -296,8 +296,8 @@ export default async function WorkspaceManualUsoPage({
           <div className="[break-inside:avoid] [page-break-inside:avoid]">
             <SectionCard
               eyebrow="Conversaciones"
-              title="Cómo usar la bandeja de conversaciones"
-              description="El panel de conversaciones es el mejor lugar para seguir el ritmo real del negocio."
+              title="Cómo usar la Bandeja IA"
+              description="La Bandeja IA es el mejor lugar para seguir el ritmo real del negocio y tomar el control de un chat cuando haga falta."
             >
               <div className="space-y-4 text-sm leading-6 text-slate-600">
                 <p>
@@ -326,15 +326,15 @@ export default async function WorkspaceManualUsoPage({
         <div className="grid gap-5 xl:grid-cols-2 print:grid-cols-1">
           <div className="[break-inside:avoid] [page-break-inside:avoid]">
             <SectionCard
-              eyebrow="Leads"
-              title="Gestión de leads"
-              description="Un lead es una oportunidad comercial. La clave no es acumularlos, sino moverlos."
+              eyebrow="Oportunidades"
+              title="Gestión de oportunidades"
+              description="Una oportunidad es un contacto comercial. La clave no es acumularlas, sino moverlas."
             >
               <div className="space-y-4 text-sm leading-6 text-slate-600">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 [break-inside:avoid] [page-break-inside:avoid]">
-                  <p className="font-semibold text-slate-900">Qué es un lead</p>
+                  <p className="font-semibold text-slate-900">Qué es una oportunidad</p>
                   <p className="mt-1">
-                    Es una persona que mostró interés real en una propiedad o en la inmobiliaria.
+                    Es una persona que mostró interés real en una propiedad, un loteo o en la inmobiliaria.
                   </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 [break-inside:avoid] [page-break-inside:avoid]">
@@ -347,7 +347,7 @@ export default async function WorkspaceManualUsoPage({
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 [break-inside:avoid] [page-break-inside:avoid]">
                   <p className="font-semibold text-slate-900">Seguimiento</p>
                   <p className="mt-1">
-                    Si un lead no avanza, revisá la conversación, definí el siguiente paso y no lo
+                    Si una oportunidad no avanza, revisá la conversación, definí el siguiente paso y no la
                     dejes perderse por falta de seguimiento.
                   </p>
                 </div>
@@ -383,20 +383,23 @@ export default async function WorkspaceManualUsoPage({
           <SectionCard
             eyebrow="Configuración"
             title="Gestión de Disponibilidad para Visitas"
-            description="Para que la IA pueda proponer visitas, necesita saber cuándo estás disponible."
+            description="Para que la IA pueda ofrecer horarios de visita, necesita saber cuándo estás disponible. La IA ofrece esos horarios; el horario final lo confirmás vos."
           >
             <div className="grid gap-6 lg:grid-cols-2 print:grid-cols-1">
               <div className="space-y-4 text-sm leading-6 text-slate-600">
                 <p>
-                  En la sección de <strong>Disponibilidad</strong>, podés configurar tus franjas horarias de trabajo. 
-                  Sin esto, la IA no podrá ofrecer turnos automáticos y tendrá que derivar la consulta siempre a un humano.
+                  En la sección de <strong>Disponibilidad</strong>, configurás tus franjas horarias. Cuando un prospecto
+                  quiere visitar, la IA le <strong>ofrece</strong> esas franjas; no agenda sola: te avisa y vos confirmás
+                  el horario. La visita queda registrada en <strong>Visitas</strong> y en el CRM.
+                  Sin franjas cargadas, la IA no puede ofrecer horarios y deriva la consulta al equipo.
                 </p>
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 [break-inside:avoid] [page-break-inside:avoid]">
                   <p className="font-semibold text-slate-900 mb-2">Tipos de Horarios</p>
                   <ul className="space-y-2 list-disc pl-4 text-slate-600">
-                    <li><strong>Generales:</strong> Para toda la inmobiliaria.</li>
+                    <li><strong>Generales:</strong> Para toda la inmobiliaria (cualquier propiedad o desarrollo).</li>
                     <li><strong>Por Agente:</strong> Si un agente específico tiene sus propios horarios.</li>
-                    <li><strong>Por Propiedad:</strong> Si una propiedad solo se puede mostrar en días específicos.</li>
+                    <li><strong>Por Propiedad:</strong> Si una propiedad solo se muestra en días específicos.</li>
+                    <li><strong>Por Desarrollo / Loteo:</strong> Para visitas a los lotes de un loteo (ej. Valles del Pino los sáb/dom). Atá la franja al desarrollo, no a la propiedad.</li>
                   </ul>
                 </div>
               </div>
@@ -480,6 +483,9 @@ export default async function WorkspaceManualUsoPage({
                 <p>
                   Desde la sección de <strong>Agentes IA</strong>, podés editar el agente activo para moldear su forma de hablar, las reglas específicas que debe respetar y los límites del inventario en los que debe enfocarse.
                 </p>
+                <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 print:bg-white">
+                  Tu inmobiliaria opera con <strong>un agente IA</strong> que atiende todo tu inventario. No te preocupes por el volumen: maneja cientos de propiedades o lotes sin confundirse, porque no las lee todas de golpe — matchea lo que pide cada cliente y ofrece las más relevantes. Manejar varios agentes por zona o sector llegará próximamente.
+                </p>
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
                   <div>
                     <p className="font-bold text-slate-900">👤 Nombre e Identidad</p>
@@ -502,7 +508,7 @@ export default async function WorkspaceManualUsoPage({
                   <div>
                     <p className="font-bold text-slate-950">🎯 Zonas y Presupuestos de Enfoque</p>
                     <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      Podés limitar los barrios y el rango de precios en los que opera tu agente. Si un lead consulta por una propiedad fuera de este enfoque, la IA responderá amablemente aclarando su especialidad y derivará al equipo humano si insisten.
+                      Podés limitar los barrios y el rango de precios en los que opera tu agente. Si un prospecto consulta por una propiedad fuera de este enfoque, la IA responderá amablemente aclarando su especialidad y derivará al equipo humano si insisten.
                     </p>
                   </div>
                   <div>
@@ -528,17 +534,17 @@ export default async function WorkspaceManualUsoPage({
         <div className="grid gap-5 xl:grid-cols-2 print:grid-cols-1">
           <div className="[break-inside:avoid] [page-break-inside:avoid]">
             <SectionCard
-              eyebrow="Captacion"
-              title="Como usar el link de entrada"
+              eyebrow="Captación"
+              title="Cómo usar el enlace de entrada"
               description="La plataforma ya tiene un enlace de WhatsApp pensado para campañas, redes y botones de contacto."
             >
               <div className="space-y-4 text-sm leading-6 text-slate-600">
                 <p>
-                  Ese enlace abre WhatsApp con un mensaje preparado y un codigo interno que permite
+                  Ese enlace abre WhatsApp con un mensaje preparado y un código interno que permite
                   asociar la consulta a tu inmobiliaria desde el primer mensaje.
                 </p>
                 <p>
-                  Este flujo es para captar clientes finales de tu inmobiliaria. La captacion de
+                  Este flujo es para captar clientes finales de tu inmobiliaria. La captación de
                   nuevas inmobiliarias para la plataforma se gestiona aparte desde Superadmin.
                 </p>
                 <div className="space-y-3">
@@ -552,7 +558,7 @@ export default async function WorkspaceManualUsoPage({
                   ))}
                 </div>
                 <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 print:border-slate-300 print:bg-white [break-inside:avoid] [page-break-inside:avoid]">
-                  <p className="font-semibold text-brand-900">Donde verlo</p>
+                  <p className="font-semibold text-brand-900">Dónde verlo</p>
                   <p className="mt-1 text-sm leading-6 text-brand-800 print:text-slate-700">
                     Entrá a la sección de captación para copiar el enlace, compartir el QR y entender
                     qué pasa cuando alguien escribe por primera vez.
@@ -563,7 +569,7 @@ export default async function WorkspaceManualUsoPage({
                     href={`/${orgSlug}/captacion`}
                     className="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                   >
-                    Abrir captacion
+                    Abrir captación
                   </Link>
                 </div>
               </div>
@@ -626,7 +632,7 @@ export default async function WorkspaceManualUsoPage({
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 [break-inside:avoid] [page-break-inside:avoid]">
                   <p className="font-semibold text-slate-900">¿Qué podés cargar en un Desarrollo?</p>
                   <ul className="space-y-2 list-disc pl-4 text-slate-600">
-                    <li><strong>Información general:</strong> nombre, descripción, dirección, teléfono de contacto y logo de la inmobiliaria o del proyecto.</li>
+                    <li><strong>Información general:</strong> nombre, descripción, dirección, teléfono de contacto, logo, <strong>imagen de portada</strong> (foto o render que se muestra en la tarjeta del listado y del catálogo) y <strong>servicios disponibles</strong> (agua, luz, gas, cloacas, pavimento, seguridad…).</li>
                     <li><strong>Plano principal (Ficha):</strong> imagen o PDF del plano que aparece destacado en la ficha pública del desarrollo.</li>
                     <li><strong>Masterplan:</strong> archivo SVG o DXF del plano vectorial. El sistema lo procesa automáticamente y genera el mapa interactivo con los lotes.</li>
                     <li><strong>Galería de planos:</strong> renders, croquis, subdivisión, catastral, mensura y documentos comerciales adicionales (hasta 15 MB por archivo).</li>
@@ -651,6 +657,15 @@ export default async function WorkspaceManualUsoPage({
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5 [break-inside:avoid] [page-break-inside:avoid]">
+              <p className="font-semibold text-blue-900 mb-2">El agente IA y el CRM del desarrollo</p>
+              <ul className="space-y-2 list-disc pl-4 text-sm text-blue-800 leading-relaxed">
+                <li>El <strong>agente IA</strong> ofrece los lotes disponibles del desarrollo y responde sobre sus <strong>servicios y descripción</strong> (ej. "¿tiene agua y luz?", "¿cómo es el barrio?") sin derivar.</li>
+                <li>Para coordinar visitas a los lotes, cargá los <strong>horarios en Disponibilidad</strong> atándolos a este desarrollo. El agente los ofrece y vos confirmás.</li>
+                <li>La ficha del desarrollo muestra las <strong>Oportunidades vinculadas</strong> y la <strong>Agenda de visitas</strong> de ese loteo, igual que la ficha de una propiedad. Los prospectos que consultan por los lotes quedan asociados al desarrollo automáticamente.</li>
+              </ul>
             </div>
 
             <div className="mt-4 grid gap-4 lg:grid-cols-2 print:grid-cols-1">
@@ -709,7 +724,7 @@ export default async function WorkspaceManualUsoPage({
                     <li>Tu contraseña de acceso a la plataforma.</li>
                     <li>Tokens de API, claves de WhatsApp o credenciales de Meta.</li>
                     <li>Datos bancarios, claves de Mercado Pago o accesos a Railway.</li>
-                    <li>Información personal de tus clientes o leads.</li>
+                    <li>Información personal de tus clientes u oportunidades.</li>
                   </ul>
                 </div>
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 [break-inside:avoid] [page-break-inside:avoid]">
