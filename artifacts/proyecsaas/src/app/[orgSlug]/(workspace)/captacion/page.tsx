@@ -22,7 +22,7 @@ const channelIdeas = [
       "Pegalo en la bio, descripción o comentarios fijados para capturar tráfico desde contenido.",
   },
   {
-    title: "Sitio web y landing pages",
+    title: "Sitio web y páginas de captación",
     description:
       "Colocalo como botón principal para que la persona escriba sin fricción y el ingreso quede asociado a tu inmobiliaria.",
   },
@@ -64,10 +64,10 @@ export default async function WorkspaceCaptacionPage({
           <div>
             <div className="flex items-center gap-2.5">
               <span className="inline-flex h-2.5 w-2.5 rounded-full bg-brand-500 shadow-[0_0_0_4px_rgba(35,86,217,0.15)]" />
-              <span className="text-sm font-semibold text-brand-700">Links y QR de Captación</span>
+              <span className="text-sm font-semibold text-brand-700">Enlaces y QR de Captación</span>
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-              Links de WhatsApp
+              Enlaces de WhatsApp
             </h1>
             <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
               Aquí encontrás el enlace y código QR para compartir con clientes desde tus redes, anuncios o sitio web. Para <strong>conectar tu número de WhatsApp</strong> al sistema, usá la sección de Integraciones.
@@ -104,14 +104,6 @@ export default async function WorkspaceCaptacionPage({
           </div>
         )}
 
-        {tenantChannels.length > 0 && (
-          <div className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-            <span className="text-xl">✅</span>
-            <p className="text-sm font-bold text-emerald-800">
-              Canal propio activo — {tenantChannels[0]?.displayPhoneNumber ?? "WhatsApp conectado"}. El agente IA está listo para responder.
-            </p>
-          </div>
-        )}
       </section>
 
       <section className="mt-5 space-y-5">
@@ -178,7 +170,7 @@ export default async function WorkspaceCaptacionPage({
 
         <SectionCard
           eyebrow="Recorrido"
-          title="Qué pasa cuando una persona entra por este link"
+          title="Qué pasa cuando una persona entra por este enlace"
           description="Resumen corto del flujo real de captación que hoy soporta la plataforma."
         >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -199,7 +191,7 @@ export default async function WorkspaceCaptacionPage({
         <SectionCard
           eyebrow="Aclaración"
           title="Alcance real de esta versión"
-          description="Esta capa resuelve el enlace operativo de entrada por WhatsApp. No incluye todavía campañas con tracking por origen, UTMs comerciales ni reportes por canal."
+          description="Esta capa resuelve el enlace operativo de entrada por WhatsApp. No incluye todavía campañas con seguimiento por origen, parámetros de campaña ni reportes por canal."
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <p className="max-w-3xl text-sm leading-6 text-slate-600">
