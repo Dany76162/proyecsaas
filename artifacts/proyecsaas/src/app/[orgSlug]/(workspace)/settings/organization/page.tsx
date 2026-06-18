@@ -52,7 +52,7 @@ export default async function OrganizationSettingsPage({
           <div>
             <div className="flex items-center gap-2.5">
               <span className="inline-flex h-2.5 w-2.5 rounded-full bg-slate-400 shadow-[0_0_0_4px_rgba(148,163,184,0.15)]" />
-              <span className="text-sm font-semibold text-slate-600">Perfil Enterprise</span>
+              <span className="text-sm font-semibold text-slate-600">Perfil de empresa</span>
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
               Organización
@@ -66,9 +66,9 @@ export default async function OrganizationSettingsPage({
 
       <section className="grid gap-6 md:grid-cols-3">
         <MetricCard
-          label="Identificador (slug)"
+          label="Identificador único"
           value={organization.slug}
-          hint="Identificador único del tenant. No se puede modificar."
+          hint="Identificador único de tu organización. No se puede modificar."
         />
         <MetricCard
           label="Plan"

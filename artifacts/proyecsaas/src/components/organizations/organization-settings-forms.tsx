@@ -172,7 +172,7 @@ export function OrganizationProfileForm({
       <div>
         <GroupLabel>Información de Contacto</GroupLabel>
         <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Email institucional">
+          <Field label="Correo institucional">
             <Input
               type="email"
               value={contactEmail}
@@ -255,7 +255,7 @@ const SOURCE_STATUS_UI: Record<string, { label: string; cls: string }> = {
   IDLE: { label: "Sin sincronizar", cls: "bg-slate-100 text-slate-500" },
   SYNCING: { label: "Sincronizando...", cls: "bg-amber-50 text-amber-700" },
   OK: { label: "Sincronizado", cls: "bg-emerald-50 text-emerald-700" },
-  ERROR: { label: "Error en sync", cls: "bg-red-50 text-red-700" },
+  ERROR: { label: "Error de sincronización", cls: "bg-red-50 text-red-700" },
 };
 
 function formatDate(iso: string | null): string {
