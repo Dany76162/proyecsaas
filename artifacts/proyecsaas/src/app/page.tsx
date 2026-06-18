@@ -247,7 +247,7 @@ export default async function HomePage() {
                 Tus propiedades, donde la gente busca
               </h2>
               <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-350 mb-5">
-                Cada propiedad que publicás aparece —además de en tu propio catálogo— en el <strong>portal y app de Raíces Pilot</strong>, donde <strong>compradores e inversores de toda Latinoamérica</strong> buscan y filtran por lo que necesitan. Más visibilidad y más consultas, sin trabajo extra.
+                Publicás una vez y tu propiedad queda en tu catálogo y también en el <strong>portal y app de Raíces Pilot</strong>, donde <strong>compradores e inversores de toda Latinoamérica</strong> buscan y filtran por lo que necesitan. Más visibilidad y más consultas, sin trabajo extra.
               </p>
               <div className="mb-6 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 p-4">
                 <p className="text-sm leading-relaxed text-emerald-900 dark:text-emerald-300">
