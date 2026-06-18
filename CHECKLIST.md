@@ -157,6 +157,11 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🇪🇸 **Castellano**: "Ver lead" → "Ver oportunidad"; "ficha del Lead" → "ficha de la oportunidad"; "Lead desconocido" → "Contacto desconocido". El resto de la página ya estaba en español.
 - ✅ Data real (`listOrganizationVisits`, `getVisitSummary`), sin componentes temporales.
 
+**Auditoría panel PROPIEDADES + tarjeta de onboarding (2026-06-18):**
+- ✅ **Propiedades 100% real** (`getPropertySummary`, `listOrganizationProperties`), todo en castellano (Disponible/Borrador/Público/Interno, "A consultar", "Ubicación pendiente"). Sin componentes temporales/duplicados.
+- 🧹 **Footer flotante de onboarding eliminado**: el card fijo `fixed bottom-6` (`onboarding-footer.tsx`) se renderizaba en 4 páginas (Propiedades/Agentes/WhatsApp/Organización) con **paso hardcodeado** (Propiedades decía siempre "Paso 2 → conectá WhatsApp" aunque ya estuviera conectado), tapaba contenido y molestaba una vez hecho el setup. Removido de las 4 páginas + componente borrado.
+- ➕ **Sidebar "Primeros pasos" (antes "Bienvenida") → `/onboarding`, ahora SIEMPRE visible** (antes se ocultaba al completar el onboarding) para repasar el progreso/guía cuando se quiera. Los usuarios nuevos siguen guiados por el banner "Tu cuenta requiere atención" del dashboard + la página `/onboarding` (que muestra el progreso real).
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
