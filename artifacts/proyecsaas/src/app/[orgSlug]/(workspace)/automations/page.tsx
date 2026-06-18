@@ -252,7 +252,7 @@ export default async function AutomationsPage({
               href={`/${orgSlug}/settings/integrations`}
               className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
             >
-              Revisar captacion
+              Revisar captación
             </Link>
           </div>
         </div>
@@ -281,7 +281,7 @@ export default async function AutomationsPage({
             {
               label: "Cola de procesamiento",
               active: redisConfigured,
-              detail: redisConfigured ? "Redis conectado" : "Modo síncrono (dev)",
+              detail: redisConfigured ? "Conectada" : "Modo directo",
               link: null,
             },
           ].map((item) => (
@@ -330,9 +330,9 @@ export default async function AutomationsPage({
           tone={autoVisitCount > 0 ? "success" : "neutral"}
         />
         <AutoMetric
-          label="Tasa de respuesta bot"
+          label="Tasa de respuesta del agente"
           value={`${responseRate}%`}
-          hint={`${outboundMessages} salientes / ${inboundMessages} entrantes.`}
+          hint={`${outboundMessages} mensajes enviados / ${inboundMessages} recibidos.`}
           tone={responseRate > 70 ? "success" : responseRate > 30 ? "info" : "neutral"}
         />
       </section>
@@ -347,7 +347,7 @@ export default async function AutomationsPage({
         <AutoMetric
           label="Con acción sugerida"
           value={withNextAction}
-          hint="Leads con próximo paso recomendado por IA."
+          hint="Oportunidades con próximo paso recomendado por IA."
           tone={withNextAction > 0 ? "info" : "neutral"}
         />
         <AutoMetric
@@ -443,7 +443,7 @@ export default async function AutomationsPage({
         <SectionCard
           eyebrow="Embudo de prospectos"
           title="Distribución por etapa"
-          description="Cómo se distribuyen los leads en el embudo de ventas del equipo."
+          description="Cómo se distribuyen las oportunidades en el embudo de ventas del equipo."
         >
           <div className="space-y-3">
             {["NEW", "CONTACTED", "INTERESTED", "VISIT", "CLOSED"].map((stage) => {
@@ -491,7 +491,7 @@ export default async function AutomationsPage({
         <SectionCard
           eyebrow="Actividad IA"
           title="Conversaciones recientes con seguimiento"
-          description="Leads que el agente marcó para seguimiento por el equipo humano."
+          description="Oportunidades que el agente marcó para seguimiento por el equipo humano."
         >
           {recentFollowUps.length === 0 ? (
             <p className="text-sm text-slate-400">Sin seguimientos activos. El agente está manejando todo automáticamente.</p>
@@ -534,7 +534,7 @@ export default async function AutomationsPage({
                     )}
                     {lastMsg && (
                       <p className="mt-2 text-xs text-slate-500 line-clamp-2">
-                        <span className="font-medium">{lastMsg.direction === "OUTBOUND" ? "Bot:" : "Cliente:"}</span>{" "}
+                        <span className="font-medium">{lastMsg.direction === "OUTBOUND" ? "Agente:" : "Cliente:"}</span>{" "}
                         {lastMsg.body}
                       </p>
                     )}
@@ -543,7 +543,7 @@ export default async function AutomationsPage({
                         href={`/${orgSlug}/leads/${conv.lead.id}`}
                         className="mt-3 inline-flex rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
                       >
-                        Ver lead →
+                        Ver oportunidad →
                       </Link>
                     )}
                   </div>
@@ -571,25 +571,25 @@ export default async function AutomationsPage({
             {
               step: "2",
               title: "Análisis IA",
-              desc: "GPT-4.1 lee el mensaje, extrae preferencias (zona, presupuesto, ambientes) y evalúa el intent.",
+              desc: "La IA lee el mensaje, extrae preferencias (zona, presupuesto, ambientes) y evalúa la intención del cliente.",
               color: "bg-brand-100 text-brand-700",
             },
             {
               step: "3",
-              title: "Match de inventario",
+              title: "Coincidencia de inventario",
               desc: "El sistema busca propiedades disponibles que coincidan con las preferencias detectadas.",
               color: "bg-blue-100 text-blue-700",
             },
             {
               step: "4",
               title: "Propuesta de visita",
-              desc: "Si hay match, el bot propone fecha y hora dentro de los horarios de disponibilidad configurados.",
+              desc: "Si hay coincidencia, el agente propone fecha y hora dentro de los horarios de disponibilidad configurados.",
               color: "bg-amber-100 text-amber-700",
             },
             {
               step: "5",
               title: "Seguimiento humano",
-              desc: "Si el cliente acepta o si el bot no puede resolver, escala al equipo con contexto completo.",
+              desc: "Si el cliente acepta o si el agente no puede resolver, escala al equipo con contexto completo.",
               color: "bg-emerald-100 text-emerald-700",
             },
           ].map((item) => (
