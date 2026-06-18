@@ -76,9 +76,11 @@ async function downscaleToFit(
   maxTex: number,
 ): Promise<string | null> {
   const scale = Math.min(1, (2 * maxTex) / width, maxTex / height)
-  if (scale >= 1) return null
-  const targetW = Math.floor(width * scale)
-  const targetH = Math.floor(height * scale)
+  // Solo reescalamos si el excedente es real (>2%). Evita re-comprimir una imagen
+  // que apenas supera el límite y degradarla sin necesidad.
+  if (scale >= 0.98) return null
+  const targetW = Math.round(width * scale)
+  const targetH = Math.round(height * scale)
   return new Promise((resolve) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
@@ -89,8 +91,12 @@ async function downscaleToFit(
         canvas.height = targetH
         const ctx = canvas.getContext('2d')
         if (!ctx) return resolve(null)
+        // Resampleo de alta calidad para no perder nitidez al achicar.
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
         ctx.drawImage(img, 0, 0, targetW, targetH)
-        resolve(canvas.toDataURL('image/jpeg', 0.9))
+        // JPEG 0.95: el 360° hace "zoom" a la imagen, así que conviene calidad alta.
+        resolve(canvas.toDataURL('image/jpeg', 0.95))
       } catch {
         resolve(null)
       }
