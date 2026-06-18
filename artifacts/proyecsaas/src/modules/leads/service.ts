@@ -43,6 +43,14 @@ export async function listOrganizationLeads(
     take: 100,
   });
 
+  // developmentId es escalar (sin relación): resolvemos los nombres en una query
+  // para mostrar el desarrollo vinculado cuando el lead no tiene propiedad.
+  const devIds = [...new Set(leads.map((l) => l.developmentId).filter((id): id is string => Boolean(id)))];
+  const devs = devIds.length
+    ? await prisma.development.findMany({ where: { id: { in: devIds } }, select: { id: true, name: true } })
+    : [];
+  const devNameById = new Map(devs.map((d) => [d.id, d.name]));
+
   return leads.map((lead) => {
     const signals = readLeadCommercialSignals({
       notes: lead.notes,
@@ -62,7 +70,10 @@ export async function listOrganizationLeads(
       budgetLabel: lead.budgetLabel ?? "Pendiente de calificación",
       ownerName: lead.owner?.fullName ?? "Sin asignar",
       propertyId: lead.propertyId ?? undefined,
-      propertyTitle: lead.property?.title ?? "Sin propiedad vinculada",
+      propertyTitle:
+        lead.property?.title ??
+        (lead.developmentId ? devNameById.get(lead.developmentId) : undefined) ??
+        "Sin propiedad vinculada",
       lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
       leadTemperature: signals.leadTemperature,
     };

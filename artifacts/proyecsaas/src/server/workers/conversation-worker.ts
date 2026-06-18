@@ -778,6 +778,18 @@ export async function processWhatsAppInboundJob(
         ? LeadStatus.INTERESTED
         : null;
 
+  // Vincular el lead a un DESARROLLO (paridad CRM con propiedades): si hay un
+  // único loteo con lotes disponibles y el lead muestra interés real, queda
+  // asociado a ese desarrollo (así deja de figurar "sin propiedad vinculada").
+  const singleDevToLink =
+    lotDevelopmentIds.length === 1 &&
+    (decision.qualificationDecision === "QUALIFIED" ||
+      Boolean(decision.visitIntent?.requested) ||
+      decision.leadTemperature === "hot" ||
+      decision.leadTemperature === "warm")
+      ? lotDevelopmentIds[0]
+      : null;
+
   await prisma.lead.update({
     where: { id: result.lead.id },
     data: {
@@ -787,6 +799,7 @@ export async function processWhatsAppInboundJob(
         propertyMatch.trace,
         decision.internalNotes ?? null,
       ),
+      ...(singleDevToLink ? { developmentId: singleDevToLink } : {}),
       ...(nextLeadStatus ? { status: nextLeadStatus, lastContactAt: new Date() } : {}),
     },
   });

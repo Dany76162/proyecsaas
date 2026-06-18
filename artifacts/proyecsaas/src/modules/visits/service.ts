@@ -302,6 +302,17 @@ export async function createAgentVisit(
     throw new VisitAutomationError("invalid-visit", "Visit date is invalid.");
   }
 
+  // Vincular el lead al desarrollo (paridad CRM con propiedades): si coordina una
+  // visita a un desarrollo, queda asociado a ese desarrollo en el CRM.
+  if (params.developmentId) {
+    await prisma.lead
+      .updateMany({
+        where: { id: lead.id, developmentId: null },
+        data: { developmentId: params.developmentId, ...(params.lotId ? { lotId: params.lotId } : {}) },
+      })
+      .catch(() => {});
+  }
+
   const fallbackOwner = await prisma.membership.findFirst({
     where: { organizationId: organization.id },
     select: { userId: true },

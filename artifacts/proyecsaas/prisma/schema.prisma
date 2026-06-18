@@ -283,6 +283,8 @@ model Lead {
   organizationId String
   ownerId        String?
   propertyId     String?
+  developmentId  String?
+  lotId          String?
   fullName       String
   email          String?
   phone          String?
@@ -304,6 +306,7 @@ model Lead {
   @@index([organizationId, status])
   @@index([organizationId, ownerId])
   @@index([organizationId, propertyId])
+  @@index([organizationId, developmentId])
 }
 
 model Property {

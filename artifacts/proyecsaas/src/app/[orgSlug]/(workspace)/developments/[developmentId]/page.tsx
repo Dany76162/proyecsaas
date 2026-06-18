@@ -32,6 +32,50 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
 
   if (!developmentRaw) notFound();
 
+  // CRM del desarrollo (paridad con propiedades): oportunidades y visitas
+  // vinculadas a este desarrollo. developmentId es escalar en Lead/Visit.
+  const [crmLeadsRaw, crmVisitsRaw] = await Promise.all([
+    prisma.lead.findMany({
+      where: { organizationId: membership.organization.id, developmentId },
+      select: {
+        id: true,
+        fullName: true,
+        status: true,
+        lastContactAt: true,
+        owner: { select: { fullName: true } },
+      },
+      orderBy: [{ lastContactAt: "desc" }, { createdAt: "desc" }],
+      take: 50,
+    }),
+    prisma.visit.findMany({
+      where: { organizationId: membership.organization.id, developmentId },
+      select: {
+        id: true,
+        status: true,
+        scheduledAt: true,
+        lead: { select: { fullName: true } },
+      },
+      orderBy: { scheduledAt: "asc" },
+      take: 50,
+    }),
+  ]);
+
+  const crm = {
+    leads: crmLeadsRaw.map((l) => ({
+      id: l.id,
+      fullName: l.fullName,
+      status: l.status as string,
+      ownerName: l.owner?.fullName ?? "Sin asignar",
+      lastContactAt: l.lastContactAt ? l.lastContactAt.toISOString() : null,
+    })),
+    visits: crmVisitsRaw.map((v) => ({
+      id: v.id,
+      status: v.status as string,
+      scheduledAt: v.scheduledAt.toISOString(),
+      leadName: v.lead?.fullName ?? "Contacto",
+    })),
+  };
+
   const development = {
     ...developmentRaw,
     lots: developmentRaw.DevelopmentLot,
@@ -168,6 +212,7 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
         activeTab={activeTab}
         stats={stats}
         stepCompletion={stepCompletion}
+        crm={crm}
       />
     </div>
   );

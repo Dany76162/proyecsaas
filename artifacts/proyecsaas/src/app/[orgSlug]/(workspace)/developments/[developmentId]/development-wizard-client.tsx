@@ -78,6 +78,20 @@ const ProjectStepsDock = dynamicImport(
   { ssr: false }
 );
 
+const LEAD_STATUS_ES: Record<string, string> = {
+  NEW: "Nuevo",
+  CONTACTED: "Contactado",
+  INTERESTED: "Interesado",
+  VISIT: "En visita",
+  CLOSED: "Cerrado",
+};
+const VISIT_STATUS_ES: Record<string, string> = {
+  PENDING: "Pendiente",
+  CONFIRMED: "Confirmada",
+  COMPLETED: "Completada",
+  CANCELED: "Cancelada",
+};
+
 interface DevelopmentWizardClientProps {
   orgSlug: string;
   development: any;
@@ -98,6 +112,10 @@ interface DevelopmentWizardClientProps {
     step5Done: boolean;
     completedCount: number;
   };
+  crm?: {
+    leads: Array<{ id: string; fullName: string; status: string; ownerName: string; lastContactAt: string | null }>;
+    visits: Array<{ id: string; status: string; scheduledAt: string; leadName: string }>;
+  };
 }
 
 export default function DevelopmentWizardClient({
@@ -106,6 +124,7 @@ export default function DevelopmentWizardClient({
   activeTab: initialActiveTab,
   stats,
   stepCompletion,
+  crm,
 }: DevelopmentWizardClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialActiveTab);
@@ -759,6 +778,51 @@ export default function DevelopmentWizardClient({
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* CRM del desarrollo: oportunidades + visitas vinculadas (paridad con propiedades) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Oportunidades vinculadas</h3>
+                  {crm && crm.leads.length > 0 ? (
+                    <div className="space-y-2">
+                      {crm.leads.map((lead) => (
+                        <a
+                          key={lead.id}
+                          href={`/${orgSlug}/leads/${lead.id}`}
+                          className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 px-3 py-2 transition hover:border-brand-300"
+                        >
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{lead.fullName}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                            {LEAD_STATUS_ES[lead.status] ?? lead.status}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400">Todavía no hay oportunidades vinculadas a este desarrollo. Entran solas cuando un cliente consulta por los lotes por WhatsApp.</p>
+                  )}
+                </div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Agenda de visitas</h3>
+                  {crm && crm.visits.length > 0 ? (
+                    <div className="space-y-2">
+                      {crm.visits.map((visit) => (
+                        <div
+                          key={visit.id}
+                          className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 px-3 py-2"
+                        >
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{visit.leadName}</span>
+                          <span className="text-[10px] text-slate-500">
+                            {VISIT_STATUS_ES[visit.status] ?? visit.status} · {new Date(visit.scheduledAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400">Sin visitas agendadas para este desarrollo todavía.</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
