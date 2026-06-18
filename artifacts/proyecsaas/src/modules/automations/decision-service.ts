@@ -333,10 +333,14 @@ function enrichDecisionWithContext(
   const doubleOptionSummary = getDoubleOptionVisitSummary(context);
   const concreteScheduledAt = getConcreteScheduledAt(context);
   const hasMatchedProperty = hasMatchedPropertyContext(context);
+  const hasLots = (context.lots?.length ?? 0) > 0;
   const availableSlots = hasAvailability(context);
   const missingSignals = getMissingDemandSignals(decision.extractedPreferences, context);
 
-  if (!hasMatchedProperty) {
+  // Solo "modo aclaración" si NO hay ni propiedad matcheada NI lotes. Si hay
+  // lotes (desarrollos/loteos), son inventario válido: el agente puede ofrecerlos
+  // y proponer visita con la disponibilidad, sin quedarse pidiendo aclaración.
+  if (!hasMatchedProperty && !hasLots) {
     return appendInternalNotes(
       {
         ...decision,
@@ -385,7 +389,7 @@ function enrichDecisionWithContext(
   }
 
   if (
-    hasMatchedProperty &&
+    (hasMatchedProperty || hasLots) &&
     !availableSlots &&
     (visitRequested || decision.visitIntent?.requested || decision.leadTemperature === "hot")
   ) {
@@ -397,13 +401,13 @@ function enrichDecisionWithContext(
         visitIntent: { requested: true },
         visitProposal: {
           proposed: false,
-          slotSummary: "Sin disponibilidad activa confirmada para la propiedad vinculada.",
+          slotSummary: "Sin disponibilidad activa confirmada todavía.",
           scheduledAt: null,
         },
         requiresFollowUp: true,
         followUpReason:
           decision.followUpReason ??
-          `Hay interes por visitar ${context.property?.title ?? "la propiedad vinculada"}, pero falta disponibilidad concreta para cerrarlo.`,
+          `Hay interes por visitar ${context.property?.title ?? "el desarrollo/lotes"}, pero falta disponibilidad concreta para cerrarlo.`,
       },
       [
         `The lead shows visit intent for ${context.property?.title ?? "the linked property"}, but there is no active availability yet.`,
