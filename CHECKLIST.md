@@ -175,6 +175,11 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🩹 **Copy honesto**: reemplazado "Límite alcanzado. Para habilitar más agentes, contactá al soporte" → "Tu inmobiliaria opera con un agente IA que atiende todo tu inventario. Manejar varios agentes por zona o sector llegará próximamente."
 - 💡 **Respuesta al usuario**: un agente se banca 200+ propiedades sin confundirse (no las lee todas: matchea por zona/tipo/presupuesto y ofrece ~3 relevantes; nunca lo reservado/vendido). Multi-agente por sector solo tendría sentido con números de WhatsApp distintos por marca → es feature a construir (agente por canal): pendiente si el usuario lo pide.
 
+**Auditoría panel ACTIVIDAD AUTOMÁTICA (2026-06-18):**
+- ✅ Data 100% real (conteos de `conversation`/`visit`/`availabilitySlot`/`lead.groupBy` por Prisma). Sin componentes temporales.
+- 🔒 **Fuga técnica oculta**: "Redis conectado" → "Conectada", "Modo síncrono (dev)" → "Modo directo"; se quitó el nombre exacto del modelo "GPT-4.1" → "La IA" (no exponer interna ni envejecer el copy).
+- 🇪🇸 **Castellano**: "intent" → "intención"; "Match de inventario" → "Coincidencia"; "bot"/"Bot:" → "agente"/"Agente:"; "leads" → "oportunidades"; "Ver lead" → "Ver oportunidad"; "captacion" → "captación". Label "Tasa de respuesta bot" → "Tasa de respuesta del agente" + hint "mensajes enviados / recibidos" (la >100% es real: el agente manda varios mensajes por cada uno recibido).
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
