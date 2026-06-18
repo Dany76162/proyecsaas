@@ -9,13 +9,16 @@ import { ThemeToggle } from "@/components/landing/ThemeToggle";
 const DEMO_WHATSAPP_URL =
   "https://wa.me/5491166037990?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20Ra%C3%ADces%20Pilot%20para%20mi%20inmobiliaria.";
 
+// Los anchors apuntan a `/#...` (no solo `#...`) para que funcionen desde
+// cualquier página (ej. /app-movil): navegan a la landing y hacen scroll a la
+// sección. Con `#...` a secas, en páginas que no son la landing no pasaba nada.
 const NAV_LINKS = [
-  { href: "#producto", label: "Producto", isAnchor: true },
-  { href: "#como-funciona", label: "Cómo funciona", isAnchor: true },
-  { href: "#tour-360", label: "Tour 360°", isAnchor: true },
-  { href: "#desarrollos", label: "Desarrollos", isAnchor: true },
-  { href: "#beneficios", label: "Beneficios", isAnchor: true },
-  { href: "#contacto", label: "Contacto", isAnchor: true },
+  { href: "/#producto", label: "Producto", isAnchor: true },
+  { href: "/#como-funciona", label: "Cómo funciona", isAnchor: true },
+  { href: "/#tour-360", label: "Tour 360°", isAnchor: true },
+  { href: "/#desarrollos", label: "Desarrollos", isAnchor: true },
+  { href: "/#beneficios", label: "Beneficios", isAnchor: true },
+  { href: "/#contacto", label: "Contacto", isAnchor: true },
   { href: "/propiedades", label: "Propiedades", isAnchor: false },
   { href: "/app-movil", label: "App", isAnchor: false },
 ] as const;
