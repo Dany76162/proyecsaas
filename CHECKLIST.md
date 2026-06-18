@@ -189,6 +189,11 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🇪🇸 **Castellano** del texto de ayuda "¿Cómo usa el agente IA estos horarios?": "slot(s)" → "franja(s)", "lead" → "prospecto".
 - 🩹 **Texto corregido a la conducta real**: decía "el agente busca el próximo slot y propone fecha y hora concreta" (auto-agendaba) → ahora "el agente OFRECE las franjas; vos confirmás el horario final". Y "primero slots vinculados al agente asignado del lead" (inexacto: el worker no prioriza por agente) → "generales + propiedad + desarrollo que consulta el prospecto". + guía: para visitas a lotes de un loteo, atar la franja al **desarrollo** (no a la propiedad). [Nota: las franjas del usuario están atadas a "Prop: Valles del Pino"; para el flujo de lotes conviene atarlas al desarrollo.]
 
+**Auditoría panel EQUIPO / Usuarios (2026-06-18):**
+- ✅ Data real (`listOrganizationUsers`, `getUserRoleBreakdown`). Editar miembro = dialog autocontenido (`updateMemberProfileAction`, con campos teléfono/WhatsApp). Sin componentes temporales.
+- 🐛 **Fix del 404 reportado** ("al conectar el número del asistente saltaba ruta no encontrada"): el **enlace de invitación** se armaba SOLO con `NEXT_PUBLIC_APP_URL`; si esa env estaba mal/sin setear/localhost en prod, el link apuntaba a un host muerto → "ruta no encontrada". Ahora `inviteUserAction` deriva la base del **host real del request** (donde opera el admin, siempre accesible), con fallback a la env (ignorando localhost) y luego al dominio de prod. (La ruta `/invite/[token]` existe y maneja bien tokens inválidos/usados/vencidos con pantalla amigable, no 404.)
+- 🇪🇸 **Castellano**: "Email" → "Correo electrónico" (dialog); "leads" → "oportunidades"; se quitaron los paréntesis en inglés de los roles (Titular/Administrador/Agente de ventas/Asistente, sin "Owner/Admin/Agent/Assistant").
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
