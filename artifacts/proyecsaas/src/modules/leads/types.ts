@@ -23,6 +23,8 @@ export type LeadListItem = {
   ownerName: string;
   propertyId?: string;
   propertyTitle: string;
+  developmentId?: string;
+  developmentName?: string;
   lastContactAt: string;
   leadTemperature: LeadTemperature;
 };

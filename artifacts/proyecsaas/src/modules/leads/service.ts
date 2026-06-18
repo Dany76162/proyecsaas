@@ -65,7 +65,7 @@ export async function listOrganizationLeads(
       phone: lead.phone ?? "",
       status: lead.status,
       source: lead.source ?? "Ingreso manual",
-      notes: signals.notes || "Lead listo para calificación.",
+      notes: signals.notes || "Oportunidad lista para calificación.",
       interestLabel: lead.interestLabel ?? "Nueva consulta",
       budgetLabel: lead.budgetLabel ?? "Pendiente de calificación",
       ownerName: lead.owner?.fullName ?? "Sin asignar",
@@ -74,6 +74,8 @@ export async function listOrganizationLeads(
         lead.property?.title ??
         (lead.developmentId ? devNameById.get(lead.developmentId) : undefined) ??
         "Sin propiedad vinculada",
+      developmentId: lead.developmentId ?? undefined,
+      developmentName: (lead.developmentId ? devNameById.get(lead.developmentId) : undefined) ?? undefined,
       lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
       leadTemperature: signals.leadTemperature,
     };
@@ -161,21 +163,31 @@ export async function getLeadDetail(
     return null;
   }
 
+  // developmentId es escalar: resolvemos el nombre del desarrollo vinculado.
+  const developmentName = lead.developmentId
+    ? (
+        await prisma.development.findUnique({
+          where: { id: lead.developmentId },
+          select: { name: true },
+        })
+      )?.name ?? null
+    : null;
+
   const activity = [
     {
       id: `${lead.id}_created`,
-      title: "Lead creado",
+      title: "Oportunidad creada",
       description: lead.source
-        ? `Lead ingresó al CRM desde ${lead.source}.`
-        : "Lead ingresó al CRM y está listo para calificación.",
+        ? `La oportunidad ingresó al CRM desde ${lead.source}.`
+        : "La oportunidad ingresó al CRM y está lista para calificación.",
       happenedAt: lead.createdAt.toISOString(),
     },
     ...(lead.updatedAt.getTime() !== lead.createdAt.getTime()
       ? [
           {
             id: `${lead.id}_updated`,
-            title: "Lead actualizado",
-            description: "Se actualizaron datos del lead, etapa o propiedad asignada.",
+            title: "Oportunidad actualizada",
+            description: "Se actualizaron datos de la oportunidad, etapa o propiedad asignada.",
             happenedAt: lead.updatedAt.toISOString(),
           },
         ]
@@ -185,7 +197,17 @@ export async function getLeadDetail(
           {
             id: `${lead.id}_property`,
             title: "Propiedad vinculada",
-            description: `El lead está vinculado a ${lead.property.title}.`,
+            description: `La oportunidad está vinculada a ${lead.property.title}.`,
+            happenedAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
+          },
+        ]
+      : []),
+    ...(!lead.property && developmentName
+      ? [
+          {
+            id: `${lead.id}_development`,
+            title: "Desarrollo vinculado",
+            description: `La oportunidad está vinculada al desarrollo ${developmentName}.`,
             happenedAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
           },
         ]
@@ -241,13 +263,15 @@ export async function getLeadDetail(
     phone: lead.phone ?? "",
     status: lead.status,
     source: lead.source ?? "Ingreso manual",
-    notes: signals.notes || "Lead listo para calificación.",
+    notes: signals.notes || "Oportunidad lista para calificación.",
     interestLabel: lead.interestLabel ?? "Nueva consulta",
     budgetLabel: lead.budgetLabel ?? "Pendiente de calificación",
     ownerName: lead.owner?.fullName ?? "Sin asignar",
-    assignedUserEmail: lead.owner?.email ?? "Sin email asignado",
+    assignedUserEmail: lead.owner?.email ?? "Sin correo asignado",
     propertyId: lead.propertyId ?? undefined,
-    propertyTitle: lead.property?.title ?? "Sin propiedad vinculada",
+    propertyTitle: lead.property?.title ?? developmentName ?? "Sin propiedad vinculada",
+    developmentId: lead.developmentId ?? undefined,
+    developmentName: developmentName ?? undefined,
     lastContactAt: (lead.lastContactAt ?? lead.updatedAt).toISOString(),
     leadTemperature: signals.leadTemperature,
     propertyMatch: signals.propertyMatch,

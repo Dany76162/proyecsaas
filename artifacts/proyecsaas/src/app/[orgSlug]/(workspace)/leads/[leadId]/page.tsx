@@ -240,6 +240,13 @@ export default async function LeadDetailPage({
               >
                 Ver propiedad relacionada
               </Link>
+            ) : lead.developmentId ? (
+              <Link
+                href={`/${orgSlug}/developments/${lead.developmentId}`}
+                className="rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+              >
+                Ver desarrollo relacionado
+              </Link>
             ) : null}
             <Link
               href={`/${orgSlug}/visits`}
