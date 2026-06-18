@@ -224,6 +224,50 @@ export default async function HomePage() {
         {/* DESARROLLADORAS / LOTEOS */}
         <DevelopersSection />
 
+        {/* PORTAL / APP PARA COMPRADORES + FILTROS DE BÚSQUEDA */}
+        <section className="mx-auto max-w-7xl px-6 py-16">
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 dark:border-brand-500/30 bg-brand-50 dark:bg-brand-500/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-700 dark:text-brand-400 mb-6">
+                <Globe className="h-3.5 w-3.5" />
+                Portal de compradores
+              </span>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+                Tus propiedades, donde la gente busca
+              </h2>
+              <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-350 mb-6">
+                Cada propiedad que publicás aparece —además de en tu propio catálogo— en el <strong>portal y app de Raíces Pilot para compradores</strong>, donde la gente busca y filtra por lo que necesita. Más visibilidad y más consultas, sin trabajo extra.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-8">
+                {["Operación", "Zona", "Precio", "Ambientes", "Baños", "Superficie", "Cochera", "Apto crédito", "Con tour 360°", "Acepta mascotas"].map((f) => (
+                  <span key={f} className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    {f}
+                  </span>
+                ))}
+              </div>
+              <Button variant="outline" size="lg" asChild className="border-slate-300">
+                <Link href="/propiedades">Ver el portal de propiedades <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                  <Laptop className="h-6 w-6" />
+                </div>
+                <h3 className="font-bold text-slate-900 dark:text-white mb-1">App para tu inmobiliaria</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">El panel de gestión, instalable en compu o celular: IA, CRM, visitas y catálogo.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                  <Smartphone className="h-6 w-6" />
+                </div>
+                <h3 className="font-bold text-slate-900 dark:text-white mb-1">App para tus compradores</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Una app instalable donde buscan y filtran propiedades — con tus publicaciones incluidas.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* PRODUCT PREVIEW / INFRASTRUCTURE (Dark Section) */}
         <section id="producto" className="bg-slate-950 py-20 text-slate-50">
           <div className="mx-auto max-w-7xl px-6">
