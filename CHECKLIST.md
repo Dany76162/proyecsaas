@@ -212,6 +212,13 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 
 > ✅ **AUDITORÍA PANEL POR PANEL COMPLETA**: Inicio · Enlaces WhatsApp · Oportunidades · Desarrollos↔CRM · Bandeja IA · Visitas · Propiedades · Desarrollos · Agentes IA · Actividad automática · Administración WhatsApp · Disponibilidad · Equipo · Organización · Soporte Técnico · **Catálogo público**.
 
+**Recordatorios automáticos de visita (2026-06-18, verificado runtime):**
+- 🔔 Nuevo: ~24 h antes de una visita próxima, el sistema avisa **al prospecto por WhatsApp** ("te recordamos tu visita a X el <fecha> hs…") y **a la inmobiliaria/agente por push** ("⏰ Recordatorio de visita").
+- Implementación: `Visit.reminderSentAt` (migración `20260618210000`) para idempotencia; `processVisitReminders()` (`src/modules/visits/reminders.ts`) corre **cada 15 min desde el worker** (`start.ts`), procesa visitas PENDING/CONFIRMED con `scheduledAt ∈ (ahora, ahora+24h]` y sin recordatorio previo. Envío WhatsApp reutiliza `resolveActiveChannelByOrgId` + `attemptWhatsAppOutboundDelivery`; push con `notifyVisitReminder`.
+- ✅ Verificado runtime: detecta la visita en ventana, marca `reminderSentAt`, no reenvía. ⚠️ Requiere VAPID + canal activo en el **worker** (ya estaban) para que el envío real funcione.
+
+**Bandeja IA — historial scrollable (2026-06-18):** el inbox traía solo 3 mensajes por conversación; ahora trae 50 (historial completo del prospecto) + `min-h-0` en la columna del chat para que el feed scrollee internamente. Permite revisión/análisis manual del prospecto deslizando los mensajes viejos.
+
 **Manual de Uso actualizado (2026-06-18):** se puso al día con todo lo de la sesión.
 - Visitas/Disponibilidad: modelo "la IA ofrece, vos confirmás" + horarios por desarrollo; la visita cae en Visitas + CRM.
 - Desarrollos: imagen de portada + servicios en "Información general", y bloque nuevo "El agente IA y el CRM del desarrollo" (ofrece lotes, responde servicios/descripción, oportunidades + agenda de visitas en la ficha).
