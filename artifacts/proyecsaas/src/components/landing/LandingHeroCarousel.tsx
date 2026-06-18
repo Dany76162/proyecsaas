@@ -314,7 +314,7 @@ export function LandingHeroCarousel() {
               </Button>
             </div>
           </div>
-          <div className="w-full flex items-center justify-center py-6 lg:py-0 overflow-hidden">
+          <div className="w-full flex items-center justify-center py-6 lg:py-0 overflow-visible">
             <div className="relative w-full max-w-[320px] xs:max-w-[360px] sm:max-w-[480px] md:max-w-[550px] h-[480px] sm:h-[620px] flex items-center justify-center overflow-visible">
               {/* Celular 1 (Izquierdo) */}
               <motion.div 

@@ -43,7 +43,7 @@ export function Navbar() {
         </div>
 
         {/* Nav desktop — oculto en mobile */}
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-4 xl:gap-6 lg:flex">
           {NAV_LINKS.map((link) =>
             link.isAnchor ? (
               <a
@@ -73,18 +73,18 @@ export function Navbar() {
           <Button
             variant="ghost"
             asChild
-            className="hidden md:inline-flex dark:text-slate-200 dark:hover:bg-slate-900"
+            className="hidden lg:inline-flex dark:text-slate-200 dark:hover:bg-slate-900"
           >
             <Link href="/login">Acceder</Link>
           </Button>
-          <Button asChild className="hidden md:inline-flex">
+          <Button asChild className="hidden lg:inline-flex">
             <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
               Solicitar demo
             </a>
           </Button>
 
           {/* Mobile: Acceder compacto */}
-          <Button asChild size="sm" className="md:hidden">
+          <Button asChild size="sm" className="lg:hidden">
             <Link href="/login">Acceder</Link>
           </Button>
 
@@ -95,7 +95,7 @@ export function Navbar() {
             aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
-            className="md:hidden flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="lg:hidden flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -106,7 +106,7 @@ export function Navbar() {
       {isOpen && (
         <div
           id="mobile-menu"
-          className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md"
+          className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md"
         >
           <nav className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800/70">
             {NAV_LINKS.map((link) =>

@@ -16,6 +16,7 @@ const createSlotSchema = z.object({
   timezone: z.string().min(1).max(80),
   userId: z.string().optional(),
   propertyId: z.string().optional(),
+  developmentId: z.string().optional(),
 });
 
 export async function createAvailabilitySlotAction(formData: FormData) {
@@ -31,11 +32,12 @@ export async function createAvailabilitySlotAction(formData: FormData) {
     timezone: String(formData.get("timezone") ?? "America/Buenos_Aires"),
     userId: formData.get("userId") ? String(formData.get("userId")) : undefined,
     propertyId: formData.get("propertyId") ? String(formData.get("propertyId")) : undefined,
+    developmentId: formData.get("developmentId") ? String(formData.get("developmentId")) : undefined,
   });
 
   if (!parsed.success) return;
 
-  const { label, weekday, startTime, endTime, timezone, userId, propertyId } = parsed.data;
+  const { label, weekday, startTime, endTime, timezone, userId, propertyId, developmentId } = parsed.data;
   const startMinute = timeToMinutes(startTime);
   const endMinute = timeToMinutes(endTime);
 
@@ -51,6 +53,7 @@ export async function createAvailabilitySlotAction(formData: FormData) {
       timezone,
       userId: userId || null,
       propertyId: propertyId || null,
+      developmentId: developmentId || null,
       isActive: true,
     },
   });

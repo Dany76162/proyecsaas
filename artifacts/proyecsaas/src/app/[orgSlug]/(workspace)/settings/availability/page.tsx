@@ -43,7 +43,7 @@ export default async function AvailabilitySettingsPage({
   const { orgSlug } = await params;
   const { success, error } = await searchParams;
 
-  const [organization, slots, members, properties] = await Promise.all([
+  const [organization, slots, members, properties, developments] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     listAvailabilitySlots(orgSlug),
     prisma.membership.findMany({
@@ -57,7 +57,15 @@ export default async function AvailabilitySettingsPage({
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
+    prisma.development.findMany({
+      where: { Organization: { slug: orgSlug } },
+      select: { id: true, name: true },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
   ]);
+
+  const developmentNameById = new Map(developments.map((d) => [d.id, d.name]));
 
   const displayTimezone =
     slots.find((s) => s.isActive)?.timezone ??
@@ -195,6 +203,9 @@ export default async function AvailabilitySettingsPage({
                       {slot.propertyTitle && (
                         <StatusBadge label={`Prop: ${slot.propertyTitle}`} tone="neutral" />
                       )}
+                      {slot.developmentId && developmentNameById.get(slot.developmentId) && (
+                        <StatusBadge label={`Desarrollo: ${developmentNameById.get(slot.developmentId)}`} tone="info" />
+                      )}
                       <StatusBadge
                         label={slot.isActive ? "Activo" : "Inactivo"}
                         tone={slot.isActive ? "success" : "neutral"}
@@ -323,6 +334,20 @@ export default async function AvailabilitySettingsPage({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Desarrollo / Loteo (opcional) */}
+          <div>
+            <label className={labelClass}>Desarrollo / Loteo <span className="text-slate-400 font-normal">(opcional)</span></label>
+            <select name="developmentId" defaultValue="" className={inputClass}>
+              <option value="">General – todos los desarrollos</option>
+              {developments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-slate-400">Para visitas a los lotes de un loteo (ej. Valles del Pino los sáb/dom).</p>
           </div>
 
           <div className="lg:col-span-3">

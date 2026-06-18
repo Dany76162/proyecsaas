@@ -10,6 +10,7 @@ export type AvailabilitySlotRow = {
   isActive: boolean;
   userId: string | null;
   propertyId: string | null;
+  developmentId: string | null;
   userName: string | null;
   propertyTitle: string | null;
   createdAt: Date;
@@ -37,6 +38,7 @@ export async function listAvailabilitySlots(orgSlug: string): Promise<Availabili
     isActive: slot.isActive,
     userId: slot.userId,
     propertyId: slot.propertyId,
+    developmentId: slot.developmentId,
     userName: slot.user?.fullName ?? null,
     propertyTitle: slot.property?.title ?? null,
     createdAt: slot.createdAt,

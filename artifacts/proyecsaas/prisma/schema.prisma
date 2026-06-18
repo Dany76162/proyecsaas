@@ -489,6 +489,10 @@ model AvailabilitySlot {
   id             String       @id @default(cuid())
   organizationId String
   propertyId     String?
+  // Desarrollo (loteo) al que aplica este horario de visitas. Scalar (sin FK)
+  // para evitar problemas de drift en prod. Si propertyId y developmentId son
+  // null, el horario es general (toda la organización).
+  developmentId  String?
   userId         String?
   label          String
   weekday        Int

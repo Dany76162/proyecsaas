@@ -491,36 +491,7 @@ export async function processWhatsAppInboundJob(
     result.conversation.propertyId = propertyMatch.property.id;
   }
 
-  const [availability, recentMessages, aiAgent, availableLots, orgRecord, propertyDetail] = await Promise.all([
-    // Horarios para proponer visitas: SIEMPRE traemos los generales de la org
-    // (propertyId null) — sirven para propiedades Y lotes — más los específicos
-    // de la propiedad matcheada si hay. Antes solo traía los de una propiedad
-    // puntual, así que los horarios "generales" nunca se usaban (ni los de lotes).
-    prisma.availabilitySlot.findMany({
-      where: {
-        organizationId: targetOrgId,
-        isActive: true,
-        OR: [
-          { propertyId: null },
-          ...(propertyMatch.property ? [{ propertyId: propertyMatch.property.id }] : []),
-        ],
-      },
-      select: {
-        id: true,
-        label: true,
-        weekday: true,
-        startMinute: true,
-        endMinute: true,
-        timezone: true,
-        user: {
-          select: {
-            fullName: true,
-          },
-        },
-      },
-      orderBy: [{ weekday: "asc" }, { startMinute: "asc" }],
-      take: 6,
-    }),
+  const [recentMessages, aiAgent, availableLots, orgRecord, propertyDetail] = await Promise.all([
     prisma.message.findMany({
       where: {
         organizationId: targetOrgId,
@@ -603,6 +574,39 @@ export async function processWhatsAppInboundJob(
           .catch(() => null)
       : Promise.resolve(null),
   ]);
+
+  // Horarios para proponer visitas. Se traen: (a) los GENERALES de la org
+  // (propertyId y developmentId null) — sirven para todo; (b) los de la
+  // PROPIEDAD matcheada; (c) los del/los DESARROLLO(S) de los lotes ofrecidos.
+  // Así una loteadora puede tener agenda por desarrollo (ej. Valles del Pino los
+  // sáb/dom) sin que aplique a otras zonas.
+  const lotDevelopmentIds = [
+    ...new Set(availableLots.map((l) => l.developmentId).filter((id): id is string => Boolean(id))),
+  ];
+  const availability = await prisma.availabilitySlot
+    .findMany({
+      where: {
+        organizationId: targetOrgId,
+        isActive: true,
+        OR: [
+          { propertyId: null, developmentId: null },
+          ...(propertyMatch.property ? [{ propertyId: propertyMatch.property.id }] : []),
+          ...(lotDevelopmentIds.length ? [{ developmentId: { in: lotDevelopmentIds } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        label: true,
+        weekday: true,
+        startMinute: true,
+        endMinute: true,
+        timezone: true,
+        user: { select: { fullName: true } },
+      },
+      orderBy: [{ weekday: "asc" }, { startMinute: "asc" }],
+      take: 6,
+    })
+    .catch(() => []);
 
   // ── AG-4C: escalateOnKeywords early-return ───────────────────────────────
   // If the latest inbound message matches any keyword configured in the agent,
