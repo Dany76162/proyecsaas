@@ -613,12 +613,19 @@ export async function processWhatsAppInboundJob(
       .replace(/[\u0300-\u036f]/g, "");
   }
 
+  // Match por PALABRA COMPLETA (no subcadena) y con keywords de >=3 chars, para
+  // evitar derivaciones erróneas: antes "ola" matcheaba "hola", "lote" matcheaba
+  // "lotes", etc., y el agente derivaba con casi cualquier mensaje.
+  const normalizedBody = normalizeForKeyword(latestInboundBody);
   const triggeredKeyword =
     aiAgent?.escalateOnKeywords && aiAgent.escalateOnKeywords.length > 0
       ? aiAgent.escalateOnKeywords
           .map((kw) => normalizeForKeyword(kw.trim()))
-          .filter(Boolean)
-          .find((kw) => normalizeForKeyword(latestInboundBody).includes(kw))
+          .filter((kw) => kw.length >= 3)
+          .find((kw) => {
+            const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            return new RegExp(`(^|\\W)${escaped}(\\W|$)`).test(normalizedBody);
+          })
       : undefined;
 
   // Base pública para links absolutos (WhatsApp necesita la URL completa) y
