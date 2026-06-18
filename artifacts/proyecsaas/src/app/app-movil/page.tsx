@@ -114,8 +114,9 @@ export default function AppMovilPage() {
   };
 
   return (
-    <main className="dark min-h-screen bg-[#07070E] pt-16">
+    <>
       <Navbar />
+      <main className="dark min-h-screen bg-[#07070E] pt-16">
 
       <section className="relative overflow-hidden py-24 sm:py-32 min-h-[90vh] flex items-center bg-[#07070E]">
         {/* Background Image */}
@@ -398,6 +399,7 @@ export default function AppMovilPage() {
           </div>
         </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }
