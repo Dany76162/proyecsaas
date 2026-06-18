@@ -47,6 +47,59 @@ function getPanoramaSourceUrl(url: string) {
   return url
 }
 
+// Límite de tamaño de textura WebGL del dispositivo. En celulares suele ser
+// 4096px (a veces 2048), bastante menor que en escritorio. Pannellum tira un
+// "webgl size error" (pantalla negra) si el panorama lo supera.
+let cachedMaxTextureSize: number | null = null
+function getMaxTextureSize(): number {
+  if (cachedMaxTextureSize !== null) return cachedMaxTextureSize
+  try {
+    const canvas = document.createElement('canvas')
+    const gl = (canvas.getContext('webgl') ||
+      canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null
+    if (gl) {
+      cachedMaxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number
+    }
+  } catch {}
+  if (!cachedMaxTextureSize || cachedMaxTextureSize < 1024) cachedMaxTextureSize = 4096
+  return cachedMaxTextureSize
+}
+
+// Reescala una imagen equirectangular para que entre en el límite del dispositivo.
+// Pannellum parte la imagen al medio, así que el límite efectivo es
+// max(W/2, H) <= maxTex. Devuelve un dataURL reescalado, o null si no hace falta
+// (ya entra) o si no se puede (canvas "tainted" por falta de CORS → se usa la original).
+async function downscaleToFit(
+  url: string,
+  width: number,
+  height: number,
+  maxTex: number,
+): Promise<string | null> {
+  const scale = Math.min(1, (2 * maxTex) / width, maxTex / height)
+  if (scale >= 1) return null
+  const targetW = Math.floor(width * scale)
+  const targetH = Math.floor(height * scale)
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = targetW
+        canvas.height = targetH
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return resolve(null)
+        ctx.drawImage(img, 0, 0, targetW, targetH)
+        resolve(canvas.toDataURL('image/jpeg', 0.9))
+      } catch {
+        resolve(null)
+      }
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
+
 function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined): ProjectionConfig {
   if (sceneType === 'cylindrical') {
     return {
@@ -83,6 +136,11 @@ export function PanoramaViewer({
   const hotspotStyleInjected = useRef(false)
   const [activeSceneIndex, setActiveSceneIndex] = useState(0)
   const [sceneTypes, setSceneTypes] = useState<Record<number, SceneProjectionType>>({})
+  // Fuentes ya resueltas (reescaladas si la original era muy grande para el dispositivo).
+  const [resolvedSources, setResolvedSources] = useState<Record<number, string>>({})
+  // Si Pannellum no puede renderizar (imagen demasiado grande, WebGL no disponible),
+  // mostramos un fallback legible en vez de una pantalla negra.
+  const [viewerError, setViewerError] = useState(false)
 
   const safeScenes = scenes || []
   const viewerScenes = safeScenes.map((scene) => ({
@@ -99,17 +157,25 @@ export function PanoramaViewer({
     if (safeScenes.length === 0) return
 
     let cancelled = false
+    const maxTex = getMaxTextureSize()
     const detectTypes = async () => {
       const types: Record<number, SceneProjectionType> = {}
+      const sources: Record<number, string> = {}
       await Promise.all(
         viewerScenes.map((scene, i) => {
           return new Promise<void>((resolve) => {
             const img = new Image()
-            img.onload = () => {
+            img.onload = async () => {
               if (cancelled) return resolve()
               const aspect = img.width / img.height
               // Las 360 reales suelen estar cerca de 2:1. Recortes o panoramicas de celular usan vista parcial.
               types[i] = aspect >= 1.85 && aspect <= 2.22 ? 'equirectangular' : 'cylindrical'
+              // Si la equirectangular supera el límite del dispositivo, la reescalamos
+              // para que entre (si no, Pannellum tira "webgl size error" → negro en móvil).
+              if (types[i] === 'equirectangular' && Math.max(img.width / 2, img.height) > maxTex) {
+                const down = await downscaleToFit(scene.sourceUrl, img.width, img.height, maxTex)
+                if (!cancelled && down) sources[i] = down
+              }
               resolve()
             }
             img.onerror = () => {
@@ -121,6 +187,7 @@ export function PanoramaViewer({
         })
       )
       if (!cancelled) {
+        setResolvedSources(sources)
         setSceneTypes(types)
       }
     }
@@ -145,6 +212,8 @@ export function PanoramaViewer({
   useEffect(() => {
     const isTypesLoaded = viewerScenes.length === 0 || Object.keys(sceneTypes).length === viewerScenes.length
     if (!containerRef.current || viewerScenes.length === 0 || !isTypesLoaded) return
+
+    setViewerError(false)
 
     // Limpiar instancia anterior
     if (viewerRef.current) {
@@ -224,13 +293,14 @@ export function PanoramaViewer({
           // @ts-ignore
           viewerRef.current = window.pannellum.viewer(containerRef.current, {
             ...projectionConfig,
-            panorama: viewerScenes[0].sourceUrl,
+            panorama: resolvedSources[0] ?? viewerScenes[0].sourceUrl,
             autoLoad: true,
             hfov: projectionConfig.hfov ?? 100,
             showControls: true,
             mouseZoom: true,
             gyroscope: true,
           })
+          viewerRef.current.on?.('error', () => setViewerError(true))
           refreshViewerLayout(viewerRef.current)
         } else {
           const scenesConfig: Record<string, any> = {}
@@ -265,7 +335,7 @@ export function PanoramaViewer({
 
             scenesConfig[`scene-${i}`] = {
               ...getPannellumProjectionConfig(sceneTypes[i]),
-              panorama: scene.sourceUrl,
+              panorama: resolvedSources[i] ?? scene.sourceUrl,
               title: scene.label,
               autoLoad: true,
               hotSpots,
@@ -279,6 +349,7 @@ export function PanoramaViewer({
             mouseZoom: true,
             gyroscope: true,
           })
+          viewerRef.current.on?.('error', () => setViewerError(true))
           refreshViewerLayout(viewerRef.current)
 
           // Escuchar eventos de cambio de escena internos de Pannellum
@@ -291,6 +362,7 @@ export function PanoramaViewer({
         }
       } catch (err) {
         console.error("Error al inicializar Pannellum", err)
+        setViewerError(true)
       }
     }
 
@@ -321,13 +393,33 @@ export function PanoramaViewer({
         viewerRef.current = null
       }
     }
-  }, [scenes, sceneTypes, isEditingHotspot, onCoordsSelected])
+  }, [scenes, sceneTypes, resolvedSources, isEditingHotspot, onCoordsSelected])
 
   if (safeScenes.length === 0) return null
 
   return (
     <div className={`relative flex min-h-[360px] flex-col bg-black ${className}`}>
       <div ref={containerRef} className="min-h-[360px] flex-1 w-full"></div>
+
+      {viewerError && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-slate-950/95 px-6 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600/10 text-2xl">🧭</div>
+          <p className="max-w-xs text-sm font-semibold text-slate-300">
+            No pudimos cargar el tour 360° en este dispositivo.
+          </p>
+          <p className="max-w-xs text-xs text-slate-500">
+            Puede que la imagen sea muy grande para tu celular. Probá abrirla directo:
+          </p>
+          <a
+            href={viewerScenes[activeSceneIndex]?.sourceUrl ?? viewerScenes[0]?.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-extrabold uppercase tracking-widest text-white transition active:scale-95"
+          >
+            Abrir imagen 360°
+          </a>
+        </div>
+      )}
       {safeScenes.length > 1 && (
         <div className="bg-slate-950/90 border-t border-white/10 px-4 py-3 flex justify-center gap-2 overflow-x-auto scrollbar-none">
           {safeScenes.map((scene, i) => (
