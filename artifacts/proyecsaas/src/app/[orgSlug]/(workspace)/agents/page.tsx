@@ -71,8 +71,8 @@ export default async function AgentsPage({
               </Link>
             )}
             {isManager && atQuota && (
-              <p className="max-w-[220px] text-right text-xs text-slate-500">
-                Límite alcanzado. Para habilitar más agentes, contactá al soporte.
+              <p className="max-w-[240px] text-right text-xs text-slate-500">
+                Tu inmobiliaria opera con un agente IA que atiende todo tu inventario. Manejar varios agentes por zona o sector llegará próximamente.
               </p>
             )}
           </div>
