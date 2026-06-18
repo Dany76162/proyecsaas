@@ -102,7 +102,7 @@ export default async function HomePage() {
               </span>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-slate-600 dark:text-slate-350 max-w-3xl mx-auto font-medium">
-              La única plataforma operativa que atiende a tus leads por WhatsApp las <strong>24 horas, los 7 días de la semana</strong>. La IA califica el interés de cada prospecto, les recomienda propiedades de tu catálogo en tiempo real y les agenda visitas directamente en tu calendario. Todo de forma 100% autónoma.
+              La plataforma operativa que atiende a tus prospectos por WhatsApp las <strong>24 horas, los 7 días de la semana</strong>. La IA califica el interés de cada uno, les recomienda propiedades y lotes de tu catálogo en tiempo real y <strong>coordina las visitas según tu disponibilidad</strong> — siempre con tu confirmación. La IA te ayuda a vender; <strong>vos tomás el control</strong> en el momento del cierre.
             </p>
             
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -179,13 +179,13 @@ export default async function HomePage() {
                     },
                     {
                       num: "02",
-                      title: "Raíces Pilot responde y organiza",
-                      desc: "La IA interactúa, califica el interés y perfila al cliente basándose en tu inventario."
+                      title: "Raíces Pilot responde y coordina",
+                      desc: "La IA califica el interés, recomienda propiedades y lotes de tu inventario, y coordina visitas según tu disponibilidad."
                     },
                     {
                       num: "03",
-                      title: "Tu equipo interviene",
-                      desc: "Los agentes asumen el control en el momento adecuado con todo el contexto necesario."
+                      title: "Tu equipo confirma y cierra",
+                      desc: "Te avisa cuándo intervenir; vos confirmás el horario de la visita y tomás el control del cierre, con todo el contexto. Recordatorios de visita automáticos para el cliente y tu equipo."
                     }
                   ].map((step, i) => (
                     <div key={i} className="flex gap-4">
