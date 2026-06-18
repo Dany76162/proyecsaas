@@ -79,7 +79,7 @@ function getPropertyMatchLabel(
     | "manual-overridden"
     | "no-match",
 ) {
-  if (status === "matched") return "Match automático";
+  if (status === "matched") return "Coincidencia automática";
   if (status === "existing-link") return "Vínculo existente";
   if (status === "manual-confirmed") return "Confirmado manualmente";
   if (status === "manual-overridden") return "Modificado manualmente";
@@ -173,9 +173,9 @@ export default async function LeadDetailPage({
 
   const successMessage =
     success === "lead-created"
-      ? "Lead creado correctamente."
+      ? "Oportunidad creada correctamente."
       : success === "lead-updated"
-        ? "Lead actualizado correctamente."
+        ? "Oportunidad actualizada correctamente."
         : success === "visit-created"
           ? "Visita agendada correctamente."
           : null;
@@ -186,7 +186,7 @@ export default async function LeadDetailPage({
       : error === "invalid-visit"
         ? "Ingresá una fecha y estado de visita válidos."
         : error === "property-unavailable"
-          ? "La propiedad seleccionada ya no está disponible para este lead."
+          ? "La propiedad seleccionada ya no está disponible para esta oportunidad."
           : error === "missing-owner"
             ? "No hay usuario asignado disponible para crear esta visita."
             : error === "visit-create-failed"
@@ -253,7 +253,7 @@ export default async function LeadDetailPage({
 
       <section className="grid gap-6 md:grid-cols-4">
         <MetricCard label="Teléfono" value={lead.phone} hint="Contacto directo principal." />
-        <MetricCard label="Email" value={lead.email || "Sin email"} hint="Contacto por correo." />
+        <MetricCard label="Correo electrónico" value={lead.email || "Sin correo"} hint="Contacto por correo." />
         <MetricCard label="Responsable" value={lead.ownerName} hint={lead.assignedUserEmail} />
         <MetricCard
           label="Próxima visita"
@@ -293,9 +293,9 @@ export default async function LeadDetailPage({
 
       {lead.propertyMatch ? (
         <SectionCard
-          eyebrow="Match de inventario"
+          eyebrow="Coincidencia de inventario"
           title="Vinculación de propiedad"
-          description="Trazabilidad de cómo el sistema mantuvo o asignó la propiedad para este lead."
+          description="Trazabilidad de cómo el sistema mantuvo o asignó la propiedad para esta oportunidad."
         >
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge
@@ -438,7 +438,7 @@ export default async function LeadDetailPage({
         <SectionCard
           eyebrow="Conversación"
           title="Contexto WhatsApp"
-          description="El agente asignado puede revisar el hilo del bot aquí sin salir del lead."
+          description="El agente asignado puede revisar el hilo del bot aquí sin salir de la oportunidad."
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -512,8 +512,8 @@ export default async function LeadDetailPage({
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <SectionCard
           eyebrow="Editar"
-          title="Datos del lead"
-          description="Controles mínimos para que el agente mantenga el lead activo."
+          title="Datos de la oportunidad"
+          description="Controles mínimos para que el agente mantenga la oportunidad activa."
         >
           <form action={updateLeadAction} className="grid gap-4 md:grid-cols-2">
             <input type="hidden" name="orgSlug" value={orgSlug} />
@@ -540,7 +540,7 @@ export default async function LeadDetailPage({
             </label>
 
             <label className="space-y-2 text-sm text-slate-600">
-              <span>Email</span>
+              <span>Correo electrónico</span>
               <input
                 name="email"
                 type="email"
@@ -608,7 +608,7 @@ export default async function LeadDetailPage({
         <SectionCard
           eyebrow="Visitas"
           title="Agregar visita"
-          description="Creá una visita en contexto sin salir del lead."
+          description="Creá una visita en contexto sin salir de la oportunidad."
         >
           <form action={createVisitAction} className="space-y-4">
             <input type="hidden" name="orgSlug" value={orgSlug} />
@@ -654,8 +654,8 @@ export default async function LeadDetailPage({
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
           eyebrow="Actividad"
-          title="Historial del lead"
-          description="Registro de eventos y acciones sobre este lead."
+          title="Historial de la oportunidad"
+          description="Registro de eventos y acciones sobre esta oportunidad."
         >
           <div className="space-y-4">
             {lead.activity.map((item) => (
@@ -673,7 +673,7 @@ export default async function LeadDetailPage({
         <SectionCard
           eyebrow="Visitas"
           title="Visitas agendadas"
-          description="Visitas vinculadas a este lead y la propiedad seleccionada."
+          description="Visitas vinculadas a esta oportunidad y la propiedad seleccionada."
         >
           <div className="space-y-4">
             {lead.visits.length ? (

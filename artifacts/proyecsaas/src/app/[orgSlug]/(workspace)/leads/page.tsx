@@ -83,7 +83,7 @@ export default async function LeadsPage({
               Oportunidades
             </h1>
             <p className="mt-2 max-w-xl text-base text-slate-500 font-medium">
-              Gestioná tu pipeline de ventas y hacé seguimiento de cada oportunidad desde el primer contacto.
+              Gestioná tu embudo de ventas y hacé seguimiento de cada oportunidad desde el primer contacto.
             </p>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default async function LeadsPage({
 
       {/* ── Quick Create + Search ── */}
       <section id="registro-lead" className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <SectionCard eyebrow="Operación" title="Registro rápido de lead">
+        <SectionCard eyebrow="Operación" title="Registro rápido de oportunidad">
           <form action={createLeadAction} className="grid gap-4 md:grid-cols-2">
             <input type="hidden" name="orgSlug" value={orgSlug} />
             <div className="space-y-1.5">
@@ -108,7 +108,7 @@ export default async function LeadsPage({
               <Input
                 name="fullName"
                 required
-                placeholder="Nombre del lead"
+                placeholder="Nombre y apellido"
               />
             </div>
             <div className="space-y-1.5">
@@ -124,12 +124,12 @@ export default async function LeadsPage({
               <Input
                 name="email"
                 type="email"
-                placeholder="lead@ejemplo.com"
+                placeholder="correo@ejemplo.com"
               />
             </div>
             <div className="md:col-span-2 pt-2">
               <Button type="submit" variant="primary" className="w-full sm:w-auto min-w-[140px]">
-                Registrar lead
+                Registrar oportunidad
               </Button>
             </div>
           </form>
@@ -142,7 +142,7 @@ export default async function LeadsPage({
               <Input
                 name="q"
                 defaultValue={q}
-                placeholder="Nombre, teléfono o email..."
+                placeholder="Nombre, teléfono o correo..."
               />
             </div>
             <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ export default async function LeadsPage({
       <SectionCard
         eyebrow="Registro"
         title="Cartera global"
-        description="Vista completa de todos los leads con acceso rápido a cada perfil."
+        description="Vista completa de todas las oportunidades con acceso rápido a cada perfil."
         noPadding
       >
         <div className="overflow-x-auto">
@@ -202,7 +202,7 @@ export default async function LeadsPage({
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 <th className="whitespace-nowrap px-5 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Lead
+                  Contacto
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                   Propiedad
@@ -294,7 +294,7 @@ export default async function LeadsPage({
                       <Link
                         href={`/${orgSlug}/leads/${lead.id}`}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300 opacity-0 transition-all duration-150 hover:bg-brand-50 hover:text-brand-600 group-hover:opacity-100"
-                        title="Abrir lead"
+                        title="Abrir oportunidad"
                       >
                         <ArrowUpRight className="h-3.5 w-3.5" />
                       </Link>
@@ -310,7 +310,7 @@ export default async function LeadsPage({
               <EmptyState
                 icon={Search}
                 title={`Sin resultados para "${query}"`}
-                description="Probá con otro nombre, teléfono o email."
+                description="Probá con otro nombre, teléfono o correo."
                 action={
                   <Link
                     href={`/${orgSlug}/leads`}
@@ -324,15 +324,15 @@ export default async function LeadsPage({
             ) : (
               <EmptyState
                 icon={Users}
-                title="Todavía no tenés leads"
-                description="Los leads entran solos cuando un cliente te escribe por WhatsApp. También podés cargar uno manualmente."
+                title="Todavía no tenés oportunidades"
+                description="Las oportunidades entran solas cuando un cliente te escribe por WhatsApp. También podés cargar una manualmente."
                 action={
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     <Button asChild variant="primary">
-                      <Link href={`/${orgSlug}/captacion`}>Generar link de WhatsApp</Link>
+                      <Link href={`/${orgSlug}/captacion`}>Generar enlace de WhatsApp</Link>
                     </Button>
                     <Button asChild variant="outline">
-                      <Link href="#registro-lead">Crear lead manual</Link>
+                      <Link href="#registro-lead">Crear oportunidad manual</Link>
                     </Button>
                   </div>
                 }
