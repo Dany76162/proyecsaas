@@ -5,11 +5,9 @@ import { redirect } from "next/navigation";
 import { 
   ArrowRight, 
   CheckCircle2, 
-  MessageSquare, 
-  Inbox, 
-  Users, 
-  BarChart3, 
-  Clock, 
+  MessageSquare,
+  Users,
+  BarChart3,
   LayoutGrid,
   Zap,
   Building,
@@ -124,31 +122,31 @@ export default async function HomePage() {
         {/* BENEFICIOS PRINCIPALES */}
         <section id="beneficios" className="mx-auto max-w-7xl px-6 py-16">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Eficiencia en cada paso</h2>
-            <p className="mt-4 text-slate-600 dark:text-slate-400">Diseñado para minimizar la fricción operativa y maximizar conversiones.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Mucho más que un bot: una plataforma completa</h2>
+            <p className="mt-4 text-slate-600 dark:text-slate-400">Atención con IA, CRM inmobiliario y herramientas para mostrar mejor cada propiedad y desarrollo — todo en un solo lugar.</p>
           </div>
-          
+
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                icon: Clock,
-                title: "Respondé mientras tu equipo está ocupado",
-                desc: "Atención 24/7 sin demoras ni pérdida de interés."
-              },
-              {
-                icon: Inbox,
-                title: "Cada consulta entra con contexto",
-                desc: "Los prospectos se perfilan y organizan automáticamente en tu embudo."
+                icon: MessageSquare,
+                title: "Atención con IA por WhatsApp 24/7",
+                desc: "Responde al instante, califica el interés y coordina visitas según tu disponibilidad. Vos confirmás el horario y cerrás."
               },
               {
                 icon: LayoutGrid,
-                title: "Seguimiento claro desde el inicio",
-                desc: "Un CRM diseñado específicamente para la operativa inmobiliaria."
+                title: "CRM inmobiliario",
+                desc: "Cada consulta entra como oportunidad y se organiza en tu embudo. Seguimiento, agenda de visitas con recordatorios y equipo con roles."
               },
               {
-                icon: Users,
-                title: "Intervención en el momento clave",
-                desc: "Tu equipo asume el control solo cuando hay oportunidad real de cierre."
+                icon: Compass,
+                title: "Catálogo y fichas que venden",
+                desc: "Catálogo público, fotos, tours 360° y fichas completas para mostrar cada propiedad como se merece."
+              },
+              {
+                icon: Building,
+                title: "Desarrollos y loteos",
+                desc: "Masterplan interactivo con lotes en tiempo real, disponibilidad por etapa y reserva online para compradores."
               }
             ].map((b, i) => (
               <div key={i} className="rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-6 shadow-sm dark:shadow-2xl/15 transition-all duration-300 hover:shadow-md dark:hover:border-brand-500/30">
