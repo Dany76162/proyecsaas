@@ -114,7 +114,7 @@ export default function AppMovilPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-[#07070E] pt-16">
+    <main className="dark min-h-screen bg-[#07070E] pt-16">
       <Navbar />
 
       <section className="relative overflow-hidden py-24 sm:py-32 min-h-[90vh] flex items-center bg-[#07070E]">
