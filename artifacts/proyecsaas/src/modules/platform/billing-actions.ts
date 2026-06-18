@@ -427,8 +427,8 @@ export async function setOrganizationCommercialStateAction(input: unknown): Prom
     plan = await prisma.plan.create({
       data: {
         id: "starter",
-        name: "Starter",
-        description: "Plan Starter por defecto",
+        name: "Inicial",
+        description: "Plan Inicial por defecto",
         sortOrder: 1,
         isActive: true,
         canUseAiAgents: true,

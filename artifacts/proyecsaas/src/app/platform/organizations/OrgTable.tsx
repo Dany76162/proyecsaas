@@ -49,7 +49,7 @@ function formatCommercialDate(isoDate: string | null) {
 
 function translatePlanLabel(label: string | null) {
   if (!label) return "Sin plan asignado";
-  if (label.toLowerCase() === "starter") return "Plan Starter";
+  if (label.toLowerCase() === "starter") return "Plan Inicial";
   return label;
 }
 

@@ -135,7 +135,7 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
       name: org.name,
       slug: org.slug,
       city: org.city ?? "Ciudad no especificada",
-      planLabel: org.planLabel ?? "Starter",
+      planLabel: org.planLabel ?? "Inicial",
       isActive: org.isActive,
       deletedAt: org.deletedAt?.toISOString() ?? null,
       isTrashed: Boolean(org.deletedAt),

@@ -30,9 +30,12 @@ function buildOrganizationSummary(organization: {
     slug: organization.slug,
     name: organization.name,
     city: organization.city ?? "Ciudad no especificada",
-    planLabel: organization.planLabel ?? "Starter",
+    planLabel:
+      !organization.planLabel || organization.planLabel.toLowerCase() === "starter"
+        ? "Inicial"
+        : organization.planLabel,
     marketFocus: organization.marketFocus ?? "Operaciones generales inmobiliarias",
-    description: organization.description ?? "Perfil del workspace pendiente.",
+    description: organization.description ?? "Perfil del espacio de trabajo pendiente.",
     memberCount: organization._count.memberships,
     leadCount: organization._count.leads,
     propertyCount: organization._count.properties,
