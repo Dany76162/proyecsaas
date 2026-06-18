@@ -156,7 +156,7 @@ export function WhatsAppConnectionForm({
                 Estás utilizando la línea oficial compartida de la plataforma (<b>+{platformPhone}</b>). Este canal es 100% gratuito y está listo para recibir consultas de inmediato sin configuraciones.
               </p>
               <p className="mt-2 text-xs leading-relaxed text-blue-700 bg-white/40 rounded-xl p-3 border border-blue-100/50">
-                💡 <b>¿Cómo se enrutan los mensajes?</b> Al compartir el catálogo, el sistema antepone un código único como <code>[ref:{orgSlug}]</code> al inicio del mensaje del cliente. Nuestro sistema inteligente lo lee de forma invisible para la IA y deriva el lead a tu panel de control de forma automática.
+                💡 <b>¿Cómo se enrutan los mensajes?</b> Al compartir el catálogo, el sistema antepone un código único como <code>[ref:{orgSlug}]</code> al inicio del mensaje del cliente. Nuestro sistema inteligente lo lee de forma invisible para la IA y deriva la oportunidad a tu panel de control de forma automática.
               </p>
             </div>
             <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">

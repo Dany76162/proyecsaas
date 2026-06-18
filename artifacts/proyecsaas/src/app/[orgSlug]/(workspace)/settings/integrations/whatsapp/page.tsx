@@ -99,7 +99,7 @@ export default async function WhatsAppIntegrationPage({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SectionCard
           eyebrow="Recomendado"
-          title="Conexión Rápida (QR Scan)"
+          title="Conexión Rápida (escaneo de QR)"
           description="Vinculá tu WhatsApp personal o comercial en segundos escaneando un código QR. Es la forma más fácil de empezar."
         >
           <EvolutionConnectionForm

@@ -18,7 +18,7 @@ export function RequestConnectionForm({ orgSlug }: { orgSlug: string }) {
         <h3 className="mt-4 text-lg font-bold text-slate-900">Solicitud enviada</h3>
         <p className="mt-2 text-sm text-slate-600 leading-relaxed">
           Recibimos tu solicitud para conectar un número propio de WhatsApp Business. 
-          Nuestro equipo se pondrá en contacto con vos al email de contacto para coordinar los pasos técnicos con Meta.
+          Nuestro equipo se pondrá en contacto con vos al correo de contacto para coordinar los pasos técnicos con Meta.
         </p>
       </div>
     );
@@ -44,7 +44,7 @@ export function RequestConnectionForm({ orgSlug }: { orgSlug: string }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black uppercase tracking-widest text-slate-500">
-            Nombre comercial (Display Name)
+            Nombre comercial (nombre visible)
           </label>
           <Input 
             name="businessName" 
@@ -68,12 +68,12 @@ export function RequestConnectionForm({ orgSlug }: { orgSlug: string }) {
 
         <div className="space-y-2">
           <label className="text-xs font-black uppercase tracking-widest text-slate-500">
-            Email de contacto
+            Correo de contacto
           </label>
-          <Input 
-            name="contactEmail" 
+          <Input
+            name="contactEmail"
             type="email"
-            placeholder="email@empresa.com" 
+            placeholder="correo@empresa.com"
             required 
             className="rounded-xl border-slate-200 focus:border-brand-500"
           />
