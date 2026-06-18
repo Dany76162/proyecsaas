@@ -151,6 +151,12 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - ✅ **Data 100% real**: `listOrganizationConversations` (Prisma). Sin componentes temporales/dev ni duplicados (la carpeta `[conversationId]` solo tiene la ruta `handoff`, no UI).
 - 🇪🇸 **Castellano**: sección renombrada **"Inbox IA" → "Bandeja IA"** (elegido por el usuario) en sidebar, header, paginación ("Volver a la Bandeja"), onboarding, panel de prueba de WhatsApp y superadmin ("Ver en Bandeja"). "Ficha Lead" → "Ver oportunidad". El resto ya estaba en español ("Agente al control / IA en espera", "Envío fallido", "Pendientes/Errores"). Se deja "chat" (aceptado por RAE).
 
+**Auditoría panel VISITAS (2026-06-18) — bug real encontrado y corregido:**
+- 🐛 **Doble creación + debug en inglés filtrado**: el path automático viejo del worker creaba la visita EN PARALELO con `createAgentVisit` (duplicado) y volcaba `decision.internalNotes` (debug: "AI intent: … AI confidence: … routed to human") en la nota visible de la visita. **Deshabilitado**: las visitas del agente se crean SOLO al aceptar el cliente, vía `createAgentVisit` (nota en español = followUpReason). Se quitaron los imports muertos (`createVisitForAutomation`, `VisitAutomationError`) del worker.
+- 🧹 **`sanitizeVisitNotes`**: limpia las notas YA guardadas con el debug viejo (rescata el motivo legible o cae a texto en español) en el tablero de Visitas y en la ficha de la oportunidad. Verificado: el texto filtrado → "Quiere visitar Valles del Pino el sabado a las 9".
+- 🇪🇸 **Castellano**: "Ver lead" → "Ver oportunidad"; "ficha del Lead" → "ficha de la oportunidad"; "Lead desconocido" → "Contacto desconocido". El resto de la página ya estaba en español.
+- ✅ Data real (`listOrganizationVisits`, `getVisitSummary`), sin componentes temporales.
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
