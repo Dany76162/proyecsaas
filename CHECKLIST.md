@@ -126,6 +126,11 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - ⚠️ **Nota**: las notificaciones YA guardadas en la DB siguen mostrando el texto viejo (inglés) hasta que el usuario use "Limpiar todas"; las nuevas ya salen en español.
 - Pendiente (otros paneles a limpiar de inglés si se quiere): Oportunidades, Inbox IA, Configuración, etc. (la tienda demo `workspace-store.ts` tiene inglés pero es showcase aparte, no afecta cuentas reales).
 
+**Auditoría panel ENLACES DE WHATSAPP / Captación (2026-06-18):**
+- ✅ **Data 100% real**: estado del canal (`getPlatformWhatsAppStatus`), canales del tenant (`whatsAppChannel`), solicitudes (`whatsAppChannelConnectionRequest`); QR/número/enlace `wa.me` del canal real conectado. Sin mocks ni componentes de dev/debug.
+- 🧹 **Duplicado eliminado**: quitado el banner verde "Canal propio activo — +número" de arriba (repetía la tarjeta "Canal exclusivo activo / Marca Propia / 📱 número" que ya muestra el formulario). El `WhatsAppConnectionForm` es reutilizado (mismo de Integraciones), no duplicado.
+- 🇪🇸 **Castellano**: "Links de WhatsApp" → "Enlaces de WhatsApp" (título + menú lateral + CTA del Inbox); "landing pages" → "páginas de captación"; "link" → "enlace"; "tracking/UTMs" → "seguimiento por origen / parámetros de campaña". Se dejan nombres propios/formatos (WhatsApp Business, Meta Ads, QR, PNG).
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
