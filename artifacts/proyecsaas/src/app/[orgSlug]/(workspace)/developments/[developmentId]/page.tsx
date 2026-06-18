@@ -34,7 +34,7 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
 
   // CRM del desarrollo (paridad con propiedades): oportunidades y visitas
   // vinculadas a este desarrollo. developmentId es escalar en Lead/Visit.
-  const [crmLeadsRaw, crmVisitsRaw] = await Promise.all([
+  const [crmLeadsRaw, crmVisitsRaw, crmSlotsRaw] = await Promise.all([
     prisma.lead.findMany({
       where: { organizationId: membership.organization.id, developmentId },
       select: {
@@ -58,6 +58,13 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
       orderBy: { scheduledAt: "asc" },
       take: 50,
     }),
+    // Horarios de visita que el agente IA usa para coordinar visitas a este loteo.
+    prisma.availabilitySlot.findMany({
+      where: { organizationId: membership.organization.id, developmentId, isActive: true },
+      select: { id: true, label: true, weekday: true, startMinute: true, endMinute: true },
+      orderBy: [{ weekday: "asc" }, { startMinute: "asc" }],
+      take: 20,
+    }),
   ]);
 
   const crm = {
@@ -73,6 +80,13 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
       status: v.status as string,
       scheduledAt: v.scheduledAt.toISOString(),
       leadName: v.lead?.fullName ?? "Contacto",
+    })),
+    availability: crmSlotsRaw.map((s) => ({
+      id: s.id,
+      label: s.label,
+      weekday: s.weekday,
+      startMinute: s.startMinute,
+      endMinute: s.endMinute,
     })),
   };
 

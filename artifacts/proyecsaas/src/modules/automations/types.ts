@@ -87,6 +87,8 @@ export type PreparedConversationContext = {
     lotNumber: string;
     developmentName: string;
     developmentCity: string | null;
+    developmentServices?: string[] | null;
+    developmentDescription?: string | null;
     areaSqm: number | null;
     priceCents: number | null;
     currency: string | null;

@@ -68,36 +68,75 @@ export default async function DevelopmentsPage({
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {developments.map((dev) => (
-              <Link
-                key={dev.id}
-                href={`/${orgSlug}/developments/${dev.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md hover:border-brand-300"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-bold text-slate-900 group-hover:text-brand-600 transition leading-snug">
-                    {dev.name}
-                  </h3>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_COLOR[dev.status] ?? "bg-slate-100 text-slate-500"}`}>
-                    {STATUS_LABEL[dev.status] ?? dev.status}
-                  </span>
-                </div>
-                {dev.city && (
-                  <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-400">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {dev.city}
-                  </p>
-                )}
-                <div className="mt-4 flex items-center gap-4 border-t border-slate-100 pt-3 text-xs font-semibold text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Layers className="h-3.5 w-3.5" />
-                    {dev.lotCount} lotes
-                  </span>
-                  <span className="text-emerald-600">{dev.availableCount} disponibles</span>
-                </div>
-              </Link>
-            ))}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {developments.map((dev) => {
+              const theme = dev.themeColor || "#0D9488";
+              const soldPct =
+                dev.lotCount > 0
+                  ? Math.round(((dev.lotCount - dev.availableCount) / dev.lotCount) * 100)
+                  : 0;
+              return (
+                <Link
+                  key={dev.id}
+                  href={`/${orgSlug}/developments/${dev.id}`}
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:border-brand-300"
+                >
+                  {/* Cabecera con color de marca + logo */}
+                  <div
+                    className="relative flex h-28 items-center justify-center overflow-hidden"
+                    style={{ background: `linear-gradient(135deg, ${theme} 0%, ${theme}cc 60%, ${theme}99 100%)` }}
+                  >
+                    {dev.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={dev.logoUrl}
+                        alt={dev.name}
+                        className="max-h-16 max-w-[70%] object-contain drop-shadow-sm transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <Building2 className="h-10 w-10 text-white/85" />
+                    )}
+                    <span className={`absolute top-3 right-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm ${STATUS_COLOR[dev.status] ?? "bg-slate-100 text-slate-500"}`}>
+                      {STATUS_LABEL[dev.status] ?? dev.status}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3 className="font-bold text-slate-900 group-hover:text-brand-600 transition leading-snug">
+                      {dev.name}
+                    </h3>
+                    {dev.city && (
+                      <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-400">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {dev.city}
+                      </p>
+                    )}
+
+                    <div className="mt-4 flex items-center gap-4 text-xs font-semibold text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Layers className="h-3.5 w-3.5" />
+                        {dev.lotCount} lotes
+                      </span>
+                      <span className="text-emerald-600">{dev.availableCount} disponibles</span>
+                    </div>
+
+                    {/* Barra de progreso vendido/reservado */}
+                    <div className="mt-auto pt-4">
+                      <div className="flex items-center justify-between text-[11px] mb-1">
+                        <span className="font-medium text-slate-400">Vendido / Reservado</span>
+                        <span className="font-bold text-slate-600 tabular-nums">{soldPct}%</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${soldPct}%`, background: theme }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

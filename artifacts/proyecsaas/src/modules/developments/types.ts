@@ -11,6 +11,8 @@ export type DevelopmentListItem = {
   publicVisible: boolean;
   lotCount: number;
   availableCount: number;
+  logoUrl: string | null;
+  themeColor: string | null;
   createdAt: Date;
 };
 

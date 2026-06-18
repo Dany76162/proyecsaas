@@ -91,6 +91,12 @@ const VISIT_STATUS_ES: Record<string, string> = {
   COMPLETED: "Completada",
   CANCELED: "Cancelada",
 };
+const WEEKDAY_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+function fmtMinute(min: number) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
 
 interface DevelopmentWizardClientProps {
   orgSlug: string;
@@ -115,6 +121,7 @@ interface DevelopmentWizardClientProps {
   crm?: {
     leads: Array<{ id: string; fullName: string; status: string; ownerName: string; lastContactAt: string | null }>;
     visits: Array<{ id: string; status: string; scheduledAt: string; leadName: string }>;
+    availability: Array<{ id: string; label: string; weekday: number; startMinute: number; endMinute: number }>;
   };
 }
 
@@ -823,6 +830,38 @@ export default function DevelopmentWizardClient({
                     <p className="text-xs text-slate-400">Sin visitas agendadas para este desarrollo todavía.</p>
                   )}
                 </div>
+              </div>
+
+              {/* Horarios de visita del desarrollo — los usa el agente IA para coordinar */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Horarios de visita</h3>
+                  <a
+                    href={`/${orgSlug}/settings/availability`}
+                    className="text-[11px] font-bold text-brand-600 hover:text-brand-700"
+                  >
+                    Configurar →
+                  </a>
+                </div>
+                {crm && crm.availability.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {crm.availability.map((slot) => (
+                      <span
+                        key={slot.id}
+                        className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200"
+                      >
+                        {WEEKDAY_ES[slot.weekday] ?? "Día"} {fmtMinute(slot.startMinute)}–{fmtMinute(slot.endMinute)}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400">
+                    No hay horarios de visita cargados para este desarrollo. Cargalos en <span className="font-semibold text-slate-500">Configuración → Disponibilidad</span> eligiendo este desarrollo, y el agente IA los va a ofrecer cuando un prospecto quiera visitar los lotes.
+                  </p>
+                )}
+                <p className="mt-3 text-[11px] text-slate-400">
+                  El agente IA ofrece estos horarios cuando un prospecto quiere visitar lotes de este loteo.
+                </p>
               </div>
             </div>
           )}

@@ -543,7 +543,7 @@ export async function processWhatsAppInboundJob(
         frontMeters: true,
         backMeters: true,
         Development: {
-          select: { name: true, city: true },
+          select: { name: true, city: true, services: true, description: true },
         },
       },
       orderBy: [{ Development: { name: "asc" } }, { lotNumber: "asc" }],
@@ -753,6 +753,8 @@ export async function processWhatsAppInboundJob(
       lotNumber: lot.lotNumber,
       developmentName: lot.Development.name,
       developmentCity: lot.Development.city,
+      developmentServices: lot.Development.services ?? null,
+      developmentDescription: lot.Development.description ?? null,
       areaSqm: roundM2(lot.areaSqm),
       priceCents: lot.priceCents,
       currency: lot.currency,
