@@ -478,6 +478,7 @@ model Visit {
   status         VisitStatus  @default(PENDING)
   scheduledAt    DateTime
   notes          String?
+  reminderSentAt DateTime?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   property       Property?    @relation("PropertyVisits", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Cascade)
   lead           Lead?        @relation(fields: [leadId, organizationId], references: [id, organizationId], onDelete: Restrict)

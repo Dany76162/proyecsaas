@@ -3,6 +3,7 @@
 import { validateWorkerRuntimeConfig } from "@/server/config/runtime";
 import { createConversationWorker } from "@/server/workers/conversation-worker";
 import { prismaWorker } from "@/server/db/prisma-worker";
+import { processVisitReminders } from "@/modules/visits/reminders";
 
 async function main() {
   validateWorkerRuntimeConfig();
@@ -80,9 +81,30 @@ async function main() {
   await writeHeartbeat();
   const heartbeatInterval = setInterval(() => void writeHeartbeat(), 30_000);
 
+  // Recordatorios automáticos de visita (~24 h antes): revisamos cada 15 min las
+  // visitas próximas y avisamos al prospecto (WhatsApp) y a la inmobiliaria (push).
+  async function runVisitReminders() {
+    try {
+      await processVisitReminders(prismaWorker);
+    } catch (err) {
+      console.error(
+        JSON.stringify({
+          scope: "worker",
+          event: "visit-reminders-failed",
+          message: err instanceof Error ? err.message : "unknown",
+        }),
+      );
+    }
+  }
+  // Primera corrida poco después del boot, luego cada 15 minutos.
+  const reminderBoot = setTimeout(() => void runVisitReminders(), 30_000);
+  const reminderInterval = setInterval(() => void runVisitReminders(), 15 * 60_000);
+
   const shutdown = async (signal: string) => {
     console.log(JSON.stringify({ scope: "worker", event: "shutdown", signal }));
     clearInterval(heartbeatInterval);
+    clearTimeout(reminderBoot);
+    clearInterval(reminderInterval);
     await worker.close();
     process.exit(0);
   };

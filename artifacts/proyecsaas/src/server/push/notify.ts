@@ -87,3 +87,29 @@ export async function notifyVisitScheduled(
     /* best-effort */
   }
 }
+
+/** Recordatorio (24 h antes) de una visita próxima, para la inmobiliaria/agente. */
+export async function notifyVisitReminder(
+  organizationId: string,
+  orgSlug: string,
+  leadName: string,
+  targetTitle: string,
+  scheduledAt: Date,
+): Promise<void> {
+  try {
+    const fecha = scheduledAt.toLocaleString("es-AR", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    await sendPushToOrganization(organizationId, {
+      title: "⏰ Recordatorio de visita",
+      body: `${leadName} — ${targetTitle} · ${fecha}`,
+      url: `/${orgSlug}/visits`,
+    });
+  } catch {
+    /* best-effort */
+  }
+}
