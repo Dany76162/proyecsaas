@@ -405,7 +405,7 @@ export default async function PropertyDetailPage({
         <SectionCard
           eyebrow="Mapa"
           title="Ubicación y privacidad del mapa"
-          description="Estos datos preparan la propiedad para el futuro mapa público de Raíces Pilot. Si ocultás la ubicación exacta, el portal mostrará una zona aproximada para proteger la operación inmobiliaria."
+          description="Estas coordenadas posicionan la propiedad en el mapa interactivo de tu catálogo público. Si ocultás la ubicación exacta, el mapa muestra una zona aproximada en vez del pin para proteger la operación inmobiliaria."
         >
           <CoordinatesFields
             initialLatitude={property.latitude?.toString() ?? null}
