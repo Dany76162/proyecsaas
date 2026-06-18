@@ -134,8 +134,8 @@ const SYSTEM_SLIDES = [
   },
   {
     id: 3,
-    title: "Tours Virtuales 360° profesionales solo con tu celular.",
-    description: "Creá escenas inmersivas interactivas sin necesidad de cámaras costosas, directo desde la web.",
+    title: "Tours Virtuales 360° de tus propiedades y desarrollos.",
+    description: "Mostrá cada vivienda o loteo con un recorrido inmersivo navegable. Tus clientes lo recorren desde el navegador del celular, sin apps.",
     image: "/landing/slide3.png",
   },
   {
