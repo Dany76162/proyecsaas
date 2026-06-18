@@ -124,7 +124,7 @@ function ConversationDetail({
 
       <div className="flex flex-1 gap-5 min-h-0 overflow-hidden">
         {/* --- Chat Area --- */}
-        <div className="flex flex-1 flex-col gap-4 min-w-0">
+        <div className="flex flex-1 flex-col gap-4 min-w-0 min-h-0">
           
           <HandoffBanner 
             isHumanControlled={conv.isHumanControlled}

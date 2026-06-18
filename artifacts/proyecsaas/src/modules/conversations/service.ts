@@ -36,7 +36,10 @@ export async function listOrganizationConversations(
         orderBy: {
           sentAt: "desc",
         },
-        take: 3,
+        // Historial completo de la conversación para poder scrollear y revisar al
+        // prospecto (antes traía solo 3 → no había nada para deslizar). Se ordena
+        // asc al mapear para mostrarlo del más viejo al más nuevo.
+        take: 50,
       },
     },
     // id as tiebreaker instead of updatedAt: updatedAt is mutable and would shift
