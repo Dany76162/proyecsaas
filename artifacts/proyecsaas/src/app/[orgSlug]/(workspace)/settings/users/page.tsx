@@ -62,16 +62,16 @@ export default async function UsersSettingsPage({
               <span>👥</span> ¿Cómo funciona el acceso para tu equipo?
             </h3>
             <p className="text-sm text-slate-500 leading-relaxed max-w-3xl">
-              Podés invitar a todos los asesores y empleados de tu inmobiliaria enviándoles un enlace personal de registro. Esto permite colaborar en el panel, dar seguimiento a leads e intervenir manualmente en chats de WhatsApp cuando sea necesario, sin compartir claves maestras.
+              Podés invitar a todos los asesores y empleados de tu inmobiliaria enviándoles un enlace personal de registro. Esto permite colaborar en el panel, dar seguimiento a las oportunidades e intervenir manualmente en chats de WhatsApp cuando sea necesario, sin compartir claves maestras.
             </p>
           </div>
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { role: "Titular (Owner)", desc: "Dueño de la inmobiliaria. Acceso total a configuraciones, facturación y eliminación de datos." },
-            { role: "Administrador (Admin)", desc: "Gestión completa de propiedades, agentes de IA, invitaciones de equipo y asignación de números." },
-            { role: "Agente de ventas (Agent)", desc: "Puede ver propiedades, gestionar sus propios leads asignados y chatear con clientes." },
-            { role: "Asistente (Assistant)", desc: "Acceso de lectura y actualización básica para mantenimiento de catálogo y fichas." }
+            { role: "Titular", desc: "Dueño de la inmobiliaria. Acceso total a configuraciones, facturación y eliminación de datos." },
+            { role: "Administrador", desc: "Gestión completa de propiedades, agentes de IA, invitaciones de equipo y asignación de números." },
+            { role: "Agente de ventas", desc: "Puede ver propiedades, gestionar sus propias oportunidades asignadas y chatear con clientes." },
+            { role: "Asistente", desc: "Acceso de lectura y actualización básica para mantenimiento de catálogo y fichas." }
           ].map((r) => (
             <div key={r.role} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">{r.role}</h4>

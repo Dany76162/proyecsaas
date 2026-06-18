@@ -1,6 +1,7 @@
 ﻿"use server";
 
 import { MembershipRole } from "@prisma/client";
+import { headers } from "next/headers";
 
 import type { ActionResult } from "@/modules/types";
 import { inviteUserSchema, updateMemberProfileSchema } from "@/modules/users/schemas";
@@ -71,10 +72,17 @@ export async function inviteUserAction(orgSlug: string, input: unknown): Promise
         },
       });
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-      if (!baseUrl) {
-        throw new Error("[inviteUserAction] NEXT_PUBLIC_APP_URL is not configured.");
-      }
+      // Base URL robusta para el enlace de invitación. Prioridad: el host REAL
+      // del request (donde el admin está operando, siempre accesible) → la env
+      // configurada → el dominio de producción. Esto evita el "ruta no encontrada"
+      // por una NEXT_PUBLIC_APP_URL mal configurada o apuntando a localhost.
+      const h = await headers();
+      const host = h.get("host");
+      const proto = h.get("x-forwarded-proto") ?? "https";
+      const requestBase = host && !/localhost|127\.0\.0\.1/.test(host) ? `${proto}://${host}` : null;
+      const envBase = process.env.NEXT_PUBLIC_APP_URL?.trim();
+      const safeEnvBase = envBase && !/localhost|127\.0\.0\.1/.test(envBase) ? envBase : null;
+      const baseUrl = (requestBase ?? safeEnvBase ?? "https://www.raicespilot.com").replace(/\/+$/, "");
       const inviteUrl = `${baseUrl}/invite/${token}`;
 
       return { inviteUrl };
