@@ -93,8 +93,15 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 **Confirmación de visita = humano (modelo definido por el usuario, 2026-06-18):** la IA **no agenda ni confirma sola**. Flujo:
 - `095c491` → `01459b8` La IA ofrece **solo los horarios cargados** (nunca inventa días/horas; si no hay, pregunta). Cuando el prospecto acepta un día/hora, la IA dice "lo coordino con el equipo y te confirmo", se **pausa** (`isHumanControlled`), y dispara push **"📅 Confirmá la visita"** con el día/horario pedido. El **OK final lo da el humano**. `nextBestAction='confirmar-visita-con-humano'`.
 - `3a003aa` → `22de8b3` **Cancelación con retención suave (máx 2 mensajes)**: si el prospecto quiere cancelar, la IA intenta retener con hasta 2 intentos (ofrecer otro día / reprogramar), **sin exigir el motivo ni ponerse insistente**; si igual cancela, lo acepta con amabilidad y dispara push **"❌ Visita cancelada — sacala del CRM"**. Reprogramar a un nuevo horario = visita aceptada (no cancelación). La IA **nunca borra del CRM**: avisa para que lo haga el humano.
+- `8d815c9` **No cancela por frase ambigua ni pregunta**: "¿me cancelaste la visita?" / "¿sigue en pie?" → la IA confirma que la visita sigue agendada, NO cancela. Solo entra al flujo de cancelación ante intención clara ("cancela", "no voy a poder ir", "dejalo"). (Bug visto en charla real: cancelaba ante una pregunta.)
 
-> **Estado:** 🟢 Cadena WhatsApp + Agente IA + notificaciones + handoff + agenda de visitas (humano confirma) funcionando end-to-end. Pendiente menor del usuario: en *Configuración → Disponibilidad*, atar los horarios de cada loteo a su **desarrollo** (ej. Valles del Pino sáb/dom) y ocultar la "propiedad" de marketing del catálogo. A probar en prod: que la IA ofrezca el horario real, pause al aceptar, y el flujo de cancelación con retención.
+**Agenda de visitas se llena sola — registro en CRM (`f936cba`, verificado en prod por el usuario):**
+- Modelo `Visit` ahora soporta **desarrollos/lotes**, no solo propiedades: `propertyId` opcional + `developmentId` / `lotId` / `targetLabel` (migración `20260618120000`, se aplica sola en deploy vía `prisma migrate deploy` del script `start`).
+- Cuando el prospecto **acepta un horario**, el worker crea la visita en estado **PENDING** (`createAgentVisit`) → aparece en `/visits` y en "En Visita" del CRM. La fecha sale del `proposedVisitDate` de la IA o de la próxima ocurrencia del slot disponible (`earliestSlotOccurrenceIso`). El humano la confirma (PENDING → CONFIRMED).
+- Cancelación → `cancelAgentVisitsForLead` marca las visitas activas del lead como **CANCELED** (no borra, deja historial).
+- UI de Visitas maneja visitas sin propiedad (usa `targetLabel`, ej. "Valles del Pino").
+
+> **Estado:** 🟢 **Verificado en charla real con SevenToop (2026-06-18):** la IA ofrece los horarios reales cargados (sáb/dom de Valles del Pino), coordina sin confirmar sola ("lo confirmo con el equipo"), se pausa, el humano da el OK, **y la visita aparece en la agenda/CRM**. Cancelación con retención y guarda anti-pregunta OK. Pendiente menor del usuario: atar los horarios de cada loteo a su **desarrollo** en *Configuración → Disponibilidad* y ocultar la "propiedad" de marketing del catálogo.
 
 ---
 
