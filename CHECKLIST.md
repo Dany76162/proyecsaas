@@ -219,6 +219,10 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 
 **Bandeja IA — historial scrollable (2026-06-18):** el inbox traía solo 3 mensajes por conversación; ahora trae 50 (historial completo del prospecto) + `min-h-0` en la columna del chat para que el feed scrollee internamente. Permite revisión/análisis manual del prospecto deslizando los mensajes viejos.
 
+**Responsive móvil — Bandeja IA + Desarrollos (2026-06-18):** (importante por la app móvil de Raíces Pilot)
+- **Bandeja IA**: el chat y el panel lateral inteligente iban siempre lado a lado → en celular aplastaban el chat. Ahora **apilan en móvil** (panel a ancho completo debajo del chat), el feed de mensajes tiene alto acotado en móvil (`max-h-58vh`, scroll interno), y la altura fija + grid de 2 columnas aplican solo en `lg`. Ya tenía botón "Volver a conversaciones" en móvil.
+- **Desarrollos (wizard)**: el header desbordaba en celular → "Volver a proyectos" ahora muestra solo la flecha, el progreso (X/5) se oculta en móvil y el nombre del desarrollo se trunca. El tab nav scrollea limpio en móvil (tabs a ancho de contenido) y se reparte parejo en escritorio. (Las herramientas de plano/masterplan/editor siguen siendo de escritorio por naturaleza.)
+
 **Manual de Uso actualizado (2026-06-18):** se puso al día con todo lo de la sesión.
 - Visitas/Disponibilidad: modelo "la IA ofrece, vos confirmás" + horarios por desarrollo; la visita cae en Visitas + CRM.
 - Desarrollos: imagen de portada + servicios en "Información general", y bloque nuevo "El agente IA y el CRM del desarrollo" (ofrece lotes, responde servicios/descripción, oportunidades + agenda de visitas en la ficha).
