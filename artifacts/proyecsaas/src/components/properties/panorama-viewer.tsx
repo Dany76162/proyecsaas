@@ -123,12 +123,19 @@ function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined
   return { type: 'equirectangular' }
 }
 
+// Fuerza el reajuste del canvas WebGL al tamaño real del contenedor. Si solo se
+// llama una vez al inicio, el canvas puede quedar con resolución chica (estirada
+// y borrosa) cuando el layout todavía no se asentó. Reintentamos varias veces.
 function refreshViewerLayout(viewer: any) {
-  window.setTimeout(() => {
+  const doResize = () => {
     try {
       viewer?.resize?.()
     } catch {}
-  }, 80)
+  }
+  requestAnimationFrame(doResize)
+  window.setTimeout(doResize, 120)
+  window.setTimeout(doResize, 400)
+  window.setTimeout(doResize, 900)
 }
 
 export function PanoramaViewer({ 
@@ -139,6 +146,7 @@ export function PanoramaViewer({
 }: PanoramaViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<any>(null)
+  const resizeObserverRef = useRef<ResizeObserver | null>(null)
   const hotspotStyleInjected = useRef(false)
   const [activeSceneIndex, setActiveSceneIndex] = useState(0)
   const [sceneTypes, setSceneTypes] = useState<Record<number, SceneProjectionType>>({})
@@ -220,6 +228,20 @@ export function PanoramaViewer({
     if (!containerRef.current || viewerScenes.length === 0 || !isTypesLoaded) return
 
     setViewerError(false)
+
+    // Reajustar el canvas cuando cambie el tamaño del contenedor (rotación del
+    // celular, abrir F12, panel lateral, etc.). Sin esto, si el viewer se inicializa
+    // antes de que el layout tenga su tamaño final, el canvas queda con resolución
+    // chica y la imagen se ve estirada/borrosa hasta que algo lo redimensione.
+    if (containerRef.current && typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => {
+        try {
+          viewerRef.current?.resize?.()
+        } catch {}
+      })
+      ro.observe(containerRef.current)
+      resizeObserverRef.current = ro
+    }
 
     // Limpiar instancia anterior
     if (viewerRef.current) {
@@ -391,6 +413,10 @@ export function PanoramaViewer({
     }
 
     return () => {
+      if (resizeObserverRef.current) {
+        try { resizeObserverRef.current.disconnect() } catch {}
+        resizeObserverRef.current = null
+      }
       if (containerRef.current) {
         containerRef.current.removeEventListener('click', handleContainerClick);
       }
