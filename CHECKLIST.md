@@ -131,6 +131,10 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🧹 **Duplicado eliminado**: quitado el banner verde "Canal propio activo — +número" de arriba (repetía la tarjeta "Canal exclusivo activo / Marca Propia / 📱 número" que ya muestra el formulario). El `WhatsAppConnectionForm` es reutilizado (mismo de Integraciones), no duplicado.
 - 🇪🇸 **Castellano**: "Links de WhatsApp" → "Enlaces de WhatsApp" (título + menú lateral + CTA del Inbox); "landing pages" → "páginas de captación"; "link" → "enlace"; "tracking/UTMs" → "seguimiento por origen / parámetros de campaña". Se dejan nombres propios/formatos (WhatsApp Business, Meta Ads, QR, PNG).
 
+**Auditoría panel OPORTUNIDADES / CRM (lista + detalle) (2026-06-18):**
+- ✅ **Data 100% real**: `listOrganizationLeads`, `getLeadSummary`, `createLeadAction` (alta), detalle con servicios reales. Sin mocks ni componentes temporales/dev; sin duplicados.
+- 🇪🇸 **Castellano** (el producto usa "Oportunidad/Contacto"): "pipeline" → "embudo de ventas"; "lead/leads" → "oportunidad/oportunidades" (columna de nombre = "Contacto"); "Match (de inventario/automático)" → "Coincidencia"; "Email" → "Correo electrónico"; "link" → "enlace"; "Abrir lead" → "Abrir oportunidad"; placeholders/ejemplos de correo. Mensajes de éxito/error traducidos.
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
