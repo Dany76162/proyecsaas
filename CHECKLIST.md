@@ -212,6 +212,12 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 
 > ✅ **AUDITORÍA PANEL POR PANEL COMPLETA**: Inicio · Enlaces WhatsApp · Oportunidades · Desarrollos↔CRM · Bandeja IA · Visitas · Propiedades · Desarrollos · Agentes IA · Actividad automática · Administración WhatsApp · Disponibilidad · Equipo · Organización · Soporte Técnico · **Catálogo público**.
 
+**Manual de Uso actualizado (2026-06-18):** se puso al día con todo lo de la sesión.
+- Visitas/Disponibilidad: modelo "la IA ofrece, vos confirmás" + horarios por desarrollo; la visita cae en Visitas + CRM.
+- Desarrollos: imagen de portada + servicios en "Información general", y bloque nuevo "El agente IA y el CRM del desarrollo" (ofrece lotes, responde servicios/descripción, oportunidades + agenda de visitas en la ficha).
+- Agentes IA: nota de un agente por inmobiliaria que maneja todo el inventario (matchea por consulta; multi-agente próximamente).
+- "Conversaciones" → "Bandeja IA"; "lead/leads" → "oportunidad/oportunidades"; typos de Captación corregidos ("Captacion/Como/codigo/Donde" → con tilde, "link" → "enlace").
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
