@@ -390,11 +390,6 @@ export function MediaPanel({
             >
               <span className="flex items-center gap-1.5">
                 {category.label}
-                {category.value === "PANORAMA" && (
-                  <span className="rounded bg-amber-500/20 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-400">
-                    Pronto
-                  </span>
-                )}
               </span>
             </button>
           ))}

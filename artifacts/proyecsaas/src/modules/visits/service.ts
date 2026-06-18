@@ -314,16 +314,19 @@ export async function createAgentVisit(
   }
 
   // ¿Ya hay una visita activa para este lead y este destino? La reutilizamos.
+  // Matcheamos por desarrollo O por propiedad (cualquiera que coincida), para no
+  // duplicar cuando el agente a veces matchea por propiedad y a veces por desarrollo
+  // (el lead tiene una sola visita activa para el mismo destino).
+  const targetOr: Array<{ developmentId: string } | { propertyId: string }> = [];
+  if (params.developmentId) targetOr.push({ developmentId: params.developmentId });
+  if (params.propertyId) targetOr.push({ propertyId: params.propertyId });
+
   const existing = await prisma.visit.findFirst({
     where: {
       organizationId: organization.id,
       leadId: lead.id,
       status: { in: [VisitStatus.PENDING, VisitStatus.CONFIRMED] },
-      ...(params.developmentId
-        ? { developmentId: params.developmentId }
-        : params.propertyId
-          ? { propertyId: params.propertyId }
-          : {}),
+      ...(targetOr.length ? { OR: targetOr } : {}),
     },
     select: { id: true, status: true },
   });
@@ -335,6 +338,8 @@ export async function createAgentVisit(
         scheduledAt,
         notes: params.notes ?? undefined,
         targetLabel: params.targetLabel ?? undefined,
+        propertyId: params.propertyId ?? undefined,
+        developmentId: params.developmentId ?? undefined,
         lotId: params.lotId ?? undefined,
       },
     });
