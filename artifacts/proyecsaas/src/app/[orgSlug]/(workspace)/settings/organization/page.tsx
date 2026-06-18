@@ -11,7 +11,6 @@ import {
   PropertySourceForm,
 } from "@/components/organizations/organization-settings-forms";
 
-import { OnboardingFooter } from "@/components/workspace/onboarding-footer";
 
 export default async function OrganizationSettingsPage({
   params,
@@ -120,18 +119,6 @@ export default async function OrganizationSettingsPage({
           }}
         />
       </SectionCard>
-
-      <div className="h-24" />
-
-      <OnboardingFooter
-        orgSlug={orgSlug}
-        stepKey="base"
-        stepNumber={1}
-        title="Configuración base"
-        description="Revisá los datos de tu inmobiliaria para que la IA tenga el contexto correcto."
-        nextLabel="Continuar al paso 2 → Propiedades"
-        nextRoute={`/${orgSlug}/properties`}
-      />
     </>
   );
 }

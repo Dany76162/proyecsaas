@@ -24,8 +24,6 @@ const PROPERTY_STATUS_CONFIG: Record<string, { label: string; tone: "neutral" | 
   SOLD:      { label: "Vendida",    tone: "info" },
 };
 
-import { OnboardingFooter } from "@/components/workspace/onboarding-footer";
-
 export default async function PropertiesPage({
   params,
 }: {
@@ -222,18 +220,6 @@ export default async function PropertiesPage({
           )}
         </div>
       </SectionCard>
-
-      <div className="h-24" />
-
-      <OnboardingFooter
-        orgSlug={orgSlug}
-        stepKey="properties"
-        stepNumber={2}
-        title="Cargá tu inventario"
-        description="Tenés las propiedades listas. El siguiente paso es conectar tu WhatsApp para que el agente IA pueda responder consultas."
-        nextLabel="Continuar al paso 3 → Conectar WhatsApp"
-        nextRoute={`/${orgSlug}/settings/integrations/whatsapp`}
-      />
     </>
   );
 }

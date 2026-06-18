@@ -39,7 +39,7 @@ type WorkspaceSidebarProps = {
 
 const OPERATION_NAV = [
   { label: "Inicio",         path: "",              icon: LayoutDashboard },
-  { label: "Bienvenida",     path: "/onboarding",   icon: Rocket },
+  { label: "Primeros pasos", path: "/onboarding",   icon: Rocket },
   { label: "Enlaces de WhatsApp", path: "/captacion",    icon: Megaphone },
   { label: "Oportunidades",     path: "/leads",        icon: Users },
   { label: "Bandeja IA",        path: "/conversations",icon: MessageSquare },
@@ -86,11 +86,9 @@ export function WorkspaceSidebar({
 }: WorkspaceSidebarProps) {
   const currentPath = usePathname();
 
-  // Una vez completado el onboarding, el atajo "Bienvenida" deja de ser útil:
-  // se oculta del menú (la página sigue accesible por URL).
-  const operationNav = OPERATION_NAV.filter(
-    (item) => !(onboardingComplete && item.path === "/onboarding"),
-  );
+  // "Primeros pasos" (→ /onboarding) queda SIEMPRE visible: aun con el onboarding
+  // completo, sirve para repasar el progreso y la guía cuando el usuario quiera.
+  const operationNav = OPERATION_NAV;
 
   function isActive(orgSlug: string, path: string): boolean {
     const href = `/${orgSlug}${path}`;

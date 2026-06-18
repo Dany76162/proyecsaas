@@ -10,7 +10,6 @@ import { RequestConnectionForm } from "./request-connection-form";
 import { EvolutionConnectionForm } from "./evolution-connection-form";
 import { prisma } from "@/server/db/prisma";
 import { getEvolutionInstanceDetails } from "@/server/whatsapp/evolution";
-import { OnboardingFooter } from "@/components/workspace/onboarding-footer";
 
 
 export default async function WhatsAppIntegrationPage({
@@ -168,18 +167,6 @@ export default async function WhatsAppIntegrationPage({
           </div>
         </SectionCard>
       </div>
-
-      <div className="h-24" />
-
-      <OnboardingFooter
-        orgSlug={orgSlug}
-        stepKey="whatsapp"
-        stepNumber={3}
-        title="Conectá tu WhatsApp"
-        description="Escané el QR o solicitá la conexión de tu número. Una vez conectado, el agente IA puede responder por vos."
-        nextLabel="Continuar al paso 4 → Crear agente IA"
-        nextRoute={`/${orgSlug}/agents`}
-      />
     </>
   );
 }

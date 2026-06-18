@@ -16,7 +16,6 @@ function AgentStatusBadge({ status }: { status: AgentSummary["status"] }) {
   return <StatusBadge label={STATUS_LABELS[status]} tone={tone} />;
 }
 
-import { OnboardingFooter } from "@/components/workspace/onboarding-footer";
 
 export default async function AgentsPage({
   params,
@@ -179,18 +178,6 @@ export default async function AgentsPage({
           ))}
         </div>
       </SectionCard>
-
-      <div className="h-24" />
-
-      <OnboardingFooter
-        orgSlug={orgSlug}
-        stepKey="agents"
-        stepNumber={4}
-        title="Activá tu agente IA"
-        description="Creá el agente y asignale un número de WhatsApp para que pueda responder consultas. El paso se completa cuando el agente tiene canal asignado."
-        nextLabel="Ver progreso de configuración"
-        nextRoute={`/${orgSlug}/onboarding`}
-      />
     </>
   );
 }
