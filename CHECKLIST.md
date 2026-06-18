@@ -162,6 +162,12 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🧹 **Footer flotante de onboarding eliminado**: el card fijo `fixed bottom-6` (`onboarding-footer.tsx`) se renderizaba en 4 páginas (Propiedades/Agentes/WhatsApp/Organización) con **paso hardcodeado** (Propiedades decía siempre "Paso 2 → conectá WhatsApp" aunque ya estuviera conectado), tapaba contenido y molestaba una vez hecho el setup. Removido de las 4 páginas + componente borrado.
 - ➕ **Sidebar "Primeros pasos" (antes "Bienvenida") → `/onboarding`, ahora SIEMPRE visible** (antes se ocultaba al completar el onboarding) para repasar el progreso/guía cuando se quiera. Los usuarios nuevos siguen guiados por el banner "Tu cuenta requiere atención" del dashboard + la página `/onboarding` (que muestra el progreso real).
 
+**Auditoría panel DESARROLLOS (lista + ficha) (2026-06-18):**
+- 🎨 **Card de la lista rediseñado**: el card era texto plano "apagado" sin imagen. Ahora tiene **cabecera con el color de marca del desarrollo (`themeColor`) + logo** (ícono de fallback) + barra de progreso vendido/reservado. Se agregó `logoUrl`/`themeColor` al `listOrganizationDevelopments`.
+- 🤖 **Hueco funcional cerrado — el agente IA ahora recibe info del DESARROLLO**: antes solo recibía datos por lote (nombre/ciudad/precio/superficie), NO los servicios ni la descripción del loteo. Ahora cada lote trae `developmentServices` (agua/luz/gas/cloacas/pavimento/seguridad…) y `developmentDescription`, y el prompt indica usarlos para responder "¿tiene agua/luz/gas?", "¿cómo es el barrio?" en vez de derivar.
+- 📅 **Ficha del desarrollo → tarjeta "Horarios de visita"**: muestra los `AvailabilitySlot` atados a ese desarrollo + botón "Configurar →" (a *Configuración → Disponibilidad*), aclarando que el agente IA usa esos horarios para coordinar visitas a los lotes del loteo. (Cómo el agente toma la info: lotes disponibles + servicios/descripción del desarrollo + horarios de disponibilidad por desarrollo.)
+- ✅ Data real; las secciones CRM (Oportunidades + Agenda de visitas) de la paridad CRM ya se ven en la ficha.
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
