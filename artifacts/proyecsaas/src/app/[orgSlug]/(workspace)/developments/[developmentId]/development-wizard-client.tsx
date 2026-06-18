@@ -366,7 +366,7 @@ export default function DevelopmentWizardClient({
                     handleTabChange(step.id);
                   }}
                   className={cn(
-                    "flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 flex-1 justify-center",
+                    "flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 shrink-0 lg:flex-1 justify-center",
                     isActive
                       ? "bg-brand-500 text-white shadow-inner"
                       : step.done

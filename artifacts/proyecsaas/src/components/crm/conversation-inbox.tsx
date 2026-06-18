@@ -122,7 +122,7 @@ function ConversationDetail({
         </div>
       </div>
 
-      <div className="flex flex-1 gap-5 min-h-0 overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-5 lg:flex-1 lg:min-h-0 lg:overflow-hidden">
         {/* --- Chat Area --- */}
         <div className="flex flex-1 flex-col gap-4 min-w-0 min-h-0">
           
@@ -160,7 +160,7 @@ function ConversationDetail({
           </form>
 
           {/* Messages Feed */}
-          <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-inner custom-scrollbar space-y-6">
+          <div className="flex-1 max-h-[58vh] lg:max-h-none overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-inner custom-scrollbar space-y-6">
             {conv.messages.length === 0 ? (
               <EmptyState title="Sin mensajes" description="Esta conversación aún no tiene actividad registrada." icon={MessageSquare} />
             ) : (
@@ -236,7 +236,7 @@ function ConversationDetail({
         </div>
 
         {/* --- Sidebar: Intelligence Center --- */}
-        <aside className="w-80 shrink-0 flex flex-col gap-5 overflow-y-auto custom-scrollbar">
+        <aside className="w-full lg:w-80 lg:shrink-0 flex flex-col gap-5 lg:overflow-y-auto custom-scrollbar">
           <IaAssistantPanel 
             summary={conv.automationSummary}
             intent={conv.nextBestAction}
@@ -365,7 +365,7 @@ export function ConversationInbox({
   const failedCount = prioritized.filter(hasFailedDelivery).length;
 
   return (
-    <div className="grid h-[calc(100vh-160px)] min-h-[500px] gap-4 lg:grid-cols-[340px_1fr]">
+    <div className="grid gap-4 lg:h-[calc(100vh-160px)] lg:min-h-[500px] lg:grid-cols-[340px_1fr]">
       {/* --- List Panel --- */}
       <div className={cn("flex flex-col gap-3 overflow-hidden", mobileShowDetail ? "hidden lg:flex" : "flex")}>
         {/* Navigation Filters */}

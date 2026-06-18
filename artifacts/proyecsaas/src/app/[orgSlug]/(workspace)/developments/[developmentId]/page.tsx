@@ -172,10 +172,10 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg transition-all border border-slate-200 dark:border-slate-700 shrink-0"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Volver a proyectos
+            <span className="hidden sm:inline">Volver a proyectos</span>
           </Link>
-          <div>
-            <h1 className="text-sm font-bold text-slate-800 dark:text-white">
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold text-slate-800 dark:text-white truncate">
               {development.name}
             </h1>
             {(development.city || development.province) && (
@@ -198,8 +198,8 @@ export default async function DevelopmentDetailPage({ params, searchParams }: Pa
             <span className="hidden sm:inline">Editor de plano</span>
             <span className="rounded bg-white/20 px-1 text-[9px] font-black uppercase tracking-wider">Pro</span>
           </Link>
-          <div className="flex items-center gap-2">
-          <div className="text-right hidden sm:block">
+          <div className="hidden sm:flex items-center gap-2">
+          <div className="text-right">
             <div className="text-sm font-black text-slate-800 dark:text-white tabular-nums leading-tight">
               {completedCount}
               <span className="text-slate-400 font-semibold text-xs">/5</span>
