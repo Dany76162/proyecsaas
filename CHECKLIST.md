@@ -147,6 +147,10 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - ✅ **Verificado runtime**: una visita coordinada vincula el lead al desarrollo (`developmentId` seteado), aparece en Oportunidades con el nombre del loteo, y la visita queda atada al desarrollo para su ficha.
 - ✅ **Ficha de la oportunidad** (`getLeadDetail`): resuelve el nombre del desarrollo → botón "Ver desarrollo relacionado", el título cae al nombre del loteo (no "Sin propiedad vinculada") y suma actividad "Desarrollo vinculado". `developmentId/developmentName` agregados a `LeadListItem`/`LeadDetail`. Verificado runtime. + inglés residual del historial traducido ("Lead" → "Oportunidad", "Sin email asignado" → "Sin correo asignado").
 
+**Auditoría panel BANDEJA IA (Inbox / Conversaciones) (2026-06-18):**
+- ✅ **Data 100% real**: `listOrganizationConversations` (Prisma). Sin componentes temporales/dev ni duplicados (la carpeta `[conversationId]` solo tiene la ruta `handoff`, no UI).
+- 🇪🇸 **Castellano**: sección renombrada **"Inbox IA" → "Bandeja IA"** (elegido por el usuario) en sidebar, header, paginación ("Volver a la Bandeja"), onboarding, panel de prueba de WhatsApp y superadmin ("Ver en Bandeja"). "Ficha Lead" → "Ver oportunidad". El resto ya estaba en español ("Agente al control / IA en espera", "Envío fallido", "Pendientes/Errores"). Se deja "chat" (aceptado por RAE).
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
