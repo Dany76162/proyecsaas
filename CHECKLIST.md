@@ -117,6 +117,15 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - `67f0be0` **Manual actualizado**: "Coordinación de visitas" (la IA ofrece horarios cargados, el humano confirma, la visita cae en Visitas+CRM) + troubleshooting 360° real (equirectangular 2:1, el visor móvil reescala solo) en vez del texto viejo de "stitching/18 fotos".
 - ⏸️ No tocado por decisión del usuario: el botón "Crear plano demo con escenas actuales" (es función real de autoposicionar escenas; se deja el nombre tal cual).
 
+**Auditoría panel de INICIO (dashboard) (2026-06-18) — "100% real" + todo en castellano:**
+- ✅ **Data 100% real**: métricas calculadas de servicios reales (leadSummary, propertySummary, visitSummary, notifications, users, conversation counts). "Cobertura IA 0%" es real (cuenta conversaciones NO bajo control humano; como el usuario tomó el control, da 0%). Sin mocks.
+- **Inglés → castellano** (pedido del usuario "no quiero palabras en inglés"):
+  - Notificaciones (origen en código): "Follow-up needed" → "Seguimiento requerido" (`conversation-worker`); "Conversation follow-up resolved" → "Seguimiento resuelto" + bodies (`follow-up.ts`); subject "WhatsApp chat" → "Chat de WhatsApp".
+  - Dashboard: "Stock disponible" → "Inventario disponible"; "leads" → "oportunidades"; "staff"/"workspace" → "equipo"/"espacio de trabajo".
+  - Plan "Starter" → **"Inicial"** (dashboard, facturación y superadmin; id interno `starter` intacto; normaliza valor guardado).
+- ⚠️ **Nota**: las notificaciones YA guardadas en la DB siguen mostrando el texto viejo (inglés) hasta que el usuario use "Limpiar todas"; las nuevas ya salen en español.
+- Pendiente (otros paneles a limpiar de inglés si se quiere): Oportunidades, Inbox IA, Configuración, etc. (la tienda demo `workspace-store.ts` tiene inglés pero es showcase aparte, no afecta cuentas reales).
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
