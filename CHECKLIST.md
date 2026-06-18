@@ -227,6 +227,7 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🚫 **Humo corregido**: el hero decía que la IA "agenda visitas directamente en tu calendario, 100% autónoma" → falso desde el modelo humano-confirma. Reescrito a lo real: la IA califica, recomienda **propiedades y lotes**, y **coordina visitas según tu disponibilidad — siempre con tu confirmación** ("la IA ayuda a vender, vos tomás el control en el cierre").
 - "Cómo funciona": pasos 2 y 3 actualizados al flujo real (IA coordina visita → el humano confirma el horario y cierra) + mención de **recordatorios automáticos** de visita.
 - ✅ Resto de la landing ya era honesto (sin overclaims: no hay "100%/garantiza/autónoma/x2" en los componentes). DevelopersSection/Tour360 conservadores, se dejan.
+- 🧱 **Amplitud del producto** (la landing estaba muy centrada en IA): la grid principal pasó de "beneficios de IA" a los **4 pilares reales** → (1) Atención con IA por WhatsApp 24/7, (2) CRM inmobiliario (oportunidades, embudo, agenda de visitas + recordatorios, equipo con roles), (3) Catálogo y fichas que venden (público, fotos, tours 360°), (4) Desarrollos y loteos (masterplan interactivo, lotes en tiempo real, reserva online). Heading: "Mucho más que un bot: una plataforma completa".
 
 **Manual de Uso actualizado (2026-06-18):** se puso al día con todo lo de la sesión.
 - Visitas/Disponibilidad: modelo "la IA ofrece, vos confirmás" + horarios por desarrollo; la visita cae en Visitas + CRM.
