@@ -200,6 +200,11 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 
 > ✅ **CONFIGURACIÓN completa**: Disponibilidad · Equipo · Organización · (WhatsApp ya estaba). Queda solo el **Catálogo público** (lo que ve el cliente).
 
+**Auditoría SOPORTE TÉCNICO + fix del bot de soporte (2026-06-18):**
+- ✅ "Soporte Técnico" (sidebar/menú/error) = enlace `wa.me` real al número maestro de la plataforma `SUPPORT_WHATSAPP_NUMBER=5491166037990` (+54 9 11 6603-7990), mensaje en español, helper único en `constants.ts`. Confirmado por el usuario: es el número de la plataforma, conectado como canal.
+- 🐛 **Bug crítico encontrado y corregido**: al escribir al número de soporte, **el agente IA COMERCIAL de la org plataforma auto-respondía** desviando los pedidos ("soy asesor comercial… contactá al equipo de soporte… ¿buscás propiedades?") en vez de dejar el mensaje en el panel **Superadmin → Soporte** para respuesta humana. Fix en el worker: si `targetOrgId === WHATSAPP_ORGANIZATION_ID` (org plataforma), se persiste la conversación/mensaje (aparece en el panel) pero **NO se genera respuesta IA** (`reason: "platform-support-org"`).
+- ⚠️ **REQUIERE**: `WHATSAPP_ORGANIZATION_ID` seteada en el **servicio WORKER** de Railway (no solo en el web). Si falta en el worker, el bot sigue respondiendo. (Patrón conocido: el worker es servicio aparte con sus propias env vars.)
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
