@@ -140,6 +140,81 @@ function getTimezoneOffsetMinutes(timeZone: string, date: Date) {
   return sign * (hours * 60 + minutes);
 }
 
+// Próxima ocurrencia (ISO) de un slot semanal (weekday + hora de inicio) en su
+// timezone. Exportado para que el worker pueda fechar visitas coordinadas.
+export function nextSlotOccurrenceIso(slot: {
+  weekday: number;
+  startMinute: number;
+  timezone: string;
+}): string {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: slot.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const weekdayMap: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  const currentWeekday = weekdayMap[map.weekday ?? ""] ?? 0;
+  const currentMinute = Number(map.hour ?? "0") * 60 + Number(map.minute ?? "0");
+  let daysUntil = (slot.weekday - currentWeekday + 7) % 7;
+
+  if (daysUntil === 0 && currentMinute >= slot.startMinute) {
+    daysUntil = 7;
+  }
+
+  const localDateBase = new Date(
+    Date.UTC(
+      Number(map.year ?? "1970"),
+      Number(map.month ?? "1") - 1,
+      Number(map.day ?? "1") + daysUntil,
+    ),
+  );
+  const startHour = Math.floor(slot.startMinute / 60);
+  const startMin = slot.startMinute % 60;
+  const localAsUtc = new Date(
+    Date.UTC(
+      localDateBase.getUTCFullYear(),
+      localDateBase.getUTCMonth(),
+      localDateBase.getUTCDate(),
+      startHour,
+      startMin,
+      0,
+      0,
+    ),
+  );
+  const offsetMinutes = getTimezoneOffsetMinutes(slot.timezone, localAsUtc);
+
+  return new Date(localAsUtc.getTime() - offsetMinutes * 60_000).toISOString();
+}
+
+// La más temprana de varias franjas. Útil para fechar una visita cuando hay
+// varios días disponibles y no sabemos exactamente cuál eligió el prospecto.
+export function earliestSlotOccurrenceIso(
+  slots: Array<{ weekday: number; startMinute: number; timezone: string }>,
+): string | null {
+  if (!slots.length) {
+    return null;
+  }
+  return slots
+    .map((s) => nextSlotOccurrenceIso(s))
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0];
+}
+
 function getConcreteScheduledAt(context: PreparedConversationContext) {
   if (context.availability.length !== 1) {
     return null;
@@ -351,8 +426,9 @@ function enrichDecisionWithContext(
         visitIntent: { requested: true },
         visitProposal: {
           proposed: true,
-          slotSummary: doubleOptionSummary ?? availabilitySummary ?? undefined,
-          scheduledAt: null,
+          slotSummary:
+            decision.visitProposal?.slotSummary ?? doubleOptionSummary ?? availabilitySummary ?? undefined,
+          scheduledAt: decision.visitProposal?.scheduledAt ?? null,
         },
         requiresFollowUp: true,
         followUpReason:
@@ -608,7 +684,7 @@ function buildPrompt(context: PreparedConversationContext) {
     "- NO derives a un asesor por preguntas de informacion que PODES responder con el contexto: medidas (frente, fondo, superficie), precio, moneda, ubicacion, manzana, etapa, destino, links de ficha, etc. Si el dato esta en el contexto, respondelo vos. Si un dato puntual no esta, decilo con naturalidad y ofrece lo que si tenes o coordinar una visita; tampoco hace falta derivar por eso.",
     "- COORDINAR VISITAS ES PARTE DE TU TRABAJO: NUNCA derives a un asesor por eso ni digas 'te conecto con un asesor' cuando el cliente quiere visitar o pregunta por dias/horarios.",
     "- HORARIOS DE VISITA: cuando el cliente quiera visitar, OFRECE EXCLUSIVAMENTE los dias y horarios que figuran en `availabilitySummary` / `availability` del contexto (son los unicos que el equipo tiene cargados para esa propiedad o desarrollo). NUNCA inventes dias ni horarios ni digas 'a partir de las 8' si ese horario no esta en la agenda. Si `availability` viene vacio, no propongas un horario inventado: preguntale al cliente que dia y franja le queda comoda para coordinarlo con el equipo.",
-    "- VOS NO CONFIRMAS NI AGENDAS LA VISITA: el horario final lo confirma una persona del equipo (puede que ese turno ya este ocupado). Por eso NUNCA digas 'ya te agende', 'quedo reservada' ni des la visita por cerrada. Cuando el cliente elige/acepta un dia y horario concretos, tu mensaje debe decir que lo vas a coordinar con el equipo y le confirmas a la brevedad (ej. 'Genial, lo coordino con el equipo y te confirmo el horario a la brevedad'). En ESE caso (cliente acepto un dia/hora concretos): poné shouldScheduleVisit=false, requiresFollowUp=true y nextBestAction='confirmar-visita-con-humano', y en followUpReason escribi el dia, horario y desarrollo/propiedad que pidio (ej. 'Quiere visitar Valles del Pino el sabado a las 9'). NO listes mas inventario ni links en ese mensaje de cierre: que sea corto.",
+    "- VOS NO CONFIRMAS NI AGENDAS LA VISITA: el horario final lo confirma una persona del equipo (puede que ese turno ya este ocupado). Por eso NUNCA digas 'ya te agende', 'quedo reservada' ni des la visita por cerrada. Cuando el cliente elige/acepta un dia y horario concretos, tu mensaje debe decir que lo vas a coordinar con el equipo y le confirmas a la brevedad (ej. 'Genial, lo coordino con el equipo y te confirmo el horario a la brevedad'). En ESE caso (cliente acepto un dia/hora concretos): poné shouldScheduleVisit=false, requiresFollowUp=true y nextBestAction='confirmar-visita-con-humano', y en followUpReason escribi el dia, horario y desarrollo/propiedad que pidio (ej. 'Quiere visitar Valles del Pino el sabado a las 9'). Ademas, completá proposedVisitDate con esa fecha y hora en formato ISO 8601, resolviendo los dias relativos ('sabado', 'manana', 'el lunes') a partir de `nowIso` del contexto (zona America/Argentina/Buenos_Aires). Si no podes determinar la fecha exacta, devolve proposedVisitDate=null. NO listes mas inventario ni links en ese mensaje de cierre: que sea corto.",
     "- CANCELACION DE VISITA (retencion suave, MAXIMO 2 mensajes): si el cliente quiere cancelar, no puede ir o se arrepiente de una visita ya coordinada, no la des de baja al instante, pero TAMPOCO te pongas insistente ni molesto. Tenes como mucho DOS intentos de retencion en total: por ejemplo, en uno ofrecele cambiar a otro dia/horario de los disponibles, y en otro proponele reprogramar para mas adelante. NO exijas el motivo: si no lo quiere dar, no insistas con eso. Mira `recentMessages`: si ya hiciste uno o dos intentos de retener y el cliente sigue queriendo cancelar (o simplemente no engancha), CORTÁ el intento y aceptá la cancelacion con amabilidad: deci que queda cancelada y que quedas a disposicion para cuando quiera retomar, y poné requiresFollowUp=true y nextBestAction='cancelar-visita-con-humano', y en followUpReason escribi el dia/horario que se cancela y el motivo solo si lo dio (ej. 'Cancela la visita del sabado a las 9 en Valles del Pino'). EXCEPCION: si el cliente quiere reprogramar a un nuevo dia/hora concretos, eso NO es cancelar: tratalo como una visita aceptada (nextBestAction='confirmar-visita-con-humano').",
     "- Deriva a un asesor SOLO si aparecen: negociacion de precio, sena/reserva/anticipo/cuotas/pago, temas legales o de documentacion, friccion repetida, o pedido EXPLICITO del cliente de hablar con una persona. En esos casos si podes decir que lo conectas con un asesor. En ningun otro caso uses esa frase.",
     "- Si el cliente pide algo que NO tenes en tu inventario/contexto (otro tipo de propiedad, otra zona, una propiedad puntual que no esta publicada, o un dato que no tenes): respondé con naturalidad y, si podes, ofrecé una alternativa de lo que SI tenes. PERO, en TODOS esos casos, marca SIEMPRE needsHumanHandoff=true para avisarle al equipo que hay un interesado por algo que no tenemos (demanda no cubierta), aunque le hayas ofrecido una alternativa. Ejemplo: si pide 'una casa en Capital' y vos solo tenes lotes, ofrecé los lotes Y poné needsHumanHandoff=true. (Esto NO es derivar a un asesor: no uses la frase 'te conecto con un asesor'; es solo un aviso interno.)",
@@ -648,6 +724,7 @@ function buildPrompt(context: PreparedConversationContext) {
         recentMessages: context.recentMessages,
         lots: context.lots ?? [],
         catalogUrl: context.catalogUrl ?? null,
+        nowIso: new Date().toISOString(),
       },
       null,
       2,
@@ -702,13 +779,18 @@ function mapAiDecisionToAutomationDecision(
       (payload.needsHumanHandoff
         ? "El prospecto pregunta algo que la IA no tiene en su inventario; necesita tu respuesta."
         : null),
-    visitProposal: payload.shouldScheduleVisit
-      ? {
-          proposed: hasConcreteVisitDate,
-          slotSummary: getDoubleOptionVisitSummary(context) ?? undefined,
-          scheduledAt: hasConcreteVisitDate ? payload.proposedVisitDate : null,
-        }
-      : null,
+    // El visitProposal lleva la fecha propuesta (si la IA la resolvió). Se arma
+    // tanto cuando shouldScheduleVisit como cuando el cliente aceptó un horario
+    // (confirmar-visita-con-humano), para que el worker pueda fechar la visita.
+    visitProposal:
+      payload.shouldScheduleVisit ||
+      payload.nextBestAction.trim() === "confirmar-visita-con-humano"
+        ? {
+            proposed: true,
+            slotSummary: getDoubleOptionVisitSummary(context) ?? undefined,
+            scheduledAt: hasConcreteVisitDate ? payload.proposedVisitDate : null,
+          }
+        : null,
     internalNotes: [
       `AI intent: ${payload.intent}`,
       `AI confidence: ${payload.confidence}`,

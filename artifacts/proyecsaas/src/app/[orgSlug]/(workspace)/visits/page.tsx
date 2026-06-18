@@ -226,9 +226,13 @@ export default async function VisitsPage({
                 <div>
                   <p className="text-lg font-semibold text-slate-950">{visit.leadName}</p>
                   <p className="mt-1 text-sm text-slate-500">
-                    <Link href={`/${orgSlug}/properties/${visit.propertyId}`} className="hover:text-brand-600">
-                      {visit.propertyTitle}
-                    </Link>
+                    {visit.propertyId ? (
+                      <Link href={`/${orgSlug}/properties/${visit.propertyId}`} className="hover:text-brand-600">
+                        {visit.propertyTitle}
+                      </Link>
+                    ) : (
+                      <span>{visit.propertyTitle}</span>
+                    )}
                     {" / "}
                     <Link href={`/${orgSlug}/leads/${visit.leadId}`} className="hover:text-brand-600">
                       Ver lead

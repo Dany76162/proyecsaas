@@ -41,8 +41,11 @@ import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 
 import {
   createVisitForAutomation,
+  createAgentVisit,
+  cancelAgentVisitsForLead,
   VisitAutomationError,
 } from "@/modules/visits/service";
+import { earliestSlotOccurrenceIso } from "@/modules/automations/decision-service";
 
 import { notifyNewLead, notifyHotLead } from "@/server/push/notify";
 
@@ -1083,6 +1086,48 @@ export async function processWhatsAppInboundJob(
         result.conversation.id,
         pushTitle,
       ).catch(() => {});
+    }
+
+    // Agenda/CRM: el cliente aceptó un horario → creamos la visita como PENDING
+    // (aparece en /visits y en "En Visita" para que vos la confirmes). El cliente
+    // canceló → marcamos sus visitas activas como CANCELED (no se borran).
+    if (isVisitConfirm) {
+      const proposedIso =
+        decision.visitProposal?.scheduledAt &&
+        !Number.isNaN(new Date(decision.visitProposal.scheduledAt).getTime())
+          ? decision.visitProposal.scheduledAt
+          : null;
+      const scheduledIso = proposedIso ?? earliestSlotOccurrenceIso(availability);
+
+      if (scheduledIso) {
+        const targetDevelopmentId = lotDevelopmentIds[0] ?? null;
+        const targetLabel =
+          propertyMatch.property?.title ??
+          availableLots.find((l) => l.developmentId === targetDevelopmentId)?.Development.name ??
+          availableLots[0]?.Development.name ??
+          "Visita";
+
+        await createAgentVisit(prisma, {
+          organizationId: targetOrgId,
+          leadId: result.lead.id,
+          scheduledAt: new Date(scheduledIso),
+          propertyId: propertyMatch.property?.id ?? null,
+          developmentId: targetDevelopmentId,
+          targetLabel,
+          notes: followUpReason,
+        }).catch((err) => {
+          console.error(
+            JSON.stringify({
+              scope: "conversation-worker",
+              event: "agent-visit-create-failed",
+              conversationId: result.conversation.id,
+              error: err instanceof Error ? err.message : "unknown",
+            }),
+          );
+        });
+      }
+    } else if (isVisitCancel) {
+      await cancelAgentVisitsForLead(prisma, targetOrgId, result.lead.id).catch(() => 0);
     }
   }
 

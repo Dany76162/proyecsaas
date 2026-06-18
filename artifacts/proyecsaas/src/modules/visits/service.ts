@@ -51,7 +51,9 @@ export async function listOrganizationVisits(
       status: visit.status,
       notes: visit.notes ?? "Visita agendada desde el workspace.",
       propertyId: visit.propertyId,
-      propertyTitle: visit.property.title,
+      // Una visita puede ser a una propiedad o a un desarrollo/lote (sin propertyId):
+      // en ese caso usamos el rótulo de destino guardado al crearla.
+      propertyTitle: visit.property?.title ?? visit.targetLabel ?? "Visita",
       leadId: visit.leadId ?? "",
       leadName: visit.lead?.fullName ?? "Lead desconocido",
       ownerName: visit.createdBy.fullName,
@@ -252,4 +254,152 @@ export async function createVisitForAutomation(
     organizationSlug: organization.slug,
     propertyId: property.id,
   };
+}
+
+export type CreateAgentVisitParams = {
+  organizationId: string;
+  leadId: string;
+  scheduledAt: Date;
+  propertyId?: string | null;
+  developmentId?: string | null;
+  lotId?: string | null;
+  targetLabel?: string | null;
+  status?: VisitStatus;
+  notes?: string;
+};
+
+/**
+ * Crea (o reutiliza) una visita coordinada por el agente IA. A diferencia de
+ * `createVisitForAutomation`, NO requiere que el lead tenga una propiedad: la
+ * visita puede ser a un desarrollo/lote. Queda como PENDING para que el humano
+ * la confirme. Dedup: si ya hay una visita activa para ese lead + mismo destino,
+ * la reutiliza (actualiza horario/notas) en vez de duplicar.
+ */
+export async function createAgentVisit(
+  prisma: PrismaClient | Prisma.TransactionClient,
+  params: CreateAgentVisitParams,
+) {
+  const organization = await prisma.organization.findUnique({
+    where: { id: params.organizationId },
+    select: { id: true, slug: true },
+  });
+
+  if (!organization) {
+    throw new VisitAutomationError("missing-organization", "Organization not found.");
+  }
+
+  const lead = await prisma.lead.findFirst({
+    where: { id: params.leadId, organizationId: organization.id },
+    select: { id: true, fullName: true, ownerId: true },
+  });
+
+  if (!lead) {
+    throw new VisitAutomationError("missing-lead", "Lead not found in organization.");
+  }
+
+  const scheduledAt = new Date(params.scheduledAt);
+  if (Number.isNaN(scheduledAt.getTime())) {
+    throw new VisitAutomationError("invalid-visit", "Visit date is invalid.");
+  }
+
+  const fallbackOwner = await prisma.membership.findFirst({
+    where: { organizationId: organization.id },
+    select: { userId: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const ownerId = lead.ownerId || fallbackOwner?.userId;
+  if (!ownerId) {
+    throw new VisitAutomationError("missing-owner", "No valid owner was found to attribute the visit.");
+  }
+
+  // ¿Ya hay una visita activa para este lead y este destino? La reutilizamos.
+  const existing = await prisma.visit.findFirst({
+    where: {
+      organizationId: organization.id,
+      leadId: lead.id,
+      status: { in: [VisitStatus.PENDING, VisitStatus.CONFIRMED] },
+      ...(params.developmentId
+        ? { developmentId: params.developmentId }
+        : params.propertyId
+          ? { propertyId: params.propertyId }
+          : {}),
+    },
+    select: { id: true, status: true },
+  });
+
+  if (existing) {
+    await prisma.visit.update({
+      where: { id: existing.id },
+      data: {
+        scheduledAt,
+        notes: params.notes ?? undefined,
+        targetLabel: params.targetLabel ?? undefined,
+        lotId: params.lotId ?? undefined,
+      },
+    });
+
+    return { visitId: existing.id, reusedExisting: true, organizationSlug: organization.slug };
+  }
+
+  const visit = await prisma.visit.create({
+    data: {
+      organizationId: organization.id,
+      leadId: lead.id,
+      propertyId: params.propertyId ?? null,
+      developmentId: params.developmentId ?? null,
+      lotId: params.lotId ?? null,
+      targetLabel: params.targetLabel ?? null,
+      createdById: ownerId,
+      scheduledAt,
+      status: params.status ?? VisitStatus.PENDING,
+      notes: params.notes ?? "Visita coordinada por el agente IA.",
+    },
+  });
+
+  await prisma.lead.update({
+    where: { id: lead.id },
+    data: { status: LeadStatus.VISIT, lastContactAt: new Date() },
+  });
+
+  await prisma.notification.create({
+    data: {
+      organizationId: organization.id,
+      type: NotificationType.VISIT_CREATED,
+      title: `Visita por confirmar: ${lead.fullName}`,
+      body: `${params.targetLabel ?? "Visita"} — ${scheduledAt.toLocaleString("es-AR", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })}.`,
+      link: `/${organization.slug}/visits`,
+      entityType: "visit",
+      entityId: visit.id,
+    },
+  });
+
+  return { visitId: visit.id, reusedExisting: false, organizationSlug: organization.slug };
+}
+
+/**
+ * Cancela (status CANCELED) las visitas activas de un lead. La usa el agente
+ * cuando el prospecto confirma que cancela. No borra: deja historial en el CRM.
+ */
+export async function cancelAgentVisitsForLead(
+  prisma: PrismaClient | Prisma.TransactionClient,
+  organizationId: string,
+  leadId: string,
+): Promise<number> {
+  const result = await prisma.visit.updateMany({
+    where: {
+      organizationId,
+      leadId,
+      status: { in: [VisitStatus.PENDING, VisitStatus.CONFIRMED] },
+    },
+    data: { status: VisitStatus.CANCELED },
+  });
+
+  return result.count;
 }

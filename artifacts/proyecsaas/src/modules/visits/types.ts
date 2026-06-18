@@ -5,7 +5,7 @@ export type VisitListItem = {
   scheduledAt: string;
   status: VisitStatus;
   notes: string;
-  propertyId: string;
+  propertyId: string | null;
   propertyTitle: string;
   leadId: string;
   leadName: string;

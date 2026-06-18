@@ -466,14 +466,17 @@ model Message {
 model Visit {
   id             String       @id @default(cuid())
   organizationId String
-  propertyId     String
+  propertyId     String?
+  developmentId  String?
+  lotId          String?
+  targetLabel    String?
   leadId         String?
   createdById    String
   status         VisitStatus  @default(PENDING)
   scheduledAt    DateTime
   notes          String?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  property       Property     @relation("PropertyVisits", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  property       Property?    @relation("PropertyVisits", fields: [propertyId, organizationId], references: [id, organizationId], onDelete: Cascade)
   lead           Lead?        @relation(fields: [leadId, organizationId], references: [id, organizationId], onDelete: Restrict)
   createdBy      User         @relation("VisitCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdAt      DateTime     @default(now())
