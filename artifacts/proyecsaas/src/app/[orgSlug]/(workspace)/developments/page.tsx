@@ -81,12 +81,22 @@ export default async function DevelopmentsPage({
                   href={`/${orgSlug}/developments/${dev.id}`}
                   className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:border-brand-300"
                 >
-                  {/* Cabecera con color de marca + logo */}
+                  {/* Cabecera: imagen de portada (foto/render/logo) o color de marca */}
                   <div
-                    className="relative flex h-28 items-center justify-center overflow-hidden"
+                    className="relative flex h-32 items-center justify-center overflow-hidden"
                     style={{ background: `linear-gradient(135deg, ${theme} 0%, ${theme}cc 60%, ${theme}99 100%)` }}
                   >
-                    {dev.logoUrl ? (
+                    {dev.coverImageUrl ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={dev.coverImageUrl}
+                          alt={dev.name}
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                      </>
+                    ) : dev.logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={dev.logoUrl}

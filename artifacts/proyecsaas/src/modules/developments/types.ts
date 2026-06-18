@@ -12,6 +12,7 @@ export type DevelopmentListItem = {
   lotCount: number;
   availableCount: number;
   logoUrl: string | null;
+  coverImageUrl: string | null;
   themeColor: string | null;
   createdAt: Date;
 };

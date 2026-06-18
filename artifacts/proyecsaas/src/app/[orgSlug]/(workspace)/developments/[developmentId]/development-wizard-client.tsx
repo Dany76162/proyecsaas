@@ -158,6 +158,7 @@ export default function DevelopmentWizardClient({
       publicVisible: formData.get("publicVisible") === "on",
       logoUrl: (formData.get("logoUrl") as string) || null,
       companyLogoUrl: (formData.get("companyLogoUrl") as string) || null,
+      coverImageUrl: (formData.get("coverImageUrl") as string) || null,
       themeColor: formData.get("themeColor") as string || undefined,
       brochurePlanUrl: formData.get("brochurePlanUrl") as string || undefined,
       contactPhone: formData.get("contactPhone") as string || undefined,
@@ -579,7 +580,11 @@ export default function DevelopmentWizardClient({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <ImageUploader label="Logo del Proyecto" name="logoUrl" defaultValue={development.logoUrl || ""} projectId={development.id} />
                     <ImageUploader label="Logo Empresa/Inmobiliaria" name="companyLogoUrl" defaultValue={development.companyLogoUrl || ""} projectId={development.id} />
-                    
+                    <div className="sm:col-span-2">
+                      <ImageUploader label="Imagen de portada (tarjeta) — foto, render o logo" name="coverImageUrl" defaultValue={development.coverImageUrl || ""} projectId={development.id} />
+                      <p className="mt-1 text-[11px] text-slate-400">Es la imagen que se muestra arriba en la tarjeta del listado de desarrollos. Si no cargás ninguna, se usa el logo o el color de marca.</p>
+                    </div>
+
                     <div className="flex flex-col gap-2">
                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide block mb-1">Color Principal (Ficha)</label>
                       <div className="flex items-center gap-3">

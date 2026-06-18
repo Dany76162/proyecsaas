@@ -10,6 +10,7 @@ export const createDevelopmentSchema = z.object({
   country: z.string().max(100).optional(),
   logoUrl: z.string().optional().nullable().or(z.literal("")),
   companyLogoUrl: z.string().optional().nullable().or(z.literal("")),
+  coverImageUrl: z.string().optional().nullable().or(z.literal("")),
   themeColor: z.string().optional().nullable().or(z.literal("")),
   brochurePlanUrl: z.string().optional().nullable().or(z.literal("")),
   contactPhone: z.string().optional().nullable().or(z.literal("")),

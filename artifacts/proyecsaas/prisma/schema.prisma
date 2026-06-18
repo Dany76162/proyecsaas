@@ -1452,6 +1452,7 @@ model Development {
 
   logoUrl              String?
   companyLogoUrl       String?
+  coverImageUrl        String?
   themeColor           String?               @default("#0D9488")
   brochurePlanUrl      String?
   contactPhone         String?

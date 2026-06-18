@@ -16,6 +16,7 @@ export async function listOrganizationDevelopments(
       status: true,
       publicVisible: true,
       logoUrl: true,
+      coverImageUrl: true,
       themeColor: true,
       createdAt: true,
       _count: { select: { DevelopmentLot: true } },
@@ -37,6 +38,7 @@ export async function listOrganizationDevelopments(
     lotCount: r._count.DevelopmentLot,
     availableCount: r.DevelopmentLot.length,
     logoUrl: r.logoUrl,
+    coverImageUrl: r.coverImageUrl,
     themeColor: r.themeColor,
     createdAt: r.createdAt,
   }));
