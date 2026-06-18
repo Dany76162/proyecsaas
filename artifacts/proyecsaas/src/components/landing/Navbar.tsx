@@ -28,7 +28,7 @@ export function Navbar() {
   const close = () => setIsOpen(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md transition-colors duration-300">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md transition-colors duration-300 font-sans">
       {/* ── Barra principal ──────────────────────────────────────────────── */}
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
 
@@ -52,7 +52,7 @@ export function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition"
+                className="whitespace-nowrap text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition"
               >
                 {link.label}
               </a>
@@ -60,7 +60,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-350 transition"
+                className="whitespace-nowrap text-sm font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-350 transition"
               >
                 {link.label}
               </Link>
@@ -80,7 +80,7 @@ export function Navbar() {
           >
             <Link href="/login">Acceder</Link>
           </Button>
-          <Button asChild className="hidden lg:inline-flex">
+          <Button asChild className="hidden lg:inline-flex whitespace-nowrap">
             <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
               Solicitar demo
             </a>
