@@ -492,30 +492,35 @@ export async function processWhatsAppInboundJob(
   }
 
   const [availability, recentMessages, aiAgent, availableLots, orgRecord, propertyDetail] = await Promise.all([
-    propertyMatch.property
-      ? prisma.availabilitySlot.findMany({
-          where: {
-            organizationId: targetOrgId,
-            propertyId: propertyMatch.property.id,
-            isActive: true,
-          },
+    // Horarios para proponer visitas: SIEMPRE traemos los generales de la org
+    // (propertyId null) — sirven para propiedades Y lotes — más los específicos
+    // de la propiedad matcheada si hay. Antes solo traía los de una propiedad
+    // puntual, así que los horarios "generales" nunca se usaban (ni los de lotes).
+    prisma.availabilitySlot.findMany({
+      where: {
+        organizationId: targetOrgId,
+        isActive: true,
+        OR: [
+          { propertyId: null },
+          ...(propertyMatch.property ? [{ propertyId: propertyMatch.property.id }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        label: true,
+        weekday: true,
+        startMinute: true,
+        endMinute: true,
+        timezone: true,
+        user: {
           select: {
-            id: true,
-            label: true,
-            weekday: true,
-            startMinute: true,
-            endMinute: true,
-            timezone: true,
-            user: {
-              select: {
-                fullName: true,
-              },
-            },
+            fullName: true,
           },
-          orderBy: [{ weekday: "asc" }, { startMinute: "asc" }],
-          take: 6,
-        })
-      : Promise.resolve([]),
+        },
+      },
+      orderBy: [{ weekday: "asc" }, { startMinute: "asc" }],
+      take: 6,
+    }),
     prisma.message.findMany({
       where: {
         organizationId: targetOrgId,
