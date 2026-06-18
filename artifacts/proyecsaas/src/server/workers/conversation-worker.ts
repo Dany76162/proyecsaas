@@ -292,6 +292,17 @@ export async function processWhatsAppInboundJob(
     return { conversation, lead, message };
   });
 
+  // La organización PLATAFORMA (número maestro de soporte) NO debe auto-responder
+  // con la IA comercial: el mensaje y la conversación ya quedaron persistidos
+  // arriba (visibles en Superadmin → Soporte) para que un humano los responda.
+  // Sin esto, el agente de ventas de la plataforma desviaba los pedidos de soporte.
+  if (
+    process.env.WHATSAPP_ORGANIZATION_ID &&
+    targetOrgId === process.env.WHATSAPP_ORGANIZATION_ID
+  ) {
+    return { status: "ignored" as const, reason: "platform-support-org" };
+  }
+
   if (leadWasCreated) {
     await notifyNewLead(targetOrgId, result.lead.fullName, result.conversation.id);
   }
