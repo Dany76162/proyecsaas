@@ -180,6 +180,10 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🔒 **Fuga técnica oculta**: "Redis conectado" → "Conectada", "Modo síncrono (dev)" → "Modo directo"; se quitó el nombre exacto del modelo "GPT-4.1" → "La IA" (no exponer interna ni envejecer el copy).
 - 🇪🇸 **Castellano**: "intent" → "intención"; "Match de inventario" → "Coincidencia"; "bot"/"Bot:" → "agente"/"Agente:"; "leads" → "oportunidades"; "Ver lead" → "Ver oportunidad"; "captacion" → "captación". Label "Tasa de respuesta bot" → "Tasa de respuesta del agente" + hint "mensajes enviados / recibidos" (la >100% es real: el agente manda varios mensajes por cada uno recibido).
 
+**Auditoría panel ADMINISTRACIÓN → WHATSAPP (2026-06-18):**
+- ✅ Data real (`getPlatformWhatsAppStatus`, `whatsAppChannel`, `whatsAppChannelConnectionRequest`). Sin componentes temporales. Reusa `WhatsAppConnectionForm` (mismo de Captación) + secciones de Conexión Rápida (QR) y WhatsApp Business API (Meta).
+- 🇪🇸 **Castellano**: "(QR Scan)" → "(escaneo de QR)"; form de Meta: "(Display Name)" → "(nombre visible)", "Email de contacto" → "Correo de contacto" (+ placeholder y texto de confirmación); "deriva el lead" → "deriva la oportunidad". Se dejan marcas/siglas (WhatsApp Business, Meta, API, QR, PNG).
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
