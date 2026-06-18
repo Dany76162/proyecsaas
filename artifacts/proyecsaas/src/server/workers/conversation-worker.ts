@@ -40,10 +40,8 @@ import { matchLeadToProperty } from "@/modules/properties/matching";
 import { resolveConversationFollowUp } from "@/modules/conversations/follow-up";
 
 import {
-  createVisitForAutomation,
   createAgentVisit,
   cancelAgentVisitsForLead,
-  VisitAutomationError,
 } from "@/modules/visits/service";
 import { earliestSlotOccurrenceIso } from "@/modules/automations/decision-service";
 
@@ -804,40 +802,19 @@ export async function processWhatsAppInboundJob(
     },
   });
 
-  // 4. Visit Creation (if proposed and concrete)
+  // 4. Visit Creation
+  // Las visitas coordinadas por el agente se crean SOLO cuando el cliente acepta
+  // un horario, vía `createAgentVisit` (bloque de follow-up más abajo), con nota
+  // en español. El path automático viejo quedó DESHABILITADO porque: (a) creaba
+  // la visita prematuramente al solo ofrecer horarios, (b) duplicaba la que crea
+  // createAgentVisit, y (c) volcaba `internalNotes` (debug en inglés) en la nota
+  // visible de la visita. Mantenemos visitResult sólo para telemetría.
   let visitResult: AutomationVisitCreationResult = {
-    proposalPresent: false,
+    proposalPresent: Boolean(decision.visitProposal?.proposed),
     concrete: false,
     created: false,
     reason: "no-proposal",
   };
-
-  if (decision.visitProposal?.proposed) {
-    visitResult.proposalPresent = true;
-    const scheduledAt = decision.visitProposal.scheduledAt ? new Date(decision.visitProposal.scheduledAt) : null;
-
-    if (scheduledAt && !Number.isNaN(scheduledAt.getTime())) {
-      visitResult.concrete = true;
-      try {
-        const outcome = await createVisitForAutomation(prisma, {
-          organizationId: targetOrgId,
-          leadId: result.lead.id,
-          scheduledAt,
-          notes: decision.internalNotes || "Auto-scheduled from WhatsApp",
-        });
-
-        visitResult.created = true;
-        visitResult.reason = "created";
-        visitResult.visitId = outcome.visit.id;
-      } catch (error) {
-        visitResult.created = false;
-        visitResult.reason = "creation-failed-safe";
-        visitResult.errorCode = error instanceof VisitAutomationError ? error.code : "unknown";
-      }
-    } else {
-      visitResult.reason = "proposal-not-concrete";
-    }
-  }
 
   // 5. Delivery if applicable
   let deliveryResult: DeliveryAttemptResult | undefined;

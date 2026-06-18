@@ -196,7 +196,7 @@ export default async function VisitsPage({
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Desde el CRM</p>
                   <p className="mt-2 text-xs font-semibold text-slate-600 leading-relaxed">
-                    Podés programar una visita en cualquier momento ingresando a la ficha del Lead interesado en la sección de Oportunidades.
+                    Podés programar una visita en cualquier momento ingresando a la ficha de la oportunidad interesada en la sección de Oportunidades.
                   </p>
                 </div>
               </div>
@@ -235,7 +235,7 @@ export default async function VisitsPage({
                     )}
                     {" / "}
                     <Link href={`/${orgSlug}/leads/${visit.leadId}`} className="hover:text-brand-600">
-                      Ver lead
+                      Ver oportunidad
                     </Link>
                   </p>
                   <p className="mt-3 text-sm leading-6 text-slate-600">{visit.notes}</p>

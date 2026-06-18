@@ -20,6 +20,19 @@ export class VisitAutomationError extends Error {
 
 export type VisitView = "upcoming" | "all";
 
+// Limpia notas de visita que filtraron texto interno de debug en inglés
+// (bug del path viejo: volcaba `internalNotes` "AI intent: ... AI confidence: ...").
+// Rescata el motivo legible si está, o cae a un texto en español.
+export function sanitizeVisitNotes(notes: string | null | undefined): string {
+  const fallback = "Visita coordinada por el agente IA.";
+  if (!notes) return fallback;
+  if (/AI intent:|AI confidence:|Lead temperature:|routed to human|Auto-scheduled/i.test(notes)) {
+    const match = notes.match(/Follow-up reason:\s*(.+?)(?:\s+(?:Client agreed|AI intent|AI confidence|Lead temperature)\b|$)/i);
+    return match?.[1]?.trim() || fallback;
+  }
+  return notes;
+}
+
 export async function listOrganizationVisits(
   prisma: PrismaClient | Prisma.TransactionClient,
   orgSlug: string,
@@ -49,13 +62,13 @@ export async function listOrganizationVisits(
       id: visit.id,
       scheduledAt: visit.scheduledAt.toISOString(),
       status: visit.status,
-      notes: visit.notes ?? "Visita agendada desde el workspace.",
+      notes: sanitizeVisitNotes(visit.notes),
       propertyId: visit.propertyId,
       // Una visita puede ser a una propiedad o a un desarrollo/lote (sin propertyId):
       // en ese caso usamos el rótulo de destino guardado al crearla.
       propertyTitle: visit.property?.title ?? visit.targetLabel ?? "Visita",
       leadId: visit.leadId ?? "",
-      leadName: visit.lead?.fullName ?? "Lead desconocido",
+      leadName: visit.lead?.fullName ?? "Contacto desconocido",
       ownerName: visit.createdBy.fullName,
     }));
 }

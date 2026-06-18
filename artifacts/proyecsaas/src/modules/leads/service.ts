@@ -2,6 +2,7 @@
 
 import { prisma } from "@/server/db/prisma";
 import { readLeadCommercialSignals } from "@/modules/leads/commercial-signals";
+import { sanitizeVisitNotes } from "@/modules/visits/service";
 
 import type {
   LeadDetail,
@@ -218,7 +219,7 @@ export async function getLeadDetail(
     id: visit.id,
     scheduledAt: visit.scheduledAt.toISOString(),
     status: visit.status,
-    notes: visit.notes ?? "Visita agendada desde el workspace.",
+    notes: sanitizeVisitNotes(visit.notes),
     propertyTitle: visit.property?.title ?? "Propiedad no disponible",
   }));
 
