@@ -135,6 +135,18 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - ✅ **Data 100% real**: `listOrganizationLeads`, `getLeadSummary`, `createLeadAction` (alta), detalle con servicios reales. Sin mocks ni componentes temporales/dev; sin duplicados.
 - 🇪🇸 **Castellano** (el producto usa "Oportunidad/Contacto"): "pipeline" → "embudo de ventas"; "lead/leads" → "oportunidad/oportunidades" (columna de nombre = "Contacto"); "Match (de inventario/automático)" → "Coincidencia"; "Email" → "Correo electrónico"; "link" → "enlace"; "Abrir lead" → "Abrir oportunidad"; placeholders/ejemplos de correo. Mensajes de éxito/error traducidos.
 
+## 🏗️ DESARROLLOS ↔ CRM — paridad con Propiedades (2026-06-18, verificado runtime)
+
+**Diagnóstico (el gap):** Desarrollos tenía capa transaccional (lotes, masterplan, reservas con pago) pero NO estaba enchufado al CRM como una Propiedad: `Lead` no tenía `developmentId`, la ficha del desarrollo no mostraba leads/visitas, y la IA no vinculaba el lead al desarrollo (por eso los interesados en Valles del Pino salían "Sin propiedad vinculada"). Disponibilidad por desarrollo y `Visit.developmentId` ya estaban de antes.
+
+**Construido (`feat(developments): CRM parity`):**
+- `Lead.developmentId` + `lotId` (scalar, sin FK; migración `20260618160000` + índice). Se aplica sola en deploy.
+- **Vínculo automático lead↔desarrollo**: (a) el worker vincula cuando hay un único loteo con lotes y el lead califica / pide visita / está caliente-tibio; (b) `createAgentVisit` vincula al coordinar una visita a un desarrollo.
+- **Ficha del desarrollo (tab Info)**: secciones nuevas **"Oportunidades vinculadas"** + **"Agenda de visitas"** (como en la ficha de propiedad). Server page trae `Lead`/`Visit` por `developmentId`.
+- **Oportunidades**: muestra el nombre del desarrollo en vez de "Sin propiedad vinculada" para leads de loteo.
+- ✅ **Verificado runtime**: una visita coordinada vincula el lead al desarrollo (`developmentId` seteado), aparece en Oportunidades con el nombre del loteo, y la visita queda atada al desarrollo para su ficha.
+- Pendiente menor: en `getLeadDetail` (ficha de la oportunidad) todavía dice "Sin propiedad vinculada" cuando es desarrollo; mostrar el loteo ahí también (bajo impacto).
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
