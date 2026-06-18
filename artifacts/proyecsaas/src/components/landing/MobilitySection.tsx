@@ -47,13 +47,13 @@ export function MobilitySection() {
                         <div className="px-2 text-[5px] uppercase tracking-widest opacity-40 font-bold">Operación</div>
                         {[
                           { icon: Home, label: "Inicio" },
-                          { icon: CheckCircle2, label: "Bienvenida", active: true },
-                          { icon: UserPlus, label: "Captación" },
-                          { icon: BookOpen, label: "Manual de uso" },
-                          { icon: Users, label: "Prospectos" },
-                          { icon: MessageSquare, label: "Conversaciones" },
+                          { icon: CheckCircle2, label: "Primeros pasos", active: true },
+                          { icon: UserPlus, label: "Enlaces de WhatsApp" },
+                          { icon: Users, label: "Oportunidades" },
+                          { icon: MessageSquare, label: "Bandeja IA" },
                           { icon: MapPin, label: "Visitas" },
                           { icon: Building2, label: "Propiedades" },
+                          { icon: BookOpen, label: "Manual de uso" },
                         ].map((item, i) => (
                           <div key={i} className={cn(
                             "flex items-center gap-2 px-2 py-1 rounded transition-colors",

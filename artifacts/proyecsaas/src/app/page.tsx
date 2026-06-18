@@ -113,6 +113,17 @@ export default async function HomePage() {
                 <Link href="/login">Acceder al sistema</Link>
               </Button>
             </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+              <span className="inline-flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                Publicá sin límite de propiedades, <strong className="text-slate-700 dark:text-slate-200">sin costo por aviso</strong>
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Globe className="h-4 w-4 text-brand-500" />
+                Para toda Latinoamérica (multimoneda)
+              </span>
+            </div>
           </div>
 
         </section>
@@ -235,9 +246,14 @@ export default async function HomePage() {
               <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
                 Tus propiedades, donde la gente busca
               </h2>
-              <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-350 mb-6">
-                Cada propiedad que publicás aparece —además de en tu propio catálogo— en el <strong>portal y app de Raíces Pilot para compradores</strong>, donde la gente busca y filtra por lo que necesita. Más visibilidad y más consultas, sin trabajo extra.
+              <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-350 mb-5">
+                Cada propiedad que publicás aparece —además de en tu propio catálogo— en el <strong>portal y app de Raíces Pilot</strong>, donde <strong>compradores e inversores de toda Latinoamérica</strong> buscan y filtran por lo que necesitan. Más visibilidad y más consultas, sin trabajo extra.
               </p>
+              <div className="mb-6 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 p-4">
+                <p className="text-sm leading-relaxed text-emerald-900 dark:text-emerald-300">
+                  <strong>No cobramos por publicar.</strong> Cargá y publicá tus propiedades sin límite de cantidad ni costo por aviso. La suscripción es por las <strong>herramientas comerciales</strong>: CRM, WhatsApp, IA, automatizaciones, reservas, estadísticas, equipo de trabajo, multimedia avanzada y módulos de desarrollos.
+                </p>
+              </div>
               <div className="flex flex-wrap gap-2 mb-8">
                 {["Operación", "Zona", "Precio", "Ambientes", "Baños", "Superficie", "Cochera", "Apto crédito", "Con tour 360°", "Acepta mascotas"].map((f) => (
                   <span key={f} className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
