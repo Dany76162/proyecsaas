@@ -103,8 +103,12 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 
 > **Estado:** 🟢 **Verificado en charla real con SevenToop (2026-06-18):** la IA ofrece los horarios reales cargados (sáb/dom de Valles del Pino), coordina sin confirmar sola ("lo confirmo con el equipo"), se pausa, el humano da el OK, **y la visita aparece en la agenda/CRM**. Cancelación con retención y guarda anti-pregunta OK. Pendiente menor del usuario: atar los horarios de cada loteo a su **desarrollo** en *Configuración → Disponibilidad* y ocultar la "propiedad" de marketing del catálogo.
 
-**Visor Tour 360° — fix móvil (2026-06-18):**
-- `6263729` **Pantalla negra en celulares**: los GPU móviles tienen un límite de textura WebGL menor (típico 4096px) y el Pannellum local **tira "webgl size error" (negro) si el panorama lo supera** — no reescala. Ahora se lee el `MAX_TEXTURE_SIZE` del dispositivo y se **reescala el panorama del lado del cliente** (canvas) para que entre y renderice en el celular. + **fallback legible** con botón "Abrir imagen 360°" en vez de pantalla negra si igual falla (ej. imagen de otro host sin CORS). Sin cambios en desktop (límite mucho más alto). Archivo: `src/components/properties/panorama-viewer.tsx`. A verificar por el usuario en celular real.
+**Visor Tour 360° — fix completo (2026-06-18, verificado por el usuario):**
+- `6263729` **Pantalla negra en celulares**: los GPU móviles tienen un límite de textura WebGL menor (típico 4096px) y el Pannellum local **tira "webgl size error" (negro) si el panorama lo supera** — no reescala. Ahora se lee el `MAX_TEXTURE_SIZE` del dispositivo y se **reescala el panorama del lado del cliente** (canvas) para que entre y renderice en el celular. + **fallback legible** con botón "Abrir imagen 360°" en vez de pantalla negra si igual falla (ej. imagen de otro host sin CORS).
+- `5cb19eb` **Reescalado de alta calidad** (imageSmoothingQuality=high + JPEG 0.95, solo si excede >2%) para no perder nitidez al achicar en móvil.
+- `281e9e2` **Imagen borrosa/pixelada (causa REAL)**: el canvas WebGL se inicializaba **antes de que el layout tuviera su tamaño final** → quedaba con resolución interna chica y se estiraba (borroso). Pista del usuario: con F12 (resize de ventana) se veía nítido. Fix: **reintentos de `resize()`** (raf + timeouts) tras init + **`ResizeObserver`** que reajusta el canvas al tamaño real del contenedor (carga, rotación, F12, panel). ✅ **Verificado nítido por el usuario en PC.** Archivo: `src/components/properties/panorama-viewer.tsx`.
+
+**Misc:** `281e9e2` también setea `metadataBase` (NEXT_PUBLIC_APP_URL || raicespilot.com) → silencia el warning de Next.js de imágenes OG/Twitter y arregla las previews de links compartidos.
 
 ---
 
