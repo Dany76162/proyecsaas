@@ -1013,9 +1013,12 @@ export async function processWhatsAppInboundJob(
       },
     });
 
-    // Push de "prospecto caliente" a la app móvil — solo la primera vez que la
-    // conversación se flaguea (evita spam). No pausa la IA.
-    if (!result.conversation.followUpActive && org?.slug) {
+    // Push de "prospecto caliente" a la app móvil. Se dispara: (a) la primera vez
+    // que la conversación se flaguea para follow-up, o (b) en el momento del
+    // handoff (derivación) aunque ya estuviera flagueada. Deduplicado por la
+    // transición de estado para no spamear.
+    const isHandoffTransition = isExplicitHandoff && !result.conversation.isHumanControlled;
+    if ((!result.conversation.followUpActive || isHandoffTransition) && org?.slug) {
       const prefs = decision.extractedPreferences;
       const summary =
         [

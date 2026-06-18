@@ -54,7 +54,14 @@ export async function GET() {
     const agents = await prisma.aiAgent
       .findMany({
         where: { organizationId: orgId },
-        select: { id: true, name: true, status: true, whatsappChannelId: true },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          whatsappChannelId: true,
+          escalateOnKeywords: true,
+          humanHandoffMessage: true,
+        },
       })
       .catch((e) => ({ error: String(e?.message ?? e) }));
 
