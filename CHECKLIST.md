@@ -83,7 +83,18 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 **Propiedades:**
 - `100659c` **Formulario adaptable por tipo** (5 perfiles: Residencial / Comercial / Suelo / Campo / Especiales): cada tipo muestra solo sus campos (un terreno ya no muestra cocheras/baños). + columna `services` (migración) + **hectáreas** para campos. La IA también adapta lo que ofrece al tipo.
 
-> **Estado:** 🟢 Cadena WhatsApp + Agente IA + notificaciones + handoff funcionando end-to-end (verificado con SevenToop en prod). Pendiente menor del usuario: cargar horarios de Disponibilidad (para que la IA agende visitas sola) y ocultar la "propiedad" de marketing del catálogo.
+**Agenda de visitas y disponibilidad (2026-06-18):**
+- `c98f0ae` La IA usa los horarios **GENERALES** de disponibilidad (`propertyId/developmentId null`) y para **lotes**, no solo los de una propiedad matcheada.
+- `1af1327` La IA propone/agenda visitas para **LOTES** (desarrollos), no solo propiedades.
+- `73189d4` **Disponibilidad por desarrollo**: `AvailabilitySlot.developmentId` (schema + migración + acción + dropdown en *Configuración → Disponibilidad* + badge "Desarrollo: X"). El worker trae los slots que matchean el desarrollo de los lotes consultados → cada loteo tiene su agenda propia (ej. Valles del Pino sáb/dom) sin mezclarse. "General" = aplica a todos (sirve para inmobiliarias con misma agenda para todo el catálogo).
+- `9d0a1a0` Aviso en el form: "General" aplica a TODOS los desarrollos.
+- `c1107df` Evitar el término "loteadora" en copy (preferir "desarrollo"/"urbanización").
+
+**Confirmación de visita = humano (modelo definido por el usuario, 2026-06-18):** la IA **no agenda ni confirma sola**. Flujo:
+- `095c491` → `01459b8` La IA ofrece **solo los horarios cargados** (nunca inventa días/horas; si no hay, pregunta). Cuando el prospecto acepta un día/hora, la IA dice "lo coordino con el equipo y te confirmo", se **pausa** (`isHumanControlled`), y dispara push **"📅 Confirmá la visita"** con el día/horario pedido. El **OK final lo da el humano**. `nextBestAction='confirmar-visita-con-humano'`.
+- `3a003aa` → `22de8b3` **Cancelación con retención suave (máx 2 mensajes)**: si el prospecto quiere cancelar, la IA intenta retener con hasta 2 intentos (ofrecer otro día / reprogramar), **sin exigir el motivo ni ponerse insistente**; si igual cancela, lo acepta con amabilidad y dispara push **"❌ Visita cancelada — sacala del CRM"**. Reprogramar a un nuevo horario = visita aceptada (no cancelación). La IA **nunca borra del CRM**: avisa para que lo haga el humano.
+
+> **Estado:** 🟢 Cadena WhatsApp + Agente IA + notificaciones + handoff + agenda de visitas (humano confirma) funcionando end-to-end. Pendiente menor del usuario: en *Configuración → Disponibilidad*, atar los horarios de cada loteo a su **desarrollo** (ej. Valles del Pino sáb/dom) y ocultar la "propiedad" de marketing del catálogo. A probar en prod: que la IA ofrezca el horario real, pause al aceptar, y el flujo de cancelación con retención.
 
 ---
 
