@@ -560,6 +560,7 @@ function buildPrompt(context: PreparedConversationContext) {
     "- NO derives a un asesor por preguntas de informacion que PODES responder con el contexto: medidas (frente, fondo, superficie), precio, moneda, ubicacion, manzana, etapa, destino, links de ficha, etc. Si el dato esta en el contexto, respondelo vos. Si un dato puntual no esta, decilo con naturalidad y ofrece lo que si tenes o coordinar una visita; tampoco hace falta derivar por eso.",
     "- COORDINAR VISITAS ES PARTE DE TU TRABAJO: NUNCA derives a un asesor por eso ni digas 'te conecto con un asesor' cuando el cliente quiere visitar o pregunta por dias/horarios. Si el cliente quiere visitar, pedile que dia y franja horaria le queda comoda y deci que vas a coordinar/confirmar la visita; si te da un dia/hora concretos, proponé esa visita. No necesitas tener horarios precargados para preguntar la preferencia del cliente.",
     "- Deriva a un asesor SOLO si aparecen: negociacion de precio, sena/reserva/anticipo/cuotas/pago, temas legales o de documentacion, friccion repetida, o pedido EXPLICITO del cliente de hablar con una persona. En esos casos si podes decir que lo conectas con un asesor. En ningun otro caso uses esa frase.",
+    "- Si el cliente pregunta por una propiedad o un dato que NO esta en tu inventario/contexto (no la tenes publicada o no tenes esa informacion), NO inventes: decile con naturalidad que lo vas a consultar con el equipo y le confirmas, y poné needsHumanHandoff=true para que un humano lo retome. (Esto NO es derivar a un asesor: no uses esa frase; solo avisás internamente que necesitás info.)",
     "- Nunca construyas, inventes ni compartas URLs, links o rutas. EXCEPCION: si el contexto incluye el campo `publicUrl` en una propiedad o lote, o el campo `catalogUrl` en la raiz del contexto, PODES compartir ese link exacto tal como viene — no lo modifiques ni construyas variantes. Nunca compartas rutas internas como /ficha, /platform, /api ni IDs internos como identificadores de recursos.",
     "Debes devolver SOLO JSON valido con esta forma exacta:",
     "{",
@@ -642,8 +643,14 @@ function mapAiDecisionToAutomationDecision(
       purpose: payload.extractedPreferences.purpose,
     },
     nextBestAction: payload.nextBestAction.trim(),
-    requiresFollowUp: payload.requiresFollowUp,
-    followUpReason: payload.followUpReason,
+    // needsHumanHandoff (la IA no tiene la info para responder) también dispara
+    // el follow-up → notificación a la app para que un humano lo retome.
+    requiresFollowUp: payload.requiresFollowUp || payload.needsHumanHandoff,
+    followUpReason:
+      payload.followUpReason ??
+      (payload.needsHumanHandoff
+        ? "El prospecto pregunta algo que la IA no tiene en su inventario; necesita tu respuesta."
+        : null),
     visitProposal: payload.shouldScheduleVisit
       ? {
           proposed: hasConcreteVisitDate,

@@ -1027,20 +1027,25 @@ export async function processWhatsAppInboundJob(
     const isHandoffTransition = isExplicitHandoff && !result.conversation.isHumanControlled;
     if ((!result.conversation.followUpActive || isHandoffTransition) && org?.slug) {
       const prefs = decision.extractedPreferences;
+      const isHot = decision.leadTemperature === "hot";
       const summary =
         [
           prefs?.zones?.[0] || null,
           prefs?.budget ? `presup. ${prefs.budget}` : null,
-          decision.leadTemperature === "hot" ? "muy interesado" : null,
+          isHot ? "muy interesado" : null,
         ]
           .filter(Boolean)
           .join(" · ") || followUpReason;
+      // Dos motivos para que la app avise: prospecto caliente, o el cliente
+      // pregunta algo que la IA no puede responder y necesita un humano.
+      const pushTitle = isHot ? "🔥 Prospecto caliente" : "❓ Un prospecto necesita tu respuesta";
       await notifyHotLead(
         targetOrgId,
         org.slug,
         result.conversation.participantName || participantPhone,
         summary,
         result.conversation.id,
+        pushTitle,
       ).catch(() => {});
     }
   }

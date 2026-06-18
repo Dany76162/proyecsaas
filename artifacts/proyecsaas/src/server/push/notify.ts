@@ -44,6 +44,7 @@ export async function notifyHotLead(
   leadName: string,
   summary: string,
   conversationId?: string,
+  title: string = "🔥 Prospecto caliente",
 ): Promise<void> {
   try {
     // Al tocar: toma control (pausa la IA) y abre WhatsApp con el prospecto.
@@ -51,7 +52,7 @@ export async function notifyHotLead(
       ? `/${orgSlug}/conversations/${conversationId}/handoff`
       : `/${orgSlug}/conversations`;
     await sendPushToOrganization(organizationId, {
-      title: "🔥 Prospecto caliente",
+      title,
       body: `${leadName || "Un interesado"} — ${summary}`,
       url,
     });
