@@ -369,20 +369,19 @@ export default async function AvailabilitySettingsPage({
         <p className="text-sm font-semibold text-slate-700">¿Cómo usa el agente IA estos horarios?</p>
         <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-500">
           <li>
-            <span className="font-medium text-slate-700">Propuesta automática:</span>{" "}
-            cuando un lead confirma interés por WhatsApp, el agente busca el próximo slot disponible
-            en esta configuración y propone fecha y hora concreta.
+            <span className="font-medium text-slate-700">El agente ofrece estos horarios:</span>{" "}
+            cuando un prospecto quiere visitar por WhatsApp, el agente le ofrece las franjas disponibles de esta configuración. No agenda solo: te avisa y vos confirmás el horario final.
           </li>
           <li>
-            <span className="font-medium text-slate-700">Prioridad de asignación:</span>{" "}
-            primero se usan slots vinculados al agente asignado del lead; si no hay, se usan los generales de la organización.
+            <span className="font-medium text-slate-700">Atá la franja a propiedad o desarrollo:</span>{" "}
+            el agente ofrece las franjas <strong>generales</strong> más las vinculadas a la <strong>propiedad</strong> o al <strong>desarrollo</strong> que el prospecto consulta. Para visitas a los lotes de un loteo, elegí el <strong>desarrollo</strong> (no la propiedad).
           </li>
           <li>
-            <span className="font-medium text-slate-700">Sin horarios = sin agendado automático:</span>{" "}
-            si no hay ningún slot activo, el agente IA no puede proponer visitas y escala al equipo.
+            <span className="font-medium text-slate-700">Sin horarios = sin coordinación automática:</span>{" "}
+            si no hay ninguna franja activa, el agente no puede ofrecer horarios y escala al equipo.
           </li>
           <li>
-            <span className="font-medium text-slate-700">Podés agregar varios slots por día:</span>{" "}
+            <span className="font-medium text-slate-700">Podés agregar varias franjas por día:</span>{" "}
             por ejemplo mañana (9–13) y tarde (15–19) en el mismo día.
           </li>
         </ul>
