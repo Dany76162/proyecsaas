@@ -129,7 +129,30 @@ export default async function WorkspaceManualUsoPage({
         </div>
       </section>
 
-      <section className="mx-auto mt-5 max-w-5xl space-y-6 print:mt-0 print:max-w-none print:space-y-4">
+      <section id="manual-print-root" className="mx-auto mt-5 max-w-5xl space-y-6 print:mt-0 print:max-w-none print:space-y-3">
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            @page { margin: 11mm; }
+            /* Dejar que las secciones fluyan y se partan entre páginas: sin esto
+               cada sección saltaba a una hoja nueva y dejaba huecos (desperdicio). */
+            #manual-print-root [class*="break-inside"],
+            #manual-print-root [class*="page-break-inside"] {
+              break-inside: auto !important;
+              page-break-inside: auto !important;
+            }
+            /* Compactar el espaciado vertical para entrar más por hoja */
+            #manual-print-root [class*="space-y-"] > * + * { margin-top: 0.45rem !important; }
+            #manual-print-root .mt-4, #manual-print-root .mt-5, #manual-print-root .mt-6 { margin-top: 0.5rem !important; }
+            #manual-print-root .mb-5 { margin-bottom: 0.4rem !important; }
+            #manual-print-root .p-4, #manual-print-root .p-5, #manual-print-root .p-6 { padding: 0.6rem !important; }
+            #manual-print-root .gap-5, #manual-print-root .gap-6 { gap: 0.55rem !important; }
+            #manual-print-root .pt-4, #manual-print-root .pt-5 { padding-top: 0.4rem !important; }
+            /* Que los títulos no queden colgados al final de una hoja */
+            #manual-print-root h2, #manual-print-root h3, #manual-print-root h4 { break-after: avoid !important; }
+            /* Tipografía levemente más compacta para imprimir */
+            #manual-print-root { font-size: 11.5px !important; line-height: 1.4 !important; }
+          }
+        ` }} />
         <div className="[break-inside:avoid] [page-break-inside:avoid]">
           <SectionCard
             eyebrow="Guía práctica"
