@@ -203,7 +203,14 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 **Auditoría SOPORTE TÉCNICO + fix del bot de soporte (2026-06-18):**
 - ✅ "Soporte Técnico" (sidebar/menú/error) = enlace `wa.me` real al número maestro de la plataforma `SUPPORT_WHATSAPP_NUMBER=5491166037990` (+54 9 11 6603-7990), mensaje en español, helper único en `constants.ts`. Confirmado por el usuario: es el número de la plataforma, conectado como canal.
 - 🐛 **Bug crítico encontrado y corregido**: al escribir al número de soporte, **el agente IA COMERCIAL de la org plataforma auto-respondía** desviando los pedidos ("soy asesor comercial… contactá al equipo de soporte… ¿buscás propiedades?") en vez de dejar el mensaje en el panel **Superadmin → Soporte** para respuesta humana. Fix en el worker: si `targetOrgId === WHATSAPP_ORGANIZATION_ID` (org plataforma), se persiste la conversación/mensaje (aparece en el panel) pero **NO se genera respuesta IA** (`reason: "platform-support-org"`).
-- ⚠️ **REQUIERE**: `WHATSAPP_ORGANIZATION_ID` seteada en el **servicio WORKER** de Railway (no solo en el web). Si falta en el worker, el bot sigue respondiendo. (Patrón conocido: el worker es servicio aparte con sus propias env vars.)
+- ⚠️ **REQUIERE**: `WHATSAPP_ORGANIZATION_ID` seteada en el **servicio WORKER** de Railway (no solo en el web). Si falta en el worker, el bot sigue respondiendo. (Patrón conocido: el worker es servicio aparte con sus propias env vars.) → **Usuario confirmó: está en los 2 servicios.**
+
+**Auditoría CATÁLOGO PÚBLICO (`/cat/[orgSlug]` + ficha propiedad + ficha desarrollo + ficha lote) (2026-06-18):**
+- ✅ **Data 100% real**: org, desarrollos (`ACTIVE` + `publicVisible`), `listPublicPropertiesByOrgSlug`, y el **formulario de contacto** crea oportunidad real (`createLeadFromPublicPropertyAction`). Sin componentes temporales/mock/coming-soon.
+- ✅ **Sin inglés visible** (lo único en inglés son comentarios de código `/* Premium… */`, no visibles). Cards de propiedad muestran foto real (`primaryImage`).
+- 🎨 **Mejora**: el card de desarrollo del catálogo mostraba solo un emoji 🗺️; ahora usa la **imagen de portada** (`coverImageUrl`) del desarrollo, con fallback al emoji. Cara pública más prolija.
+
+> ✅ **AUDITORÍA PANEL POR PANEL COMPLETA**: Inicio · Enlaces WhatsApp · Oportunidades · Desarrollos↔CRM · Bandeja IA · Visitas · Propiedades · Desarrollos · Agentes IA · Actividad automática · Administración WhatsApp · Disponibilidad · Equipo · Organización · Soporte Técnico · **Catálogo público**.
 
 ---
 
