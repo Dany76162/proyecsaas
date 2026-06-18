@@ -28,6 +28,7 @@ export type PreparedConversationContext = {
         status: string;
         priceCents: number | null;
         currency: string | null;
+        priceLabel?: string | null;
         operationType?: string | null;
         rooms?: number | null;
         bedrooms?: number | null;
@@ -89,6 +90,7 @@ export type PreparedConversationContext = {
     areaSqm: number | null;
     priceCents: number | null;
     currency: string | null;
+    priceLabel?: string | null;
     manzana: string | null;
     etapaNombre: string | null;
     destino: string | null;

@@ -634,6 +634,10 @@ export async function processWhatsAppInboundJob(
   const absUrl = (path: string | null) => (path ? `${appBase}${path}` : null);
   const roundM2 = (v: number | null) => (v != null ? Math.round(v) : null);
   const roundM = (v: number | null) => (v != null ? Math.round(v * 10) / 10 : null);
+  // Precio ya formateado (priceCents está en CENTAVOS): así la IA no tiene que
+  // dividir por 100 (lo hacía mal y mostraba 1.870.000 en vez de 18.700).
+  const fmtPrice = (cents: number | null, currency: string | null) =>
+    cents != null ? `${currency || "USD"} ${Math.round(cents / 100).toLocaleString("es-AR")}` : null;
 
   let decision: AutomationDecision;
 
@@ -683,6 +687,7 @@ export async function processWhatsAppInboundJob(
           status: propertyMatch.property.status,
           priceCents: propertyMatch.property.priceCents,
           currency: propertyMatch.property.currency,
+          priceLabel: fmtPrice(propertyMatch.property.priceCents, propertyMatch.property.currency),
           operationType: propertyDetail?.operationType ?? null,
           rooms: propertyDetail?.rooms ?? null,
           bedrooms: propertyDetail?.bedrooms ?? propertyMatch.property.bedrooms ?? null,
@@ -741,6 +746,7 @@ export async function processWhatsAppInboundJob(
       areaSqm: roundM2(lot.areaSqm),
       priceCents: lot.priceCents,
       currency: lot.currency,
+      priceLabel: fmtPrice(lot.priceCents, lot.currency),
       manzana: lot.manzana,
       etapaNombre: lot.etapaNombre,
       destino: lot.destino,
