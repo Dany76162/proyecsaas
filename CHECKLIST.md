@@ -194,6 +194,12 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - 🐛 **Fix del 404 reportado** ("al conectar el número del asistente saltaba ruta no encontrada"): el **enlace de invitación** se armaba SOLO con `NEXT_PUBLIC_APP_URL`; si esa env estaba mal/sin setear/localhost en prod, el link apuntaba a un host muerto → "ruta no encontrada". Ahora `inviteUserAction` deriva la base del **host real del request** (donde opera el admin, siempre accesible), con fallback a la env (ignorando localhost) y luego al dominio de prod. (La ruta `/invite/[token]` existe y maneja bien tokens inválidos/usados/vencidos con pantalla amigable, no 404.)
 - 🇪🇸 **Castellano**: "Email" → "Correo electrónico" (dialog); "leads" → "oportunidades"; se quitaron los paréntesis en inglés de los roles (Titular/Administrador/Agente de ventas/Asistente, sin "Owner/Admin/Agent/Assistant").
 
+**Auditoría panel ORGANIZACIÓN (2026-06-18):**
+- ✅ Data real (perfil de la org). La **sincronización de propiedades desde URL** es REAL (no stub): el endpoint `api/properties/sync-from-source` usa `syncPropertiesFromUrl` para fetchear el listado del sitio y crear/actualizar Property (con estados IDLE/SYNCING/OK/ERROR). Sin componentes temporales.
+- 🇪🇸 **Castellano**: "Perfil Enterprise" → "Perfil de empresa"; "Identificador (slug)" → "Identificador único" + "tenant" → "tu organización"; "Email institucional" → "Correo institucional"; "Error en sync" → "Error de sincronización".
+
+> ✅ **CONFIGURACIÓN completa**: Disponibilidad · Equipo · Organización · (WhatsApp ya estaba). Queda solo el **Catálogo público** (lo que ve el cliente).
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
