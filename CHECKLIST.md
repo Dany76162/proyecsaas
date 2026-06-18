@@ -184,6 +184,11 @@ Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) ha
 - ✅ Data real (`getPlatformWhatsAppStatus`, `whatsAppChannel`, `whatsAppChannelConnectionRequest`). Sin componentes temporales. Reusa `WhatsAppConnectionForm` (mismo de Captación) + secciones de Conexión Rápida (QR) y WhatsApp Business API (Meta).
 - 🇪🇸 **Castellano**: "(QR Scan)" → "(escaneo de QR)"; form de Meta: "(Display Name)" → "(nombre visible)", "Email de contacto" → "Correo de contacto" (+ placeholder y texto de confirmación); "deriva el lead" → "deriva la oportunidad". Se dejan marcas/siglas (WhatsApp Business, Meta, API, QR, PNG).
 
+**Auditoría panel DISPONIBILIDAD (2026-06-18):**
+- ✅ Data real (`listAvailabilitySlots`, miembros, propiedades, desarrollos). Sin componentes temporales. Form con dropdowns de Agente/Propiedad/Desarrollo (ya existían).
+- 🇪🇸 **Castellano** del texto de ayuda "¿Cómo usa el agente IA estos horarios?": "slot(s)" → "franja(s)", "lead" → "prospecto".
+- 🩹 **Texto corregido a la conducta real**: decía "el agente busca el próximo slot y propone fecha y hora concreta" (auto-agendaba) → ahora "el agente OFRECE las franjas; vos confirmás el horario final". Y "primero slots vinculados al agente asignado del lead" (inexacto: el worker no prioriza por agente) → "generales + propiedad + desarrollo que consulta el prospecto". + guía: para visitas a lotes de un loteo, atar la franja al **desarrollo** (no a la propiedad). [Nota: las franjas del usuario están atadas a "Prop: Valles del Pino"; para el flujo de lotes conviene atarlas al desarrollo.]
+
 ---
 
 ## 1. IDENTIDAD DEL PRODUCTO
