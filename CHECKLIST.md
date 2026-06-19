@@ -591,11 +591,11 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **No tocado:** Panel Admin, Superadmin, CRM, WhatsApp, AgentOS, Prisma, DB, migraciones, Railway, env, worker, Mercado Pago.
 
 ### 8. Tour 360 mobile — panoramas grandes y límites WebGL
-- **Commit:** `58ae5a6` (rama `fix/pwa-b2c-cat-tour360-mobile`)
+- **Commit:** `58ae5a6` + `3c95774` (rama `fix/pwa-b2c-cat-tour360-mobile`)
 - **Estado:** 🟡 Implementado en rama y validado (`tsc` + `next build` exit 0) — **pendiente de prueba en celular real + merge/push**
 - **Secciones:** §7 · §8 · §27 · §41
 - **Archivo:** `src/components/properties/panorama-viewer.tsx`
-- **Alcance:** En dispositivos con límite de textura WebGL bajo (`maxTex <= 4096`, típicamente mobile), el visor usa como **1ª opción una fuente optimizada server-side** (`/_next/image?...&w=3840&q=75`) en vez de procesar el panorama gigante por canvas en el celular (evita errores WebGL/memoria). Solo aplica a rutas locales same-origin; si no se puede optimizar, cae al reescalado por canvas (comportamiento anterior); si todo falla, se mantiene el fallback **“Abrir imagen 360°”**. **Desktop queda intacto** (maxTex alto → fuente original). Optimizador de Next activo; `w=3840` es deviceSize por defecto.
+- **Alcance:** En dispositivos con límite de textura WebGL bajo (`maxTex <= 4096`, típicamente mobile) y fuente **local same-origin**, el visor **mide Y renderiza desde una fuente optimizada server-side** (`/_next/image?...&w=3840&q=75`) en vez de cargar/decodificar el panorama gigante. **Ajuste protectivo (`3c95774`):** antes se cargaba el original para medir width/height y recién después se reemplazaba por la optimizada → el celular descargaba el gigante igual; ahora la medición se hace sobre la optimizada, así el original **nunca** se carga en mobile. Si la optimizada no carga, cae al comportamiento anterior (medir el original + reescalado por canvas); si todo falla, se mantiene el fallback **“Abrir imagen 360°”**. **Desktop intacto** (maxTex alto → fuente original). Optimizador de Next activo; `w=3840` es deviceSize por defecto.
 - **Pendiente:** confirmar en celular real que el panorama 360° carga vía fuente optimizada (no se pudo probar runtime acá). Si el optimizador no funciona con alguna fuente, el flujo cae solo al comportamiento anterior (sin regresión).
 - **No tocado:** captura de tours / creación con celular, Prisma, DB, Railway, worker, almacenamiento, reservas, cobros.
 
