@@ -111,16 +111,18 @@ async function downscaleToFit(
 }
 
 // En dispositivos con límite de textura WebGL bajo (mobile) preferimos una
-// fuente OPTIMIZADA server-side (optimizador de Next.js) en vez de procesar la
-// imagen gigante por canvas en el celular: el servidor reescala con Sharp y el
-// cliente recibe una imagen liviana (~3840px). El proxy /api/storage/view ya es
-// público (hotfix anterior), por lo que el optimizador puede hacer fetch sin
-// redireccionamiento a login. Devuelve null si la URL no empieza por '/' (remota
-// sin proxy) → se usa el reescalado por canvas como fallback.
+// fuente OPTIMIZADA server-side en vez de procesar la imagen gigante por canvas
+// en el celular: el proxy /api/storage/view recibe parámetros 'w' y 'q', y
+// reescala usando sharp directamente en el servidor. Esto evita llamar a
+// /_next/image (que causa loops/deadlocks HTTP internos en contenedores como Railway).
+// Devuelve null si la URL no es del proxy.
 function buildOptimizedPanoramaSource(sourceUrl: string, width = 3840, quality = 75): string | null {
-  if (!sourceUrl || !sourceUrl.startsWith('/')) return null
-  if (sourceUrl.startsWith('/_next/image')) return null
-  return `/_next/image?url=${encodeURIComponent(sourceUrl)}&w=${width}&q=${quality}`
+  if (!sourceUrl) return null
+  if (sourceUrl.startsWith('/api/storage/view')) {
+    const separator = sourceUrl.includes('?') ? '&' : '?'
+    return `${sourceUrl}${separator}w=${width}&q=${quality}`
+  }
+  return null
 }
 
 function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined): ProjectionConfig {
