@@ -116,7 +116,7 @@ async function downscaleToFit(
 // reescala usando sharp directamente en el servidor. Esto evita llamar a
 // /_next/image (que causa loops/deadlocks HTTP internos en contenedores como Railway).
 // Devuelve null si la URL no es del proxy.
-function buildOptimizedPanoramaSource(sourceUrl: string, width = 3840, quality = 75): string | null {
+function buildOptimizedPanoramaSource(sourceUrl: string, width = 3840, quality = 85): string | null {
   if (!sourceUrl) return null
   if (sourceUrl.startsWith('/api/storage/view')) {
     const separator = sourceUrl.includes('?') ? '&' : '?'
