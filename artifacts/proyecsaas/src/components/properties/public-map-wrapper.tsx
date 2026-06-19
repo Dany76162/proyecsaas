@@ -205,18 +205,14 @@ function MediumCard({ prop }: { prop: any }) {
           <h3 className="text-sm font-bold text-slate-950 line-clamp-2 leading-snug group-hover:text-brand-600 transition">
             {prop.title}
           </h3>
-          <p className="text-base font-extrabold text-slate-900 tracking-tight mt-1 leading-tight">
-            {fmt(prop)}
-          </p>
           <div className="flex items-center gap-1 mt-1">
             <MapPin className="h-3.5 w-3.5 text-slate-500 shrink-0" />
             <span className="text-xs font-medium text-slate-600 truncate">
               {[prop.neighborhood, prop.city].filter(Boolean).join(", ") || "—"}
             </span>
           </div>
-        </div>
-        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
-          <div className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-600">
+          {/* Datos rápidos arriba, para que no los apriete el CTA */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-semibold text-slate-600">
             {prop.bedrooms != null && (
               <span className="flex items-center gap-0.5"><Bed className="h-3.5 w-3.5 text-slate-500" />{prop.bedrooms}</span>
             )}
@@ -224,10 +220,16 @@ function MediumCard({ prop }: { prop: any }) {
               <span className="flex items-center gap-0.5"><Bath className="h-3.5 w-3.5 text-slate-500" />{prop.bathrooms}</span>
             )}
             {(prop.totalSurfaceM2 || prop.surfaceM2) && (
-              <span>{prop.totalSurfaceM2 || prop.surfaceM2}m²</span>
+              <span className="flex items-center gap-0.5"><Maximize2 className="h-3.5 w-3.5 text-slate-500" />{prop.totalSurfaceM2 || prop.surfaceM2}m²</span>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+        </div>
+        {/* Precio abajo, alineado con el CTA */}
+        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
+          <p className="min-w-0 truncate text-base font-extrabold text-slate-900 tracking-tight leading-tight">
+            {fmt(prop)}
+          </p>
+          <div className="flex shrink-0 items-center gap-1.5">
             <Link href={detail} className="rounded-lg bg-slate-900 hover:bg-slate-800 px-2.5 py-1 text-[10px] font-bold uppercase text-white transition whitespace-nowrap">
               Ver ficha
             </Link>
@@ -719,7 +721,7 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
           <div className="flex min-w-0 items-center gap-2 text-xs font-bold text-emerald-600 whitespace-nowrap">
              {available} / {total} libres
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             <Link href={detail} className="rounded-lg bg-slate-900 hover:bg-slate-800 px-2.5 py-1 text-[10px] font-bold uppercase text-white transition whitespace-nowrap">
               Ver lotes
             </Link>

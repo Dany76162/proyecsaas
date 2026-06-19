@@ -547,8 +547,9 @@ export default async function PublicPortalPropertiesPage({
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased">
       {/* Nav header */}
       <header className="bg-slate-950 text-white border-b border-slate-900 shadow-lg sticky top-0 z-40">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-1.5 transition hover:opacity-90">
+        <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+          {/* En mobile el logo va centrado (absoluto); en sm+ vuelve a la izquierda. */}
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 sm:static sm:left-auto sm:translate-x-0 flex items-center gap-1.5 transition hover:opacity-90">
             <img
               src="/brand/logo_transparent_icon.png"
               alt="Raíces Pilot Logo"
@@ -563,13 +564,14 @@ export default async function PublicPortalPropertiesPage({
               CTAs comerciales/admin: el consumidor ya está dentro de la app y
               "Panel Admin" es para inmobiliarias, no para compradores. En
               navegador normal se ven igual. */}
-          <nav className="flex items-center gap-4 sm:gap-6">
+          <nav className="ml-auto sm:ml-0 flex items-center gap-2 sm:gap-6">
             <InstallAppNavbarButton />
             <Link href="/" className="hidden sm:inline-flex [@media(display-mode:standalone)]:!hidden items-center gap-1 text-sm font-medium text-slate-350 hover:text-white transition">
               <ArrowLeft className="h-4 w-4" /> Volver al Inicio
             </Link>
-            <Link href="/login" className="[@media(display-mode:standalone)]:!hidden rounded-full bg-brand-500 hover:bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm">
-              Panel Admin
+            <Link href="/login" className="[@media(display-mode:standalone)]:!hidden rounded-full bg-brand-500 hover:bg-brand-600 px-3 sm:px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm">
+              <span className="sm:hidden">Admin</span>
+              <span className="hidden sm:inline">Panel Admin</span>
             </Link>
           </nav>
         </div>
