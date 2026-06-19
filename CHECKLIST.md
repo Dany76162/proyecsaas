@@ -611,7 +611,7 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **No tocado:** Prisma, DB, migraciones, Railway, env, worker, WhatsApp/webhooks, CRM, Superadmin, AgentOS, reservas, cobros, `sw-b2c.js`, botón "Ver", rutas `/cat`, captura/creación de tours.
 
 ### 10. Tour 360 mobile — rollback de `/_next/image` y uso de proxy público directo
-- **Commit:** `(pendiente)`
+- **Commit:** `b60b0a9`
 - **Estado:** 🟡 Implementado en rama / pendiente de prueba real en celular
 - **Secciones:** §7 · §8 · §27 · §41
 - **Archivos:** `src/components/properties/panorama-viewer.tsx`
