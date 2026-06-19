@@ -689,9 +689,9 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
     : detail;
 
   return (
-    <article className="group flex min-h-[140px] sm:min-h-[160px] lg:min-h-[230px] overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md hover:border-slate-300">
+    <article className="group flex h-[140px] sm:h-[160px] lg:min-h-[230px] lg:h-auto overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md hover:border-slate-300">
       {/* Image */}
-      <div className="relative w-32 sm:w-40 lg:w-[210px] shrink-0 bg-slate-100 overflow-hidden">
+      <div className="relative w-32 sm:w-40 lg:w-[210px] shrink-0 bg-slate-100 overflow-hidden h-full">
         <ImageCarousel images={images} alt={dev.name} />
         <div className="absolute left-1.5 top-1.5 flex flex-col gap-1">
           <span className="rounded bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white backdrop-blur-sm leading-tight">
@@ -700,30 +700,30 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
         </div>
       </div>
       {/* Content */}
-      <div className="flex flex-1 flex-col justify-between p-3 min-w-0">
+      <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-3 min-w-0 h-full overflow-hidden">
         <div className="min-w-0">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider truncate mb-0.5">
+          <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate mb-0.5">
             {dev.organization?.name ?? "Inmobiliaria"}
           </p>
-          <h3 className="text-sm font-bold text-slate-950 line-clamp-2 leading-snug group-hover:text-brand-600 transition">
+          <h3 className="text-sm font-bold text-slate-950 line-clamp-1 sm:line-clamp-2 leading-tight sm:leading-snug group-hover:text-brand-600 transition">
             {dev.name}
           </h3>
           <div className="flex items-center gap-1 mt-1">
-            <MapPin className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-            <span className="text-xs font-medium text-slate-600 truncate">
+            <MapPin className="h-3 sm:h-3.5 w-3 sm:w-3.5 text-slate-500 shrink-0" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-600 truncate">
               {[dev.address, dev.city].filter(Boolean).join(", ") || "—"}
             </span>
           </div>
           {/* Datos rápidos arriba, para que no los apriete el CTA */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-semibold text-slate-600">
-            <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 whitespace-nowrap">
+          <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-semibold text-slate-600">
+            <span className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-emerald-600 whitespace-nowrap">
                {available} / {total} libres
             </span>
           </div>
         </div>
         {/* Precio abajo, alineado con el CTA */}
-        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
-          <p className="min-w-0 truncate text-sm font-extrabold text-slate-900 tracking-tight leading-tight">
+        <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-slate-100">
+          <p className="min-w-0 truncate text-sm font-extrabold text-slate-900 tracking-tight leading-none">
             {fmt(dev)}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
