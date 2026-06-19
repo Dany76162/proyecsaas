@@ -39,14 +39,23 @@ function getPanoramaSourceUrl(url: string) {
     return url
   }
 
-  // Si comienza con / (local) o es una URL absoluta, la ruteamos por el proxy
-  // para centralizar el CORS y las optimizaciones server-side de Sharp.
+  // Si contiene '/uploads/', es una subida local (ya sea ruta relativa o absoluta).
+  // Extraemos la ruta relativa limpia para que el proxy lea directamente de disco.
+  if (url.includes('/uploads/')) {
+    const match = url.match(/\/uploads\/.+$/)
+    if (match) {
+      return `/api/storage/view?url=${encodeURIComponent(match[0])}`
+    }
+  }
+
+  // Si ya es una ruta relativa del proxy o del sistema, la dejamos igual.
   if (url.startsWith('/')) {
-    return `/api/storage/view?url=${encodeURIComponent(url)}`
+    return url
   }
 
   try {
     const parsed = new URL(url)
+    // Para URLs absolutas remotas (R2 .r2.dev o con dominio personalizado), pasamos por el proxy.
     return `/api/storage/view?url=${encodeURIComponent(url)}`
   } catch {
     return url

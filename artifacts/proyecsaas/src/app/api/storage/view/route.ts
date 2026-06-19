@@ -61,38 +61,72 @@ export async function GET(req: Request) {
       } else {
         const sourceUrl = new URL(urlParam);
         const configuredPublicUrl = process.env.STORAGE_PUBLIC_URL ? new URL(process.env.STORAGE_PUBLIC_URL) : null;
-        const isAllowedR2Host =
-          sourceUrl.protocol === "https:" &&
-          (sourceUrl.hostname.endsWith(".r2.dev") ||
-            (configuredPublicUrl && sourceUrl.hostname === configuredPublicUrl.hostname));
-
-        if (!isAllowedR2Host) {
-          return new Response("URL host is not allowed", { status: 400 });
-        }
-
-        const upstream = await fetch(sourceUrl.toString(), {
-          headers: { Accept: "image/*,*/*;q=0.8" },
-          cache: "force-cache",
-        });
-
-        if (!upstream.ok) {
-          return new Response("File not found", { status: upstream.status || 404 });
-        }
-
-        contentType = upstream.headers.get("Content-Type") ?? "application/octet-stream";
         
-        // If resizing is requested, load the body into a buffer.
-        // Otherwise, return the body stream directly for performance.
-        if (widthParam) {
-          const arrayBuffer = await upstream.arrayBuffer();
-          buffer = Buffer.from(arrayBuffer);
-        } else {
-          if (!upstream.body) {
-            return new Response("File body is empty", { status: 404 });
+        const requestHost = (req.headers.get("host") || "").split(":")[0];
+        const isSameOrigin =
+          sourceUrl.hostname === requestHost ||
+          sourceUrl.hostname === "localhost" ||
+          sourceUrl.hostname === "127.0.0.1";
+
+        if (isSameOrigin && sourceUrl.pathname.startsWith("/uploads/")) {
+          // Si es del mismo origen y apunta a /uploads/, leemos el archivo directamente de disco
+          // para evitar hacer una petición HTTP a nosotros mismos (evita deadlocks/timeouts).
+          const normalized = path.normalize(sourceUrl.pathname);
+          const publicDir = join(process.cwd(), "public");
+          const localPath = join(publicDir, normalized);
+
+          if (!localPath.startsWith(publicDir)) {
+            return new Response("Forbidden", { status: 403 });
           }
-          headers.set("Content-Type", contentType);
-          headers.set("Cache-Control", cacheControl);
-          return new NextResponse(upstream.body, { headers });
+
+          try {
+            const ext = normalized.split(".").pop()?.toLowerCase();
+            contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : ext === "svg" ? "image/svg+xml" : "image/jpeg";
+
+            if (widthParam) {
+              buffer = await fs.readFile(localPath);
+            } else {
+              const fileBuffer = await fs.readFile(localPath);
+              headers.set("Content-Type", contentType);
+              headers.set("Cache-Control", cacheControl);
+              return new NextResponse(fileBuffer as any, { headers });
+            }
+          } catch {
+            return new Response("File not found", { status: 404 });
+          }
+        } else {
+          const isAllowedR2Host =
+            sourceUrl.protocol === "https:" &&
+            (sourceUrl.hostname.endsWith(".r2.dev") ||
+              isSameOrigin ||
+              (configuredPublicUrl && sourceUrl.hostname === configuredPublicUrl.hostname));
+
+          if (!isAllowedR2Host) {
+            return new Response("URL host is not allowed", { status: 400 });
+          }
+
+          const upstream = await fetch(sourceUrl.toString(), {
+            headers: { Accept: "image/*,*/*;q=0.8" },
+            cache: "force-cache",
+          });
+
+          if (!upstream.ok) {
+            return new Response("File not found", { status: upstream.status || 404 });
+          }
+
+          contentType = upstream.headers.get("Content-Type") ?? "application/octet-stream";
+          
+          if (widthParam) {
+            const arrayBuffer = await upstream.arrayBuffer();
+            buffer = Buffer.from(arrayBuffer);
+          } else {
+            if (!upstream.body) {
+              return new Response("File body is empty", { status: 404 });
+            }
+            headers.set("Content-Type", contentType);
+            headers.set("Cache-Control", cacheControl);
+            return new NextResponse(upstream.body, { headers });
+          }
         }
       }
     } else {
