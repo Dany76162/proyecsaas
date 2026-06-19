@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { AccessRequestForm } from "./access-request-form";
 
 export const metadata = {
-  title: "Solicitar Acceso | RAÍCESPilot",
-  description: "Solicita una demo de la plataforma operativa para inmobiliarias modernas.",
+  title: "Solicitar demo | RAÍCESPilot",
+  description: "Solicitá una demo guiada de la plataforma operativa para inmobiliarias y desarrolladoras.",
 };
 
 export default function SolicitarAccesoPage() {
@@ -32,10 +32,10 @@ export default function SolicitarAccesoPage() {
       <main className="flex-1 flex flex-col items-center justify-center px-6 pt-32 pb-16">
         <div className="w-full max-w-2xl text-center">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl mb-4">
-            Solicitar demo de RaicesPilot
+            Solicitar demo de Raíces Pilot
           </h1>
           <p className="text-lg text-slate-600 mb-12 leading-relaxed max-w-xl mx-auto">
-            Completá tus datos y coordinamos una demo para mostrarte cómo RaicesPilot puede ordenar la atención, el seguimiento y la gestión comercial de tu inmobiliaria.
+            Completá tus datos y un asesor de Raíces Pilot te contacta para coordinar una demo guiada y mostrarte cómo la plataforma ordena la atención, el seguimiento y la gestión comercial de tu inmobiliaria o desarrollo. El acceso operativo se habilita tras una validación manual.
           </p>
 
           {/* Formulario de Solicitud */}

@@ -5,9 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/landing/ThemeToggle";
-
-const DEMO_WHATSAPP_URL =
-  "https://wa.me/5491166037990?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20Ra%C3%ADces%20Pilot%20para%20mi%20inmobiliaria.";
+import { DEMO_WHATSAPP_URL } from "@/lib/constants";
 
 // Los anchors apuntan a `/#...` (no solo `#...`) para que funcionen desde
 // cualquier página (ej. /app-movil): navegan a la landing y hacen scroll a la

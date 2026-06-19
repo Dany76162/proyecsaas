@@ -4,9 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Calendar, Building, Sparkles, ArrowRight, ShieldCheck, CheckCircle2, Zap, Heart, Star, Compass, Phone, ExternalLink, Laptop, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const DEMO_WHATSAPP_URL =
-  "https://wa.me/5491166037990?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20Ra%C3%ADces%20Pilot%20para%20mi%20inmobiliaria.";
+import { DEMO_WHATSAPP_URL } from "@/lib/constants";
 
 type Message = {
   id: number;
@@ -306,11 +304,11 @@ export function LandingHeroCarousel() {
             <div className="flex flex-col sm:flex-row items-center gap-4 pt-2 w-full max-w-full overflow-hidden">
               <Button size="lg" asChild className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold tracking-wide shadow-lg shadow-emerald-600/20 transform hover:scale-[1.01] active:scale-[0.99] transition duration-200 shrink-0 max-w-full">
                 <a href={DEMO_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full text-center py-3">
-                  <MessageSquare className="h-5 w-5 shrink-0" /> Probar demo por WhatsApp
+                  <MessageSquare className="h-5 w-5 shrink-0" /> Solicitar demo
                 </a>
               </Button>
               <Button variant="outline" size="lg" asChild className="w-full sm:w-auto border-white/10 hover:border-white/20 bg-white/[0.03] text-white hover:bg-white/[0.07] shrink-0 max-w-full">
-                <a href="#contacto" className="w-full text-center py-3">Solicitar Acceso</a>
+                <a href="/login" className="w-full text-center py-3">Acceder</a>
               </Button>
             </div>
           </div>

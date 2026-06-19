@@ -31,9 +31,7 @@ import { DevelopersSection } from "@/components/landing/DevelopersSection";
 import Image from "next/image";
 import { prisma } from "@/server/db/prisma";
 import { Navbar } from "@/components/landing/Navbar";
-
-const DEMO_WHATSAPP_URL =
-  "https://wa.me/5491166037990?text=Hola%2C%20quiero%20solicitar%20una%20demo%20de%20Ra%C3%ADces%20Pilot%20para%20mi%20inmobiliaria.";
+import { DEMO_WHATSAPP_URL } from "@/lib/constants";
 
 export default async function HomePage() {
   const sessionUser = await getSessionUser();
