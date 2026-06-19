@@ -575,6 +575,13 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **Archivo:** `src/app/platform/support/actions/support-actions.ts` (`generateSupportDraft`)
 - **Alcance:** Lógica/prompt ajustada para dejar claro que `/platform/support` es soporte técnico/comercial B2B de la plataforma Raíces Pilot y no una inmobiliaria. Consultas de compradores finales ("busco casa", "precio de lote") o ajenas ("kg de papa") se tratan como fuera de alcance sin pedir zonas ni presupuesto. Consultas reales (accesos, facturación, problemas del panel, demo B2B) se atienden correctamente. Mantiene flujo HITL manual, no activa auto-respuestas ni afecta la IA automática del worker. Sin tocar Prisma, DB, webhooks ni Railway.
 
+
+### 6. Superadmin Soporte — Fase 1 Router estructurado JSON + plantillas seguras
+- **Commit:** `56f331d` (rama `feat/support-ai-structured-router`, trabajo `f3f0a54`)
+- **Estado:** ✅ Completado / Producción
+- **Archivo:** `src/app/platform/support/actions/support-actions.ts` (`generateSupportDraft`, `SupportIntent`, `getTemplateForIntent`, `classifySupportIntent`)
+- **Alcance:** La función manual “Sugerir con IA” ahora funciona con un router estructurado. Primero clasifica el último mensaje en formato JSON validando la intención dentro de una lista permitida (ej: `SALUDO_SIMPLE`, `AYUDA_AMBIGUA`, `SOPORTE_ACCESO`, `COMPRADOR_FINAL_INMOBILIARIO`, `OTRO_RUBRO_AJENO`, `DEMO_ACCESO_B2B`). Para intenciones simples (como saludos o consultas ajenas) devuelve plantillas seguras sin procesar el manual. Para soporte real (accesos, plataforma, WhatsApp), usa el manual/contexto para generar soporte técnico estructurado. Si falla OpenAI o el JSON, cae en un fallback seguro ("AYUDA_AMBIGUA"). Mantiene UI igual y el operador decide enviar (HITL). No activa IA automática ni auto-respuestas. Sin tocar worker, Evolution, Prisma ni DB.
+
 ---
 
 ## ⏭️ PRÓXIMO PASO (bloqueado en tu decisión)
