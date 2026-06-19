@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { isR2Configured, getR2Client } from "@/lib/storage/r2";
+import { promises as fs } from "node:fs";
+import path, { join } from "node:path";
 
 export const dynamic = "force-dynamic";
 
@@ -32,40 +34,66 @@ export async function GET(req: Request) {
     let cacheControl = "public, max-age=31536000, immutable";
 
     if (urlParam) {
-      const sourceUrl = new URL(urlParam);
-      const configuredPublicUrl = process.env.STORAGE_PUBLIC_URL ? new URL(process.env.STORAGE_PUBLIC_URL) : null;
-      const isAllowedR2Host =
-        sourceUrl.protocol === "https:" &&
-        (sourceUrl.hostname.endsWith(".r2.dev") ||
-          (configuredPublicUrl && sourceUrl.hostname === configuredPublicUrl.hostname));
+      if (urlParam.startsWith("/")) {
+        const normalized = path.normalize(urlParam);
+        const publicDir = join(process.cwd(), "public");
+        const localPath = join(publicDir, normalized);
 
-      if (!isAllowedR2Host) {
-        return new Response("URL host is not allowed", { status: 400 });
-      }
-
-      const upstream = await fetch(sourceUrl.toString(), {
-        headers: { Accept: "image/*,*/*;q=0.8" },
-        cache: "force-cache",
-      });
-
-      if (!upstream.ok) {
-        return new Response("File not found", { status: upstream.status || 404 });
-      }
-
-      contentType = upstream.headers.get("Content-Type") ?? "application/octet-stream";
-      
-      // If resizing is requested, load the body into a buffer.
-      // Otherwise, return the body stream directly for performance.
-      if (widthParam) {
-        const arrayBuffer = await upstream.arrayBuffer();
-        buffer = Buffer.from(arrayBuffer);
-      } else {
-        if (!upstream.body) {
-          return new Response("File body is empty", { status: 404 });
+        if (!localPath.startsWith(publicDir)) {
+          return new Response("Forbidden", { status: 403 });
         }
-        headers.set("Content-Type", contentType);
-        headers.set("Cache-Control", cacheControl);
-        return new NextResponse(upstream.body, { headers });
+
+        try {
+          const ext = normalized.split(".").pop()?.toLowerCase();
+          contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : ext === "svg" ? "image/svg+xml" : "image/jpeg";
+
+          if (widthParam) {
+            buffer = await fs.readFile(localPath);
+          } else {
+            const fileBuffer = await fs.readFile(localPath);
+            headers.set("Content-Type", contentType);
+            headers.set("Cache-Control", cacheControl);
+            return new NextResponse(fileBuffer as any, { headers });
+          }
+        } catch {
+          return new Response("File not found", { status: 404 });
+        }
+      } else {
+        const sourceUrl = new URL(urlParam);
+        const configuredPublicUrl = process.env.STORAGE_PUBLIC_URL ? new URL(process.env.STORAGE_PUBLIC_URL) : null;
+        const isAllowedR2Host =
+          sourceUrl.protocol === "https:" &&
+          (sourceUrl.hostname.endsWith(".r2.dev") ||
+            (configuredPublicUrl && sourceUrl.hostname === configuredPublicUrl.hostname));
+
+        if (!isAllowedR2Host) {
+          return new Response("URL host is not allowed", { status: 400 });
+        }
+
+        const upstream = await fetch(sourceUrl.toString(), {
+          headers: { Accept: "image/*,*/*;q=0.8" },
+          cache: "force-cache",
+        });
+
+        if (!upstream.ok) {
+          return new Response("File not found", { status: upstream.status || 404 });
+        }
+
+        contentType = upstream.headers.get("Content-Type") ?? "application/octet-stream";
+        
+        // If resizing is requested, load the body into a buffer.
+        // Otherwise, return the body stream directly for performance.
+        if (widthParam) {
+          const arrayBuffer = await upstream.arrayBuffer();
+          buffer = Buffer.from(arrayBuffer);
+        } else {
+          if (!upstream.body) {
+            return new Response("File body is empty", { status: 404 });
+          }
+          headers.set("Content-Type", contentType);
+          headers.set("Cache-Control", cacheControl);
+          return new NextResponse(upstream.body, { headers });
+        }
       }
     } else {
       if (!isR2Configured()) {

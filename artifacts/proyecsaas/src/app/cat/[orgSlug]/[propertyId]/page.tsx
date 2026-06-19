@@ -40,6 +40,24 @@ function getVideoEmbedUrl(url: string): { type: "youtube" | "vimeo" | "direct"; 
   return { type: "direct", src: url };
 }
 
+function getOptimizedCatalogImageUrl(url: string | null, width = 1200, quality = 80): string {
+  if (!url) return "";
+  if (url.startsWith('/api/storage/view')) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}w=${width}&q=${quality}`;
+  }
+  if (url.startsWith('/uploads/')) {
+    return `/api/storage/view?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' && parsed.hostname.endsWith('.r2.dev')) {
+      return `/api/storage/view?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+    }
+  } catch {}
+  return url;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ orgSlug: string; propertyId: string }> }) {
   const { orgSlug, propertyId } = await params;
   
@@ -171,7 +189,7 @@ export default async function PublicPropertyDetailPage({
         <div className="relative h-[60vh] min-h-[400px] max-h-[700px] w-full overflow-hidden flex items-center justify-center">
           {primaryImage ? (
             <img 
-              src={primaryImage.url} 
+              src={getOptimizedCatalogImageUrl(primaryImage.url, 1200)} 
               alt={property.title}
               className="h-full w-full object-cover"
             />

@@ -3,6 +3,24 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
+function getOptimizedImageUrl(url: string, width = 400, quality = 75): string {
+  if (!url) return "";
+  if (url.startsWith('/api/storage/view')) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}w=${width}&q=${quality}`;
+  }
+  if (url.startsWith('/uploads/')) {
+    return `/api/storage/view?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' && parsed.hostname.endsWith('.r2.dev')) {
+      return `/api/storage/view?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+    }
+  } catch {}
+  return url;
+}
+
 type ImageItem = {
   id: string;
   url: string;
@@ -47,7 +65,7 @@ export function ImageGallery({ images }: ImageGalleryProps) {
             className="group relative aspect-video overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03] transition-all hover:border-white/[0.18]"
           >
             <img
-              src={img.url}
+              src={getOptimizedImageUrl(img.url, 400)}
               alt={img.altText ?? "Imagen de la propiedad"}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
@@ -95,7 +113,7 @@ export function ImageGallery({ images }: ImageGalleryProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={images[activeIndex].url}
+              src={getOptimizedImageUrl(images[activeIndex].url, 1600, 85)}
               alt={images[activeIndex].altText ?? "Imagen ampliada"}
               className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain shadow-2xl animate-in zoom-in-95 duration-200"
             />

@@ -20,6 +20,24 @@ import { prisma } from "@/server/db/prisma";
 import { listPublicPropertiesByOrgSlug } from "@/modules/properties/service";
 import { formatCurrency } from "@/lib/utils";
 
+function getOptimizedCatalogImageUrl(url: string | null, width = 600, quality = 75): string {
+  if (!url) return "";
+  if (url.startsWith('/api/storage/view')) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}w=${width}&q=${quality}`;
+  }
+  if (url.startsWith('/uploads/')) {
+    return `/api/storage/view?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' && parsed.hostname.endsWith('.r2.dev')) {
+      return `/api/storage/view?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+    }
+  } catch {}
+  return url;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const org = await prisma.organization.findUnique({
@@ -378,10 +396,12 @@ export default async function PublicOrganizationCatalogPage({
                 ? formatCurrency(property.priceCents, property.currency ?? "USD") 
                 : "A consultar";
 
-              // FASE 3: Obtener imagen de portada (isPrimary o primera de la lista)
-              const primaryImage = property.images && property.images.length > 0
-                ? (property.images.find(img => img.isPrimary)?.url ?? property.images[0].url)
-                : null;
+              // FASE 3: Obtener imagen de portada (isPrimary o primera de la lista, evitando panoramas)
+              const panoramaUrls = new Set(property.panoramas?.map((p) => p.url) ?? []);
+              const flatImages = property.images ? property.images.filter((img) => !panoramaUrls.has(img.url)) : [];
+              const primaryImage = flatImages.length > 0
+                ? (flatImages.find(img => img.isPrimary)?.url ?? flatImages[0].url)
+                : (property.images && property.images.length > 0 ? property.images[0].url : null);
 
               const hasTour360 = property.panoramas && property.panoramas.length > 0;
 
@@ -405,7 +425,7 @@ export default async function PublicOrganizationCatalogPage({
                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden shrink-0">
                     {primaryImage ? (
                       <img 
-                        src={primaryImage} 
+                        src={getOptimizedCatalogImageUrl(primaryImage, 600)} 
                         alt={property.title}
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-103"
                         loading="lazy"
