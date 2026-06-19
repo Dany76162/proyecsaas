@@ -569,6 +569,12 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **Archivo:** `src/app/platform/support/actions/support-actions.ts` (`generateSupportDraft`)
 - **Alcance:** Lógica/prompt de sugerencia IA ajustada para responder como número equivocado ante consultas ajenas al rubro (ropa, comida, etc). Mantiene HITL (solo sugiere) y responde que el canal corresponde a Raíces Pilot sin inventar stock ni especular sobre el titular anterior. IA automática intacta.
 
+### 5. Superadmin Soporte — Sugerencia IA restringida a soporte de plataforma B2B
+- **Commit:** `2e96a6b` (rama `fix/support-ai-platform-scope`, trabajo `e6445b4`)
+- **Estado:** ✅ Completado / Producción
+- **Archivo:** `src/app/platform/support/actions/support-actions.ts` (`generateSupportDraft`)
+- **Alcance:** Lógica/prompt ajustada para dejar claro que `/platform/support` es soporte técnico/comercial B2B de la plataforma Raíces Pilot y no una inmobiliaria. Consultas de compradores finales ("busco casa", "precio de lote") o ajenas ("kg de papa") se tratan como fuera de alcance sin pedir zonas ni presupuesto. Consultas reales (accesos, facturación, problemas del panel, demo B2B) se atienden correctamente. Mantiene flujo HITL manual, no activa auto-respuestas ni afecta la IA automática del worker. Sin tocar Prisma, DB, webhooks ni Railway.
+
 ---
 
 ## ⏭️ PRÓXIMO PASO (bloqueado en tu decisión)
