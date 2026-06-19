@@ -620,6 +620,19 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **Se mantiene:** fallback público sin botón a login; admin conserva comportamiento interno si corresponde.
 - **Pendiente:** prueba física en celular real post-deploy.
 - **No tocado:** Prisma, DB, Railway, worker, WhatsApp, CRM, Superadmin, AgentOS, reservas/cobros, `sw-b2c.js`, rutas `/cat`, botón “Ver”.
+
+### 11. Tour 360 mobile — restaurar optimizador server-side `/_next/image` (causa raíz real)
+- **Commit:** `a18a8cc`
+- **Estado:** 🟡 Implementado en rama / pendiente de merge, prueba real en celular y push
+- **Secciones:** §7 · §8 · §27 · §41
+- **Archivos:** `src/components/properties/panorama-viewer.tsx`
+- **Diagnóstico definitivo:** La causa raíz del crasheo mobile era que el celular intentaba cargar el panorama original (8K = ~33 Megapíxeles) en RAM, lo que agotaba la memoria del navegador antes de que WebGL pudiera renderizarlo. El rollback anterior (entrada 10) quitó el optimizador `/_next/image` pero no resolvió el problema de RAM.
+- **Cambio:** Se restauró `buildOptimizedPanoramaSource`. En mobile (maxTex ≤ 4096) el visor pide la imagen ya reescalada al servidor (`/_next/image` → sharp): el celular recibe solo 3840px o 2048px según su límite real. Desktop (maxTex alto) queda intacto, sigue usando la fuente original directa.
+- **Condición que permite esto:** El proxy `/api/storage/view` ya es público (hotfix entrada 9), por lo que el optimizador de Next.js puede hacer fetch sin redireccionamiento a login.
+- **Se mantiene:** `downscaleToFit` por canvas como fallback extremo; fallback visual público sin botón a login.
+- **Pendiente:** merge a main, push, prueba física en celular real post-deploy.
+- **No tocado:** Prisma, DB, Railway, worker, WhatsApp, CRM, Superadmin, AgentOS, reservas/cobros, `sw-b2c.js`, rutas `/cat`, botón "Ver", captura/creación de tours.
+
 ---
 
 ## ⏭️ PRÓXIMO PASO (bloqueado en tu decisión)

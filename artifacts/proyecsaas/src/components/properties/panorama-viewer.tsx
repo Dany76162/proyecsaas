@@ -110,9 +110,18 @@ async function downscaleToFit(
   })
 }
 
-// (Rollback) La optimización vía /_next/image se quitó: rompía el visor 360° en
-// mobile/público. El panorama se carga desde el proxy público /api/storage/view
-// (CORS) y, si excede el límite de textura del dispositivo, se reescala por canvas.
+// En dispositivos con límite de textura WebGL bajo (mobile) preferimos una
+// fuente OPTIMIZADA server-side (optimizador de Next.js) en vez de procesar la
+// imagen gigante por canvas en el celular: el servidor reescala con Sharp y el
+// cliente recibe una imagen liviana (~3840px). El proxy /api/storage/view ya es
+// público (hotfix anterior), por lo que el optimizador puede hacer fetch sin
+// redireccionamiento a login. Devuelve null si la URL no empieza por '/' (remota
+// sin proxy) → se usa el reescalado por canvas como fallback.
+function buildOptimizedPanoramaSource(sourceUrl: string, width = 3840, quality = 75): string | null {
+  if (!sourceUrl || !sourceUrl.startsWith('/')) return null
+  if (sourceUrl.startsWith('/_next/image')) return null
+  return `/_next/image?url=${encodeURIComponent(sourceUrl)}&w=${width}&q=${quality}`
+}
 
 function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined): ProjectionConfig {
   if (sceneType === 'cylindrical') {
@@ -202,10 +211,29 @@ export function PanoramaViewer({
           (async () => {
             if (cancelled) return
 
-            // Cargamos el panorama desde scene.sourceUrl (proxy /api/storage/view,
-            // ahora PÚBLICO con CORS). Si la equirectangular supera el límite de
-            // textura del dispositivo (mobile), la reescalamos por canvas para que
-            // entre. (Sin /_next/image: rompía el visor en mobile — rollback.)
+            // En dispositivos de límite bajo (mobile, maxTex <= 4096) pedimos la
+            // imagen ya REESCALADA al servidor (/_next/image → sharp): el celular
+            // nunca necesita cargar el panorama gigante en memoria.
+            // Ancho adaptado al límite real: si el teléfono tiene maxTex=2048 pedimos
+            // w=2048, si no 3840. Ambos son deviceSizes válidos por defecto en Next.
+            if (maxTex <= 4096) {
+              const optWidth = maxTex <= 2048 ? 2048 : 3840
+              const optimizedUrl = buildOptimizedPanoramaSource(scene.sourceUrl, optWidth)
+              if (optimizedUrl) {
+                // Medimos desde la URL optimizada (la imagen ya viene pequeña del server).
+                const dim = await measureImage(optimizedUrl)
+                if (cancelled) return
+                if (dim) {
+                  types[i] = classify(dim.w, dim.h)
+                  sources[i] = optimizedUrl
+                  return // ✅ Caso normal mobile: listo, sin tener que tocar el gigante.
+                }
+                // La URL optimizada falló (ej: Next no pudo procesar) → fallback abajo.
+              }
+            }
+
+            // Desktop (maxTex alto) o fallback mobile si la optimizada no funcionó:
+            // medir el original y reescalar por canvas si supera el límite.
             const dim = await measureImage(scene.sourceUrl)
             if (cancelled) return
             if (!dim) {
@@ -213,8 +241,6 @@ export function PanoramaViewer({
               return
             }
             types[i] = classify(dim.w, dim.h)
-            // Si la equirectangular supera el límite del dispositivo, la reescalamos
-            // (si no, Pannellum tira "webgl size error" → negro en móvil).
             if (types[i] === 'equirectangular' && Math.max(dim.w / 2, dim.h) > maxTex) {
               const down = await downscaleToFit(scene.sourceUrl, dim.w, dim.h, maxTex)
               if (!cancelled && down) sources[i] = down
