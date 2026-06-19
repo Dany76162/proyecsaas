@@ -3,7 +3,7 @@
   "short_name": "Inmuebles",
   "id": "/propiedades",
   "start_url": "/propiedades",
-  "scope": "/propiedades",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#FFFFFF",

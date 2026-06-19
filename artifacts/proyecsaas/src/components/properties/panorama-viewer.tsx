@@ -106,6 +106,18 @@ async function downscaleToFit(
   })
 }
 
+// En dispositivos con límite de textura WebGL bajo (mobile) preferimos una
+// fuente OPTIMIZADA server-side (optimizador de Next.js) en vez de procesar la
+// imagen gigante por canvas en el celular: el servidor reescala con Sharp y el
+// cliente recibe una imagen liviana (~3840px). Solo aplica a rutas locales
+// same-origin, que es lo que el optimizador procesa de forma fiable. Devuelve
+// null si no se puede optimizar (URL remota/data/blob) → se usa el flujo actual.
+function buildOptimizedPanoramaSource(sourceUrl: string, width = 3840, quality = 75): string | null {
+  if (!sourceUrl || !sourceUrl.startsWith('/')) return null
+  if (sourceUrl.startsWith('/_next/image')) return null
+  return `/_next/image?url=${encodeURIComponent(sourceUrl)}&w=${width}&q=${quality}`
+}
+
 function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined): ProjectionConfig {
   if (sceneType === 'cylindrical') {
     return {
@@ -187,8 +199,19 @@ export function PanoramaViewer({
               // Si la equirectangular supera el límite del dispositivo, la reescalamos
               // para que entre (si no, Pannellum tira "webgl size error" → negro en móvil).
               if (types[i] === 'equirectangular' && Math.max(img.width / 2, img.height) > maxTex) {
-                const down = await downscaleToFit(scene.sourceUrl, img.width, img.height, maxTex)
-                if (!cancelled && down) sources[i] = down
+                // 1ª opción en dispositivos de límite bajo (mobile, maxTex <= 4096):
+                // fuente optimizada server-side, para no procesar el panorama
+                // gigante por canvas en el celular. Si no se puede optimizar
+                // (URL remota/data) caemos al reescalado por canvas (comportamiento
+                // anterior). Si todo falla, queda el fallback "Abrir imagen 360°".
+                const optimized =
+                  maxTex <= 4096 ? buildOptimizedPanoramaSource(scene.sourceUrl) : null
+                if (optimized) {
+                  sources[i] = optimized
+                } else {
+                  const down = await downscaleToFit(scene.sourceUrl, img.width, img.height, maxTex)
+                  if (!cancelled && down) sources[i] = down
+                }
               }
               resolve()
             }
