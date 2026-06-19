@@ -15,7 +15,7 @@ import { getManualContextForAI } from "@/modules/manuals/content";
  */
 export async function getSupportConversations() {
   await requirePlatformAdmin();
-  
+
   const settings = await getGlobalSettings();
   const platformOrgId = process.env.WHATSAPP_ORGANIZATION_ID;
 
@@ -78,7 +78,7 @@ export async function getSupportMessages(conversationId: string) {
  */
 export async function sendSupportResponse(conversationId: string, text: string) {
   const sessionUser = await requirePlatformAdmin();
-  
+
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     select: { organizationId: true, participantPhone: true },
@@ -149,6 +149,95 @@ export async function sendSupportResponse(conversationId: string, text: string) 
   return { success: true };
 }
 
+type SupportIntent =
+  | "SALUDO_SIMPLE"
+  | "AYUDA_AMBIGUA"
+  | "SOPORTE_ACCESO"
+  | "SOPORTE_ERROR_PLATAFORMA"
+  | "SOPORTE_WHATSAPP"
+  | "SOPORTE_PANEL"
+  | "SOPORTE_PROPIEDADES_EN_PANEL"
+  | "SOPORTE_DESARROLLOS_EN_PANEL"
+  | "SOPORTE_RESERVAS"
+  | "DEMO_ACCESO_B2B"
+  | "COMPRADOR_FINAL_INMOBILIARIO"
+  | "OTRO_RUBRO_AJENO"
+  | "SPAM_IRRELEVANTE"
+  | "ESCALAR_HUMANO";
+
+function getTemplateForIntent(intent: SupportIntent): string | null {
+  switch (intent) {
+    case "SALUDO_SIMPLE":
+      return "Hola, gracias por escribir a Raíces Pilot. ¿Con qué podemos ayudarte?";
+    case "AYUDA_AMBIGUA":
+      return "Claro, contame qué necesitás hacer o qué inconveniente estás teniendo en la plataforma, así podemos orientarte.";
+    case "COMPRADOR_FINAL_INMOBILIARIO":
+      return "Hola, gracias por escribir. Este canal corresponde al soporte de Raíces Pilot, una plataforma para inmobiliarias y desarrolladoras. Desde este canal no brindamos asesoramiento para la compra, alquiler o búsqueda directa de propiedades. Te sugerimos contactar a la inmobiliaria o desarrolladora correspondiente por sus canales comerciales. Saludos.";
+    case "OTRO_RUBRO_AJENO":
+      return "Hola, gracias por escribir. Este canal corresponde actualmente a Raíces Pilot, una plataforma tecnológica para inmobiliarias y desarrolladoras. No tenemos relación con el comercio o persona que quizás estabas buscando. Te sugerimos verificar el contacto actualizado. Saludos.";
+    case "SPAM_IRRELEVANTE":
+      return "Hola, este canal corresponde al soporte de Raíces Pilot. Si necesitás asistencia sobre la plataforma, podés escribirnos con más detalle para poder orientarte.";
+    case "DEMO_ACCESO_B2B":
+      return "Hola, gracias por escribir. Podemos ayudarte con la solicitud de demo de Raíces Pilot. Por favor indicanos tu nombre, empresa o rubro y un WhatsApp de contacto para que el equipo pueda coordinar los próximos pasos.";
+    default:
+      return null;
+  }
+}
+
+async function classifySupportIntent(messages: { role: "user" | "assistant", content: string }[]): Promise<{ intent: SupportIntent, confidence: "high" | "medium" | "low", reason: string }> {
+  const openai = getOpenAIClient();
+
+  const prompt = `Analiza el siguiente historial de chat y clasifica la intención principal del último mensaje del usuario en una de las siguientes categorías exactas:
+- SALUDO_SIMPLE (ej: "Hola", "Buenas")
+- AYUDA_AMBIGUA (ej: "Necesito ayuda", "Tengo un problema")
+- SOPORTE_ACCESO (ej: "No puedo entrar", "Perdí mi clave")
+- SOPORTE_ERROR_PLATAFORMA (ej: "Error 500", "No carga la página")
+- SOPORTE_WHATSAPP (ej: "No conecta WhatsApp")
+- SOPORTE_PANEL (ej: "Duda sobre cómo usar el CRM")
+- SOPORTE_PROPIEDADES_EN_PANEL (ej: "Mis propiedades no se ven")
+- SOPORTE_DESARROLLOS_EN_PANEL (ej: "No puedo cargar un desarrollo")
+- SOPORTE_RESERVAS (ej: "Problema con una reserva")
+- DEMO_ACCESO_B2B (ej: "Quiero probar", "Quiero una demo")
+- COMPRADOR_FINAL_INMOBILIARIO (ej: "Busco casa", "Precio del lote X")
+- OTRO_RUBRO_AJENO (ej: "Kg de papa", "Comida", "Ropa")
+- SPAM_IRRELEVANTE
+- ESCALAR_HUMANO
+
+Debes responder ÚNICAMENTE con un objeto JSON válido con las claves "intent", "confidence" (high, medium, low) y "reason".`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "Eres un clasificador de intención estructurado." },
+        ...messages,
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0,
+      max_tokens: 150,
+    });
+
+    const content = completion.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(content);
+
+    const validIntents = ["SALUDO_SIMPLE", "AYUDA_AMBIGUA", "SOPORTE_ACCESO", "SOPORTE_ERROR_PLATAFORMA", "SOPORTE_WHATSAPP", "SOPORTE_PANEL", "SOPORTE_PROPIEDADES_EN_PANEL", "SOPORTE_DESARROLLOS_EN_PANEL", "SOPORTE_RESERVAS", "DEMO_ACCESO_B2B", "COMPRADOR_FINAL_INMOBILIARIO", "OTRO_RUBRO_AJENO", "SPAM_IRRELEVANTE", "ESCALAR_HUMANO"];
+
+    if (validIntents.includes(parsed.intent)) {
+      return {
+        intent: parsed.intent as SupportIntent,
+        confidence: parsed.confidence || "low",
+        reason: parsed.reason || "Sin razón"
+      };
+    }
+
+    throw new Error("Invalid intent returned");
+  } catch (error) {
+    console.error("[classifySupportIntent] Error parsing intent:", error);
+    return { intent: "AYUDA_AMBIGUA", confidence: "low", reason: "Fallback por error de clasificación" };
+  }
+}
+
 /**
  * Genera un borrador de respuesta sugerido con IA usando el historial del chat
  * e infiriendo el tipo de usuario y el manual operativo compartible.
@@ -172,7 +261,21 @@ export async function generateSupportDraft(conversationId: string) {
       take: 20,
     });
 
-    // 2. Inferir tipo de usuario
+    const chatMessages = messages.map(m => ({
+      role: m.direction === "INBOUND" ? ("user" as const) : ("assistant" as const),
+      content: m.body
+    }));
+
+    // 2. Clasificar la intención del usuario
+    const classification = await classifySupportIntent(chatMessages);
+    const template = getTemplateForIntent(classification.intent);
+
+    // 3. Si hay plantilla directa, se devuelve inmediatamente
+    if (template) {
+      return { success: true, draft: template };
+    }
+
+    // 4. Si no hay plantilla, es soporte real. Inferir usuario y cargar manual.
     let inferredUserType = "usuario externo / lead";
     let orgName = "Soporte Técnico General";
     let extraContext = "";
@@ -212,16 +315,17 @@ export async function generateSupportDraft(conversationId: string) {
       }
     }
 
-    // 3. Obtener el manual
     const manualContext = getManualContextForAI();
 
-    // 4. Construir el prompt de soporte técnico
     const prompt = `Actúas como el Agente de Soporte Técnico IA de RaicesPilot.
 Tu tarea es redactar una propuesta de respuesta (borrador sugerido) a la consulta del usuario.
+La intención detectada del último mensaje es: ${classification.intent} (${classification.reason}).
+Deberás brindar soporte técnico de plataforma B2B usando la información del manual.
 
 REGLAS DE TONO:
 - Español castellano profesional, claro y neutral para LATAM. Evitar localismos excesivos. El tono debe ser humano, serio, útil y comercialmente confiable.
 - No uses regionalismos marcados ni voseo extremo (ej: "vos sabés"), prefiere el tuteo neutro o un trato formal respetuoso ("tú sabes", "usted sabe" según corresponda).
+- Eres soporte de plataforma B2B, no eres inmobiliaria, no eres tienda, no eres asesor de compradores finales, no eres vendedor de propiedades.
 
 INFORMACIÓN DEL INTERLOCUTOR:
 - Tipo de usuario inferido: ${inferredUserType}
@@ -234,49 +338,10 @@ REGLAS CRÍTICAS DE SEGURIDAD Y PRIVACIDAD:
 3. No hagas compromisos comerciales específicos, descuentos ni cambios de planes sin la debida confirmación del equipo directivo.
 4. Si la consulta supera las capacidades técnicas o requiere intervención manual profunda, propone derivar con un operador experto de soporte.
 
-JERARQUÍA DE CLASIFICACIÓN (ROUTER DE INTENCIÓN):
-Antes de generar la respuesta sugerida, clasifica internamente el mensaje en UNA de estas 6 categorías y responde según corresponda:
-
-1. SALUDO_SIMPLE:
-- Aplica: Usuario solo saluda o escribe corto sin intención clara ("Hola", "Buenas", "Hola, ¿están?", "Hola buenas").
-- Respuesta: "Hola, gracias por escribir a Raíces Pilot. ¿Con qué podemos ayudarte?" (O listando opciones breves: acceso, uso del panel, WhatsApp, propiedades, etc.).
-- PROHIBIDO: Pedir motivo de consulta si solo dijo hola, asumir que busca propiedades, asumir demo, responder como tienda, o marcar fuera de rubro. No pidas zona/presupuesto.
-
-2. AYUDA_AMBIGUA:
-- Aplica: Dice necesitar ayuda pero no explica con qué ("Necesito ayuda", "Tengo un problema", "Me ayudás?").
-- Respuesta: "Claro, contame qué necesitás hacer o qué inconveniente estás teniendo en la plataforma, así podemos orientarte."
-- PROHIBIDO: Asumir intención, ofrecer propiedades, responder como inmobiliaria o tienda.
-
-3. SOPORTE_PLATAFORMA:
-- Aplica: Consulta soporte real de Raíces Pilot ("No puedo entrar", "Tengo un error", "No llegan los leads", "No puedo conectar WhatsApp").
-- Respuesta: Responder como soporte técnico de plataforma B2B, usando el manual/contexto disponible.
-
-4. DEMO_ACCESO_B2B:
-- Aplica: Consulta para contratar, probar o acceder ("Quiero una demo", "Soy inmobiliaria", "Quiero probar").
-- Respuesta: "Hola, gracias por escribir. Podemos ayudarte con la solicitud de demo de Raíces Pilot. Por favor indicanos tu nombre, empresa/rubro y un WhatsApp de contacto para que el equipo pueda coordinar los próximos pasos."
-- PROHIBIDO: Prometer agenda automática, inventar precios, cerrar acuerdos comerciales.
-
-5. COMPRADOR_FINAL_INMOBILIARIO:
-- Aplica: Comprador/inquilino final buscando propiedad ("Busco casa", "Quiero alquilar", "Tenés casas en Morón?", "Precio de lote").
-- Respuesta: "Hola, gracias por escribir. Este canal corresponde al soporte de Raíces Pilot, una plataforma para inmobiliarias y desarrolladoras. Desde este canal no brindamos asesoramiento para la compra, alquiler o búsqueda directa de propiedades. Te sugerimos contactar a la inmobiliaria o desarrolladora correspondiente por sus canales comerciales. Saludos."
-- PROHIBIDO: Pedir zona/presupuesto/ambientes, ofrecer propiedades, consultar catálogo, actuar como inmobiliaria o decir que vas a buscar opciones.
-
-6. OTRO_RUBRO_AJENO / CANAL_EQUIVOCADO:
-- Aplica: Sin relación con Raíces Pilot ni soporte ("Cuánto está el kg de papa", "Tenés comida", mensajes personales).
-- Respuesta: "Hola, gracias por escribir. Este canal corresponde actualmente a Raíces Pilot, una plataforma tecnológica para inmobiliarias y desarrolladoras. No tenemos relación con el comercio o persona que quizás estabas buscando (no somos un comercio de alimentos ni vendemos productos ajenos). Te sugerimos verificar el contacto actualizado. Saludos."
-- PROHIBIDO: Inventar stock, responder como tienda, decir "visitá nuestra tienda", hablar de antiguos titulares, reciclaje de línea o deudas.
-
-REGLA GENERAL: Elige solo una categoría según el último mensaje y el contexto inmediato. Si no hay info suficiente, prefiere SALUDO_SIMPLE o AYUDA_AMBIGUA. No saltes a comprador final ni fuera de rubro sin evidencia.
-
-Aquí tienes la guía de referencia del sistema para basar tus respuestas técnicas (si corresponde a soporte de plataforma):
+Aquí tienes la guía de referencia del sistema para basar tus respuestas técnicas:
 ${manualContext}
 
 Por favor, analiza el historial de la conversación a continuación y genera únicamente el texto propuesto de respuesta para que el operador humano lo revise. No agregues etiquetas, prefacios, ni explicaciones adicionales, solo el texto final de respuesta sugerida.`;
-
-    const chatMessages = messages.map(m => ({
-      role: m.direction === "INBOUND" ? ("user" as const) : ("assistant" as const),
-      content: m.body
-    }));
 
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
@@ -292,12 +357,16 @@ Por favor, analiza el historial de la conversación a continuación y genera ún
 
     const draft = completion.choices[0]?.message?.content?.trim() || "";
 
+    if (!draft) {
+      return { success: true, draft: getTemplateForIntent("AYUDA_AMBIGUA") };
+    }
+
     return { success: true, draft };
   } catch (error: any) {
     console.error("[generateSupportDraft] Error:", error);
-    return { 
-      success: false, 
-      error: "No se pudo generar la sugerencia con IA por un error de cuota o límite del motor. El chat manual sigue disponible." 
+    return {
+      success: false,
+      error: "No se pudo generar la sugerencia con IA por un error de cuota o límite del motor. El chat manual sigue disponible."
     };
   }
 }
