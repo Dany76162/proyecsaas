@@ -351,8 +351,8 @@ export default function MasterManualPage() {
                 <tr>
                   <td className="px-4 py-3 font-semibold text-slate-900">TRIALING</td>
                   <td className="px-4 py-3 text-center text-emerald-600 font-bold">SÍ</td>
-                  <td className="px-4 py-3 text-center text-rose-600 font-bold">NO</td>
-                  <td className="px-4 py-3 text-slate-600">Periodo inicial de pruebas gratuito (14 días). El acceso al panel está completamente habilitado, pero la página pública permanece inactiva para evitar la proliferación de cuentas de prueba, registros inactivos o clientes sin valor comercial confirmado.</td>
+                  <td className="px-4 py-3 text-center text-emerald-600 font-bold">SÍ</td>
+                  <td className="px-4 py-3 text-slate-600">Periodo inicial de prueba gratuito (14 días) con acceso total al panel. Publicar es gratis desde el día uno: el catálogo y la página pública de la inmobiliaria están activos, sin límite de propiedades ni costo por aviso (la suscripción es por las herramientas: CRM, WhatsApp, IA, automatizaciones, reservas, etc.). Las cuentas en prueba todavía no figuran en el carrusel de “Quienes ya usan” de la landing, reservado a clientes confirmados.</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 font-semibold text-slate-900">PAST_DUE</td>
