@@ -171,9 +171,9 @@ function MediumCard({ prop }: { prop: any }) {
   const img = (prop.images || []).find((i: any) => i.isPrimary) || (prop.images || [])[0] || null;
   const { detail, wa } = links(prop);
   return (
-    <article className="group flex min-h-[230px] overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md hover:border-slate-300">
+    <article className="group flex min-h-[140px] sm:min-h-[160px] lg:min-h-[230px] overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md hover:border-slate-300">
       {/* Image */}
-      <div className="relative w-[210px] shrink-0 bg-slate-100 overflow-hidden">
+      <div className="relative w-32 sm:w-40 lg:w-[210px] shrink-0 bg-slate-100 overflow-hidden">
         {img ? (
           <img src={img.url} alt={prop.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
         ) : (
@@ -215,8 +215,8 @@ function MediumCard({ prop }: { prop: any }) {
             </span>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
+          <div className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-600">
             {prop.bedrooms != null && (
               <span className="flex items-center gap-0.5"><Bed className="h-3.5 w-3.5 text-slate-500" />{prop.bedrooms}</span>
             )}
@@ -686,9 +686,9 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
     : detail;
 
   return (
-    <article className="group flex min-h-[230px] overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md hover:border-slate-300">
+    <article className="group flex min-h-[140px] sm:min-h-[160px] lg:min-h-[230px] overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md hover:border-slate-300">
       {/* Image */}
-      <div className="relative w-[210px] shrink-0 bg-slate-100 overflow-hidden">
+      <div className="relative w-32 sm:w-40 lg:w-[210px] shrink-0 bg-slate-100 overflow-hidden">
         <ImageCarousel images={images} alt={dev.name} />
         <div className="absolute left-1.5 top-1.5 flex flex-col gap-1">
           <span className="rounded bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white backdrop-blur-sm leading-tight">
@@ -705,7 +705,7 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
           <h3 className="text-sm font-bold text-slate-950 line-clamp-2 leading-snug group-hover:text-brand-600 transition">
             {dev.name}
           </h3>
-          <p className="text-[11px] text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+          <p className="hidden sm:line-clamp-2 text-[11px] text-slate-500 mt-1 leading-relaxed">
             {dev.description}
           </p>
           <div className="flex items-center gap-1 mt-1">
@@ -715,8 +715,8 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
             </span>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-600">
+        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
+          <div className="flex min-w-0 items-center gap-2 text-xs font-bold text-emerald-600 whitespace-nowrap">
              {available} / {total} libres
           </div>
           <div className="flex items-center gap-1.5">
