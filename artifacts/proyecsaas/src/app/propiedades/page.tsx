@@ -569,10 +569,6 @@ export default async function PublicPortalPropertiesPage({
             <Link href="/" className="hidden sm:inline-flex [@media(display-mode:standalone)]:!hidden items-center gap-1 text-sm font-medium text-slate-350 hover:text-white transition">
               <ArrowLeft className="h-4 w-4" /> Volver al Inicio
             </Link>
-            <Link href="/login" className="[@media(display-mode:standalone)]:!hidden rounded-full bg-brand-500 hover:bg-brand-600 px-3 sm:px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm">
-              <span className="sm:hidden">Admin</span>
-              <span className="hidden sm:inline">Panel Admin</span>
-            </Link>
           </nav>
         </div>
       </header>
