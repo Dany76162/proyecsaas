@@ -1,7 +1,5 @@
 import { Map, Activity, Compass, ArrowRight, CheckCircle2 } from "lucide-react";
-
-const DEV_WHATSAPP_URL =
-  "https://wa.me/5491166037990?text=Hola%2C%20quiero%20una%20demo%20de%20Ra%C3%ADces%20Pilot%20para%20mi%20desarrollo%20o%20loteo.";
+import { DEMO_WHATSAPP_URL_DEVELOPER } from "@/lib/constants";
 
 const CARDS = [
   {
@@ -69,12 +67,12 @@ export function DevelopersSection() {
         {/* CTA */}
         <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <a
-            href={DEV_WHATSAPP_URL}
+            href={DEMO_WHATSAPP_URL_DEVELOPER}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-brand-700 sm:w-auto"
           >
-            Solicitar demo para mi desarrollo <ArrowRight className="h-4 w-4" />
+            Solicitar demo <ArrowRight className="h-4 w-4" />
           </a>
           <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
             <CheckCircle2 className="h-4 w-4 text-brand-500" />

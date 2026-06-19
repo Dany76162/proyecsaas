@@ -36,7 +36,7 @@ export function AccessRequestForm() {
     e.preventDefault();
     if (!validate()) return;
 
-    const message = `Hola, quiero solicitar una demo de RaicesPilot.
+    const message = `Hola, quiero solicitar una demo de Raíces Pilot.
 
 Datos de la inmobiliaria:
 * Inmobiliaria: ${formData.orgName}
@@ -141,7 +141,7 @@ Datos de la inmobiliaria:
           <div className="pt-4 space-y-4">
             <Button type="submit" size="lg" className="w-full bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-500/20 h-12">
               <MessageCircle className="mr-2 h-5 w-5" />
-              Solicitar demo por WhatsApp
+              Solicitar demo
             </Button>
             
             <Button variant="outline" size="lg" className="w-full text-slate-600 h-12" asChild>
@@ -154,7 +154,7 @@ Datos de la inmobiliaria:
       </div>
 
       <p className="text-[13px] text-slate-500 leading-relaxed max-w-lg mx-auto">
-        El acceso a la plataforma se habilita de forma controlada. Una vez aprobada la solicitud, el equipo podrá enviarte el enlace correspondiente para configurar tu cuenta.
+        La demo es comercial y guiada por una persona del equipo de Raíces Pilot. El acceso operativo se habilita de forma controlada: validamos tus datos manualmente antes de habilitarlo (no hay publicación ni acceso real automático). Una vez aprobada la solicitud, te enviamos el enlace para configurar tu cuenta.
       </p>
     </div>
   );
