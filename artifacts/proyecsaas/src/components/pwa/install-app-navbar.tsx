@@ -45,10 +45,11 @@ export function InstallAppNavbarButton() {
           está dentro de la app, no necesita el botón de instalar. */}
       <button
         onClick={handleActionClick}
-        className="[@media(display-mode:standalone)]:!hidden inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/5 px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm"
+        aria-label="App Móvil"
+        className="[@media(display-mode:standalone)]:!hidden inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/5 px-2.5 sm:px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm"
       >
         <Smartphone className="h-3.5 w-3.5" />
-        App Móvil
+        <span className="hidden sm:inline">App Móvil</span>
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen} className="print:hidden">
