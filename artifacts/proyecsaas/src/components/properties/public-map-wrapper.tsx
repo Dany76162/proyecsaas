@@ -226,12 +226,13 @@ function MediumCard({ prop }: { prop: any }) {
         </div>
         {/* Precio abajo, alineado con el CTA */}
         <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
-          <p className="min-w-0 truncate text-base font-extrabold text-slate-900 tracking-tight leading-tight">
+          <p className="min-w-0 truncate text-sm font-extrabold text-slate-900 tracking-tight leading-tight">
             {fmt(prop)}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
-            <Link href={detail} className="rounded-lg bg-slate-900 hover:bg-slate-800 px-2.5 py-1 text-[10px] font-bold uppercase text-white transition whitespace-nowrap">
-              Ver ficha
+            <Link href={detail} className="rounded-lg bg-slate-900 hover:bg-slate-800 px-2.5 py-1.5 text-[11px] font-bold uppercase text-white transition whitespace-nowrap">
+              <span className="lg:hidden">Ver</span>
+              <span className="hidden lg:inline">Ver ficha</span>
             </Link>
             <a href={wa} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50 transition">
               <Phone className="h-3.5 w-3.5" />
