@@ -583,16 +583,16 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **Alcance:** La función manual “Sugerir con IA” ahora funciona con un router estructurado. Primero clasifica el último mensaje en formato JSON validando la intención dentro de una lista permitida (ej: `SALUDO_SIMPLE`, `AYUDA_AMBIGUA`, `SOPORTE_ACCESO`, `COMPRADOR_FINAL_INMOBILIARIO`, `OTRO_RUBRO_AJENO`, `DEMO_ACCESO_B2B`). Para intenciones simples (como saludos o consultas ajenas) devuelve plantillas seguras sin procesar el manual. Para soporte real (accesos, plataforma, WhatsApp), usa el manual/contexto para generar soporte técnico estructurado. Si falla OpenAI o el JSON, cae en un fallback seguro ("AYUDA_AMBIGUA"). Mantiene UI igual y el operador decide enviar (HITL). No activa IA automática ni auto-respuestas. Sin tocar worker, Evolution, Prisma ni DB.
 
 ### 7. `/propiedades` PWA B2C — fichas `/cat` dentro de app instalada
-- **Commit:** `58ae5a6` (rama `fix/pwa-b2c-cat-tour360-mobile`)
-- **Estado:** 🟡 Implementado en rama y validado (`tsc` + `next build` exit 0) — **pendiente de merge/push a `main`**
+- **Commit:** `58ae5a6` · merge `2d9f85b` (rama `fix/pwa-b2c-cat-tour360-mobile`)
+- **Estado:** ✅ Completado / Producción (mergeado y pusheado a `main`; `tsc` + `next build` exit 0)
 - **Secciones:** §2 · §8 · §27 · §41
 - **Archivo:** `public/manifest-b2c.json`
 - **Alcance:** La app B2C mantiene `start_url` en `/propiedades` pero amplía el `scope` de `/propiedades` a `/` para que las fichas públicas `/cat/...` abran dentro del modo standalone (sin barra blanca / custom tab al tocar “Ver”). El botón “Ver” no se tocó porque ya usa navegación interna correcta. `sw-b2c.js` sigue sin push y no pisa la app B2B.
 - **No tocado:** Panel Admin, Superadmin, CRM, WhatsApp, AgentOS, Prisma, DB, migraciones, Railway, env, worker, Mercado Pago.
 
 ### 8. Tour 360 mobile — panoramas grandes y límites WebGL
-- **Commit:** `58ae5a6` + `3c95774` (rama `fix/pwa-b2c-cat-tour360-mobile`)
-- **Estado:** 🟡 Implementado en rama y validado (`tsc` + `next build` exit 0) — **pendiente de prueba en celular real + merge/push**
+- **Commit:** `58ae5a6` + `3c95774` · merge `2d9f85b` (rama `fix/pwa-b2c-cat-tour360-mobile`)
+- **Estado:** ✅ Completado / Producción (mergeado y pusheado a `main`; `tsc` + `next build` exit 0). ⚠️ **Pendiente de validación en celular real** (no se pudo probar físicamente acá; la lógica es sin regresión).
 - **Secciones:** §7 · §8 · §27 · §41
 - **Archivo:** `src/components/properties/panorama-viewer.tsx`
 - **Alcance:** En dispositivos con límite de textura WebGL bajo (`maxTex <= 4096`, típicamente mobile) y fuente **local same-origin**, el visor **mide Y renderiza desde una fuente optimizada server-side** (`/_next/image?...&w=3840&q=75`) en vez de cargar/decodificar el panorama gigante. **Ajuste protectivo (`3c95774`):** antes se cargaba el original para medir width/height y recién después se reemplazaba por la optimizada → el celular descargaba el gigante igual; ahora la medición se hace sobre la optimizada, así el original **nunca** se carga en mobile. Si la optimizada no carga, cae al comportamiento anterior (medir el original + reescalado por canvas); si todo falla, se mantiene el fallback **“Abrir imagen 360°”**. **Desktop intacto** (maxTex alto → fuente original). Optimizador de Next activo; `w=3840` es deviceSize por defecto.
