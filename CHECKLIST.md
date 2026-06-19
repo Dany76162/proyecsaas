@@ -610,6 +610,16 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **Hotfix D (PWA scope) — DOCUMENTADO, no implementado:** el `scope: "/"` (entrada 7) es correcto para **instalaciones nuevas**; las **instalaciones existentes** mantienen el manifest viejo cacheado (WebAPK) → la barra blanca/custom tab persiste hasta **reinstalar la app**. Solución robusta propuesta (PR aparte): rutas de ficha **in-scope** bajo `/propiedades/...` que reutilicen la ficha `/cat`, y los botones "Ver" del portal navegando dentro de `/propiedades`; opcionalmente revertir el scope a `/propiedades`. No se implementó en este hotfix para mantenerlo acotado al bug de login.
 - **No tocado:** Prisma, DB, migraciones, Railway, env, worker, WhatsApp/webhooks, CRM, Superadmin, AgentOS, reservas, cobros, `sw-b2c.js`, botón "Ver", rutas `/cat`, captura/creación de tours.
 
+### 10. Tour 360 mobile — rollback de `/_next/image` y uso de proxy público directo
+- **Commit:** `(pendiente)`
+- **Estado:** 🟡 Implementado en rama / pendiente de prueba real en celular
+- **Secciones:** §7 · §8 · §27 · §41
+- **Archivos:** `src/components/properties/panorama-viewer.tsx`
+- **Causa:** Desktop funcionaba porque usaba proxy directo; mobile fallaba porque entraba en la rama `/_next/image`. El patrón `/_next/image?url=/api/storage/view?url=...` se tomó como regresión probable.
+- **Cambio:** Se quitó el uso de `/_next/image` para el Tour 360 mobile. El visor vuelve a cargar desde `/api/storage/view` directo, ahora público, y reescala por canvas si supera `MAX_TEXTURE_SIZE`.
+- **Se mantiene:** fallback público sin botón a login; admin conserva comportamiento interno si corresponde.
+- **Pendiente:** prueba física en celular real post-deploy.
+- **No tocado:** Prisma, DB, Railway, worker, WhatsApp, CRM, Superadmin, AgentOS, reservas/cobros, `sw-b2c.js`, rutas `/cat`, botón “Ver”.
 ---
 
 ## ⏭️ PRÓXIMO PASO (bloqueado en tu decisión)

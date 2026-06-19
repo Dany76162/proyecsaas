@@ -110,17 +110,9 @@ async function downscaleToFit(
   })
 }
 
-// En dispositivos con límite de textura WebGL bajo (mobile) preferimos una
-// fuente OPTIMIZADA server-side (optimizador de Next.js) en vez de procesar la
-// imagen gigante por canvas en el celular: el servidor reescala con Sharp y el
-// cliente recibe una imagen liviana (~3840px). Solo aplica a rutas locales
-// same-origin, que es lo que el optimizador procesa de forma fiable. Devuelve
-// null si no se puede optimizar (URL remota/data/blob) → se usa el flujo actual.
-function buildOptimizedPanoramaSource(sourceUrl: string, width = 3840, quality = 75): string | null {
-  if (!sourceUrl || !sourceUrl.startsWith('/')) return null
-  if (sourceUrl.startsWith('/_next/image')) return null
-  return `/_next/image?url=${encodeURIComponent(sourceUrl)}&w=${width}&q=${quality}`
-}
+// (Rollback) La optimización vía /_next/image se quitó: rompía el visor 360° en
+// mobile/público. El panorama se carga desde el proxy público /api/storage/view
+// (CORS) y, si excede el límite de textura del dispositivo, se reescala por canvas.
 
 function getPannellumProjectionConfig(sceneType: SceneProjectionType | undefined): ProjectionConfig {
   if (sceneType === 'cylindrical') {
@@ -210,30 +202,10 @@ export function PanoramaViewer({
           (async () => {
             if (cancelled) return
 
-            // En dispositivos de límite bajo (mobile, maxTex <= 4096) con fuente
-            // LOCAL same-origin medimos Y renderizamos desde la versión OPTIMIZADA
-            // server-side (liviana, ~3840px): así NUNCA se descarga ni decodifica
-            // el panorama gigante en el celular antes de usar la optimizada. Solo
-            // si la optimizada no carga caemos al comportamiento anterior.
-            // Ancho según el límite real del dispositivo: si el teléfono tiene
-            // límite 2048, una imagen de 3840 igual fallaría → pedimos w=2048.
-            // (Ambos, 2048 y 3840, son deviceSizes válidos por defecto en Next.)
-            const optWidth = maxTex <= 2048 ? 2048 : 3840
-            const optimizedUrl =
-              maxTex <= 4096 ? buildOptimizedPanoramaSource(scene.sourceUrl, optWidth) : null
-            if (optimizedUrl) {
-              const dim = await measureImage(optimizedUrl)
-              if (cancelled) return
-              if (dim) {
-                types[i] = classify(dim.w, dim.h)
-                sources[i] = optimizedUrl
-                return
-              }
-              // La optimizada falló → seguimos con el flujo original (abajo).
-            }
-
-            // Comportamiento anterior: medir el original y reescalar por canvas si
-            // supera el límite. Desktop (maxTex alto) usa siempre la fuente original.
+            // Cargamos el panorama desde scene.sourceUrl (proxy /api/storage/view,
+            // ahora PÚBLICO con CORS). Si la equirectangular supera el límite de
+            // textura del dispositivo (mobile), la reescalamos por canvas para que
+            // entre. (Sin /_next/image: rompía el visor en mobile — rollback.)
             const dim = await measureImage(scene.sourceUrl)
             if (cancelled) return
             if (!dim) {
