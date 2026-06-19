@@ -543,6 +543,34 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 
 ---
 
+## Cambios recientes cerrados — Junio 2026
+
+### 1. `/propiedades` mobile UX3 — botón “Ver” y precio compacto
+- **Commit:** `b528e2b` (rama `fix/propiedades-mobile-ux3`, trabajo `85e05a6`)
+- **Estado:** ✅ Completado / Producción
+- **Archivo:** `src/components/properties/public-map-wrapper.tsx`
+- **Alcance:** En mobile, el botón de propiedades pasó a “Ver”. Precio mobile más compacto y legible. Se respetó el formatter existente `fmt(prop)`. Desktop intacto. Sin tocar Panel Admin, Superadmin, Prisma ni Mercado Pago.
+
+### 2. `/propiedades` mobile UX4 — tarjeta desarrollo/masterplan alineada con propiedades
+- **Commit:** `b772625` (rama `fix/propiedades-dev-card-mobile-ux4`, trabajo `e45caab`)
+- **Estado:** ✅ Completado / Producción
+- **Archivo:** `src/components/properties/public-map-wrapper.tsx`
+- **Alcance:** `DevelopmentMediumCard` en mobile adaptada. Lotes subieron debajo de la ubicación. Precio bajó al CTA usando `fmt(dev)`. Botón a “Ver”. Desktop intacto. Sin tocar lógica comercial ni Prisma.
+
+### 3. `/propiedades` mobile UX5 — altura de tarjeta MASTERPLAN igualada
+- **Commit:** `7bc3191` (rama `fix/propiedades-dev-card-height-ux5`, trabajo `97ee427`)
+- **Estado:** ✅ Completado / Producción
+- **Archivo:** `src/components/properties/public-map-wrapper.tsx`
+- **Alcance:** Se forzó `h-[140px] sm:h-[160px]` en mobile + `h-full overflow-hidden line-clamp-1` para igualar visualmente la tarjeta de Masterplan con la de propiedades sin crecer extra. Sin tocar DB, Railway ni lógica.
+
+### 4. Superadmin Soporte — “Sugerir con IA” para consultas ajenas / número equivocado
+- **Commit:** `98b857c` (rama `fix/support-ai-wrong-number-suggestion`, trabajo `7ed4b0c`)
+- **Estado:** ✅ Completado / Producción
+- **Archivo:** `src/app/platform/support/actions/support-actions.ts` (`generateSupportDraft`)
+- **Alcance:** Lógica/prompt de sugerencia IA ajustada para responder como número equivocado ante consultas ajenas al rubro (ropa, comida, etc). Mantiene HITL (solo sugiere) y responde que el canal corresponde a Raíces Pilot sin inventar stock ni especular sobre el titular anterior. IA automática intacta.
+
+---
+
 ## ⏭️ PRÓXIMO PASO (bloqueado en tu decisión)
 1. ✔️ ~~Copy sección "Desarrolladoras" (§2)~~ → **hecho y en prod** (`0907f4f`).
 2. ✔️ ~~Unificación de badges (§32/41)~~ → divergencias estáticas de estado de lote **cerradas** (`d4233a5`).
