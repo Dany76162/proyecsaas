@@ -559,12 +559,16 @@ export default async function PublicPortalPropertiesPage({
               <span className="font-light">Pilot</span>
             </span>
           </Link>
+          {/* En modo app instalada/PWA (display-mode: standalone) ocultamos los
+              CTAs comerciales/admin: el consumidor ya está dentro de la app y
+              "Panel Admin" es para inmobiliarias, no para compradores. En
+              navegador normal se ven igual. */}
           <nav className="flex items-center gap-4 sm:gap-6">
             <InstallAppNavbarButton />
-            <Link href="/" className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-slate-350 hover:text-white transition">
+            <Link href="/" className="hidden sm:inline-flex [@media(display-mode:standalone)]:!hidden items-center gap-1 text-sm font-medium text-slate-350 hover:text-white transition">
               <ArrowLeft className="h-4 w-4" /> Volver al Inicio
             </Link>
-            <Link href="/login" className="rounded-full bg-brand-500 hover:bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm">
+            <Link href="/login" className="[@media(display-mode:standalone)]:!hidden rounded-full bg-brand-500 hover:bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm">
               Panel Admin
             </Link>
           </nav>
