@@ -247,6 +247,35 @@ export async function sendEvolutionMessage(instanceName: string, to: string, tex
 }
 
 /**
+ * Descarga el contenido (base64) de un mensaje multimedia (audio, imagen…)
+ * desde Evolution, a partir de la `key` del mensaje. Lo usamos para bajar las
+ * notas de voz y transcribirlas. Best-effort: devuelve null si falla.
+ */
+export async function getEvolutionMediaBase64(
+  instanceName: string,
+  key: unknown,
+): Promise<{ base64: string; mimetype?: string } | null> {
+  try {
+    const data = await request(`/chat/getBase64FromMediaMessage/${instanceName}`, {
+      method: "POST",
+      body: JSON.stringify({ message: { key }, convertToMp4: false }),
+    });
+    const base64: unknown =
+      data?.base64 ?? data?.media?.base64 ?? data?.buffer ?? data?.data ?? null;
+    if (!base64 || typeof base64 !== "string") return null;
+    const mimetype: string | undefined =
+      data?.mimetype ?? data?.mediaType ?? data?.media?.mimetype ?? undefined;
+    return { base64, mimetype };
+  } catch (error: any) {
+    console.error(
+      `[EvolutionAPI] getBase64FromMediaMessage failed for ${instanceName}:`,
+      error?.message ?? error,
+    );
+    return null;
+  }
+}
+
+/**
  * Checks the connection status of an instance.
  */
 export async function getEvolutionInstanceStatus(instanceName: string): Promise<EvolutionInstanceStatus> {

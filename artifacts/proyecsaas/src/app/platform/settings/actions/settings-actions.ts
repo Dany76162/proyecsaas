@@ -50,6 +50,7 @@ export async function getGlobalSettings() {
       operatorCuid: get("OPERATOR_CUID"),
       operatorCompany: get("OPERATOR_COMPANY"),
       saasFeeds: get("SAAS_FEED_URLS", "[]"),
+      audioTranscription: get("AI_AUDIO_TRANSCRIPTION_ENABLED", "true"),
     };
   } catch {
     console.warn("GlobalSetting table not found, using environment fallbacks.");
@@ -61,6 +62,7 @@ export async function getGlobalSettings() {
       operatorCuid: "",
       operatorCompany: "",
       saasFeeds: "[]",
+      audioTranscription: "true",
     };
   }
 }

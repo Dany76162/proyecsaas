@@ -47,6 +47,9 @@ import { earliestSlotOccurrenceIso } from "@/modules/automations/decision-servic
 
 import { notifyNewLead, notifyHotLead } from "@/server/push/notify";
 
+import { getEvolutionMediaBase64, sendEvolutionMessage } from "@/server/whatsapp/evolution";
+import { transcribeAudio } from "@/lib/ai/transcription";
+
 import { getQueueConnection } from "@/server/queues/connection";
 import {
   resolveInboundByPhoneNumberId,
@@ -85,8 +88,58 @@ export type WhatsAppInboundJobData = {
     timestamp: string | null;
     type: string;
     body: string;
+    // Para audios: key del mensaje para bajar el contenido y transcribirlo.
+    mediaKey?: unknown;
   };
 };
+
+// Compuerta (Superadmin) + fallback para audios entrantes.
+const AUDIO_FALLBACK_TEXT =
+  "¡Hola! 🙌 Por ahora se me complica escuchar las notas de voz. ¿Me lo escribís en un mensajito así te ayudo al toque?";
+
+async function isAudioTranscriptionEnabled(): Promise<boolean> {
+  try {
+    const setting = await prisma.globalSetting.findUnique({
+      where: { key: "AI_AUDIO_TRANSCRIPTION_ENABLED" },
+      select: { value: true },
+    });
+    // Default ON: si no existe la fila, asumimos habilitado.
+    return setting ? setting.value !== "false" : true;
+  } catch {
+    return true;
+  }
+}
+
+async function transcribeWhatsAppAudio(
+  instanceName: string | undefined,
+  mediaKey: unknown,
+): Promise<string | null> {
+  if (!instanceName || !mediaKey) return null;
+  const media = await getEvolutionMediaBase64(instanceName, mediaKey);
+  if (!media?.base64) return null;
+  const buffer = Buffer.from(media.base64, "base64");
+  const ext = media.mimetype?.includes("mp4")
+    ? "mp4"
+    : media.mimetype?.includes("mpeg")
+      ? "mp3"
+      : "ogg";
+  return transcribeAudio(buffer, `voice.${ext}`);
+}
+
+async function sendAudioFallbackReply(
+  instanceName: string | undefined,
+  to: string,
+): Promise<void> {
+  if (!instanceName) return;
+  try {
+    await sendEvolutionMessage(instanceName, to, AUDIO_FALLBACK_TEXT);
+  } catch (error) {
+    console.error(
+      "[conversation-worker] no se pudo enviar el fallback de audio:",
+      (error as Error).message,
+    );
+  }
+}
 
 type ProcessWhatsAppInboundOptions = {
   deliveryMode?: "runtime" | "simulate";
@@ -163,14 +216,31 @@ export async function processWhatsAppInboundJob(
   // Strip the platform routing code ([ref:slug]) before processing so the AI
   // sees clean text. The routing already happened in the webhook.
   const rawMessageBody = normalizeBody(data.message.body);
-  const messageBody = stripRoutingCodeFromMessage(rawMessageBody);
+  let messageBody = stripRoutingCodeFromMessage(rawMessageBody);
 
   if (!participantPhone) {
     throw new ConversationWorkerError("missing-phone", "Participant phone is missing.");
   }
 
-  // Solo procesamos texto por ahora en automatización
-  if (data.message.type !== "text") {
+  // Audio (notas de voz): lo transcribimos a texto y seguimos el flujo normal.
+  // Si la transcripción está apagada (Superadmin) o falla, le pedimos al
+  // prospecto que escriba el mensaje — nunca lo dejamos en visto.
+  if (data.message.type === "audio") {
+    const enabled = await isAudioTranscriptionEnabled();
+    if (!enabled) {
+      await sendAudioFallbackReply(instanceName, participantPhone);
+      return { status: "ignored", reason: "audio-transcription-disabled" } as const;
+    }
+    const transcript = await transcribeWhatsAppAudio(instanceName, data.message.mediaKey);
+    if (!transcript) {
+      await sendAudioFallbackReply(instanceName, participantPhone);
+      return { status: "ignored", reason: "audio-transcription-failed" } as const;
+    }
+    messageBody = stripRoutingCodeFromMessage(normalizeBody(transcript));
+  }
+
+  // Solo procesamos texto (o audio ya transcripto) por ahora en automatización.
+  if (data.message.type !== "text" && data.message.type !== "audio") {
     return { status: "ignored", reason: "unsupported-message-type" } as const;
   }
 

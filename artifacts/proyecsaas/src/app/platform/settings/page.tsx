@@ -15,6 +15,7 @@ export default async function PlatformSettingsPage() {
     operatorCuid: globalSettings.operatorCuid,
     operatorCompany: globalSettings.operatorCompany,
     saasFeeds: globalSettings.saasFeeds,
+    audioTranscription: globalSettings.audioTranscription,
     mpStatus: !!process.env.MERCADO_PAGO_ACCESS_TOKEN,
     aiStatus: !!(process.env["AI_INTEGRATIONS_OPENAI_API_KEY"] ?? process.env.OPENAI_API_KEY),
   };

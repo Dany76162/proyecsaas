@@ -93,13 +93,19 @@ export async function POST(request: NextRequest) {
   const contactPhone = remoteJid?.split("@")[0];
   const contactName = messageData.pushName || "WhatsApp User";
   
-  // Support for different message types (text, image, etc)
+  // Support for different message types (text, image, audio…)
   // Evolution API puts the text in message.conversation or message.extendedTextMessage.text
-  const body = messageData.message?.conversation || 
-               messageData.message?.extendedTextMessage?.text || 
+  const hasImage = !!messageData.message?.imageMessage;
+  const hasAudio = !!messageData.message?.audioMessage; // incluye notas de voz (ptt)
+  const captionFromImage = messageData.message?.imageMessage?.caption || "";
+
+  const body = messageData.message?.conversation ||
+               messageData.message?.extendedTextMessage?.text ||
+               captionFromImage ||
                "";
 
-  if (!body && !messageData.message?.imageMessage) {
+  // Los audios no traen texto: igual los dejamos pasar para transcribirlos en el worker.
+  if (!body && !hasImage && !hasAudio) {
     return NextResponse.json({ ok: true, ignoredEmpty: true });
   }
 
@@ -135,8 +141,10 @@ export async function POST(request: NextRequest) {
       externalId: messageData.key?.id || null,
       from: contactPhone || null,
       timestamp: messageData.messageTimestamp || Math.floor(Date.now() / 1000),
-      type: messageData.message?.imageMessage ? "image" : "text",
+      type: hasAudio ? "audio" : hasImage ? "image" : "text",
       body: stripRoutingCodeFromMessage(body),
+      // Para audios: la key permite bajar el contenido y transcribirlo en el worker.
+      mediaKey: hasAudio ? messageData.key : undefined,
     },
   };
 

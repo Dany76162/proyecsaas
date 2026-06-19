@@ -596,8 +596,77 @@ interface Settings {
   operatorCuid: string;
   operatorCompany: string;
   saasFeeds: string;
+  audioTranscription: string;
   mpStatus: boolean;
   aiStatus: boolean;
+}
+
+// --- Toggle: transcripción de audios por IA -----------------------------------
+
+function AiAudioTranscriptionSection({ initialEnabled }: { initialEnabled: boolean }) {
+  const [enabled, setEnabled] = useState(initialEnabled);
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const toggle = () => {
+    const next = !enabled;
+    setEnabled(next); // optimista
+    setMessage(null);
+    startTransition(async () => {
+      try {
+        await updateGlobalSetting("AI_AUDIO_TRANSCRIPTION_ENABLED", next ? "true" : "false");
+        setMessage({
+          type: "success",
+          text: next ? "Transcripción de audios activada." : "Transcripción de audios desactivada.",
+        });
+      } catch {
+        setEnabled(!next); // revertir
+        setMessage({ type: "error", text: "No se pudo guardar el cambio." });
+      }
+    });
+  };
+
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="max-w-md">
+        <p className="text-sm font-bold text-slate-900">Transcripción de notas de voz (IA)</p>
+        <p className="text-xs text-slate-500 leading-relaxed mt-1">
+          Cuando un prospecto manda un audio por WhatsApp, la IA lo transcribe a texto y responde
+          igual que con un mensaje escrito. Si lo desactivás, la IA le pide al prospecto que escriba
+          el mensaje (nunca lo deja en visto).
+        </p>
+        {message && (
+          <p
+            className={cn(
+              "text-xs mt-2 font-medium",
+              message.type === "success" ? "text-emerald-600" : "text-red-600",
+            )}
+          >
+            {message.text}
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label="Transcripción de notas de voz por IA"
+        disabled={isPending}
+        onClick={toggle}
+        className={cn(
+          "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-50",
+          enabled ? "bg-emerald-500" : "bg-slate-300",
+        )}
+      >
+        <span
+          className={cn(
+            "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform",
+            enabled ? "translate-x-6" : "translate-x-1",
+          )}
+        />
+      </button>
+    </div>
+  );
 }
 
 export default function PlatformSettingsUI({
@@ -682,7 +751,13 @@ export default function PlatformSettingsUI({
             />
           </section>
 
-          {/* 3. Conexión y Alimentación SaaS */}
+          {/* 3. Inteligencia Artificial */}
+          <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
+            <h2 className="text-xl font-bold text-slate-900 mb-5 sm:mb-8">Inteligencia Artificial</h2>
+            <AiAudioTranscriptionSection initialEnabled={settings.audioTranscription !== "false"} />
+          </section>
+
+          {/* 4. Conexión y Alimentación SaaS */}
           <section className="rounded-2xl sm:rounded-[2.5rem] border border-slate-200 bg-white p-5 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
             <SaaSFeedSection initialFeeds={settings.saasFeeds} />
           </section>
