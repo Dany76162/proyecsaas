@@ -708,23 +708,28 @@ function DevelopmentMediumCard({ dev }: { dev: any }) {
           <h3 className="text-sm font-bold text-slate-950 line-clamp-2 leading-snug group-hover:text-brand-600 transition">
             {dev.name}
           </h3>
-          <p className="hidden sm:line-clamp-2 text-[11px] text-slate-500 mt-1 leading-relaxed">
-            {dev.description}
-          </p>
           <div className="flex items-center gap-1 mt-1">
             <MapPin className="h-3.5 w-3.5 text-slate-500 shrink-0" />
             <span className="text-xs font-medium text-slate-600 truncate">
               {[dev.address, dev.city].filter(Boolean).join(", ") || "—"}
             </span>
           </div>
-        </div>
-        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
-          <div className="flex min-w-0 items-center gap-2 text-xs font-bold text-emerald-600 whitespace-nowrap">
-             {available} / {total} libres
+          {/* Datos rápidos arriba, para que no los apriete el CTA */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-semibold text-slate-600">
+            <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 whitespace-nowrap">
+               {available} / {total} libres
+            </span>
           </div>
+        </div>
+        {/* Precio abajo, alineado con el CTA */}
+        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
+          <p className="min-w-0 truncate text-sm font-extrabold text-slate-900 tracking-tight leading-tight">
+            {fmt(dev)}
+          </p>
           <div className="flex shrink-0 items-center gap-1.5">
-            <Link href={detail} className="rounded-lg bg-slate-900 hover:bg-slate-800 px-2.5 py-1 text-[10px] font-bold uppercase text-white transition whitespace-nowrap">
-              Ver lotes
+            <Link href={detail} className="rounded-lg bg-slate-900 hover:bg-slate-800 px-2.5 py-1.5 text-[11px] font-bold uppercase text-white transition whitespace-nowrap">
+              <span className="lg:hidden">Ver</span>
+              <span className="hidden lg:inline">Ver lotes</span>
             </Link>
             <a href={wa} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50 transition">
               <Phone className="h-3.5 w-3.5" />
