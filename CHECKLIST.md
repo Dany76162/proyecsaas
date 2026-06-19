@@ -623,7 +623,7 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 
 ### 11. Tour 360 mobile — restaurar optimizador server-side `/_next/image` (causa raíz real)
 - **Commit:** `a18a8cc`
-- **Estado:** 🟡 Implementado en rama / pendiente de merge, prueba real en celular y push
+- **Estado:** ✅ Completado / Producción — mergeado y pusheado a main. ⚠️ Pendiente de prueba física en celular real post-deploy.
 - **Secciones:** §7 · §8 · §27 · §41
 - **Archivos:** `src/components/properties/panorama-viewer.tsx`
 - **Diagnóstico definitivo:** La causa raíz del crasheo mobile era que el celular intentaba cargar el panorama original (8K = ~33 Megapíxeles) en RAM, lo que agotaba la memoria del navegador antes de que WebGL pudiera renderizarlo. El rollback anterior (entrada 10) quitó el optimizador `/_next/image` pero no resolvió el problema de RAM.
