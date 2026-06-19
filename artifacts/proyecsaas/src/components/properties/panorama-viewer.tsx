@@ -35,20 +35,22 @@ type ProjectionConfig = {
 }
 
 function getPanoramaSourceUrl(url: string) {
-  if (!url || url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:')) {
+  if (!url || url.startsWith('data:') || url.startsWith('blob:')) {
     return url
+  }
+
+  // Si comienza con / (local) o es una URL absoluta, la ruteamos por el proxy
+  // para centralizar el CORS y las optimizaciones server-side de Sharp.
+  if (url.startsWith('/')) {
+    return `/api/storage/view?url=${encodeURIComponent(url)}`
   }
 
   try {
     const parsed = new URL(url)
-    if (parsed.protocol === 'https:' && parsed.hostname.endsWith('.r2.dev')) {
-      return `/api/storage/view?url=${encodeURIComponent(url)}`
-    }
+    return `/api/storage/view?url=${encodeURIComponent(url)}`
   } catch {
     return url
   }
-
-  return url
 }
 
 // Límite de tamaño de textura WebGL del dispositivo. En celulares suele ser
@@ -213,24 +215,18 @@ export function PanoramaViewer({
           (async () => {
             if (cancelled) return
 
-            // En dispositivos de límite bajo (mobile, maxTex <= 4096) pedimos la
-            // imagen ya REESCALADA al servidor (/_next/image → sharp): el celular
-            // nunca necesita cargar el panorama gigante en memoria.
-            // Ancho adaptado al límite real: si el teléfono tiene maxTex=2048 pedimos
-            // w=2048, si no 3840. Ambos son deviceSizes válidos por defecto en Next.
-            if (maxTex <= 4096) {
-              const optWidth = maxTex <= 2048 ? 2048 : 3840
-              const optimizedUrl = buildOptimizedPanoramaSource(scene.sourceUrl, optWidth)
-              if (optimizedUrl) {
-                // Medimos desde la URL optimizada (la imagen ya viene pequeña del server).
-                const dim = await measureImage(optimizedUrl)
-                if (cancelled) return
-                if (dim) {
-                  types[i] = classify(dim.w, dim.h)
-                  sources[i] = optimizedUrl
-                  return // ✅ Caso normal mobile: listo, sin tener que tocar el gigante.
-                }
-                // La URL optimizada falló (ej: Next no pudo procesar) → fallback abajo.
+            // Para todos los dispositivos, solicitamos una versión optimizada del servidor
+            // limitada a Math.min(8192, maxTex) de ancho para no saturar la memoria y acelerar la carga.
+            const optWidth = Math.min(8192, maxTex)
+            const optimizedUrl = buildOptimizedPanoramaSource(scene.sourceUrl, optWidth)
+            if (optimizedUrl) {
+              // Medimos desde la URL optimizada (la imagen ya viene pequeña del server).
+              const dim = await measureImage(optimizedUrl)
+              if (cancelled) return
+              if (dim) {
+                types[i] = classify(dim.w, dim.h)
+                sources[i] = optimizedUrl
+                return // ✅ Listo: la imagen viene optimizada y con tamaño seguro del servidor
               }
             }
 
