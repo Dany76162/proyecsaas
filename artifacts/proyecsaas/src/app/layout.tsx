@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://www.raicespilot.com"),
-  title: "RaicesPilot | Infraestructura Operativa Inmobiliaria",
+  title: "Raíces Pilot | Infraestructura Operativa Inmobiliaria",
   description: "Infraestructura operativa para inmobiliarias que centraliza leads, propiedades, conversaciones y seguimiento comercial.",
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' }
