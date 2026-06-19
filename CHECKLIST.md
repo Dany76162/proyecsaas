@@ -592,12 +592,23 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 
 ### 8. Tour 360 mobile — panoramas grandes y límites WebGL
 - **Commit:** `58ae5a6` + `3c95774` · merge `2d9f85b` (rama `fix/pwa-b2c-cat-tour360-mobile`)
-- **Estado:** ✅ Completado / Producción (mergeado y pusheado a `main`; `tsc` + `next build` exit 0). ⚠️ **Pendiente de validación en celular real** (no se pudo probar físicamente acá; la lógica es sin regresión).
+- **Estado:** 🟡 Parcial — **la prueba real en celular FALLÓ**: salía “No pudimos cargar el tour 360°” y el botón **“Abrir imagen 360°” mandaba al login**. La causa real **NO era solo WebGL/tamaño** sino que el **proxy de media estaba protegido** (`/api/storage/view` → `307 /login` para anónimos, confirmado en prod). **Corregido por hotfix `def7856` (ver entrada 9).** Pendiente: re-test en celular real.
 - **Secciones:** §7 · §8 · §27 · §41
 - **Archivo:** `src/components/properties/panorama-viewer.tsx`
-- **Alcance:** En dispositivos con límite de textura WebGL bajo (`maxTex <= 4096`, típicamente mobile) y fuente **local same-origin**, el visor **mide Y renderiza desde una fuente optimizada server-side** (`/_next/image?...&w=3840&q=75`) en vez de cargar/decodificar el panorama gigante. **Ajuste protectivo (`3c95774`):** antes se cargaba el original para medir width/height y recién después se reemplazaba por la optimizada → el celular descargaba el gigante igual; ahora la medición se hace sobre la optimizada, así el original **nunca** se carga en mobile. Si la optimizada no carga, cae al comportamiento anterior (medir el original + reescalado por canvas); si todo falla, se mantiene el fallback **“Abrir imagen 360°”**. **Desktop intacto** (maxTex alto → fuente original). Optimizador de Next activo; `w=3840` es deviceSize por defecto.
-- **Pendiente:** confirmar en celular real que el panorama 360° carga vía fuente optimizada (no se pudo probar runtime acá). Si el optimizador no funciona con alguna fuente, el flujo cae solo al comportamiento anterior (sin regresión).
+- **Alcance (lo de esta entrada):** optimización de fuente para mobile (`/_next/image`) midiendo desde la optimizada para no cargar el gigante. Correcto, pero **inútil mientras el proxy estuviera protegido** (el optimizador hace fetch interno a `/api/storage/view` y también recibía login). Resuelto en la entrada 9.
 - **No tocado:** captura de tours / creación con celular, Prisma, DB, Railway, worker, almacenamiento, reservas, cobros.
+
+### 9. Hotfix público Tour 360 — proxy de media público + fallback sin login + ancho por maxTex
+- **Commit:** `def7856` (rama `hotfix/public-tour360-mobile-fallback`)
+- **Estado:** 🟡 Implementado y validado (`tsc` + `next build` exit 0); causa confirmada en prod (`GET /api/storage/view` anónimo → `307 /login`). **Pendiente de merge/push + re-test en celular real.**
+- **Secciones:** §2 · §7 · §8 · §27 · §41
+- **Archivos:** `src/middleware.ts`, `src/components/properties/panorama-viewer.tsx`, `src/components/properties/unified-media-viewer.tsx`
+- **Causa raíz:** `/api/storage/view` (proxy CORS de los panoramas 360°, usado vía `getPanoramaSourceUrl` para hosts `*.r2.dev`) **no estaba en `PUBLIC_PATHS`** → el comprador anónimo era redirigido a login; Pannellum recibía HTML de login, el optimizador interno también, y el botón "Abrir imagen 360°" (href = el proxy) mandaba al login.
+- **Hotfix B (causa):** `/api/storage/view` agregado a `PUBLIC_PATHS`. El param `url` está restringido a hosts `r2.dev` (bucket público), así que no expone nada que no sea ya público.
+- **Hotfix A (login):** `PanoramaViewer` recibe `audience` (`'public' | 'admin'`, default `admin`). En **público** el fallback de error **NO** muestra el botón "Abrir imagen 360°" (orienta a la pestaña "Imágenes Reales"); en admin se conserva. La ficha `/cat` (`UnifiedMediaViewer`) pasa `audience="public"`.
+- **Hotfix C (WebGL):** el ancho de la fuente optimizada se elige por `maxTex` (2048 si el dispositivo limita a 2048, si no 3840; ambos deviceSizes válidos).
+- **Hotfix D (PWA scope) — DOCUMENTADO, no implementado:** el `scope: "/"` (entrada 7) es correcto para **instalaciones nuevas**; las **instalaciones existentes** mantienen el manifest viejo cacheado (WebAPK) → la barra blanca/custom tab persiste hasta **reinstalar la app**. Solución robusta propuesta (PR aparte): rutas de ficha **in-scope** bajo `/propiedades/...` que reutilicen la ficha `/cat`, y los botones "Ver" del portal navegando dentro de `/propiedades`; opcionalmente revertir el scope a `/propiedades`. No se implementó en este hotfix para mantenerlo acotado al bug de login.
+- **No tocado:** Prisma, DB, migraciones, Railway, env, worker, WhatsApp/webhooks, CRM, Superadmin, AgentOS, reservas, cobros, `sw-b2c.js`, botón "Ver", rutas `/cat`, captura/creación de tours.
 
 ---
 
