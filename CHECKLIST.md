@@ -582,6 +582,23 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **Archivo:** `src/app/platform/support/actions/support-actions.ts` (`generateSupportDraft`, `SupportIntent`, `getTemplateForIntent`, `classifySupportIntent`)
 - **Alcance:** La función manual “Sugerir con IA” ahora funciona con un router estructurado. Primero clasifica el último mensaje en formato JSON validando la intención dentro de una lista permitida (ej: `SALUDO_SIMPLE`, `AYUDA_AMBIGUA`, `SOPORTE_ACCESO`, `COMPRADOR_FINAL_INMOBILIARIO`, `OTRO_RUBRO_AJENO`, `DEMO_ACCESO_B2B`). Para intenciones simples (como saludos o consultas ajenas) devuelve plantillas seguras sin procesar el manual. Para soporte real (accesos, plataforma, WhatsApp), usa el manual/contexto para generar soporte técnico estructurado. Si falla OpenAI o el JSON, cae en un fallback seguro ("AYUDA_AMBIGUA"). Mantiene UI igual y el operador decide enviar (HITL). No activa IA automática ni auto-respuestas. Sin tocar worker, Evolution, Prisma ni DB.
 
+### 7. `/propiedades` PWA B2C — fichas `/cat` dentro de app instalada
+- **Commit:** `58ae5a6` (rama `fix/pwa-b2c-cat-tour360-mobile`)
+- **Estado:** 🟡 Implementado en rama y validado (`tsc` + `next build` exit 0) — **pendiente de merge/push a `main`**
+- **Secciones:** §2 · §8 · §27 · §41
+- **Archivo:** `public/manifest-b2c.json`
+- **Alcance:** La app B2C mantiene `start_url` en `/propiedades` pero amplía el `scope` de `/propiedades` a `/` para que las fichas públicas `/cat/...` abran dentro del modo standalone (sin barra blanca / custom tab al tocar “Ver”). El botón “Ver” no se tocó porque ya usa navegación interna correcta. `sw-b2c.js` sigue sin push y no pisa la app B2B.
+- **No tocado:** Panel Admin, Superadmin, CRM, WhatsApp, AgentOS, Prisma, DB, migraciones, Railway, env, worker, Mercado Pago.
+
+### 8. Tour 360 mobile — panoramas grandes y límites WebGL
+- **Commit:** `58ae5a6` (rama `fix/pwa-b2c-cat-tour360-mobile`)
+- **Estado:** 🟡 Implementado en rama y validado (`tsc` + `next build` exit 0) — **pendiente de prueba en celular real + merge/push**
+- **Secciones:** §7 · §8 · §27 · §41
+- **Archivo:** `src/components/properties/panorama-viewer.tsx`
+- **Alcance:** En dispositivos con límite de textura WebGL bajo (`maxTex <= 4096`, típicamente mobile), el visor usa como **1ª opción una fuente optimizada server-side** (`/_next/image?...&w=3840&q=75`) en vez de procesar el panorama gigante por canvas en el celular (evita errores WebGL/memoria). Solo aplica a rutas locales same-origin; si no se puede optimizar, cae al reescalado por canvas (comportamiento anterior); si todo falla, se mantiene el fallback **“Abrir imagen 360°”**. **Desktop queda intacto** (maxTex alto → fuente original). Optimizador de Next activo; `w=3840` es deviceSize por defecto.
+- **Pendiente:** confirmar en celular real que el panorama 360° carga vía fuente optimizada (no se pudo probar runtime acá). Si el optimizador no funciona con alguna fuente, el flujo cae solo al comportamiento anterior (sin regresión).
+- **No tocado:** captura de tours / creación con celular, Prisma, DB, Railway, worker, almacenamiento, reservas, cobros.
+
 ---
 
 ## ⏭️ PRÓXIMO PASO (bloqueado en tu decisión)
