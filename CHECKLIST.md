@@ -612,7 +612,7 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 
 ### 10. Tour 360 mobile — rollback de `/_next/image` y uso de proxy público directo
 - **Commit:** `b60b0a9`
-- **Estado:** 🟡 Implementado en rama / pendiente de prueba real en celular
+- **Estado:** ✅ Completado / Producción — mergeado y pusheado a main
 - **Secciones:** §7 · §8 · §27 · §41
 - **Archivos:** `src/components/properties/panorama-viewer.tsx`
 - **Causa:** Desktop funcionaba porque usaba proxy directo; mobile fallaba porque entraba en la rama `/_next/image`. El patrón `/_next/image?url=/api/storage/view?url=...` se tomó como regresión probable.
