@@ -182,6 +182,7 @@ export function UnifiedMediaViewer({
               className="h-full w-full"
               immersiveControls
               variant="immersive"
+              audience="public"
             />
           </div>
         )}

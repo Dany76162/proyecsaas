@@ -16,6 +16,10 @@ type PanoramaViewerProps = {
   floorPlanUrl?: string | null
   isEditingHotspot?: boolean
   onCoordsSelected?: (pitch: number, yaw: number) => void
+  // 'public' = ficha pública del catálogo (comprador sin sesión): el fallback de
+  // error NO muestra el botón "Abrir imagen 360°" (esa URL puede redirigir a
+  // login). 'admin' (default) = panel interno: conserva el botón para operadores.
+  audience?: 'public' | 'admin'
 }
 
 type SceneProjectionType = 'equirectangular' | 'cylindrical'
@@ -150,11 +154,12 @@ function refreshViewerLayout(viewer: any) {
   window.setTimeout(doResize, 900)
 }
 
-export function PanoramaViewer({ 
-  scenes, 
+export function PanoramaViewer({
+  scenes,
   className = "h-full w-full bg-black",
   isEditingHotspot = false,
-  onCoordsSelected
+  onCoordsSelected,
+  audience = 'admin'
 }: PanoramaViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<any>(null)
@@ -210,8 +215,12 @@ export function PanoramaViewer({
             // server-side (liviana, ~3840px): así NUNCA se descarga ni decodifica
             // el panorama gigante en el celular antes de usar la optimizada. Solo
             // si la optimizada no carga caemos al comportamiento anterior.
+            // Ancho según el límite real del dispositivo: si el teléfono tiene
+            // límite 2048, una imagen de 3840 igual fallaría → pedimos w=2048.
+            // (Ambos, 2048 y 3840, son deviceSizes válidos por defecto en Next.)
+            const optWidth = maxTex <= 2048 ? 2048 : 3840
             const optimizedUrl =
-              maxTex <= 4096 ? buildOptimizedPanoramaSource(scene.sourceUrl) : null
+              maxTex <= 4096 ? buildOptimizedPanoramaSource(scene.sourceUrl, optWidth) : null
             if (optimizedUrl) {
               const dim = await measureImage(optimizedUrl)
               if (cancelled) return
@@ -478,19 +487,29 @@ export function PanoramaViewer({
         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-slate-950/95 px-6 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600/10 text-2xl">🧭</div>
           <p className="max-w-xs text-sm font-semibold text-slate-300">
-            No pudimos cargar el tour 360° en este dispositivo.
+            El tour 360° no está disponible en este dispositivo.
           </p>
-          <p className="max-w-xs text-xs text-slate-500">
-            Puede que la imagen sea muy grande para tu celular. Probá abrirla directo:
-          </p>
-          <a
-            href={viewerScenes[activeSceneIndex]?.sourceUrl ?? viewerScenes[0]?.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-extrabold uppercase tracking-widest text-white transition active:scale-95"
-          >
-            Abrir imagen 360°
-          </a>
+          {audience === 'public' ? (
+            // Público (comprador sin sesión): NO mostramos un botón cuya URL puede
+            // redirigir a login. Lo orientamos a las imágenes reales de la ficha.
+            <p className="max-w-xs text-xs text-slate-500">
+              Podés ver las imágenes reales de la propiedad en la pestaña “Imágenes Reales”.
+            </p>
+          ) : (
+            <>
+              <p className="max-w-xs text-xs text-slate-500">
+                Puede que la imagen sea muy grande para tu celular. Probá abrirla directo:
+              </p>
+              <a
+                href={viewerScenes[activeSceneIndex]?.sourceUrl ?? viewerScenes[0]?.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-extrabold uppercase tracking-widest text-white transition active:scale-95"
+              >
+                Abrir imagen 360°
+              </a>
+            </>
+          )}
         </div>
       )}
       {safeScenes.length > 1 && (

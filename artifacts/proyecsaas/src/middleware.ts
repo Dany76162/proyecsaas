@@ -21,6 +21,11 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   /^\/map\/.+/,
   /^\/invite\/.+/,
   /^\/api\/public\//,
+  // Proxy de media (CORS) para panoramas 360° del catálogo público. El param
+  // `url` está restringido a hosts r2.dev (bucket público), así que no expone
+  // nada que no sea ya público. Sin esto, el anónimo que abre un tour 360° era
+  // redirigido a /login y el visor recibía HTML en vez de la imagen.
+  /^\/api\/storage\/view(\/|$)/,
   /^\/api\/webhooks\//,
   /^\/api\/whatsapp\/webhook(\/|$)/,
   /^\/api\/properties\/sync-from-source/,
