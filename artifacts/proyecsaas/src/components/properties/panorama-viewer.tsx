@@ -187,41 +187,59 @@ export function PanoramaViewer({
     const detectTypes = async () => {
       const types: Record<number, SceneProjectionType> = {}
       const sources: Record<number, string> = {}
-      await Promise.all(
-        viewerScenes.map((scene, i) => {
-          return new Promise<void>((resolve) => {
-            const img = new Image()
-            img.onload = async () => {
-              if (cancelled) return resolve()
-              const aspect = img.width / img.height
-              // Las 360 reales suelen estar cerca de 2:1. Recortes o panoramicas de celular usan vista parcial.
-              types[i] = aspect >= 1.85 && aspect <= 2.22 ? 'equirectangular' : 'cylindrical'
-              // Si la equirectangular supera el límite del dispositivo, la reescalamos
-              // para que entre (si no, Pannellum tira "webgl size error" → negro en móvil).
-              if (types[i] === 'equirectangular' && Math.max(img.width / 2, img.height) > maxTex) {
-                // 1ª opción en dispositivos de límite bajo (mobile, maxTex <= 4096):
-                // fuente optimizada server-side, para no procesar el panorama
-                // gigante por canvas en el celular. Si no se puede optimizar
-                // (URL remota/data) caemos al reescalado por canvas (comportamiento
-                // anterior). Si todo falla, queda el fallback "Abrir imagen 360°".
-                const optimized =
-                  maxTex <= 4096 ? buildOptimizedPanoramaSource(scene.sourceUrl) : null
-                if (optimized) {
-                  sources[i] = optimized
-                } else {
-                  const down = await downscaleToFit(scene.sourceUrl, img.width, img.height, maxTex)
-                  if (!cancelled && down) sources[i] = down
-                }
-              }
-              resolve()
-            }
-            img.onerror = () => {
-              types[i] = 'equirectangular'
-              resolve()
-            }
-            img.src = scene.sourceUrl
-          })
+      // Mide ancho/alto de una imagen (sin procesarla por canvas). null si falla.
+      const measureImage = (url: string) =>
+        new Promise<{ w: number; h: number } | null>((resolve) => {
+          const im = new Image()
+          im.onload = () => resolve({ w: im.width, h: im.height })
+          im.onerror = () => resolve(null)
+          im.src = url
         })
+
+      // Las 360 reales suelen estar cerca de 2:1. Recortes/panorámicas de celular usan vista parcial.
+      const classify = (w: number, h: number): SceneProjectionType =>
+        w / h >= 1.85 && w / h <= 2.22 ? 'equirectangular' : 'cylindrical'
+
+      await Promise.all(
+        viewerScenes.map((scene, i) =>
+          (async () => {
+            if (cancelled) return
+
+            // En dispositivos de límite bajo (mobile, maxTex <= 4096) con fuente
+            // LOCAL same-origin medimos Y renderizamos desde la versión OPTIMIZADA
+            // server-side (liviana, ~3840px): así NUNCA se descarga ni decodifica
+            // el panorama gigante en el celular antes de usar la optimizada. Solo
+            // si la optimizada no carga caemos al comportamiento anterior.
+            const optimizedUrl =
+              maxTex <= 4096 ? buildOptimizedPanoramaSource(scene.sourceUrl) : null
+            if (optimizedUrl) {
+              const dim = await measureImage(optimizedUrl)
+              if (cancelled) return
+              if (dim) {
+                types[i] = classify(dim.w, dim.h)
+                sources[i] = optimizedUrl
+                return
+              }
+              // La optimizada falló → seguimos con el flujo original (abajo).
+            }
+
+            // Comportamiento anterior: medir el original y reescalar por canvas si
+            // supera el límite. Desktop (maxTex alto) usa siempre la fuente original.
+            const dim = await measureImage(scene.sourceUrl)
+            if (cancelled) return
+            if (!dim) {
+              types[i] = 'equirectangular'
+              return
+            }
+            types[i] = classify(dim.w, dim.h)
+            // Si la equirectangular supera el límite del dispositivo, la reescalamos
+            // (si no, Pannellum tira "webgl size error" → negro en móvil).
+            if (types[i] === 'equirectangular' && Math.max(dim.w / 2, dim.h) > maxTex) {
+              const down = await downscaleToFit(scene.sourceUrl, dim.w, dim.h, maxTex)
+              if (!cancelled && down) sources[i] = down
+            }
+          })(),
+        ),
       )
       if (!cancelled) {
         setResolvedSources(sources)
