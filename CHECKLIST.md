@@ -599,8 +599,8 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 - **No tocado:** captura de tours / creación con celular, Prisma, DB, Railway, worker, almacenamiento, reservas, cobros.
 
 ### 9. Hotfix público Tour 360 — proxy de media público + fallback sin login + ancho por maxTex
-- **Commit:** `def7856` (rama `hotfix/public-tour360-mobile-fallback`)
-- **Estado:** 🟡 Implementado y validado (`tsc` + `next build` exit 0); causa confirmada en prod (`GET /api/storage/view` anónimo → `307 /login`). **Pendiente de merge/push + re-test en celular real.**
+- **Commit:** `def7856` · merge `68c0aee` (rama `hotfix/public-tour360-mobile-fallback`)
+- **Estado:** ✅ Completado / Producción (mergeado y pusheado a `main`; `tsc` + `next build` exit 0; causa confirmada en prod `GET /api/storage/view` anónimo → `307 /login`). ⚠️ **Pendiente de re-test en celular real** después del deploy.
 - **Secciones:** §2 · §7 · §8 · §27 · §41
 - **Archivos:** `src/middleware.ts`, `src/components/properties/panorama-viewer.tsx`, `src/components/properties/unified-media-viewer.tsx`
 - **Causa raíz:** `/api/storage/view` (proxy CORS de los panoramas 360°, usado vía `getPanoramaSourceUrl` para hosts `*.r2.dev`) **no estaba en `PUBLIC_PATHS`** → el comprador anónimo era redirigido a login; Pannellum recibía HTML de login, el optimizador interno también, y el botón "Abrir imagen 360°" (href = el proxy) mandaba al login.
