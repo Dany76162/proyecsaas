@@ -407,6 +407,15 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 - ✅ **Control de costos de IA REAL** implementado (ver §40, `a3d556d`).
 - 🟡 Opcional: setear `SERPER_API_KEY` en Railway enciende el Buscador Web (API paga de terceros, decisión tuya).
 
+### AgentOS — CEO IA B2B Fase 0/1
+* **Commit:** `064236616e6c71e493ecaa15a3d43de122d96496`
+* **Estado:** 🟡 Beta reforzada / solo lectura
+* **Secciones:** §18 · §19 · §20 · §21 · §40 · §46
+* **Alcance:** Se reencuadró AgentOS como Director IA / CEO IA B2B. Se redujo el sesgo de Marketing y se amplió el diagnóstico hacia activación, First WOW, soporte, costos IA, salud operativa y próximas mejores acciones.
+* **Seguridad:** HITL, solo lectura, sin acciones automáticas.
+* **Pendiente:** Fase 2 con agentes especializados reales y posible expansión de `AgentType`.
+* **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
