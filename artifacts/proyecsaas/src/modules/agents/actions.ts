@@ -3,14 +3,48 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getOpenAIClient, createAgentLog, getActiveAgentByType, inferPlatform, formatOpenAIPrompt, parseMarketingResponse, OPENAI_MODEL, generateOperativeDiagnosis, getDirectorAgentStatus } from "@/modules/agents/service";
+import {
+  getOpenAIClient,
+  createAgentLog,
+  getActiveAgentByType,
+  inferPlatform,
+  formatOpenAIPrompt,
+  parseMarketingResponse,
+  OPENAI_MODEL,
+  generateOperativeDiagnosis,
+  getDirectorAgentStatus,
+} from "@/modules/agents/service";
 import { prisma } from "@/server/db/prisma";
-import { assertMinimumRole, requireOrganizationMembership, requirePlatformAdmin } from "@/server/auth/access";
-import { ApprovalStatus, AgentType, AgentAutonomyLevel, AgentLogLevel, TaskStatus, RunStatus, DraftStatus, MembershipRole, GoalType, GoalStatus } from "@prisma/client";
+import {
+  assertMinimumRole,
+  requireOrganizationMembership,
+  requirePlatformAdmin,
+} from "@/server/auth/access";
+import {
+  ApprovalStatus,
+  AgentType,
+  AgentAutonomyLevel,
+  AgentLogLevel,
+  TaskStatus,
+  RunStatus,
+  DraftStatus,
+  MembershipRole,
+  GoalType,
+  GoalStatus,
+} from "@prisma/client";
 import type { ContentPlatform, AgentPriority } from "@prisma/client";
 import { createAgentGoal, suggestTasksForGoal } from "./goals-service";
-import { createAgentAutomation, runAgentAutomationNow, toggleAutomationStatus, runDueAgentAutomations } from "./automations-service";
-import { AutomationType, AutomationFrequency, ContentCalendarStatus } from "@prisma/client";
+import {
+  createAgentAutomation,
+  runAgentAutomationNow,
+  toggleAutomationStatus,
+  runDueAgentAutomations,
+} from "./automations-service";
+import {
+  AutomationType,
+  AutomationFrequency,
+  ContentCalendarStatus,
+} from "@prisma/client";
 import { getSessionUser } from "@/server/auth/session";
 
 export async function createAgentTask(formData: FormData) {
@@ -19,7 +53,9 @@ export async function createAgentTask(formData: FormData) {
   const title = formData.get("title")?.toString().trim();
   const description = formData.get("description")?.toString().trim();
   const priority = formData.get("priority")?.toString() as AgentPriority | null;
-  const platform = formData.get("platform")?.toString() as ContentPlatform | null;
+  const platform = formData
+    .get("platform")
+    ?.toString() as ContentPlatform | null;
   const contentType = formData.get("contentType")?.toString()?.trim() || "post";
   const goalId = formData.get("goalId")?.toString();
 
@@ -48,11 +84,17 @@ export async function createAgentTask(formData: FormData) {
 
   const orchestrator = await getActiveAgentByType(AgentType.ORCHESTRATOR);
   if (!orchestrator) {
-    await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.FAILED } });
+    await prisma.agentTask.update({
+      where: { id: task.id },
+      data: { status: TaskStatus.FAILED },
+    });
     throw new Error("No se encontró Director Operativo IA activo");
   }
 
-  await prisma.agentTask.update({ where: { id: task.id }, data: { agentId: orchestrator.id, status: TaskStatus.ASSIGNED } });
+  await prisma.agentTask.update({
+    where: { id: task.id },
+    data: { agentId: orchestrator.id, status: TaskStatus.ASSIGNED },
+  });
 
   await createAgentLog({
     level: AgentLogLevel.INFO,
@@ -65,7 +107,10 @@ export async function createAgentTask(formData: FormData) {
   } catch (err) {
     // processTaskWithOrchestrator already marks task/run as FAILED and logs internally,
     // so we swallow here to allow the redirect to proceed gracefully.
-    console.error("[AgentOS] Error en generación (ya registrado en logs):", err instanceof Error ? err.message : err);
+    console.error(
+      "[AgentOS] Error en generación (ya registrado en logs):",
+      err instanceof Error ? err.message : err,
+    );
   }
 
   redirect("/platform/agents/tasks");
@@ -74,10 +119,16 @@ export async function createAgentTask(formData: FormData) {
 export async function approveOrRejectDraft(formData: FormData) {
   const sessionUser = await requirePlatformAdmin();
   const approvalId = formData.get("approvalId")?.toString();
-  const decision = formData.get("decision")?.toString() as ApprovalStatus | null;
+  const decision = formData
+    .get("decision")
+    ?.toString() as ApprovalStatus | null;
   const comments = formData.get("comments")?.toString() ?? "";
 
-  if (!approvalId || !decision || !Object.values(ApprovalStatus).includes(decision)) {
+  if (
+    !approvalId ||
+    !decision ||
+    !Object.values(ApprovalStatus).includes(decision)
+  ) {
     throw new Error("Decisión de aprobación inválida");
   }
 
@@ -104,13 +155,18 @@ export async function approveOrRejectDraft(formData: FormData) {
     },
   });
 
-  const draft = await prisma.contentDraft.findFirst({ where: { taskId: approval.taskId } });
+  const draft = await prisma.contentDraft.findFirst({
+    where: { taskId: approval.taskId },
+  });
 
   if (draft) {
     await prisma.contentDraft.update({
       where: { id: draft.id },
       data: {
-        status: decision === ApprovalStatus.APPROVED ? DraftStatus.APPROVED : DraftStatus.REJECTED,
+        status:
+          decision === ApprovalStatus.APPROVED
+            ? DraftStatus.APPROVED
+            : DraftStatus.REJECTED,
       },
     });
   }
@@ -118,7 +174,10 @@ export async function approveOrRejectDraft(formData: FormData) {
   await prisma.agentTask.update({
     where: { id: approval.taskId },
     data: {
-      status: decision === ApprovalStatus.APPROVED ? TaskStatus.COMPLETED : TaskStatus.FAILED,
+      status:
+        decision === ApprovalStatus.APPROVED
+          ? TaskStatus.COMPLETED
+          : TaskStatus.FAILED,
     },
   });
 
@@ -160,7 +219,11 @@ export async function toggleAgentStatus(orgSlug: string, agentId: string) {
   revalidatePath(`/${orgSlug}/agents`);
 }
 
-async function processTaskWithOrchestrator(taskId: string, orchestratorId: string, userId: string) {
+async function processTaskWithOrchestrator(
+  taskId: string,
+  orchestratorId: string,
+  userId: string,
+) {
   const task = await prisma.agentTask.findUnique({ where: { id: taskId } });
   if (!task) throw new Error("Tarea no encontrada");
 
@@ -171,7 +234,11 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
       taskId,
       agentId: orchestratorId,
       status: RunStatus.RUNNING,
-      input: { title: task.title, description: task.description, metadata: task.metadata },
+      input: {
+        title: task.title,
+        description: task.description,
+        metadata: task.metadata,
+      },
     },
   });
 
@@ -182,30 +249,74 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
     metadata: { taskId },
   });
 
-  const platform = inferPlatform(task.description ?? "", (task.metadata as { platform?: string } | null)?.platform ?? null);
-  const contentType = (task.metadata as { contentType?: string } | null)?.contentType ?? "post";
+  const platform = inferPlatform(
+    task.description ?? "",
+    (task.metadata as { platform?: string } | null)?.platform ?? null,
+  );
+  const contentType =
+    (task.metadata as { contentType?: string } | null)?.contentType ?? "post";
 
   await prisma.agentTask.update({
     where: { id: task.id },
-    data: { metadata: { contentType, platform }, status: TaskStatus.IN_PROGRESS },
+    data: {
+      metadata: { contentType, platform },
+      status: TaskStatus.IN_PROGRESS,
+    },
   });
+
+  const isMarketing =
+    contentType === "post" ||
+    contentType === "ad" ||
+    contentType === "copy" ||
+    task.title.toLowerCase().includes("marketing") ||
+    task.title.toLowerCase().includes("publicación");
+
+  if (!isMarketing) {
+    // Tarea B2B general (activación, QA, soporte, finanzas, operaciones)
+    await prisma.agentRun.update({
+      where: { id: orchestratorRun.id },
+      data: { status: RunStatus.COMPLETED, completedAt: new Date() },
+    });
+    await prisma.agentTask.update({
+      where: { id: task.id },
+      data: { status: TaskStatus.ASSIGNED },
+    });
+    await createAgentLog({
+      runId: orchestratorRun.id,
+      level: AgentLogLevel.INFO,
+      message:
+        "Tarea retenida en Director Operativo IA para evaluación ejecutiva (HITL). No derivada a Marketing.",
+      metadata: { taskId, isMarketing: false },
+    });
+    return;
+  }
 
   const marketingAgent = await getActiveAgentByType(AgentType.MARKETING);
   if (!marketingAgent) {
-    await prisma.agentRun.update({ where: { id: orchestratorRun.id }, data: { status: RunStatus.FAILED, error: "Marketing agent no activo" } });
+    await prisma.agentRun.update({
+      where: { id: orchestratorRun.id },
+      data: { status: RunStatus.FAILED, error: "Marketing agent no activo" },
+    });
     await createAgentLog({
       runId: orchestratorRun.id,
       level: AgentLogLevel.ERROR,
       message: "No se encontró Agente de Marketing activo",
       metadata: { taskId },
     });
-    await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.FAILED } });
+    await prisma.agentTask.update({
+      where: { id: task.id },
+      data: { status: TaskStatus.FAILED },
+    });
     return;
   }
 
   try {
     const client = getOpenAIClient();
-    const prompt = formatOpenAIPrompt({ title: task.title, description: task.description ?? "", platform });
+    const prompt = formatOpenAIPrompt({
+      title: task.title,
+      description: task.description ?? "",
+      platform,
+    });
     await createAgentLog({
       runId: orchestratorRun.id,
       level: AgentLogLevel.INFO,
@@ -213,17 +324,20 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
       metadata: { taskId, platform, contentType },
     });
 
-    const completion = await Promise.race([
+    const completion = (await Promise.race([
       client.chat.completions.create({
         model: OPENAI_MODEL,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_tokens: 700,
       }),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("OpenAI timeout")), 30000)),
-    ]) as { choices: Array<{ message: { content?: string } }> };
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("OpenAI timeout")), 30000),
+      ),
+    ])) as { choices: Array<{ message: { content?: string } }> };
 
-    const responseText = completion.choices?.[0]?.message?.content?.trim() ?? "";
+    const responseText =
+      completion.choices?.[0]?.message?.content?.trim() ?? "";
     const parsed = parseMarketingResponse(responseText);
 
     const marketingRun = await prisma.agentRun.create({
@@ -234,7 +348,11 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
         agentId: marketingAgent.id,
         status: RunStatus.COMPLETED,
         input: { promptSummary: `Generar contenido para ${platform}` },
-        output: { content: parsed.content, title: parsed.title, hashtags: parsed.hashtags },
+        output: {
+          content: parsed.content,
+          title: parsed.title,
+          hashtags: parsed.hashtags,
+        },
       },
     });
 
@@ -265,13 +383,20 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
       },
     });
 
-    await prisma.agentRun.update({ where: { id: orchestratorRun.id }, data: { status: RunStatus.COMPLETED, completedAt: new Date() } });
-    await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.APPROVAL_PENDING } });
+    await prisma.agentRun.update({
+      where: { id: orchestratorRun.id },
+      data: { status: RunStatus.COMPLETED, completedAt: new Date() },
+    });
+    await prisma.agentTask.update({
+      where: { id: task.id },
+      data: { status: TaskStatus.APPROVAL_PENDING },
+    });
 
     await createAgentLog({
       runId: marketingRun.id,
       level: AgentLogLevel.INFO,
-      message: "Borrador generado por el Agente de Marketing y pendiente de aprobación",
+      message:
+        "Borrador generado por el Agente de Marketing y pendiente de aprobación",
       metadata: { taskId, draftPlatform: platform },
     });
   } catch (error) {
@@ -290,7 +415,11 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
 
     await prisma.agentRun.update({
       where: { id: orchestratorRun.id },
-      data: { status: RunStatus.FAILED, error: userMessage, completedAt: new Date() },
+      data: {
+        status: RunStatus.FAILED,
+        error: userMessage,
+        completedAt: new Date(),
+      },
     });
     await createAgentLog({
       runId: orchestratorRun.id,
@@ -298,7 +427,10 @@ async function processTaskWithOrchestrator(taskId: string, orchestratorId: strin
       message: userMessage,
       metadata: { taskId, error: rawMessage, isQuotaError: is429 },
     });
-    await prisma.agentTask.update({ where: { id: task.id }, data: { status: TaskStatus.FAILED } });
+    await prisma.agentTask.update({
+      where: { id: task.id },
+      data: { status: TaskStatus.FAILED },
+    });
   }
 }
 
@@ -396,29 +528,32 @@ export async function createGoalAction(formData: FormData) {
     description,
     priority,
     type,
-    targetDate: targetDateStr ? new Date(targetDateStr) : undefined
+    targetDate: targetDateStr ? new Date(targetDateStr) : undefined,
   });
 
   revalidatePath("/platform/agents/goals");
   revalidatePath("/platform/agents");
-  
+
   redirect(`/platform/agents/goals/${goal.id}`);
 }
 
 export async function suggestGoalTasksAction(goalId: string) {
   await requirePlatformAdmin();
-  
+
   if (!goalId) throw new Error("ID de objetivo requerido");
 
   const suggestions = await suggestTasksForGoal(goalId);
   return { success: true, data: suggestions };
 }
 
-export async function createSuggestedTasksAction(goalId: string, tasks: { title: string; description: string }[]) {
+export async function createSuggestedTasksAction(
+  goalId: string,
+  tasks: { title: string; description: string }[],
+) {
   const sessionUser = await requirePlatformAdmin();
 
   const orchestrator = await getActiveAgentByType(AgentType.ORCHESTRATOR);
-  
+
   for (const taskData of tasks) {
     const task = await prisma.agentTask.create({
       data: {
@@ -430,20 +565,20 @@ export async function createSuggestedTasksAction(goalId: string, tasks: { title:
         title: taskData.title,
         description: taskData.description,
         priority: "MEDIUM",
-        createdById: sessionUser.id
-      }
+        createdById: sessionUser.id,
+      },
     });
 
     await createAgentLog({
       level: AgentLogLevel.INFO,
       message: `Tarea creada desde objetivo: ${task.title}`,
-      metadata: { goalId, taskId: task.id }
+      metadata: { goalId, taskId: task.id },
     });
   }
 
   revalidatePath(`/platform/agents/goals/${goalId}`);
   revalidatePath("/platform/agents/tasks");
-  
+
   return { success: true };
 }
 
@@ -453,10 +588,14 @@ export async function createAutomationAction(formData: FormData) {
   const title = formData.get("title")?.toString().trim();
   const description = formData.get("description")?.toString().trim();
   const type = formData.get("type")?.toString() as AutomationType;
-  const frequency = formData.get("frequency")?.toString() as AutomationFrequency;
+  const frequency = formData
+    .get("frequency")
+    ?.toString() as AutomationFrequency;
   const agentId = formData.get("agentId")?.toString();
   const goalId = formData.get("goalId")?.toString();
-  const dayOfWeek = formData.get("dayOfWeek") ? Number(formData.get("dayOfWeek")) : undefined;
+  const dayOfWeek = formData.get("dayOfWeek")
+    ? Number(formData.get("dayOfWeek"))
+    : undefined;
   const timeOfDay = formData.get("timeOfDay")?.toString();
 
   if (!title || !type || !frequency) {
@@ -472,33 +611,36 @@ export async function createAutomationAction(formData: FormData) {
     goalId: goalId || undefined,
     dayOfWeek,
     timeOfDay,
-    createdById: sessionUser.id
+    createdById: sessionUser.id,
   });
 
   revalidatePath("/platform/agents/automations");
   revalidatePath("/platform/agents");
-  
+
   redirect("/platform/agents/automations");
 }
 
 export async function runAutomationNowAction(automationId: string) {
   const sessionUser = await requirePlatformAdmin();
-  
+
   await runAgentAutomationNow(automationId, sessionUser.id);
-  
+
   revalidatePath("/platform/agents/automations");
   revalidatePath("/platform/agents/tasks");
-  
+
   return { success: true };
 }
 
-export async function toggleAutomationAction(automationId: string, active: boolean) {
+export async function toggleAutomationAction(
+  automationId: string,
+  active: boolean,
+) {
   await requirePlatformAdmin();
-  
+
   await toggleAutomationStatus(automationId, active);
-  
+
   revalidatePath("/platform/agents/automations");
-  
+
   return { success: true };
 }
 
@@ -512,17 +654,20 @@ export async function runDueAutomationsAction() {
 }
 
 // CALENDAR ACTIONS
-export async function scheduleContentDraftAction(draftId: string, data: { date: Date, platform?: ContentPlatform, notes?: string }) {
+export async function scheduleContentDraftAction(
+  draftId: string,
+  data: { date: Date; platform?: ContentPlatform; notes?: string },
+) {
   await requirePlatformAdmin();
-  
+
   await prisma.contentDraft.update({
     where: { id: draftId },
     data: {
       scheduledFor: data.date,
       plannedPlatform: data.platform,
       notes: data.notes,
-      calendarStatus: "SCHEDULED"
-    }
+      calendarStatus: "SCHEDULED",
+    },
   });
 
   revalidatePath("/platform/agents/calendar");
@@ -530,12 +675,15 @@ export async function scheduleContentDraftAction(draftId: string, data: { date: 
   return { success: true };
 }
 
-export async function updateCalendarStatusAction(draftId: string, status: ContentCalendarStatus) {
+export async function updateCalendarStatusAction(
+  draftId: string,
+  status: ContentCalendarStatus,
+) {
   await requirePlatformAdmin();
 
   await prisma.contentDraft.update({
     where: { id: draftId },
-    data: { calendarStatus: status }
+    data: { calendarStatus: status },
   });
 
   revalidatePath("/platform/agents/calendar");
@@ -553,7 +701,11 @@ export async function activateDirectorAgentAction(): Promise<{
   const sessionUser = await requirePlatformAdmin();
 
   const existing = await prisma.agent.findFirst({
-    where: { type: AgentType.ORCHESTRATOR, scope: "PLATFORM", organizationId: null },
+    where: {
+      type: AgentType.ORCHESTRATOR,
+      scope: "PLATFORM",
+      organizationId: null,
+    },
     include: { governance: true },
   });
 
@@ -605,7 +757,11 @@ export async function activateDirectorAgentAction(): Promise<{
   await createAgentLog({
     level: AgentLogLevel.INFO,
     message: "Director Operativo IA activado (Fase 4A)",
-    metadata: { agentId: agent.id, autonomyLevel: "REQUIRE_APPROVAL", activatedBy: sessionUser.id },
+    metadata: {
+      agentId: agent.id,
+      autonomyLevel: "REQUIRE_APPROVAL",
+      activatedBy: sessionUser.id,
+    },
   });
 
   // Bypass strict AuditEvent type — "agent.director_activated" is a platform-internal event
@@ -618,7 +774,11 @@ export async function activateDirectorAgentAction(): Promise<{
         entityType: "Agent",
         entityId: agent.id,
         entityName: "Director Operativo IA",
-        metadata: { type: "ORCHESTRATOR", scope: "PLATFORM", autonomyLevel: "REQUIRE_APPROVAL" },
+        metadata: {
+          type: "ORCHESTRATOR",
+          scope: "PLATFORM",
+          autonomyLevel: "REQUIRE_APPROVAL",
+        },
       },
     })
     .catch(() => {});
@@ -626,7 +786,8 @@ export async function activateDirectorAgentAction(): Promise<{
   revalidatePath("/platform/agents");
   return {
     success: true,
-    message: "Director Operativo IA activado correctamente en modo SUPERVISADO.",
+    message:
+      "Director Operativo IA activado correctamente en modo SUPERVISADO.",
     agentId: agent.id,
     alreadyExisted: false,
   };
@@ -646,7 +807,8 @@ export async function requestOperativeDiagnosisAction(): Promise<{
   if (!status.exists || !status.isActive) {
     return {
       success: false,
-      error: "El Director Operativo IA no está activo. Actívalo primero desde este panel.",
+      error:
+        "El Director Operativo IA no está activo. Actívalo primero desde este panel.",
     };
   }
 
@@ -697,4 +859,3 @@ export async function requestOperativeDiagnosisAction(): Promise<{
     agentId: status.agentId,
   };
 }
-

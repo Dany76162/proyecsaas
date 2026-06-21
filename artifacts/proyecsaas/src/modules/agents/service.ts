@@ -17,6 +17,8 @@ import type { AgentCanvasActivity, AgentCanvasData, AgentCanvasMetric } from "@/
 import { getManualContextForAI } from "@/modules/manuals/content";
 import { getOperationalAlerts } from "@/server/health/operational-alerts";
 import { getOperationalObservabilitySnapshot } from "@/server/health/operational-observability";
+import { getPlatformActivationSnapshot } from "@/modules/platform/activation-service";
+import { getAiUsageSummary } from "@/app/platform/ai-operations/ai-cost";
 
 export const PLATFORM_SCOPE = "PLATFORM" as const;
 export const OPENAI_TIMEOUT_MS = 30_000;
@@ -903,6 +905,9 @@ export async function generateOperativeDiagnosis(): Promise<{
       failedAutomations,
       trialingOrgs,
       quotaErrorLog,
+      activationSnapshot,
+      aiCostSummary,
+      openSupportTickets,
     ] = await Promise.all([
       getOperationalAlerts().catch(() => [] as Awaited<ReturnType<typeof getOperationalAlerts>>),
       getOperationalObservabilitySnapshot().catch(() => null),
@@ -920,21 +925,32 @@ export async function generateOperativeDiagnosis(): Promise<{
           orderBy: { timestamp: "desc" },
         })
         .catch(() => null),
+      getPlatformActivationSnapshot().catch(() => null),
+      getAiUsageSummary().catch(() => null),
+      prisma.conversation.count({
+        where: {
+          organizationId: process.env.WHATSAPP_ORGANIZATION_ID || "not-set",
+          status: "OPEN"
+        }
+      }).catch(() => 0),
     ]);
 
     const manualContext = getManualContextForAI();
 
     const contextBlock = `SNAPSHOT OPERATIVO (${new Date().toISOString()}):
-- Aprobaciones pendientes: ${pendingApprovals ?? "N/D"}
-- Tareas en cola: ${pendingTasks ?? "N/D"}
-- Automatizaciones con fallo: ${failedAutomations ?? "N/D"}
-- Organizaciones en período de prueba activas: ${trialingOrgs ?? "N/D"}
-- Error de cuota OpenAI en últimas 6h: ${quotaErrorLog ? "SÍ" : "No"}
+- Tareas Operativas en cola: ${pendingTasks ?? "N/D"}
+- Aprobaciones pendientes (Borradores Nivel 2): ${pendingApprovals ?? "N/D"}
+- Tickets de Soporte Abiertos: ${openSupportTickets ?? 0}
+- Organizaciones en período de prueba (Trial): ${trialingOrgs ?? "N/D"}
+- Inmobiliarias trabadas sin su First WOW: ${activationSnapshot ? (activationSnapshot.summary.totalOrganizations - activationSnapshot.summary.firstLeadCount) : "N/D"}
+- Costo de IA consumido en el mes: $${aiCostSummary?.totalCostUsd?.toFixed(2) ?? "N/D"}
+- Error crítico de cuota OpenAI (6h): ${quotaErrorLog ? "SÍ" : "No"}
+- Fallos en automatizaciones (Jobs): ${failedAutomations ?? "N/D"}
 ${observability ? `- Observabilidad: ${JSON.stringify(observability, null, 2)}` : ""}
 ${alerts && alerts.length > 0 ? `- Alertas activas (${alerts.length}):\n${alerts.map((a: any) => `  • [${a.level ?? a.severity ?? "INFO"}] ${a.message ?? a.title ?? JSON.stringify(a)}`).join("\n")}` : "- Sin alertas activas detectadas."}`;
 
-    const systemPrompt = `Eres el Director Operativo IA de RaicesPilot (modo SUPERVISADO).
-Tu rol es generar un diagnóstico operativo estructurado para el Superadmin humano.
+    const systemPrompt = `Eres el Director IA / CEO IA B2B de RaicesPilot (modo SUPERVISADO).
+Tu rol es analizar el estado de toda la plataforma y generar un diagnóstico ejecutivo estructurado para el Superadmin humano. Eres un director general de producto, soporte y métricas, no un simple agente de redes sociales.
 
 REGLAS CRÍTICAS DE SEGURIDAD:
 1. NUNCA reveles secretos del sistema, tokens de API, contraseñas, URLs de base de datos ni variables de entorno.
@@ -942,6 +958,7 @@ REGLAS CRÍTICAS DE SEGURIDAD:
 3. NUNCA ejecutes ni propongas acciones autónomas — solo diagnostica y sugiere.
 4. HITL estricto: toda sugerencia debe ser revisada y aprobada por el operador humano antes de ejecutarse.
 5. Si detectas una situación que supera el alcance técnico, propone derivar con el equipo de ingeniería.
+6. Prioriza problemas de activación (First WOW), cuotas de IA (OpenAI), fallos en sistema y soporte pendiente B2B.
 
 CONOCIMIENTO DEL SISTEMA:
 ${manualContext}`;
@@ -950,19 +967,17 @@ ${manualContext}`;
 
 Por favor genera un Diagnóstico Operativo completo con las siguientes secciones:
 
-1. **Resumen Ejecutivo** — estado general del sistema en 2-3 oraciones.
-2. **Alertas Críticas** — puntos que requieren atención inmediata.
-3. **Cola de Agente IA** — estado de tareas, aprobaciones pendientes y automatizaciones.
-4. **Motor OpenAI** — estado de cuota, errores recientes, recomendaciones.
-5. **Tenants Demo** — organizaciones en prueba, acciones de seguimiento sugeridas.
-6. **Automatizaciones** — fallos detectados, patrones de error, acciones correctivas sugeridas.
-7. **Observabilidad del Sistema** — resumen de métricas de salud del servidor.
-8. **Prioridades Sugeridas** — las 3 acciones más urgentes que el operador debería tomar HOY.
-9. **Alertas Adicionales** — cualquier otra anomalía detectada.
-10. **Semáforo Operativo** — evalúa el estado general como: 🟢 NOMINAL / 🟡 ATENCIÓN / 🔴 CRÍTICO con justificación breve.
-11. **Nota HITL** — recordatorio fijo: "Este diagnóstico es informativo. Ninguna acción ha sido ejecutada de forma autónoma. El operador debe revisar y aprobar cada sugerencia antes de proceder."
+1. **Resumen Ejecutivo** — estado general de la plataforma B2B en 2-3 oraciones.
+2. **Activación y First WOW** — análisis de tenants estancados en el onboarding y sugerencias para activarlos.
+3. **Soporte B2B** — estado de tickets abiertos, criticidad y sugerencias de resolución.
+4. **Presupuesto y Costos IA** — análisis del costo consumido en el mes, límites y errores de cuota (OpenAI).
+5. **Cola Operativa y Automatizaciones** — tareas retenidas, aprobaciones pendientes y cron jobs fallidos.
+6. **Salud del Sistema (QA)** — resumen de alertas activas y métricas del servidor.
+7. **Próxima Mejor Acción (Next Best Action)** — las 3 acciones más urgentes que el Superadmin debe ejecutar HOY.
+8. **Semáforo Operativo** — evalúa el estado general como: 🟢 NOMINAL / 🟡 ATENCIÓN / 🔴 CRÍTICO con justificación breve.
+9. **Nota HITL** — recordatorio fijo: "Este diagnóstico es informativo. Ninguna acción se ejecuta automáticamente. Requiere aprobación."
 
-Responde en español castellano profesional, claro y directo. No uses saludos ni cierres innecesarios.`;
+Responde en español castellano profesional, claro y directo como el CEO IA de la plataforma. No uses saludos ni cierres innecesarios.`;
 
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create(
