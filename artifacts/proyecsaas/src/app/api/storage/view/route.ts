@@ -89,7 +89,7 @@ export async function GET(req: Request) {
               const fileBuffer = await fs.readFile(localPath);
               headers.set("Content-Type", contentType);
               headers.set("Cache-Control", cacheControl);
-              return new Response(fileBuffer, { headers });
+              return new Response(fileBuffer as any, { headers });
             }
           } catch {
             return new Response("File not found", { status: 404 });
@@ -177,7 +177,7 @@ export async function GET(req: Request) {
 
           headers.set("Content-Type", "image/jpeg");
           headers.set("Cache-Control", "public, max-age=31536000, immutable");
-          return new Response(optimizedBuffer, { headers });
+          return new Response(optimizedBuffer as any, { headers });
         }
       } catch (resizeError) {
         console.error("[api/storage/view] Error optimizing image with sharp:", resizeError);
@@ -188,7 +188,7 @@ export async function GET(req: Request) {
     // Fallback if resizing failed or was skipped
     headers.set("Content-Type", contentType);
     headers.set("Cache-Control", cacheControl);
-    return new Response(buffer, { headers });
+    return new Response(buffer as any, { headers });
 
   } catch (error: any) {
     console.error("[api/storage/view] Error streaming file:", error);
