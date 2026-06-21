@@ -465,7 +465,7 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
         type: "ORCHESTRATOR",
         status: orchestrator?.isActive ? "Activo" : "Sin agente activo",
         description:
-          "Punto de control del flujo AgentOS. Recibe tareas, prepara la ejecución y deriva el contenido al Agente de Marketing.",
+          "Punto de control ejecutivo de Raíces Pilot. Analiza operación, clientes, soporte, costos IA, activación y riesgos. Sugiere prioridades bajo supervisión humana.",
         href: "/platform/agents/tasks",
         metrics: [
           { label: "Tareas asignadas", value: taskCounts.ASSIGNED + taskCounts.IN_PROGRESS + taskCounts.APPROVAL_PENDING, tone: "info" },

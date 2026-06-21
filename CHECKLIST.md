@@ -416,6 +416,15 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Fase 2:** Pendiente (NO iniciada) — Modelado en BD y asignación de agentes especializados reales.
 * **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas.
 
+### AgentOS — UI Ejecutiva Director IA Fase 1.1
+* **Commit:** `...`
+* **Estado:** 🟡 Beta reforzada / listo para validación en producción
+* **Secciones:** §18 · §20 · §21 · §26 · §40 · §41 · §46
+* **Alcance:** La pantalla `/platform/agents` se reordenó como centro de mando ejecutivo del Director IA. El diagnóstico deja de mostrarse solo como texto largo y se priorizan métricas ejecutivas: semáforo operativo, First WOW, soporte B2B, costos IA, jobs fallidos y próxima mejor acción.
+* **Seguridad:** Solo lectura, HITL, sin acciones automáticas.
+* **Pendiente:** Fase 2 con agentes especializados reales y estructura de permisos.
+* **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)

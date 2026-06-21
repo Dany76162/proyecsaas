@@ -137,6 +137,37 @@ export default function DirectorPanelClient({ initialStatus }: { initialStatus: 
         </p>
       </div>
 
+      {/* Tarjetas Ejecutivas Superiores (Fase 1.1) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Semáforo Operativo</p>
+          <p className="text-sm font-black text-emerald-900">Operable</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">First WOW Pendientes</p>
+          <p className="text-sm font-black text-slate-900">Sin dato estructurado</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Tickets B2B Abiertos</p>
+          <p className="text-sm font-black text-slate-900">Sin dato estructurado</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Costo IA Mensual</p>
+          <p className="text-sm font-black text-slate-900">Sin dato estructurado</p>
+        </div>
+      </div>
+
+      {/* Próxima Mejor Acción Destacada */}
+      <div className="rounded-xl border-2 border-indigo-100 bg-white p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Zap className="h-4 w-4 text-indigo-600" />
+          <h3 className="text-xs font-black uppercase tracking-widest text-indigo-900">Próxima Mejor Acción</h3>
+        </div>
+        <p className="text-sm font-medium text-slate-600 italic">
+          Solicitá un diagnóstico para generar la próxima mejor acción.
+        </p>
+      </div>
+
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
         {!status.exists || !status.isActive ? (
@@ -179,10 +210,10 @@ export default function DirectorPanelClient({ initialStatus }: { initialStatus: 
 
       {/* Diagnosis output */}
       {diagnosis && (
-        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-400">
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-400 mt-6 pt-6 border-t border-slate-200 border-dashed">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-black text-slate-700 uppercase tracking-widest">
-              Diagnóstico Operativo
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">
+              Detalle del Informe Completo
             </p>
             <button
               type="button"
@@ -198,8 +229,8 @@ export default function DirectorPanelClient({ initialStatus }: { initialStatus: 
               {copied ? "Copiado" : "Copiar"}
             </button>
           </div>
-          <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-5">
-            <pre className="whitespace-pre-wrap text-xs text-slate-700 font-mono leading-relaxed">
+          <div className="max-h-[20rem] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/50 p-5">
+            <pre className="whitespace-pre-wrap text-[11px] text-slate-600 font-mono leading-relaxed">
               {diagnosis}
             </pre>
           </div>

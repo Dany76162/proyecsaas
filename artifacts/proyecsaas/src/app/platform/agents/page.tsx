@@ -42,27 +42,44 @@ export default async function PlatformAgentsPage() {
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-brand-600">
              <Terminal className="h-5 w-5" />
-             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Vista General del Sistema</span>
+             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Centro de Mando Operativo</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">AgentOS 3.1 <span className="text-brand-600">GOBERNANZA</span></h1>
+          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">AgentOS — <span className="text-brand-600">Director IA</span></h1>
           <p className="text-sm font-medium text-slate-500">
-            Gobernanza operativa, control de límites y seguridad para administración de plataforma.
+            Centro de dirección IA para supervisar activación, soporte, costos, operaciones, QA y próximas acciones de Raíces Pilot.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           <Link
-            href="/platform/agents/automations/new"
-            className="inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-6 py-3.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-brand-600/20 transition hover:bg-brand-700 active:scale-95"
+            href="/platform/activation"
+            className="inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700 active:scale-95"
           >
-            <Plus className="h-4 w-4" />
-            Nueva automatización
+            Activación
+          </Link>
+          <Link
+            href="/platform/support"
+            className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 active:scale-95"
+          >
+            Soporte B2B
+          </Link>
+          <Link
+            href="/platform/qa"
+            className="inline-flex items-center gap-2 rounded-2xl bg-slate-800 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-slate-800/20 transition hover:bg-slate-900 active:scale-95"
+          >
+            QA
+          </Link>
+          <Link
+            href="/platform/ai-operations"
+            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 active:scale-95"
+          >
+            Operaciones IA
           </Link>
           <Link
             href="/platform/agents/canvas"
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3.5 text-xs font-black uppercase tracking-widest text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
           >
-            <Network className="h-4 w-4" />
+            <Network className="h-3 w-3" />
             Canvas
           </Link>
         </div>
