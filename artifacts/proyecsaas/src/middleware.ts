@@ -79,7 +79,6 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - public folder assets (images, fonts, etc.)
-     */
-    "/((?!_next/static|_next/image|api/property-media/upload|.*\\.(?:ico|png|jpg|jpeg|svg|webp|gif|woff|woff2|ttf|otf|css|js\\.map)).*)",
+    "/((?!_next/static|_next/image|api/property-media/upload|.*\\.(?:ico|png|jpg|jpeg|svg|webp|gif|woff|woff2|ttf|otf|css|js|js\\.map)).*)",
   ],
 };
