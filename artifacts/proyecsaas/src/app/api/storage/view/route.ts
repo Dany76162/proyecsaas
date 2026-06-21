@@ -89,20 +89,18 @@ export async function GET(req: Request) {
               const fileBuffer = await fs.readFile(localPath);
               headers.set("Content-Type", contentType);
               headers.set("Cache-Control", cacheControl);
-              return new NextResponse(fileBuffer as any, { headers });
+              return new Response(fileBuffer, { headers });
             }
           } catch {
             return new Response("File not found", { status: 404 });
           }
         } else {
-          const isAllowedR2Host =
-            sourceUrl.protocol === "https:" &&
-            (sourceUrl.hostname.endsWith(".r2.dev") ||
-              isSameOrigin ||
-              (configuredPublicUrl && sourceUrl.hostname === configuredPublicUrl.hostname));
+          // Allow any HTTPS external URL to be proxied for panoramas
+          // as we use various providers (R2, Cloudinary, Unsplash, Pannellum examples)
+          const isAllowedHost = sourceUrl.protocol === "https:";
 
-          if (!isAllowedR2Host) {
-            return new Response("URL host is not allowed", { status: 400 });
+          if (!isAllowedHost) {
+            return new Response("URL host is not allowed (must be https)", { status: 400 });
           }
 
           const upstream = await fetch(sourceUrl.toString(), {
@@ -125,7 +123,7 @@ export async function GET(req: Request) {
             }
             headers.set("Content-Type", contentType);
             headers.set("Cache-Control", cacheControl);
-            return new NextResponse(upstream.body, { headers });
+            return new Response(upstream.body, { headers });
           }
         }
       }
@@ -159,7 +157,7 @@ export async function GET(req: Request) {
       } else {
         headers.set("Content-Type", contentType);
         headers.set("Cache-Control", cacheControl);
-        return new NextResponse(stream as any, { headers });
+        return new Response(stream as any, { headers });
       }
     }
 
@@ -179,7 +177,7 @@ export async function GET(req: Request) {
 
           headers.set("Content-Type", "image/jpeg");
           headers.set("Cache-Control", "public, max-age=31536000, immutable");
-          return new NextResponse(optimizedBuffer as any, { headers });
+          return new Response(optimizedBuffer, { headers });
         }
       } catch (resizeError) {
         console.error("[api/storage/view] Error optimizing image with sharp:", resizeError);
@@ -190,7 +188,7 @@ export async function GET(req: Request) {
     // Fallback if resizing failed or was skipped
     headers.set("Content-Type", contentType);
     headers.set("Cache-Control", cacheControl);
-    return new NextResponse(buffer as any, { headers });
+    return new Response(buffer, { headers });
 
   } catch (error: any) {
     console.error("[api/storage/view] Error streaming file:", error);
