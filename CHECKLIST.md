@@ -426,8 +426,8 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas.
 
 ### AgentOS — Limpieza UI Ejecutiva Fase 1.1.1
-* **Commit:** `fix/agentos-director-ui-cleanup-1-1-1`
-* **Estado:** 🟡 Beta reforzada / limpieza post-merge.
+* **Commit:** `ff27cfc`
+* **Estado:** 🟢 Mergeado a main / listo para producción. Fase 2 NO iniciada.
 * **Secciones:** §20 · §21 · §40 · §41 · §46
 * **Alcance:** Se eliminó el semáforo hardcodeado en verde ("Operable") cuando no hay dato estructurado real → ahora cae al fallback honesto neutral ("Sin dato estructurado" + "Solicitá un diagnóstico para evaluar el estado operativo"). Se limpió el ruido autogenerado de `next-env.d.ts` (revertido `.next` → `.next-dev`, la convención del repo: dev usa distDir `.next-dev`, prod `.next`). Auditado: el cliente solo recibe `DirectorAgentStatus` (sin métricas operativas estructuradas), por eso no se inventó estado ni se hizo parsing del texto del LLM.
 * **Seguridad:** Sin cambios funcionales sensibles, sin acciones automáticas, HITL intacto.
