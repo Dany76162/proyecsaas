@@ -139,9 +139,10 @@ export default function DirectorPanelClient({ initialStatus }: { initialStatus: 
 
       {/* Tarjetas Ejecutivas Superiores (Fase 1.1) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Semáforo Operativo</p>
-          <p className="text-sm font-black text-emerald-900">Operable</p>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Semáforo Operativo</p>
+          <p className="text-sm font-black text-slate-900">Sin dato estructurado</p>
+          <p className="text-[10px] font-medium text-slate-400 mt-0.5 leading-snug">Solicitá un diagnóstico para evaluar el estado operativo.</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">First WOW Pendientes</p>

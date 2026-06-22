@@ -425,6 +425,15 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente:** Fase 2 con agentes especializados reales y estructura de permisos.
 * **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas.
 
+### AgentOS — Limpieza UI Ejecutiva Fase 1.1.1
+* **Commit:** `fix/agentos-director-ui-cleanup-1-1-1`
+* **Estado:** 🟡 Beta reforzada / limpieza post-merge.
+* **Secciones:** §20 · §21 · §40 · §41 · §46
+* **Alcance:** Se eliminó el semáforo hardcodeado en verde ("Operable") cuando no hay dato estructurado real → ahora cae al fallback honesto neutral ("Sin dato estructurado" + "Solicitá un diagnóstico para evaluar el estado operativo"). Se limpió el ruido autogenerado de `next-env.d.ts` (revertido `.next` → `.next-dev`, la convención del repo: dev usa distDir `.next-dev`, prod `.next`). Auditado: el cliente solo recibe `DirectorAgentStatus` (sin métricas operativas estructuradas), por eso no se inventó estado ni se hizo parsing del texto del LLM.
+* **Seguridad:** Sin cambios funcionales sensibles, sin acciones automáticas, HITL intacto.
+* **Pendiente:** Conectar las tarjetas ejecutivas (semáforo, First WOW, tickets, costo IA) a datos estructurados reales en una fase posterior.
+* **No tocado:** Prisma, DB, Railway, env vars, worker, WhatsApp/webhooks, pagos/reservas, AgentType, Fase 2.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
