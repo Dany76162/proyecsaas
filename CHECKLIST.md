@@ -477,6 +477,16 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente Fase 2B:** Evaluar persistir agentes como filas reales `Agent` con `slug` (migración mínima aditiva `Agent.slug String?`), previo análisis del drift de producción (la DB de Railway está desincronizada del schema — no aplicar `migrate dev` a ciegas).
 * **Pendiente Fase 2C:** Catálogo completo de agentes, borradores con aprobación humana (`CREATE_DRAFTS`) y expansión gradual.
 
+### AgentOS — ✅ Producción validada / Fase 2A cerrada (QA 2026-06-22)
+* **Estado:** ✅ Producción validada. (main `38c6118`)
+* **Ruta probada:** `/platform/agents`.
+* **Evidencia visual:** La sección `Equipo de especialistas IA` aparece correctamente con 6 especialistas read-only: Onboarding/Activación, Soporte B2B, QA/Producción, Finanzas/Costos IA, Integraciones/WhatsApp/Meta y Producto/Mejoras. Siguen visibles el Director IA y las tarjetas ejecutivas superiores.
+* **Datos visibles:** Cada especialista muestra estado, resumen, hallazgos, recomendación, fuente y fecha/hora de actualización.
+* **Seguridad:** Badges `Solo lectura` y `HITL` visibles. No hay acciones automáticas ni botones de ejecución, sin envío de mensajes, sin escritura en DB.
+* **Arquitectura validada:** Fase 2A funciona como módulos de análisis read-only del Director IA. No se persistieron agentes nuevos como filas `Agent`.
+* **Pendiente:** Fase 2B queda pendiente para evaluar agentes persistidos por `slug`, Biblioteca real desde DB y posible migración aditiva, previo análisis de drift de producción. Fase 2C no iniciada.
+* **No tocado:** Prisma, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
