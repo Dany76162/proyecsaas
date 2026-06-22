@@ -443,6 +443,15 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente (no bloqueante):** (1) conectar las tarjetas ejecutivas a datos estructurados reales (hoy el informe los tiene en texto, las tarjetas en fallback); (2) diseñar Fase 2 con agentes especializados reales (requiere revisar Prisma/AgentType, planificación aparte).
 * **No tocar:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas ni AgentType.
 
+### AgentOS — Tarjetas ejecutivas con datos estructurados Fase 1.2
+* **Commit:** `<pendiente>` (rama `feat/agentos-executive-structured-metrics-phase1-2`)
+* **Estado:** 🟡 Beta reforzada / listo para validación en producción.
+* **Secciones:** §20 · §21 · §26 · §40 · §41 · §46
+* **Alcance:** Las tarjetas ejecutivas superiores de `/platform/agents` ya **NO** muestran "Sin dato estructurado" cuando hay datos reales: consumen un objeto estructurado nuevo `getExecutiveMetrics()` (`service.ts`) con `firstWowPendingCount`, `openB2BTicketsCount`, `monthlyAiCostUsd`, `failedJobsCount`, `operationalStatus`+razón, `nextBestActionSummary` y `lastUpdatedAt`. Las fuentes son **las mismas reales que ya alimentan el diagnóstico** (`getPlatformActivationSnapshot`, `getAiUsageSummary`, `prisma.conversation.count` de la org soporte, `prisma.agentAutomation.count` FAILED, log de cuota OpenAI, `getOperationalAlerts`). **No se parsea el texto del LLM**: si una fuente falta, el campo queda `null` y la tarjeta sigue mostrando "Sin dato estructurado". Cada tarjeta linkea a su panel (Activación / Soporte / Operaciones IA / QA). Próxima Mejor Acción se calcula por prioridad desde los mismos datos. Semáforo: ROJO (cuota IA o alerta crítica), AMARILLO (jobs fallidos / First WOW / tickets > 0), VERDE (datos OK y sin pendientes), SIN_DATO (sin datos suficientes) — **nunca verde por defecto**.
+* **Seguridad:** Solo lectura, HITL, sin acciones automáticas (la Próxima Mejor Acción es texto informativo).
+* **Pendiente:** Fase 2 con agentes especializados reales y permisos.
+* **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas, AgentType.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)

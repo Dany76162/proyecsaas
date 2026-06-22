@@ -1,12 +1,29 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Cpu, Zap, ClipboardCopy, CheckCheck, Loader2, AlertTriangle, ShieldCheck } from "lucide-react";
 import { activateDirectorAgentAction, requestOperativeDiagnosisAction } from "@/modules/agents/actions";
 import { cn } from "@/lib/utils";
-import type { DirectorAgentStatus } from "@/modules/agents/service";
+import type { DirectorAgentStatus, ExecutiveMetrics, ExecutiveOperationalStatus } from "@/modules/agents/service";
 
-export default function DirectorPanelClient({ initialStatus }: { initialStatus: DirectorAgentStatus }) {
+const STATUS_STYLES: Record<ExecutiveOperationalStatus, { label: string; cardClass: string; labelClass: string; valueClass: string }> = {
+  VERDE: { label: "Operable", cardClass: "border-emerald-200 bg-emerald-50", labelClass: "text-emerald-600", valueClass: "text-emerald-900" },
+  AMARILLO: { label: "Atención", cardClass: "border-amber-200 bg-amber-50", labelClass: "text-amber-600", valueClass: "text-amber-900" },
+  ROJO: { label: "Crítico", cardClass: "border-red-200 bg-red-50", labelClass: "text-red-600", valueClass: "text-red-900" },
+  SIN_DATO: { label: "Sin dato estructurado", cardClass: "border-slate-200 bg-slate-50", labelClass: "text-slate-500", valueClass: "text-slate-900" },
+};
+
+const fmtCount = (n: number | null) => (n === null ? "Sin dato estructurado" : String(n));
+
+export default function DirectorPanelClient({
+  initialStatus,
+  executiveMetrics,
+}: {
+  initialStatus: DirectorAgentStatus;
+  executiveMetrics: ExecutiveMetrics;
+}) {
+  const semaforo = STATUS_STYLES[executiveMetrics.operationalStatus];
   const [status, setStatus] = useState(initialStatus);
   const [diagnosis, setDiagnosis] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -137,35 +154,55 @@ export default function DirectorPanelClient({ initialStatus }: { initialStatus: 
         </p>
       </div>
 
-      {/* Tarjetas Ejecutivas Superiores (Fase 1.1) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Semáforo Operativo</p>
-          <p className="text-sm font-black text-slate-900">Sin dato estructurado</p>
-          <p className="text-[10px] font-medium text-slate-400 mt-0.5 leading-snug">Solicitá un diagnóstico para evaluar el estado operativo.</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+      {/* Tarjetas Ejecutivas Superiores (Fase 1.2 — datos estructurados reales) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* Semáforo Operativo (calculado desde datos estructurados, no del texto IA) */}
+        <Link href="/platform/qa" className={`rounded-xl border px-4 py-3 transition hover:shadow-sm ${semaforo.cardClass}`}>
+          <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${semaforo.labelClass}`}>Semáforo Operativo</p>
+          <p className={`text-sm font-black ${semaforo.valueClass}`}>{semaforo.label}</p>
+          <p className="text-[10px] font-medium text-slate-400 mt-0.5 leading-snug line-clamp-2">{executiveMetrics.operationalStatusReason}</p>
+        </Link>
+
+        {/* First WOW Pendientes */}
+        <Link href="/platform/activation" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">First WOW Pendientes</p>
-          <p className="text-sm font-black text-slate-900">Sin dato estructurado</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-sm font-black text-slate-900">{fmtCount(executiveMetrics.firstWowPendingCount)}</p>
+          <p className="text-[10px] font-medium text-brand-500 mt-0.5">Ver activación →</p>
+        </Link>
+
+        {/* Tickets B2B Abiertos */}
+        <Link href="/platform/support" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Tickets B2B Abiertos</p>
-          <p className="text-sm font-black text-slate-900">Sin dato estructurado</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-sm font-black text-slate-900">{fmtCount(executiveMetrics.openB2BTicketsCount)}</p>
+          <p className="text-[10px] font-medium text-brand-500 mt-0.5">Ver soporte →</p>
+        </Link>
+
+        {/* Costo IA Mensual */}
+        <Link href="/platform/ai-operations" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Costo IA Mensual</p>
-          <p className="text-sm font-black text-slate-900">Sin dato estructurado</p>
-        </div>
+          <p className="text-sm font-black text-slate-900">{executiveMetrics.monthlyAiCostUsd !== null ? `$${executiveMetrics.monthlyAiCostUsd.toFixed(2)}` : "Sin dato estructurado"}</p>
+          <p className="text-[10px] font-medium text-brand-500 mt-0.5">Ver consumo →</p>
+        </Link>
+
+        {/* Jobs Fallidos */}
+        <Link href="/platform/qa" className={`rounded-xl border px-4 py-3 transition hover:shadow-sm ${(executiveMetrics.failedJobsCount ?? 0) > 0 ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}>
+          <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${(executiveMetrics.failedJobsCount ?? 0) > 0 ? "text-amber-600" : "text-slate-500"}`}>Jobs Fallidos</p>
+          <p className={`text-sm font-black ${(executiveMetrics.failedJobsCount ?? 0) > 0 ? "text-amber-900" : "text-slate-900"}`}>{fmtCount(executiveMetrics.failedJobsCount)}</p>
+          <p className="text-[10px] font-medium text-brand-500 mt-0.5">Ver QA →</p>
+        </Link>
       </div>
 
-      {/* Próxima Mejor Acción Destacada */}
+      {/* Próxima Mejor Acción Destacada (Fase 1.2 — calculada desde datos estructurados) */}
       <div className="rounded-xl border-2 border-indigo-100 bg-white p-4">
         <div className="flex items-center gap-2 mb-2">
           <Zap className="h-4 w-4 text-indigo-600" />
           <h3 className="text-xs font-black uppercase tracking-widest text-indigo-900">Próxima Mejor Acción</h3>
         </div>
-        <p className="text-sm font-medium text-slate-600 italic">
-          Solicitá un diagnóstico para generar la próxima mejor acción.
+        <p className="text-sm font-semibold text-slate-700">
+          {executiveMetrics.nextBestActionSummary}
+        </p>
+        <p className="text-[10px] font-medium text-slate-400 mt-1.5">
+          Sugerencia informativa (HITL). Ninguna acción se ejecuta automáticamente.
         </p>
       </div>
 

@@ -888,6 +888,125 @@ export async function getDirectorAgentStatus(): Promise<DirectorAgentStatus> {
   }
 }
 
+// ── AgentOS Fase 1.2 — Tarjetas ejecutivas con datos ESTRUCTURADOS ──
+// Estas métricas alimentan las tarjetas superiores de /platform/agents. Se
+// calculan SIEMPRE desde servicios/consultas reales (las mismas fuentes que ya
+// alimentan el diagnóstico), NUNCA parseando el texto del LLM. Cuando una fuente
+// no está disponible, el campo queda en null y la UI muestra "Sin dato
+// estructurado" en vez de inventar un valor.
+export type ExecutiveOperationalStatus = "VERDE" | "AMARILLO" | "ROJO" | "SIN_DATO";
+
+export type ExecutiveMetrics = {
+  firstWowPendingCount: number | null;
+  openB2BTicketsCount: number | null;
+  monthlyAiCostUsd: number | null;
+  failedJobsCount: number | null;
+  operationalStatus: ExecutiveOperationalStatus;
+  operationalStatusReason: string;
+  nextBestActionSummary: string;
+  lastUpdatedAt: string;
+};
+
+export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
+  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+  const supportOrgId = process.env.WHATSAPP_ORGANIZATION_ID;
+
+  const [
+    activationSnapshot,
+    aiCostSummary,
+    openB2BTicketsCount,
+    failedJobsCount,
+    quotaErrorLog,
+    alerts,
+  ] = await Promise.all([
+    getPlatformActivationSnapshot().catch(() => null),
+    getAiUsageSummary().catch(() => null),
+    // Tickets B2B = conversaciones abiertas de la org plataforma de soporte.
+    // Si la env no está configurada, no inventamos un 0: devolvemos null (sin dato).
+    supportOrgId
+      ? prisma.conversation
+          .count({ where: { organizationId: supportOrgId, status: "OPEN" } })
+          .catch(() => null)
+      : Promise.resolve<number | null>(null),
+    prisma.agentAutomation.count({ where: { status: "FAILED" } }).catch(() => null),
+    prisma.agentLog
+      .findFirst({
+        where: {
+          level: "ERROR",
+          OR: [{ message: { contains: "429" } }, { message: { contains: "quota" } }],
+          timestamp: { gte: sixHoursAgo },
+        },
+        orderBy: { timestamp: "desc" },
+      })
+      .catch(() => null),
+    getOperationalAlerts().catch(() => [] as Awaited<ReturnType<typeof getOperationalAlerts>>),
+  ]);
+
+  const firstWowPendingCount = activationSnapshot
+    ? Math.max(0, activationSnapshot.summary.totalOrganizations - activationSnapshot.summary.firstLeadCount)
+    : null;
+  const monthlyAiCostUsd = aiCostSummary ? aiCostSummary.totalCostUsd : null;
+  const hasQuotaError = Boolean(quotaErrorLog);
+  const hasCriticalAlert = (alerts ?? []).some((a) => a.severity === "critical");
+
+  // ¿Hay suficiente dato estructurado para evaluar el semáforo?
+  const hasStructuredData =
+    firstWowPendingCount !== null ||
+    failedJobsCount !== null ||
+    monthlyAiCostUsd !== null ||
+    openB2BTicketsCount !== null;
+
+  let operationalStatus: ExecutiveOperationalStatus;
+  let operationalStatusReason: string;
+
+  if (!hasStructuredData) {
+    operationalStatus = "SIN_DATO";
+    operationalStatusReason = "Sin datos estructurados suficientes para evaluar.";
+  } else if (hasQuotaError || hasCriticalAlert) {
+    operationalStatus = "ROJO";
+    operationalStatusReason = hasQuotaError
+      ? "Error de cuota de IA (OpenAI) en las últimas 6h."
+      : "Alerta crítica operativa activa.";
+  } else if ((failedJobsCount ?? 0) > 0 || (firstWowPendingCount ?? 0) > 0 || (openB2BTicketsCount ?? 0) > 0) {
+    const reasons: string[] = [];
+    if ((failedJobsCount ?? 0) > 0) reasons.push(`${failedJobsCount} jobs fallidos`);
+    if ((firstWowPendingCount ?? 0) > 0) reasons.push(`${firstWowPendingCount} sin First WOW`);
+    if ((openB2BTicketsCount ?? 0) > 0) reasons.push(`${openB2BTicketsCount} tickets abiertos`);
+    operationalStatus = "AMARILLO";
+    operationalStatusReason = reasons.join(" · ");
+  } else {
+    operationalStatus = "VERDE";
+    operationalStatusReason = "Sin alertas, jobs fallidos, tickets ni First WOW pendientes.";
+  }
+
+  // Próxima mejor acción — calculada desde datos estructurados, por prioridad.
+  let nextBestActionSummary: string;
+  if (hasQuotaError || hasCriticalAlert) {
+    nextBestActionSummary = "Revisar consumo IA y alertas críticas en Operaciones IA / QA.";
+  } else if ((failedJobsCount ?? 0) > 0) {
+    nextBestActionSummary = "Revisar jobs fallidos en QA Operativo.";
+  } else if ((firstWowPendingCount ?? 0) > 0) {
+    nextBestActionSummary = "Contactar inmobiliarias pendientes de First WOW.";
+  } else if ((openB2BTicketsCount ?? 0) > 0) {
+    nextBestActionSummary = "Priorizar tickets B2B abiertos.";
+  } else if (!hasStructuredData) {
+    nextBestActionSummary = "Solicitá un diagnóstico para evaluar el estado operativo.";
+  } else {
+    nextBestActionSummary = "Mantener monitoreo operativo.";
+  }
+
+  return {
+    firstWowPendingCount,
+    openB2BTicketsCount,
+    monthlyAiCostUsd,
+    failedJobsCount,
+    operationalStatus,
+    operationalStatusReason,
+    nextBestActionSummary,
+    lastUpdatedAt: new Date().toISOString(),
+  };
+}
+
 export async function generateOperativeDiagnosis(): Promise<{
   success: boolean;
   diagnosis?: string;
