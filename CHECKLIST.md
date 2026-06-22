@@ -515,6 +515,17 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente:** Validar en producción (sincronizar y revisar Biblioteca). Fase 2B.1 (columna `slug`), 2B.4 (routing) y 2B.5 (borradores) NO iniciadas.
 * **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
 
+### AgentOS — Fase 2B.2/2B.3: cierre operativo / pendiente QA productiva manual
+* **Estado:** 🟡 Mergeado a main / listo para QA productiva manual. (Aún NO "Producción validada": falta tocar el botón `Sincronizar especialistas` en prod.)
+* **Main:** `b4261ec73af7457bb64280b1a4410a414da234d4`.
+* **Rama:** `feat/agentos-persisted-specialists-config-slug-2b` archivada local y remota.
+* **Alcance validado por build:** `/platform/agents` y `/platform/agents/library` compilan correctamente (`tsc` + `next build` exit 0). La Biblioteca incorpora lectura de agentes reales desde DB + governance y fallback visual.
+* **Sincronización:** La acción `Sincronizar especialistas` es manual, explícita e idempotente. No se ejecuta automáticamente al renderizar páginas.
+* **Pendiente QA producción:** Abrir `/platform/agents/library`, tocar `Sincronizar especialistas` una vez, confirmar que se crean/actualizan 6 especialistas, revisar que no se dupliquen al repetir, y validar que Director IA y Marketing siguen funcionando.
+* **Seguridad:** Sin migraciones, sin `AgentType` nuevo, sin columna `Agent.slug`, sin escritura automática, sin WhatsApp/envíos, sin pagos/reservas.
+* **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
+* **Fases no iniciadas:** Fase 2B.1, Fase 2B.4 y Fase 2B.5 NO iniciadas.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
