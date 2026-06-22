@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { getOpenAIClient as getSharedOpenAIClient } from "@/lib/ai/openai";
 import { prisma } from "@/server/db/prisma";
 import {
+  AgentAutonomyLevel,
   AgentLogLevel,
   AgentType,
   ApprovalStatus,
@@ -160,77 +161,88 @@ export async function getAgentDashboardSummary(): Promise<AgentDashboardSummary>
   };
 }
 
-export async function getAgentLibraryData() {
+export type AgentLibraryEntry = {
+  id: string;
+  name: string;
+  role: string;
+  type: string;
+  status: "ACTIVE" | "INACTIVE";
+  isActive: boolean;
+  capabilities: string[];
+  availability: string;
+  /** true si hay una fila Agent real en DB para esta entrada. */
+  persisted: boolean;
+  autonomyLevel: string | null;
+};
+
+// Fase 2B.3 — la Biblioteca lee agentes REALES desde DB (Director + Marketing
+// core + los 6 especialistas por config.slug) con su governance. Conserva
+// fallback visual para los especialistas que todavía no fueron sincronizados.
+export async function getAgentLibraryData(): Promise<AgentLibraryEntry[]> {
   const agents = await prisma.agent.findMany({
     where: { scope: "PLATFORM" },
-    orderBy: { createdAt: "asc" }
+    include: { governance: true },
+    orderBy: { createdAt: "asc" },
   });
 
-  // Agentes "virtuales" o futuros que no están en DB aún
-  const predefined = [
+  const director = agents.find((a) => a.type === AgentType.ORCHESTRATOR && !isSpecialistAgent(a));
+  const marketing = agents.find((a) => a.type === AgentType.MARKETING && !isSpecialistAgent(a));
+
+  const entries: AgentLibraryEntry[] = [
     {
-      id: "orchestrator",
+      id: director?.id ?? "orchestrator",
       name: "Director Operativo IA",
       role: "Orquesta objetivos, tareas y agentes.",
       type: "ORCHESTRATOR",
-      status: "ACTIVE",
-      isActive: agents.some(a => a.type === "ORCHESTRATOR" && a.isActive),
+      status: director?.isActive ? "ACTIVE" : "INACTIVE",
+      isActive: !!director?.isActive,
       capabilities: ["Planificación", "Asignación", "Seguimiento"],
-      availability: "24/7"
+      availability: director ? "24/7" : "Sin activar",
+      persisted: !!director,
+      autonomyLevel: director?.governance?.autonomyLevel ?? null,
     },
     {
-      id: "marketing",
+      id: marketing?.id ?? "marketing",
       name: "Agente de Marketing",
       role: "Genera contenido, campañas y borradores.",
       type: "MARKETING",
-      status: "ACTIVE",
-      isActive: agents.some(a => a.type === "MARKETING" && a.isActive),
+      status: marketing?.isActive ? "ACTIVE" : "INACTIVE",
+      isActive: !!marketing?.isActive,
       capabilities: ["Copywriting", "Hashtags", "Ads"],
-      availability: "24/7"
+      availability: marketing ? "24/7" : "Sin activar",
+      persisted: !!marketing,
+      autonomyLevel: marketing?.governance?.autonomyLevel ?? null,
     },
-    {
-      id: "commercial",
-      name: "Agente Comercial",
-      role: "Analiza solicitudes de demo y oportunidades comerciales.",
-      type: "COMMERCIAL",
-      status: "INACTIVE",
-      isActive: false,
-      capabilities: ["Calificación", "Ventas", "Prospectos"],
-      availability: "Próximamente"
-    },
-    {
-      id: "onboarding",
-      name: "Agente de Onboarding",
-      role: "Ayuda a preparar altas de inmobiliarias y configuración inicial.",
-      type: "ONBOARDING",
-      status: "INACTIVE",
-      isActive: false,
-      capabilities: ["Setup", "Configuración", "Migración"],
-      availability: "Próximamente"
-    },
-    {
-      id: "qa",
-      name: "Agente QA",
-      role: "Audita logs, errores y calidad operativa.",
-      type: "QA",
-      status: "INACTIVE",
-      isActive: false,
-      capabilities: ["Auditoría", "Testing", "Alertas"],
-      availability: "Próximamente"
-    },
-    {
-      id: "financial",
-      name: "Agente Financiero",
-      role: "Resume métricas de facturación y uso.",
-      type: "FINANCIAL",
-      status: "INACTIVE",
-      isActive: false,
-      capabilities: ["Facturación", "Pagos", "Métricas"],
-      availability: "Próximamente"
-    }
   ];
 
-  return predefined;
+  // Especialistas: fila real por config.slug si existe; si no, fallback visual.
+  for (const def of SPECIALIST_AGENT_DEFINITIONS) {
+    const row = agents.find((a) => getAgentConfigSlug(a) === def.slug);
+    entries.push({
+      id: row?.id ?? def.slug,
+      name: def.name,
+      role: def.description,
+      type: "SPECIALIST",
+      status: row?.isActive ? "ACTIVE" : "INACTIVE",
+      isActive: !!row?.isActive,
+      capabilities: [...def.capabilities],
+      availability: row ? "Solo lectura" : "Sin sincronizar",
+      persisted: !!row,
+      autonomyLevel: row?.governance?.autonomyLevel ?? "SUGGEST_ONLY",
+    });
+  }
+
+  return entries;
+}
+
+/** Cuántos de los 6 especialistas todavía NO están persistidos en DB. */
+export async function getUnsyncedSpecialistCount(): Promise<number> {
+  const agents = await prisma.agent.findMany({
+    where: { scope: "PLATFORM" },
+    select: { config: true },
+  });
+  const slugs = new Set(agents.map((a) => getAgentConfigSlug(a)).filter(Boolean));
+  return SPECIALIST_AGENT_DEFINITIONS.filter((d) => !slugs.has(d.slug)).length;
 }
 
 export async function listAgentTasks() {
@@ -678,9 +690,179 @@ export async function getAgentCanvasData(): Promise<AgentCanvasData> {
   };
 }
 
+// ── AgentOS Fase 2B — identidad de especialistas por config.slug ──
+// No expandimos AgentType (solo ORCHESTRATOR/MARKETING). Los especialistas se
+// persisten como filas Agent con type=ORCHESTRATOR pero marcados en config con
+// kind="specialist" + slug. Los helpers core de búsqueda por type DEBEN excluir
+// estos especialistas para no devolver uno en vez del Director/Marketing real.
+function asConfigRecord(config: unknown): Record<string, unknown> {
+  return config && typeof config === "object" && !Array.isArray(config)
+    ? (config as Record<string, unknown>)
+    : {};
+}
+
+export function getAgentConfigSlug(agent: { config: unknown }): string | null {
+  const slug = asConfigRecord(agent.config).slug;
+  return typeof slug === "string" ? slug : null;
+}
+
+export function isSpecialistAgent(agent: { config: unknown }): boolean {
+  return asConfigRecord(agent.config).kind === "specialist";
+}
+
 export async function getActiveAgentByType(type: AgentType) {
-  return prisma.agent.findFirst({
+  // findMany + filtro en JS: excluye especialistas (config.kind === "specialist")
+  // para que el Director/Marketing "core" nunca se confunda con un especialista.
+  const candidates = await prisma.agent.findMany({
     where: { scope: "PLATFORM", type, isActive: true },
+    orderBy: { createdAt: "asc" },
+  });
+  return candidates.find((a) => !isSpecialistAgent(a)) ?? null;
+}
+
+// Catálogo de los 6 especialistas read-only de Fase 2A, persistibles en 2B.
+export const SPECIALIST_AGENT_DEFINITIONS = [
+  {
+    slug: "onboarding-activation",
+    name: "Especialista de Onboarding",
+    role: "Especialista de Onboarding",
+    area: "Activación / First WOW",
+    capabilities: ["diagnosticar", "recomendar", "priorizar"],
+    dataSources: ["getPlatformActivationSnapshot"],
+    uiLabel: "Onboarding / Activación",
+    description: "Analiza activación y First WOW.",
+  },
+  {
+    slug: "support-b2b",
+    name: "Especialista de Soporte B2B",
+    role: "Especialista de Soporte B2B",
+    area: "Soporte / Tickets B2B",
+    capabilities: ["diagnosticar", "recomendar", "priorizar"],
+    dataSources: ["conversaciones abiertas (org soporte)"],
+    uiLabel: "Soporte B2B",
+    description: "Analiza tickets B2B abiertos.",
+  },
+  {
+    slug: "qa-production",
+    name: "Especialista de QA / Producción",
+    role: "Especialista de QA / Producción",
+    area: "Calidad / Salud operativa",
+    capabilities: ["diagnosticar", "recomendar", "priorizar"],
+    dataSources: ["jobs fallidos", "getOperationalAlerts", "log de cuota"],
+    uiLabel: "QA / Producción",
+    description: "Audita jobs, alertas y salud operativa.",
+  },
+  {
+    slug: "finance-ai-costs",
+    name: "Especialista de Finanzas / Costos IA",
+    role: "Especialista de Finanzas / Costos IA",
+    area: "Costos de IA",
+    capabilities: ["diagnosticar", "recomendar", "priorizar"],
+    dataSources: ["getAiUsageSummary", "log de cuota"],
+    uiLabel: "Finanzas / Costos IA",
+    description: "Resume el costo de IA del mes.",
+  },
+  {
+    slug: "integrations-whatsapp-meta",
+    name: "Especialista de Integraciones",
+    role: "Especialista de Integraciones",
+    area: "WhatsApp / Meta / APIs",
+    capabilities: ["diagnosticar", "recomendar", "priorizar"],
+    dataSources: ["getPlatformWhatsAppStatus"],
+    uiLabel: "Integraciones / WhatsApp / Meta",
+    description: "Revisa el estado de WhatsApp/Meta.",
+  },
+  {
+    slug: "product-improvements",
+    name: "Especialista de Producto",
+    role: "Especialista de Producto",
+    area: "Mejoras de producto",
+    capabilities: ["diagnosticar", "recomendar", "priorizar"],
+    dataSources: ["getExecutiveMetrics"],
+    uiLabel: "Producto / Mejoras",
+    description: "Prioriza una mejora de producto.",
+  },
+] as const;
+
+const SPECIALIST_FORBIDDEN_ACTIONS = [
+  "write_db_sensitive",
+  "send_whatsapp",
+  "modify_payments",
+  "modify_reservations",
+  "modify_env",
+  "deploy",
+] as const;
+
+// Persistencia IDEMPOTENTE de los 6 especialistas como filas Agent.
+// SOLO se invoca desde una acción explícita de Superadmin (nunca al renderizar).
+// No expande AgentType, no toca AiAgent, no crea duplicados.
+export async function ensureSpecialistAgents(): Promise<{ created: number; updated: number }> {
+  const existing = await prisma.agent.findMany({ where: { scope: "PLATFORM" } });
+  let created = 0;
+  let updated = 0;
+
+  for (const def of SPECIALIST_AGENT_DEFINITIONS) {
+    const config: Prisma.JsonObject = {
+      kind: "specialist",
+      slug: def.slug,
+      role: def.role,
+      area: def.area,
+      capabilities: [...def.capabilities],
+      dataSources: [...def.dataSources],
+      allowedActions: ["read", "suggest"],
+      forbiddenActions: [...SPECIALIST_FORBIDDEN_ACTIONS],
+      uiLabel: def.uiLabel,
+      description: def.description,
+    };
+
+    const current = existing.find((a) => getAgentConfigSlug(a) === def.slug);
+
+    if (current) {
+      await prisma.agent.update({
+        where: { id: current.id },
+        data: { name: def.name, isActive: true, config },
+      });
+      updated += 1;
+      await ensureSpecialistGovernance(current.id);
+    } else {
+      const agent = await prisma.agent.create({
+        data: {
+          scope: "PLATFORM",
+          organizationId: null,
+          name: def.name,
+          type: AgentType.ORCHESTRATOR,
+          isActive: true,
+          config,
+        },
+      });
+      created += 1;
+      await ensureSpecialistGovernance(agent.id);
+    }
+  }
+
+  return { created, updated };
+}
+
+async function ensureSpecialistGovernance(agentId: string) {
+  const policy = await prisma.agentGovernancePolicy.findUnique({ where: { agentId } });
+  if (policy) {
+    if (policy.autonomyLevel !== AgentAutonomyLevel.SUGGEST_ONLY) {
+      await prisma.agentGovernancePolicy.update({
+        where: { agentId },
+        data: { autonomyLevel: AgentAutonomyLevel.SUGGEST_ONLY },
+      });
+    }
+    return;
+  }
+  await prisma.agentGovernancePolicy.create({
+    data: {
+      agentId,
+      scope: "PLATFORM",
+      autonomyLevel: AgentAutonomyLevel.SUGGEST_ONLY,
+      maxTasksPerDay: 5,
+      maxRunsPerDay: 10,
+      isPaused: false,
+    },
   });
 }
 
@@ -862,11 +1044,14 @@ export type DirectorAgentStatus = {
 
 export async function getDirectorAgentStatus(): Promise<DirectorAgentStatus> {
   try {
-    const agent = await prisma.agent.findFirst({
+    // Excluir especialistas (type ORCHESTRATOR + config.kind="specialist"): el
+    // Director "core" es el ORCHESTRATOR más antiguo que NO es especialista.
+    const orchestrators = await prisma.agent.findMany({
       where: { type: AgentType.ORCHESTRATOR, scope: PLATFORM_SCOPE },
       include: { governance: true },
       orderBy: { createdAt: "asc" },
     });
+    const agent = orchestrators.find((a) => !isSpecialistAgent(a));
 
     if (!agent) return { exists: false, isActive: false };
 

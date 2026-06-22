@@ -13,6 +13,8 @@ import {
   OPENAI_MODEL,
   generateOperativeDiagnosis,
   getDirectorAgentStatus,
+  isSpecialistAgent,
+  ensureSpecialistAgents,
 } from "@/modules/agents/service";
 import { prisma } from "@/server/db/prisma";
 import {
@@ -700,14 +702,18 @@ export async function activateDirectorAgentAction(): Promise<{
 }> {
   const sessionUser = await requirePlatformAdmin();
 
-  const existing = await prisma.agent.findFirst({
+  // Excluir especialistas (config.kind="specialist"): el Director core es el
+  // ORCHESTRATOR más antiguo que NO es especialista.
+  const orchestrators = await prisma.agent.findMany({
     where: {
       type: AgentType.ORCHESTRATOR,
       scope: "PLATFORM",
       organizationId: null,
     },
     include: { governance: true },
+    orderBy: { createdAt: "asc" },
   });
+  const existing = orchestrators.find((a) => !isSpecialistAgent(a));
 
   if (existing) {
     // Ensure governance policy exists
@@ -858,4 +864,40 @@ export async function requestOperativeDiagnosisAction(): Promise<{
     isQuotaError: result.isQuotaError,
     agentId: status.agentId,
   };
+}
+
+// AgentOS Fase 2B.2 — Sincronización MANUAL de los 6 especialistas como filas
+// Agent (idempotente, config.slug). Solo Superadmin, nunca automática. No toca
+// AgentType, AiAgent, worker, WhatsApp ni pagos. No ejecuta acciones de agente.
+export async function ensureSpecialistAgentsAction(): Promise<{
+  success: boolean;
+  created?: number;
+  updated?: number;
+  message: string;
+}> {
+  const sessionUser = await requirePlatformAdmin();
+
+  try {
+    const { created, updated } = await ensureSpecialistAgents();
+
+    await createAgentLog({
+      level: AgentLogLevel.INFO,
+      message: `Especialistas sincronizados (${created} creados, ${updated} actualizados)`,
+      metadata: { requestedBy: sessionUser.id, created, updated, type: "SPECIALISTS_SYNC" },
+    });
+
+    revalidatePath("/platform/agents/library");
+    revalidatePath("/platform/agents");
+    return {
+      success: true,
+      created,
+      updated,
+      message: `Especialistas sincronizados: ${created} creados, ${updated} actualizados.`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "No se pudieron sincronizar los especialistas.",
+    };
+  }
 }

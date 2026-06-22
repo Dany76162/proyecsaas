@@ -505,6 +505,16 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **No tocar en el arranque de 2B:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
 * **Pendiente:** Implementar primero Fase 2B.2 + 2B.3 sin migración. Dejar `Agent.slug` columna real para una fase posterior si se justifica.
 
+### AgentOS — Fase 2B.2/2B.3: especialistas persistidos con `config.slug` y Biblioteca real (IMPLEMENTADA 2026-06-22)
+* **Commit:** `<pendiente>` (rama `feat/agentos-persisted-specialists-config-slug-2b`)
+* **Estado:** 🟡 Beta reforzada / listo para validación en producción.
+* **Alcance:** Persistencia idempotente de los 6 especialistas de Fase 2A como filas `Agent` usando `Agent.config.slug` (`SPECIALIST_AGENT_DEFINITIONS` + `ensureSpecialistAgents()`), SIN migraciones. La Biblioteca (`getAgentLibraryData()`) ahora lee agentes reales desde DB + governance, con fallback visual para los no sincronizados. Slugs: `onboarding-activation`, `support-b2b`, `qa-production`, `finance-ai-costs`, `integrations-whatsapp-meta`, `product-improvements`.
+* **Seguridad — escritura solo manual:** la persistencia corre SOLO vía `ensureSpecialistAgentsAction()` (Superadmin) detrás del botón "Sincronizar especialistas". NUNCA se escribe en DB al renderizar páginas. Governance de cada especialista en `SUGGEST_ONLY`.
+* **Protección del core:** los especialistas usan `type: ORCHESTRATOR` + `config.kind="specialist"`; se hardenaron `getActiveAgentByType`, `getDirectorAgentStatus` y `activateDirectorAgentAction` para EXCLUIR especialistas → Director/Marketing/`processTaskWithOrchestrator`/diagnóstico intactos.
+* **Arquitectura:** Cero migraciones, no se expandió `AgentType`, no se agregó columna `Agent.slug`. Identidad por `config.slug`. Fase 2A (`getAgentSpecialistReports()`) sigue funcionando igual.
+* **Pendiente:** Validar en producción (sincronizar y revisar Biblioteca). Fase 2B.1 (columna `slug`), 2B.4 (routing) y 2B.5 (borradores) NO iniciadas.
+* **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)

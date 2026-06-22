@@ -1,10 +1,14 @@
-import { getAgentLibraryData } from "@/modules/agents/service";
+import { getAgentLibraryData, getUnsyncedSpecialistCount } from "@/modules/agents/service";
 import { Users, ShieldCheck, Zap, Activity, Clock, ChevronRight, AlertCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import SyncSpecialistsButton from "./SyncSpecialistsButton";
 
 export default async function AgentLibraryPage() {
-  const library = await getAgentLibraryData();
+  const [library, unsyncedCount] = await Promise.all([
+    getAgentLibraryData(),
+    getUnsyncedSpecialistCount(),
+  ]);
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
@@ -18,6 +22,8 @@ export default async function AgentLibraryPage() {
           Perfiles de IA disponibles para la operación interna de RaicesPilot.
         </p>
       </div>
+
+      <SyncSpecialistsButton unsyncedCount={unsyncedCount} />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {library.map((agent) => (
