@@ -434,6 +434,15 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente:** Conectar las tarjetas ejecutivas (semáforo, First WOW, tickets, costo IA) a datos estructurados reales en una fase posterior.
 * **No tocado:** Prisma, DB, Railway, env vars, worker, WhatsApp/webhooks, pagos/reservas, AgentType, Fase 2.
 
+### AgentOS — ✅ Producción validada / Fase 1 cerrada (QA 2026-06-22)
+* **Estado:** ✅ **Producción validada / Fase 1 cerrada.** Cubre Fase 0/1 + 1.1 + 1.1.1 probadas en producción real.
+* **Ruta probada:** `/platform/agents`.
+* **Evidencia visual:** título `AGENTOS — DIRECTOR IA`, subtítulo `Centro de dirección IA...`, tarjetas ejecutivas superiores visibles. Semáforo Operativo en tarjeta = **"Sin dato estructurado"** (correcto: aún sin métrica estructurada real, fallback honesto de la Fase 1.1.1).
+* **Diagnóstico operativo generado OK.** El informe (texto del Director IA) detectó datos reales: **4 inmobiliarias sin First WOW**, **26 tickets B2B abiertos**, **costo IA mensual $0.08**, **2 jobs fallidos**, **semáforo operativo amarillo** (en el informe), **próximas mejores acciones** y **nota HITL**.
+* **Seguridad confirmada en prod:** NO se ejecutaron acciones automáticas (solo lectura / HITL). **Fase 2 NO iniciada.**
+* **Pendiente (no bloqueante):** (1) conectar las tarjetas ejecutivas a datos estructurados reales (hoy el informe los tiene en texto, las tarjetas en fallback); (2) diseñar Fase 2 con agentes especializados reales (requiere revisar Prisma/AgentType, planificación aparte).
+* **No tocar:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas ni AgentType.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
