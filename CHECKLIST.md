@@ -487,6 +487,24 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente:** Fase 2B queda pendiente para evaluar agentes persistidos por `slug`, Biblioteca real desde DB y posible migración aditiva, previo análisis de drift de producción. Fase 2C no iniciada.
 * **No tocado:** Prisma, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
 
+### AgentOS — Fase 2B: agentes persistidos por slug y Biblioteca real desde DB (PLAN APROBADO 2026-06-22)
+* **Estado:** 🟡 Plan aprobado / no iniciado.
+* **Alcance:** Persistir los 6 especialistas de Fase 2A como filas reales `Agent` y hacer que la Biblioteca de Agentes lea datos reales desde DB, dejando de depender del array hardcodeado.
+* **Decisión principal:** Arrancar con `Agent.config.slug` para evitar migraciones iniciales.
+* **Decisión sobre `AgentType`:** NO expandir `AgentType`. La identidad de cada especialista será por `slug`; `type` queda como categoría base.
+* **Motivo:** `AgentType` hoy solo tiene `ORCHESTRATOR` y `MARKETING`; expandirlo generaría rigidez y migraciones innecesarias.
+* **Drift:** El drift documentado (`prisma_drift_db_to_schema.sql`) no menciona `Agent`, pero el estado real de producción no debe asumirse limpio. Antes de cualquier DDL, ejecutar auditoría read-only (`prisma migrate status`, `prisma validate`) y preparar backup/snapshot.
+* **Fase 2B.0:** Auditoría técnica de migraciones/drift, sin cambios.
+* **Fase 2B.1:** Migración opcional posterior: `Agent.slug String? @unique`, solo si se aprueba después de la auditoría de drift.
+* **Fase 2B.2:** Persistir 6 agentes base con `config.slug`, `scope PLATFORM`, metadata de rol/capabilities/dataSources y governance `SUGGEST_ONLY`.
+* **Fase 2B.3:** Refactor de `getAgentLibraryData()` para leer agentes reales + governance desde DB, conservando fallback visual.
+* **Fase 2B.4:** Routing controlado Director → especialista por `slug`, sin ejecución automática.
+* **Fase 2B.5:** Borradores bajo HITL solo donde aplique: Marketing, Producto, Documentación y sugerencia de respuesta de Soporte B2B.
+* **Seguridad:** Todo `SUGGEST_ONLY`/HITL por defecto. `CREATE_DRAFTS` solo para áreas no sensibles y nunca envío/publicación automática.
+* **Prohibido:** Pagos/reservas, WhatsApp/envíos, webhooks, Railway, worker, env vars, seguridad/permisos, finanzas sensibles y cualquier acción automática.
+* **No tocar en el arranque de 2B:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
+* **Pendiente:** Implementar primero Fase 2B.2 + 2B.3 sin migración. Dejar `Agent.slug` columna real para una fase posterior si se justifica.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
