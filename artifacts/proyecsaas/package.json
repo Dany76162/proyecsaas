@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --port 25195 --hostname 0.0.0.0",
     "worker:dev": "npx tsx --conditions=react-server src/server/workers/start.ts",
+    "prebuild": "node scripts/check-tour360-invariants.mjs",
     "build": "next build",
     "start": "prisma db execute --file prisma/repair-production-media.sql --schema prisma/schema.prisma || true && prisma migrate resolve --rolled-back 20260521120000_add_property_media_categories || true && prisma migrate resolve --rolled-back 20260521133000_add_panorama_spatial_fields || true && prisma migrate deploy && next start -H 0.0.0.0",
     "typecheck": "prisma generate && tsc --noEmit",

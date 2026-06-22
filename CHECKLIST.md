@@ -662,6 +662,23 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 
 ---
 
+## 🛑 TOUR 360° PÚBLICO — INVARIANTES (NO ROMPER) — verificado funcionando 2026-06-22
+
+> El visor 360° real del catálogo público (`/cat/...`, ej. `/cat/seventoop-marketing-digital/<devId>`) se **rompió varias veces** y SIEMPRE por uno de los 5 puntos de abajo. **`tsc` y `next build` pasan igual aunque esto quede roto** (es comportamiento runtime, no de tipos) → no confiar solo en que "compila". Antes de tocar middleware, el proxy de media o los assets de Pannellum, releer esto.
+
+**La cadena (cómo carga el visor):** ficha pública → `UnifiedMediaViewer` (`audience="public"`) → `PanoramaViewer` → inyecta `<script src="/pannellum.js">` + `<link href="/pannellum.css">` → `getPanoramaSourceUrl()` rutea la imagen por `/api/storage/view?url=...` → `buildOptimizedPanoramaSource()` agrega `w`/`q` → el proxy reescala con `sharp` server-side y devuelve la imagen.
+
+**Los 5 invariantes que NO se pueden romper:**
+1. **`/api/storage/view` DEBE estar en `PUBLIC_PATHS`** de `src/middleware.ts` (regex `/^\/api\/storage\/view(\/|$)/`). Si se saca → el comprador anónimo es redirigido a `/login`, el visor recibe HTML en vez de la imagen → pantalla negra/error en PC y móvil.
+2. **El `config.matcher` de `src/middleware.ts` DEBE excluir `js` y `css`** (`...|css|js|js\\.map)).*)`) para que `/pannellum.js` y `/pannellum.css` se sirvan sin gate de auth. **Y el comentario `/* ... */` arriba del matcher DEBE conservar su cierre `*/`**: una vez se borró el `*/` y el string del matcher quedó DENTRO del comentario → matcher vacío → todo roto (commits `40c4c9c`→`5d270ee`).
+3. **`public/pannellum.js` y `public/pannellum.css` DEBEN existir.** El visor los inyecta por ruta absoluta; si faltan, no hay visor.
+4. **El proxy `/api/storage/view` (`route.ts`) DEBE:** (a) permitir URLs https externas + leer `/uploads/` same-origin directo de disco; (b) devolver el body como `new Response(buffer as any, ...)` (el `as any` es necesario para TS con Buffer — quitarlo rompió el response, ver `3e89fc4`); (c) soportar `w`/`q` (resize `sharp` con `limitInputPixels:false`) sin tirar en el caso normal.
+5. **`PanoramaViewer audience="public"` NO debe mostrar el botón "Abrir imagen 360°"** en el fallback de error (esa URL puede redirigir a login). El público va a "Imágenes Reales"; el botón queda solo para `admin`.
+
+**Regla operativa:** cualquier cambio a `src/middleware.ts`, `src/app/api/storage/view/route.ts`, `src/components/properties/panorama-viewer.tsx` o `public/pannellum.*` exige (a) correr **`node scripts/check-tour360-invariants.mjs`** (chequea estáticamente los invariantes 1–4; sale con error si alguno se rompió) y (b) **probar el visor real en una ficha de `/cat` en PC y móvil después del deploy** (compilar no alcanza; `tsc`/`build` pasan aunque el runtime quede roto). Opcional: cablear el script como `prebuild` en `package.json` para que un deploy con un invariante roto falle solo (no aplicado todavía por precaución con el flujo de build).
+
+---
+
 ## ⏭️ PRÓXIMO PASO (bloqueado en tu decisión)
 1. ✔️ ~~Copy sección "Desarrolladoras" (§2)~~ → **hecho y en prod** (`0907f4f`).
 2. ✔️ ~~Unificación de badges (§32/41)~~ → divergencias estáticas de estado de lote **cerradas** (`d4233a5`).
