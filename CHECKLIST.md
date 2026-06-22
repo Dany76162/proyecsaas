@@ -461,6 +461,20 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente:** Diseñar Fase 2 con agentes especializados reales, permisos y posible revisión de Prisma/AgentType.
 * **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas, AgentType.
 
+### AgentOS — Fase 2A: especialistas de diagnóstico read-only (PLAN APROBADO 2026-06-22)
+* **Estado:** 🟡 Plan aprobado / no iniciado.
+* **Alcance:** Crear una futura Fase 2A con 6 especialistas de diagnóstico: (1) Onboarding / Activación, (2) Soporte B2B, (3) QA / Producción, (4) Finanzas / Costos IA, (5) Integraciones / WhatsApp / Meta, (6) Producto / Mejoras.
+* **Decisión arquitectónica:** NO expandir `AgentType` por ahora. Usar camino dinámico/configurable por `slug` en fases posteriores.
+* **Motivo:** `AgentType` hoy solo tiene `ORCHESTRATOR` y `MARKETING`; expandirlo a muchos agentes generaría rigidez y migraciones innecesarias. Además, el pipeline (`AgentTask/Run/Approval/Log/Governance`) ya es agnóstico al type (keyeado por `agentId`).
+* **Fase 2A:** CERO migraciones. Los especialistas serán primero módulos de análisis read-only del Director IA (mismo patrón que `getExecutiveMetrics()`), reusando fuentes reales ya existentes (activación, costos, alertas, logs, conversaciones).
+* **Backbone reutilizable (sin cambios):** `AgentTask`, `AgentRun`, `AgentApproval`, `AgentLog`, `AgentGoal`, `AgentAutomation`, `AgentGovernancePolicy`.
+* **Permisos:** Todos los especialistas de Fase 2A en `SUGGEST_ONLY` (vía `AgentGovernancePolicy.autonomyLevel`).
+* **Seguridad:** Solo lectura, HITL, sin acciones automáticas, sin envío de mensajes.
+* **Hallazgo de auditoría:** `getAgentLibraryData()` hoy devuelve un array hardcodeado (consulta `prisma.agent` pero lo ignora); solo ORCHESTRATOR y MARKETING son agentes reales en DB, los otros 4 de la Biblioteca son visuales/maqueta. Hacer que la Biblioteca lea agentes reales queda para 2B.
+* **No tocar en Fase 2A:** Prisma, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType.
+* **Pendiente Fase 2B:** Evaluar persistir agentes como filas reales `Agent` con `slug` (migración mínima aditiva `Agent.slug String?`), previo análisis del drift de producción (la DB de Railway está desincronizada del schema — no aplicar `migrate dev` a ciegas).
+* **Pendiente Fase 2C:** Catálogo completo de agentes, borradores con aprobación humana (`CREATE_DRAFTS`) y expansión gradual.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
