@@ -461,9 +461,11 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente:** Diseñar Fase 2 con agentes especializados reales, permisos y posible revisión de Prisma/AgentType.
 * **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas, AgentType.
 
-### AgentOS — Fase 2A: especialistas de diagnóstico read-only (PLAN APROBADO 2026-06-22)
-* **Estado:** 🟡 Plan aprobado / no iniciado.
-* **Alcance:** Crear una futura Fase 2A con 6 especialistas de diagnóstico: (1) Onboarding / Activación, (2) Soporte B2B, (3) QA / Producción, (4) Finanzas / Costos IA, (5) Integraciones / WhatsApp / Meta, (6) Producto / Mejoras.
+### AgentOS — Fase 2A: especialistas de diagnóstico read-only (IMPLEMENTADA 2026-06-22)
+* **Commit:** `<pendiente>` (rama `feat/agentos-specialists-phase2a-readonly`)
+* **Estado:** 🟡 Beta reforzada / listo para validación en producción.
+* **Implementado:** 6 especialistas read-only del Director IA en `service.ts` (`getOnboardingSpecialistReport`, `getSupportB2BSpecialistReport`, `getQASpecialistReport`, `getFinanceSpecialistReport`, `getIntegrationsSpecialistReport`, `getProductSpecialistReport` + agregador `getAgentSpecialistReports()`), tipos `AgentSpecialistReport`/`AgentSpecialistStatus`. Cada uno devuelve `{ status, summary, findings[], recommendation, source, lastUpdatedAt }` desde fuentes reales (activación, conversaciones soporte, jobs/alertas/cuota, costos IA, estado WhatsApp/Meta, métricas ejecutivas). UI: sección "Equipo de especialistas IA" en `/platform/agents` (`AgentSpecialistsPanel.tsx`) con 6 tarjetas, badges "Solo lectura" + "HITL". Fuente faltante → estado `SIN_DATO` honesto. Sin LLM-parsing.
+* **Alcance (plan):** 6 especialistas de diagnóstico: (1) Onboarding / Activación, (2) Soporte B2B, (3) QA / Producción, (4) Finanzas / Costos IA, (5) Integraciones / WhatsApp / Meta, (6) Producto / Mejoras.
 * **Decisión arquitectónica:** NO expandir `AgentType` por ahora. Usar camino dinámico/configurable por `slug` en fases posteriores.
 * **Motivo:** `AgentType` hoy solo tiene `ORCHESTRATOR` y `MARKETING`; expandirlo a muchos agentes generaría rigidez y migraciones innecesarias. Además, el pipeline (`AgentTask/Run/Approval/Log/Governance`) ya es agnóstico al type (keyeado por `agentId`).
 * **Fase 2A:** CERO migraciones. Los especialistas serán primero módulos de análisis read-only del Director IA (mismo patrón que `getExecutiveMetrics()`), reusando fuentes reales ya existentes (activación, costos, alertas, logs, conversaciones).

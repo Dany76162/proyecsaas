@@ -19,6 +19,7 @@ import { getOperationalAlerts } from "@/server/health/operational-alerts";
 import { getOperationalObservabilitySnapshot } from "@/server/health/operational-observability";
 import { getPlatformActivationSnapshot } from "@/modules/platform/activation-service";
 import { getAiUsageSummary } from "@/app/platform/ai-operations/ai-cost";
+import { getPlatformWhatsAppStatus } from "@/server/whatsapp/platform-channel-status";
 
 export const PLATFORM_SCOPE = "PLATFORM" as const;
 export const OPENAI_TIMEOUT_MS = 30_000;
@@ -1005,6 +1006,262 @@ export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
     nextBestActionSummary,
     lastUpdatedAt: new Date().toISOString(),
   };
+}
+
+// ── AgentOS Fase 2A — Especialistas de diagnóstico READ-ONLY ──
+// Cada especialista es un módulo de análisis del Director IA: lee fuentes reales
+// ya existentes y devuelve un informe estructurado (estado + hallazgos +
+// recomendación). NO ejecuta acciones, NO escribe en DB, NO envía mensajes, NO
+// persiste agentes. Todo SUGGEST_ONLY / HITL. Si falta la fuente estructurada,
+// el informe sale en estado "SIN_DATO" de forma honesta.
+export type AgentSpecialistStatus = "OK" | "ATENCION" | "CRITICO" | "SIN_DATO";
+
+export type AgentSpecialistReport = {
+  id: string;
+  name: string;
+  area: string;
+  status: AgentSpecialistStatus;
+  summary: string;
+  findings: string[];
+  recommendation: string;
+  source: string;
+  lastUpdatedAt: string;
+};
+
+export async function getOnboardingSpecialistReport(): Promise<AgentSpecialistReport> {
+  const base = {
+    id: "onboarding",
+    name: "Especialista de Onboarding",
+    area: "Activación / First WOW",
+    source: "getPlatformActivationSnapshot()",
+    lastUpdatedAt: new Date().toISOString(),
+  };
+  const snap = await getPlatformActivationSnapshot().catch(() => null);
+  if (!snap) {
+    return {
+      ...base,
+      status: "SIN_DATO",
+      summary: "Falta la fuente estructurada de activación.",
+      findings: ["No se pudo leer el snapshot de activación."],
+      recommendation: "Reintentar el diagnóstico más tarde.",
+    };
+  }
+  const { totalOrganizations, firstLeadCount, onboardingViewedCount } = snap.summary;
+  const pending = Math.max(0, totalOrganizations - firstLeadCount);
+  const findings = [
+    `${totalOrganizations} organizaciones totales`,
+    `${firstLeadCount} con su primer lead (First WOW)`,
+    `${pending} sin First WOW`,
+    `${onboardingViewedCount} vieron el onboarding`,
+  ];
+  if (pending > 0) {
+    return {
+      ...base,
+      status: "ATENCION",
+      summary: `${pending} inmobiliarias todavía no alcanzaron su First WOW.`,
+      findings,
+      recommendation: "Contactar inmobiliarias pendientes de First WOW.",
+    };
+  }
+  return {
+    ...base,
+    status: "OK",
+    summary: "Todas las organizaciones alcanzaron su First WOW.",
+    findings,
+    recommendation: "Mantener el monitoreo de activación.",
+  };
+}
+
+export async function getSupportB2BSpecialistReport(): Promise<AgentSpecialistReport> {
+  const base = {
+    id: "support-b2b",
+    name: "Especialista de Soporte B2B",
+    area: "Soporte / Tickets B2B",
+    source: "conversaciones abiertas (org de soporte)",
+    lastUpdatedAt: new Date().toISOString(),
+  };
+  const supportOrgId = process.env.WHATSAPP_ORGANIZATION_ID;
+  if (!supportOrgId) {
+    return {
+      ...base,
+      status: "SIN_DATO",
+      summary: "Falta la organización de soporte configurada.",
+      findings: ["Sin WHATSAPP_ORGANIZATION_ID no se pueden contar tickets B2B."],
+      recommendation: "Configurar la organización de soporte para habilitar el conteo.",
+    };
+  }
+  const open = await prisma.conversation
+    .count({ where: { organizationId: supportOrgId, status: "OPEN" } })
+    .catch(() => null);
+  if (open === null) {
+    return {
+      ...base,
+      status: "SIN_DATO",
+      summary: "No se pudo leer el conteo de tickets.",
+      findings: ["Error al consultar conversaciones de soporte."],
+      recommendation: "Reintentar más tarde.",
+    };
+  }
+  const findings = [`${open} conversaciones de soporte abiertas`];
+  if (open === 0) {
+    return {
+      ...base,
+      status: "OK",
+      summary: "No hay tickets B2B abiertos.",
+      findings,
+      recommendation: "Mantener el monitoreo de soporte.",
+    };
+  }
+  return {
+    ...base,
+    status: open >= 20 ? "CRITICO" : "ATENCION",
+    summary: `${open} tickets B2B abiertos esperando respuesta.`,
+    findings,
+    recommendation: "Priorizar tickets B2B abiertos.",
+  };
+}
+
+export async function getQASpecialistReport(): Promise<AgentSpecialistReport> {
+  const base = {
+    id: "qa",
+    name: "Especialista de QA / Producción",
+    area: "Calidad / Salud operativa",
+    source: "jobs fallidos + alertas operativas + log de cuota",
+    lastUpdatedAt: new Date().toISOString(),
+  };
+  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+  const [failedJobs, alerts, quotaLog] = await Promise.all([
+    prisma.agentAutomation.count({ where: { status: "FAILED" } }).catch(() => null),
+    getOperationalAlerts().catch(() => [] as Awaited<ReturnType<typeof getOperationalAlerts>>),
+    prisma.agentLog
+      .findFirst({
+        where: {
+          level: "ERROR",
+          OR: [{ message: { contains: "429" } }, { message: { contains: "quota" } }],
+          timestamp: { gte: sixHoursAgo },
+        },
+        orderBy: { timestamp: "desc" },
+      })
+      .catch(() => null),
+  ]);
+  const criticalAlerts = (alerts ?? []).filter((a) => a.severity === "critical").length;
+  const findings = [
+    `${failedJobs ?? "s/d"} jobs/automatizaciones fallidas`,
+    `${(alerts ?? []).length} alertas activas (${criticalAlerts} críticas)`,
+    `Error de cuota OpenAI (6h): ${quotaLog ? "sí" : "no"}`,
+  ];
+  if (failedJobs === null) {
+    return { ...base, status: "SIN_DATO", summary: "Sin fuente estructurada de salud operativa.", findings, recommendation: "Reintentar el diagnóstico más tarde." };
+  }
+  if (criticalAlerts > 0 || quotaLog) {
+    return { ...base, status: "CRITICO", summary: "Hay alertas críticas o error de cuota de IA activos.", findings, recommendation: "Revisar alertas críticas y consumo de IA en QA / Operaciones IA." };
+  }
+  if (failedJobs > 0) {
+    return { ...base, status: "ATENCION", summary: `${failedJobs} jobs fallidos requieren revisión.`, findings, recommendation: "Revisar jobs fallidos en QA Operativo." };
+  }
+  return { ...base, status: "OK", summary: "Sin jobs fallidos ni alertas críticas.", findings, recommendation: "Mantener el monitoreo de QA." };
+}
+
+export async function getFinanceSpecialistReport(): Promise<AgentSpecialistReport> {
+  const base = {
+    id: "finance",
+    name: "Especialista de Finanzas / Costos IA",
+    area: "Costos de IA",
+    source: "getAiUsageSummary() + log de cuota",
+    lastUpdatedAt: new Date().toISOString(),
+  };
+  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+  const [aiCost, quotaLog] = await Promise.all([
+    getAiUsageSummary().catch(() => null),
+    prisma.agentLog
+      .findFirst({
+        where: {
+          level: "ERROR",
+          OR: [{ message: { contains: "429" } }, { message: { contains: "quota" } }],
+          timestamp: { gte: sixHoursAgo },
+        },
+        orderBy: { timestamp: "desc" },
+      })
+      .catch(() => null),
+  ]);
+  if (!aiCost) {
+    return { ...base, status: "SIN_DATO", summary: "Sin fuente estructurada de costos de IA.", findings: ["No se pudo leer el resumen de uso de IA."], recommendation: "Reintentar más tarde." };
+  }
+  const findings = [
+    `Costo IA del mes: $${aiCost.totalCostUsd.toFixed(2)}`,
+    `Error de cuota OpenAI (6h): ${quotaLog ? "sí" : "no"}`,
+  ];
+  if (quotaLog) {
+    return { ...base, status: "CRITICO", summary: "Hay un error de cuota de IA (OpenAI) reciente.", findings, recommendation: "Revisar consumo y límites de IA en Operaciones IA." };
+  }
+  return { ...base, status: "OK", summary: `Costo de IA del mes en $${aiCost.totalCostUsd.toFixed(2)}.`, findings, recommendation: "Mantener el monitoreo del consumo de IA." };
+}
+
+export async function getIntegrationsSpecialistReport(): Promise<AgentSpecialistReport> {
+  const base = {
+    id: "integrations",
+    name: "Especialista de Integraciones",
+    area: "WhatsApp / Meta / APIs",
+    source: "getPlatformWhatsAppStatus()",
+    lastUpdatedAt: new Date().toISOString(),
+  };
+  const status = await getPlatformWhatsAppStatus().catch(() => null);
+  if (!status) {
+    return { ...base, status: "SIN_DATO", summary: "Sin fuente estructurada del estado de integraciones.", findings: ["No se pudo leer el estado de WhatsApp/Meta."], recommendation: "Reintentar más tarde." };
+  }
+  const findings = [
+    `Número de plataforma: ${status.platformPhone ? "configurado" : "sin configurar"}`,
+    `Meta WhatsApp: ${status.metaStatus}`,
+    `Integración activa: ${status.fullyActive ? "sí" : "no"}`,
+  ];
+  if (!status.platformPhone) {
+    return { ...base, status: "SIN_DATO", summary: "No hay número de WhatsApp de plataforma configurado.", findings, recommendation: "Configurar el número de WhatsApp de la plataforma." };
+  }
+  if (!status.fullyActive) {
+    return { ...base, status: "ATENCION", summary: "La integración de WhatsApp/Meta no está totalmente activa.", findings, recommendation: "Revisar la conexión de Meta WhatsApp en Integraciones." };
+  }
+  return { ...base, status: "OK", summary: "Integración de WhatsApp/Meta activa.", findings, recommendation: "Mantener el monitoreo de integraciones." };
+}
+
+export async function getProductSpecialistReport(): Promise<AgentSpecialistReport> {
+  const base = {
+    id: "product",
+    name: "Especialista de Producto",
+    area: "Mejoras de producto",
+    source: "getExecutiveMetrics() (señales estructuradas)",
+    lastUpdatedAt: new Date().toISOString(),
+  };
+  const m = await getExecutiveMetrics().catch(() => null);
+  if (!m) {
+    return { ...base, status: "SIN_DATO", summary: "Sin señales estructuradas para priorizar mejoras.", findings: ["No se pudieron leer las métricas ejecutivas."], recommendation: "Reintentar más tarde." };
+  }
+  const findings = [
+    `First WOW pendientes: ${m.firstWowPendingCount ?? "s/d"}`,
+    `Tickets B2B abiertos: ${m.openB2BTicketsCount ?? "s/d"}`,
+    `Jobs fallidos: ${m.failedJobsCount ?? "s/d"}`,
+  ];
+  // Prioriza UNA mejora según la señal más fuerte. No crea tarea ni roadmap.
+  if ((m.firstWowPendingCount ?? 0) > 0) {
+    return { ...base, status: "ATENCION", summary: "El mayor cuello hoy es la activación (First WOW).", findings, recommendation: "Priorizar mejoras de onboarding para acelerar el First WOW." };
+  }
+  if ((m.openB2BTicketsCount ?? 0) > 0) {
+    return { ...base, status: "ATENCION", summary: "El volumen de soporte sugiere fricción de producto.", findings, recommendation: "Priorizar mejoras de autoservicio para reducir tickets B2B." };
+  }
+  if ((m.failedJobsCount ?? 0) > 0) {
+    return { ...base, status: "ATENCION", summary: "Hay jobs fallidos que afectan la confiabilidad.", findings, recommendation: "Priorizar la estabilización de los jobs de automatización." };
+  }
+  return { ...base, status: "OK", summary: "Sin señales fuertes de fricción; producto estable.", findings, recommendation: "Explorar mejoras incrementales de valor." };
+}
+
+export async function getAgentSpecialistReports(): Promise<AgentSpecialistReport[]> {
+  return Promise.all([
+    getOnboardingSpecialistReport(),
+    getSupportB2BSpecialistReport(),
+    getQASpecialistReport(),
+    getFinanceSpecialistReport(),
+    getIntegrationsSpecialistReport(),
+    getProductSpecialistReport(),
+  ]);
 }
 
 export async function generateOperativeDiagnosis(): Promise<{

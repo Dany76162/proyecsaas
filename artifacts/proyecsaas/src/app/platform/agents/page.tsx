@@ -19,15 +19,17 @@ import {
   ListChecks,
   BookOpen
 } from "lucide-react";
-import { getAgentDashboardSummary, getDirectorAgentStatus, getExecutiveMetrics } from "@/modules/agents/service";
+import { getAgentDashboardSummary, getDirectorAgentStatus, getExecutiveMetrics, getAgentSpecialistReports } from "@/modules/agents/service";
 import { cn } from "@/lib/utils";
 import DirectorPanelClient from "./DirectorPanelClient";
+import AgentSpecialistsPanel from "./AgentSpecialistsPanel";
 
 export default async function PlatformAgentsPage() {
-  const [summary, directorStatus, executiveMetrics] = await Promise.all([
+  const [summary, directorStatus, executiveMetrics, specialistReports] = await Promise.all([
     getAgentDashboardSummary(),
     getDirectorAgentStatus(),
     getExecutiveMetrics(),
+    getAgentSpecialistReports(),
   ]);
 
   const metrics = [
@@ -88,6 +90,9 @@ export default async function PlatformAgentsPage() {
 
       {/* ── Director Operativo IA — Fase 4A ── */}
       <DirectorPanelClient initialStatus={directorStatus} executiveMetrics={executiveMetrics} />
+
+      {/* ── Equipo de especialistas IA — Fase 2A (read-only / HITL) ── */}
+      <AgentSpecialistsPanel reports={specialistReports} />
 
       {summary.hasOpenAIQuotaError && (
         <div className="flex items-center gap-4 rounded-[2rem] border border-red-200 bg-red-50/50 p-6 animate-pulse">
