@@ -452,6 +452,15 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente:** Fase 2 con agentes especializados reales y permisos.
 * **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas, AgentType.
 
+### AgentOS — ✅ Producción validada / Fase 1.2 cerrada (QA 2026-06-22)
+* **Estado:** ✅ Producción validada.
+* **Ruta probada:** `/platform/agents`.
+* **Evidencia visual:** Las tarjetas ejecutivas superiores consumen datos estructurados reales y muestran Semáforo Operativo `Atención`, First WOW pendientes `4`, Tickets B2B abiertos `26`, Costo IA mensual `$0.08`, Jobs fallidos `0` y Próxima Mejor Acción `Contactar inmobiliarias pendientes de First WOW`.
+* **Seguridad:** HITL visible, sin acciones automáticas.
+* **Observación no bloqueante:** El diagnóstico anterior mencionó 2 jobs fallidos, mientras que la tarjeta estructurada actual muestra 0. Se deja registrado como diferencia temporal/fuente estructurada y no bloquea la validación.
+* **Pendiente:** Diseñar Fase 2 con agentes especializados reales, permisos y posible revisión de Prisma/AgentType.
+* **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas, AgentType.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
