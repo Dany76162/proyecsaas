@@ -565,9 +565,29 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 
 ## 30. AUDITORÍA DE NAVEGACIÓN — 🟢 (Landing/Tenant/Superadmin sin duplicados, <3 clics)
 
-## 31. AUDITORÍA DE DEMO COMERCIAL — 🟢
+## 31. AUDITORÍA DE DEMO COMERCIAL — 🟢 · ⚠️ P0 modo demo poblado pendiente
 - **¿Qué ve el cliente en los primeros 5 minutos?**
   R: Login → Dashboard con KPIs → conecta WhatsApp → ve el **Inbox IA** respondiendo y creando la oportunidad sola (el momento WOW, §46). ⚠️ Hoy ese recorrido no está guiado: el cliente debe navegarlo (lo resuelve §46).
+
+### First WOW + Demo Comercial — Hallazgo P0: modo demo poblado pendiente (auditoría 2026-06-22)
+* **Estado:** ⚠️ Revisar / P0 comercial para preventa.
+* **Auditoría:** Solo lectura (sin tocar código).
+* **Hallazgo principal:** El First WOW está bien diseñado y medido (onboarding 5 pasos + medición en `activation-service`: `firstLeadCount`/`wowReachedCount`/`medianTimeToWowMinutes`), pero la demo comercial NO está lista para mostrar valor en frío. Una cuenta nueva puede quedar en pantallas vacías hasta completar setup real.
+* **Bloqueante comercial:** No existe una experiencia demo poblada conectada a una ruta o workspace demostrable.
+* **Dataset existente:** `src/server/demo/workspace-store.ts` contiene un dataset demo completo (orgs/usuarios/leads/propiedades/actividades) pero está **huérfano**: ningún archivo lo importa y no hay ruta `/demo`.
+* **Impacto:** El vendedor no puede mostrar en 2 minutos un flujo completo de CRM + Inbox IA + propiedades + catálogo + desarrollo/masterplan sin preconfigurar una cuenta.
+* **First WOW actual:** Depende de WhatsApp real/conectado, agente activo y actividad real. Correcto para producción, pero fricciona la demo en frío.
+* **Recomendación próxima fase:** Crear una **Fase Demo.1** para modo demo poblado read-only o workspace demo seguro.
+* **Alcance recomendado Demo.1:** Reutilizar/adaptar `workspace-store.ts` para una experiencia demo SIN escribir en DB real, sin worker, sin WhatsApp/envíos y sin pagos/reservas.
+* **Prioridad:** Alta para preventa/demo comercial.
+* **No implementar todavía:** Este bloque solo documenta el hallazgo y prepara el plan.
+
+#### Próxima fase sugerida — Demo.1 / Modo demo poblado read-only
+1. Enchufar el dataset demo existente a una experiencia visible y segura.
+2. Crear recorrido demo con CRM, Inbox IA, propiedades, catálogo y desarrollo/masterplan.
+3. Agregar banner claro: `Modo demo`.
+4. Mantener todo sin escrituras reales, sin worker, sin WhatsApp, sin pagos y sin reservas reales.
+5. Validar que sirva para demo comercial de inmobiliaria y desarrolladora.
 
 ## 32. AUDITORÍA DE CONSISTENCIA VISUAL — 🟡 (unificación en curso)
 - ☑ Auditoría de colores/botones/badges/tipografías/espaciados/iconografía completada · duplicados identificados.
@@ -577,6 +597,7 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 - ☐ **Botón primario** "azul primario + negro secundario": aplicación **incremental** (215 usos de `bg-brand-*` en 98 archivos, mayoría NO son botones; se evita repintado masivo de riesgo).
 
 ## 33. MÓDULOS HUÉRFANOS — ☐ auditar Canvas/Prospecting/Comercial/QA
+- ⚠️ **`src/server/demo/workspace-store.ts` huérfano** (auditoría 2026-06-22): dataset demo completo (orgs/usuarios/leads/propiedades/actividades) sin importadores ni ruta `/demo`. Candidato a enchufar en la Fase Demo.1 (ver §31). No borrar: es la base del futuro modo demo.
 
 ## 34. ESCALABILIDAD — 🟢 (10/100/1000 clientes auditado; cuellos identificados → §39)
 
