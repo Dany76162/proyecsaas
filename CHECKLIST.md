@@ -462,8 +462,8 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **No tocado:** Prisma, DB, Railway, worker, WhatsApp, pagos/reservas, AgentType.
 
 ### AgentOS — Fase 2A: especialistas de diagnóstico read-only (IMPLEMENTADA 2026-06-22)
-* **Commit:** `<pendiente>` (rama `feat/agentos-specialists-phase2a-readonly`)
-* **Estado:** 🟡 Beta reforzada / listo para validación en producción.
+* **Commit:** `2d2d2b3`
+* **Estado:** 🟢 Mergeado a main / listo para validación en producción. Fase 2B/2C NO iniciadas.
 * **Implementado:** 6 especialistas read-only del Director IA en `service.ts` (`getOnboardingSpecialistReport`, `getSupportB2BSpecialistReport`, `getQASpecialistReport`, `getFinanceSpecialistReport`, `getIntegrationsSpecialistReport`, `getProductSpecialistReport` + agregador `getAgentSpecialistReports()`), tipos `AgentSpecialistReport`/`AgentSpecialistStatus`. Cada uno devuelve `{ status, summary, findings[], recommendation, source, lastUpdatedAt }` desde fuentes reales (activación, conversaciones soporte, jobs/alertas/cuota, costos IA, estado WhatsApp/Meta, métricas ejecutivas). UI: sección "Equipo de especialistas IA" en `/platform/agents` (`AgentSpecialistsPanel.tsx`) con 6 tarjetas, badges "Solo lectura" + "HITL". Fuente faltante → estado `SIN_DATO` honesto. Sin LLM-parsing.
 * **Alcance (plan):** 6 especialistas de diagnóstico: (1) Onboarding / Activación, (2) Soporte B2B, (3) QA / Producción, (4) Finanzas / Costos IA, (5) Integraciones / WhatsApp / Meta, (6) Producto / Mejoras.
 * **Decisión arquitectónica:** NO expandir `AgentType` por ahora. Usar camino dinámico/configurable por `slug` en fases posteriores.
