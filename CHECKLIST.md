@@ -526,6 +526,18 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
 * **Fases no iniciadas:** Fase 2B.1, Fase 2B.4 y Fase 2B.5 NO iniciadas.
 
+### AgentOS — ✅ Producción validada / Fase 2B.2/2B.3 cerrada (QA 2026-06-22)
+* **Estado:** ✅ Producción validada.
+* **Ruta probada:** `/platform/agents/library`.
+* **Evidencia visual:** La Biblioteca de Agentes carga correctamente, aparece el bloque `Sincronizar especialistas` y la acción manual respondió `Especialistas sincronizados: 0 creados, 6 actualizados` (confirma idempotencia: no duplicó).
+* **Resultado:** Los 6 especialistas quedaron persistidos/actualizados como agentes reales mediante `Agent.config.slug`, sin duplicarse.
+* **Agentes visibles:** Onboarding, Soporte B2B, QA/Producción, Finanzas/Costos IA, Integraciones/WhatsApp/Meta y Producto/Mejoras.
+* **Core intacto:** Director Operativo IA sigue visible y activo; Marketing no rompe la Biblioteca.
+* **Arquitectura validada:** Biblioteca real desde DB + governance, fallback visual conservado, identidad por `config.slug`.
+* **Seguridad:** Sincronización manual explícita e idempotente. No hay escritura automática al renderizar páginas.
+* **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentType, AiAgent.
+* **Fases no iniciadas:** Fase 2B.1, Fase 2B.4 y Fase 2B.5 NO iniciadas.
+
 ## 21. SUPERADMIN — 🟢 Producción (navegación agrupada en 6 secciones)
 
 ## 22. SOPORTE — 🟢 Producción (Manual Vivo + Soporte IA)
