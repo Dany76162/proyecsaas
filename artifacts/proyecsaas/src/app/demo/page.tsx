@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { getDemoShowcase } from "@/server/demo/demo-content";
+import { PublicPropertyCard } from "@/components/properties/public-property-card";
 
 export const dynamic = "force-static";
 
@@ -148,29 +149,20 @@ export default function DemoPage() {
         {/* Propiedades */}
         <section id="propiedades" className="space-y-4">
           <SectionTitle icon={Home} kicker="Inventario" title="Propiedades" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {properties.map((p) => (
-              <div key={p.id} className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.imageUrl}
-                  alt={p.titleEs}
-                  loading="lazy"
-                  className="h-40 w-full bg-slate-100 object-cover"
-                />
-                <div className="flex flex-1 flex-col p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-black text-slate-900">{p.titleEs}</p>
-                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{p.statusEs}</span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500">{p.neighborhood}, {p.city} · {p.typeEs}</p>
-                  <p className="mt-2 text-lg font-black text-brand-700">{p.priceLabel}</p>
-                  <p className="mt-1 text-[11px] text-slate-500">{p.bedrooms} amb · {p.bathrooms} baños · {p.surfaceM2} m²</p>
-                  <span className="mt-3 inline-flex w-fit cursor-default items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Ver ficha (demo)
-                  </span>
-                </div>
-              </div>
+              <PublicPropertyCard
+                key={p.id}
+                imageUrl={p.imageUrl}
+                title={p.titleEs}
+                propertyType={p.typeEs}
+                opText="Venta"
+                location={`${p.neighborhood}, ${p.city}`}
+                bedroomsLabel={`${p.bedrooms} dorm.`}
+                bathroomsLabel={`${p.bathrooms} bañ.`}
+                surfaceLabel={`${p.surfaceM2} m²`}
+                priceLabel={p.priceLabel}
+              />
             ))}
           </div>
         </section>
