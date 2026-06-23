@@ -277,20 +277,7 @@ export async function resolveInboundByPhoneNumberId(
   prisma: PrismaClient | Prisma.TransactionClient,
   phoneNumberId: string,
 ): Promise<ResolvedWhatsAppChannel | null> {
-  const [databaseChannel, legacyChannel] = await Promise.all([
-    resolveDatabaseChannelByPhoneNumberId(prisma, phoneNumberId),
-    resolveLegacyFallback(phoneNumberId),
-  ]);
-
-  if (databaseChannel && legacyChannel && databaseChannel.organizationId !== legacyChannel.organizationId) {
-    logResolutionEventOnce("db-legacy-mismatch", {
-      phoneNumberId,
-      organizationId: databaseChannel.organizationId,
-      reason: `legacy-org-${legacyChannel.organizationId}`,
-    });
-
-    return legacyChannel;
-  }
+  const databaseChannel = await resolveDatabaseChannelByPhoneNumberId(prisma, phoneNumberId);
 
   if (databaseChannel) {
     logResolutionEventOnce("db-hit", {
@@ -301,6 +288,8 @@ export async function resolveInboundByPhoneNumberId(
 
     return databaseChannel;
   }
+
+  const legacyChannel = await resolveLegacyFallback(phoneNumberId);
 
   if (legacyChannel) {
     logResolutionEventOnce("db-miss-legacy-fallback", {
