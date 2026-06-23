@@ -612,6 +612,14 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
 * **Estado final:** Demo.1 cerrada como herramienta comercial read-only para preventa.
 
+### Demo.1 — Link público en landing (2026-06-22)
+* **Commit:** `<pendiente>` (rama `feat/landing-ver-demo-link`)
+* **Estado:** 🟡 Listo para validación.
+* **Cambio:** Se agregó botón secundario `Ver demo interactiva` en el hero de la landing pública (`src/app/page.tsx`) apuntando a `/demo`, entre `Solicitar demo` y `Acceder al sistema`.
+* **Regla comercial:** NO reemplaza el CTA principal `Solicitar demo` (sigue siendo el botón primario brand); `Ver demo interactiva` es CTA secundario (outline) para preventa.
+* **Seguridad:** Solo navegación hacia ruta read-only `/demo`. Sin DB, sin worker, sin WhatsApp, sin pagos/reservas.
+* **No tocado:** `/demo` y su dataset, Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
+
 ## 32. AUDITORÍA DE CONSISTENCIA VISUAL — 🟡 (unificación en curso)
 - ☑ Auditoría de colores/botones/badges/tipografías/espaciados/iconografía completada · duplicados identificados.
 - ✔️ **Badge de lote público unificado** (`f794c9a`) — 1ª divergencia cerrada.

@@ -108,6 +108,9 @@ export default async function HomePage() {
                 </a>
               </Button>
               <Button variant="outline" size="lg" asChild className="w-full sm:w-auto border-slate-300">
+                <Link href="/demo">Ver demo interactiva</Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild className="w-full sm:w-auto border-slate-300">
                 <Link href="/login">Acceder al sistema</Link>
               </Button>
             </div>
