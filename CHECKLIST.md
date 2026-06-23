@@ -590,8 +590,8 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 5. Validar que sirva para demo comercial de inmobiliaria y desarrolladora.
 
 ### Demo.1 — Modo demo poblado read-only (IMPLEMENTADA 2026-06-22)
-* **Commit:** `<pendiente>` (rama `feat/demo-mode-readonly-demo1`)
-* **Estado:** 🟡 Beta / listo para validación.
+* **Commit:** `1e44bea`
+* **Estado:** 🟡 Mergeado a main / listo para validación visual.
 * **Ruta:** `/demo` (pública, sin login, `force-static`, metadata `noindex`).
 * **Alcance:** Página demo read-only en español LATAM con banner "Modo demo — Datos de ejemplo", KPIs, CRM/Oportunidades, Inbox IA, Propiedades, Desarrollo demo y Catálogo público demo.
 * **Dataset:** reusa `src/server/demo/workspace-store.ts` (solo getters de lectura) vía adaptador nuevo `src/server/demo/demo-content.ts` que mapea el contenido (inglés→español) y agrega los bloques que el store no tiene (Inbox IA y un desarrollo) como ejemplo claramente ficticio.
