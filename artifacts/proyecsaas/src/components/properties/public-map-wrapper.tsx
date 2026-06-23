@@ -15,7 +15,6 @@ import {
   MapPin,
   Bed,
   Bath,
-  Car,
   Phone,
   ChevronRight,
   Maximize2,

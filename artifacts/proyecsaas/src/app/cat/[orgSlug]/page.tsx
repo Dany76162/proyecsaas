@@ -2,18 +2,13 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { 
-  Building2, 
-  Compass, 
-  Phone, 
+import {
+  Building2,
+  Compass,
+  Phone,
   Mail,
-  MapPin, 
-  ChevronRight,
-  Sparkles,
-  BedDouble,
-  Bath,
-  Maximize2,
-  Share2
+  MapPin,
+  Sparkles
 } from "lucide-react";
 
 import { prisma } from "@/server/db/prisma";
