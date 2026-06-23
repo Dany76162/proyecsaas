@@ -68,6 +68,15 @@ const TEXT_ES: Record<string, string> = {
 
 const es = (value: string) => TEXT_ES[value] ?? value;
 
+// Fotos reales de las propiedades demo (archivos locales en public/demo/).
+// Reemplazá estos JPG por tus propias fotos manteniendo el nombre del archivo.
+const PROPERTY_IMAGES: Record<string, string> = {
+  prop_1: "/demo/departamento.jpg", // Departamento luminoso de 2 ambientes
+  prop_2: "/demo/duplex.jpg", // Casa reciclada en dúplex
+  prop_3: "/demo/monoambiente.jpg", // Monoambiente apto inversión
+};
+const FALLBACK_PROPERTY_IMAGE = "/demo/propiedad.jpg";
+
 function formatPrice(priceCents: number, currency: string) {
   const amount = Math.round(priceCents / 100);
   return `${currency} ${amount.toLocaleString("es-AR")}`;
@@ -96,6 +105,7 @@ export function getDemoShowcase() {
 
   const properties = rawProps.map((p) => ({
     id: p.id,
+    imageUrl: PROPERTY_IMAGES[p.id] ?? FALLBACK_PROPERTY_IMAGE,
     titleEs: es(p.title),
     typeEs: es(p.propertyType),
     neighborhood: p.neighborhood,
@@ -169,7 +179,7 @@ const DEMO_INBOX = [
 ];
 
 const DEMO_DEVELOPMENT = {
-  name: "Valles del Pino",
+  name: "Altos del Lago",
   description:
     "Loteo residencial con servicios completos. La IA ofrece los lotes disponibles, responde por servicios y coordina visitas según la disponibilidad del desarrollo.",
   totalLots: 48,
