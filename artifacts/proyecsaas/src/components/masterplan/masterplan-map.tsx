@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Map as MapIcon, Layers as LayersIcon, Filter, ZoomIn, ZoomOut,
-    Crosshair, X, Search, MapPin, Check, Save, Grid3x3, Compass, Hash
+    Crosshair, X, Search, MapPin, Check, Save, Grid3x3, Compass, Hash,
+    Eye, EyeOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -254,6 +255,22 @@ export default function MasterplanMap({
     const [isSavingPlan, setIsSavingPlan] = useState(false);
     const [planSaved, setPlanSaved] = useState(false);
     const [showDeleteOverlayConfirm, setShowDeleteOverlayConfirm] = useState(false);
+
+    // Modo rendimiento (Paso 5 / editor): en proyectos grandes ocultamos los lotes
+    // mientras se calibra el plano para que el mapa y el overlay se muevan fluidos.
+    // No afecta datos ni la persistencia del overlay; el usuario puede mostrarlos cuando quiera.
+    const LARGE_PROJECT_LOT_THRESHOLD = 300;
+    const [showLots, setShowLots] = useState(true);
+    const perfDefaultAppliedRef = useRef(false);
+
+    // Aplicar el default del modo rendimiento una sola vez, cuando los lotes ya cargaron.
+    useEffect(() => {
+        if (perfDefaultAppliedRef.current || units.length === 0) return;
+        perfDefaultAppliedRef.current = true;
+        if (variant === "editor" && units.length > LARGE_PROJECT_LOT_THRESHOLD) {
+            setShowLots(false);
+        }
+    }, [units.length, variant]);
 
     // Active tool panel (mutually exclusive) — solo "imagenes" pertenece al Paso 5
     const [activePanel, setActivePanel] = useState<"imagenes" | null>(null);
@@ -908,6 +925,19 @@ export default function MasterplanMap({
     useEffect(() => {
         if (!isMapReady || !leafletMapRef.current || units.length === 0) return;
 
+        // Modo rendimiento (editor): si los lotes están ocultos, no dibujamos polígonos.
+        // Limpiamos los que pudieran quedar y salimos. Así el mapa y el overlay se mueven
+        // fluidos en proyectos con miles de lotes. La persistencia del overlay no depende de esto.
+        if (variant === "editor" && !showLots) {
+            if (polygonsRef.current.size > 0) {
+                const map = leafletMapRef.current;
+                polygonsRef.current.forEach((poly) => map?.removeLayer(poly));
+                polygonsRef.current.clear();
+            }
+            prevUnitsRef.current = units;
+            return;
+        }
+
         // Fast path: if only unit estados changed (no structural/coord changes), patch styles directly.
         // This avoids the full removeLayer/addLayer cycle that causes visible flicker.
         const prev = prevUnitsRef.current;
@@ -1199,7 +1229,7 @@ export default function MasterplanMap({
         drawPolygons();
     // overlayConfig y svgViewBox son parte del cálculo de coordenadas
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isMapReady, units, filteredIds, selectedUnitId, overlayConfig, svgViewBox, isEditingOverlay]);
+    }, [isMapReady, units, filteredIds, selectedUnitId, overlayConfig, svgViewBox, isEditingOverlay, showLots, variant]);
 
     // Fase futura: Camera markers para Tour 360° desacoplados del commit inicial de Desarrollos.
     // El useEffect que dibuja marcadores de cámara en el mapa está comentado junto con tour360-viewer.
@@ -1718,6 +1748,23 @@ export default function MasterplanMap({
                             </button>
                         </div>
 
+                        {/* Modo rendimiento: mostrar/ocultar lotes (proyectos grandes) */}
+                        {variant === "editor" && (
+                            <button
+                                onClick={() => setShowLots((v) => !v)}
+                                title={showLots ? "Ocultar los lotes para mover el mapa con fluidez" : "Mostrar los lotes sobre el mapa"}
+                                className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex-shrink-0",
+                                    showLots
+                                        ? "bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700/50"
+                                        : "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/30"
+                                )}
+                            >
+                                {showLots ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                {showLots ? "Ocultar lotes" : "Mostrar lotes"}
+                            </button>
+                        )}
+
                         {/* Separator */}
                         {overlayConfig?.bounds && <div className="h-5 w-px bg-slate-700/60 flex-shrink-0" />}
 
@@ -1896,6 +1943,16 @@ export default function MasterplanMap({
                         <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/90 backdrop-blur-sm text-white text-xs font-medium border border-slate-700/60 shadow-xl whitespace-nowrap">
                             <MapPin className="w-3.5 h-3.5 text-brand-400 shrink-0" />
                             Ya hay un plano guardado. Ajustalo sobre el mapa para ubicarlo y posicionarlo.
+                        </div>
+                    </div>
+                )}
+
+                {/* Hint: modo rendimiento activo — lotes ocultos en proyecto grande */}
+                {variant === "editor" && !showLots && units.length > LARGE_PROJECT_LOT_THRESHOLD && (
+                    <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-4 w-full max-w-lg">
+                        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/90 backdrop-blur-sm text-white text-xs font-medium border border-slate-700/60 shadow-xl">
+                            <EyeOff className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+                            Proyecto grande: ocultamos los lotes mientras calibrás el plano para que el mapa sea más fluido. Tocá “Mostrar lotes” cuando quieras revisar el encuadre.
                         </div>
                     </div>
                 )}
