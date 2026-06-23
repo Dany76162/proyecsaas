@@ -596,6 +596,7 @@ export async function processWhatsAppInboundJob(
       where: { organizationId: targetOrgId },
       select: {
         name: true,
+        mode: true,
         tone: true,
         persona: true,
         zoneFilters: true,
@@ -820,6 +821,7 @@ export async function processWhatsAppInboundJob(
     aiAgent: aiAgent
       ? {
           name: aiAgent.name,
+          mode: aiAgent.mode as "REAL_ESTATE" | "RECEPTION" | undefined,
           tone: aiAgent.tone as "FORMAL" | "FRIENDLY" | "NEUTRAL",
           persona: aiAgent.persona,
           zoneFilters: aiAgent.zoneFilters,
