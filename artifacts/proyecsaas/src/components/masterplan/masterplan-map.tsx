@@ -263,6 +263,14 @@ export default function MasterplanMap({
     const [showLots, setShowLots] = useState(true);
     const perfDefaultAppliedRef = useRef(false);
 
+    // Fase A — culling por viewport + gate de zoom (proyectos grandes en el editor).
+    // Por debajo de este zoom no se dibujan lotes (a esa distancia son ilegibles y saturan
+    // el canvas). Por encima, solo se dibujan los lotes visibles en la zona actual del mapa.
+    const MIN_LOT_RENDER_ZOOM = 16;
+    const [lotsZoomGated, setLotsZoomGated] = useState(false);
+    // Nonce que se incrementa al terminar de mover/zoom para recalcular el culling (no por frame).
+    const [viewportNonce, setViewportNonce] = useState(0);
+
     // Aplicar el default del modo rendimiento una sola vez, cuando los lotes ya cargaron.
     useEffect(() => {
         if (perfDefaultAppliedRef.current || units.length === 0) return;
@@ -271,6 +279,20 @@ export default function MasterplanMap({
             setShowLots(false);
         }
     }, [units.length, variant]);
+
+    // Fase A: recalcular culling/gate al TERMINAR de mover o hacer zoom (no en cada frame).
+    useEffect(() => {
+        if (!isMapReady || variant !== "editor") return;
+        const map = leafletMapRef.current;
+        if (!map) return;
+        const onViewportChange = () => setViewportNonce((n) => n + 1);
+        map.on("moveend", onViewportChange);
+        map.on("zoomend", onViewportChange);
+        return () => {
+            map.off("moveend", onViewportChange);
+            map.off("zoomend", onViewportChange);
+        };
+    }, [isMapReady, variant]);
 
     // Active tool panel (mutually exclusive) — solo "imagenes" pertenece al Paso 5
     const [activePanel, setActivePanel] = useState<"imagenes" | null>(null);
@@ -938,6 +960,23 @@ export default function MasterplanMap({
             return;
         }
 
+        // Fase A — gate de zoom: en proyectos grandes (editor), si el mapa está demasiado
+        // lejos no dibujamos los lotes (a esa distancia son ilegibles y saturan el canvas).
+        // Mostramos un aviso para acercar. El culling por viewport se aplica más abajo.
+        const cullingActive = variant === "editor" && units.length > LARGE_PROJECT_LOT_THRESHOLD;
+        const currentZoom = leafletMapRef.current.getZoom();
+        if (cullingActive && currentZoom < MIN_LOT_RENDER_ZOOM) {
+            if (polygonsRef.current.size > 0) {
+                const map = leafletMapRef.current;
+                polygonsRef.current.forEach((poly) => map?.removeLayer(poly));
+                polygonsRef.current.clear();
+            }
+            prevUnitsRef.current = units;
+            if (!lotsZoomGated) setLotsZoomGated(true);
+            return;
+        }
+        if (lotsZoomGated) setLotsZoomGated(false);
+
         // Fast path: if only unit estados changed (no structural/coord changes), patch styles directly.
         // This avoids the full removeLayer/addLayer cycle that causes visible flicker.
         const prev = prevUnitsRef.current;
@@ -1062,6 +1101,9 @@ export default function MasterplanMap({
             const map = leafletMapRef.current!;
             const contentBounds = L.latLngBounds([]);
 
+            // Culling por viewport: límites visibles con 25% de margen (lotes al borde igual entran).
+            const viewBounds = cullingActive ? map.getBounds().pad(0.25) : null;
+
             // Clear old polygons
             polygonsRef.current.forEach((poly) => map.removeLayer(poly));
             polygonsRef.current.clear();
@@ -1107,6 +1149,10 @@ export default function MasterplanMap({
                 }
 
                 if (!coords || coords.length < 3) return;
+
+                // Culling: en proyectos grandes, solo creamos los polígonos que caen en el
+                // viewport actual. Los de fuera de pantalla no se instancian en Leaflet.
+                if (viewBounds && !viewBounds.intersects(L.latLngBounds(coords as [number, number][]))) return;
 
                 const isFiltered = filteredIds.has(unit.id);
                 const color = STATUS_COLORS[unit.estado] || "#94a3b8";
@@ -1220,7 +1266,9 @@ export default function MasterplanMap({
             });
 
             contentBoundsRef.current = contentBounds.isValid() ? contentBounds : null;
-            if (!hasAutoFitContentRef.current && contentBounds.isValid()) {
+            // Con culling activo no auto-encuadramos: contentBounds solo cubre los lotes del
+            // viewport actual, así que un fitBounds saltaría a un subconjunto parcial.
+            if (!cullingActive && !hasAutoFitContentRef.current && contentBounds.isValid()) {
                 hasAutoFitContentRef.current = true;
                 map.fitBounds(contentBounds, { padding: [40, 40], maxZoom: 19, animate: false });
             }
@@ -1229,7 +1277,7 @@ export default function MasterplanMap({
         drawPolygons();
     // overlayConfig y svgViewBox son parte del cálculo de coordenadas
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isMapReady, units, filteredIds, selectedUnitId, overlayConfig, svgViewBox, isEditingOverlay, showLots, variant]);
+    }, [isMapReady, units, filteredIds, selectedUnitId, overlayConfig, svgViewBox, isEditingOverlay, showLots, variant, viewportNonce]);
 
     // Fase futura: Camera markers para Tour 360° desacoplados del commit inicial de Desarrollos.
     // El useEffect que dibuja marcadores de cámara en el mapa está comentado junto con tour360-viewer.
@@ -1953,6 +2001,16 @@ export default function MasterplanMap({
                         <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/90 backdrop-blur-sm text-white text-xs font-medium border border-slate-700/60 shadow-xl">
                             <EyeOff className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
                             Proyecto grande: ocultamos los lotes mientras calibrás el plano para que el mapa sea más fluido. Tocá “Mostrar lotes” cuando quieras revisar el encuadre.
+                        </div>
+                    </div>
+                )}
+
+                {/* Hint: gate de zoom — lotes visibles pero el mapa está demasiado lejos */}
+                {variant === "editor" && showLots && lotsZoomGated && (
+                    <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-4 w-full max-w-lg">
+                        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/90 backdrop-blur-sm text-white text-xs font-medium border border-slate-700/60 shadow-xl">
+                            <Search className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+                            Acercá el mapa para ver los lotes. Para mantenerlo fluido, los lotes se muestran al acercarte y solo los de la zona visible.
                         </div>
                     </div>
                 )}
