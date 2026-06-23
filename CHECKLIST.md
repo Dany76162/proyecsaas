@@ -56,6 +56,7 @@
 | `06af210` | **#3 — Imágenes de desarrollos en portal `/propiedades`** | 9 |
 | `db81732` | **#4 — Desarrollos visibles en modo mapa** | 9 · 10 · 14 |
 | `1a39244` | **Bloque 1 — CTA público de reserva/contacto en ficha de lote** | 8 · 16 |
+| `a8b5a79` | **#5 — Filtros del mapa: tour360 + tipo (`type`/`propertyType`)** | 9 · 10 |
 
 **#3 — Imágenes de desarrollos en el portal `/propiedades` (`06af210`) — ✅ Implementado / 🟡 pendiente QA visual en prod**
 - Las tarjetas de desarrollo (`DevelopmentFullCard` + `DevelopmentMediumCard` en `public-map-wrapper.tsx`) usaban `dev.images` (relación inexistente) y caían siempre al `logoUrl`, ignorando `coverImageUrl` (la "Imagen de portada" del wizard). Ahora priorizan **`coverImageUrl ?? logoUrl`**, mostrando la portada real.
@@ -66,7 +67,12 @@
 - El endpoint `/api/public/properties/map` devuelve marcadores de desarrollo (`markerKind: "development"`) junto a las propiedades; el popup del marcador prioriza **`coverImageUrl ?? logoUrl`** (consistente con la tarjeta).
 - **`fitBounds` inicial** ahora encuadra **propiedades + desarrollos** (una sola vez, al llegar los primeros marcadores; las búsquedas posteriores no reencuadran). Antes, un desarrollo con ubicación lejana al cluster quedaba fuera del viewport inicial y parecía "no aparecer".
 - Verificado en sesión: el endpoint responde HTTP 200 con propiedades + 1 desarrollo (`markerKind:"development"`, coords/URL válidas) y el código extiende los bounds sobre cada marcador válido. **Pendiente:** captura visual del encuadre en navegador real (Chrome headless no carga los tiles + WebGL, así que el mapa no se pudo screenshotear).
-- **#5 (filtro "Recorrido 360°" + mismatch `type`/`propertyType` en el fetch del mapa) queda PENDIENTE — no tocado, solo anotado.**
+**#5 — Filtros del mapa: "Recorrido 360°" + tipo (`type`/`propertyType`) (`a8b5a79`) — ✅ Implementado / 🟡 pendiente QA visual en navegador**
+- **Mismatch `type`/`propertyType` corregido**: el portal usa la convención `type` (formularios, página de listado y `MoreFiltersDropdown`), pero `/api/public/properties/map` leía solo `propertyType`, así que el filtro de tipo enviado por `property-map.tsx` (`q.set("type", …)`) nunca se aplicaba en el mapa. La API ahora acepta **`propertyType ?? type`** (compatibilidad hacia atrás).
+- **Checkbox "Recorrido 360°" reparado** en el dropdown "Más filtros": tenía `onChange={() => {}}` y `handleApply` leía `filters.tour360` (prop) en vez de estado local → no se podía togglear. Ahora usa estado local `tour360`, igual que el resto de los checkboxes.
+- **Rutas impactadas**: `src/app/api/public/properties/map/route.ts`, `src/components/properties/public-map-wrapper.tsx`.
+- **Desarrollos**: siguen visibles independientemente de estos filtros (su `where` en el endpoint no los filtra por tipo/360) — no desaparecen al filtrar.
+- Validado en sesión a nivel **endpoint** (HTTP 200): sin filtros → 5 props + 1 dev; `type=departamento` → 2 props + 1 dev (antes daba 5, prueba que el `type` ahora aplica); `tour360=true` → 1 prop + 1 dev; combinados → 0 props + 1 dev; `propertyType=loft` (legacy) → 1 prop + 1 dev (fallback OK). Más `tsc --noEmit` limpio + `next build` OK + tour360 invariants OK. **Pendiente:** QA visual del toggle "Recorrido 360°" y del filtro de tipo en el navegador real.
 
 **Bloque 1 — CTA público de reserva/contacto en la ficha de lote (`1a39244`) — 🟡 Implementado / pendiente QA navegador del flujo real**
 - Nuevo `lot-public-cta.tsx`: reserva online con seña que redirige a Mercado Pago (usa el `POST /reserve` existente) + botón de WhatsApp con mensaje pre-cargado + mensajes por estado del lote (AVAILABLE / RESERVED / SOLD / sin seña).
