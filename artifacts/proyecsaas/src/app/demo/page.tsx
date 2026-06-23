@@ -155,13 +155,14 @@ export default function DemoPage() {
                 key={p.id}
                 imageUrl={p.imageUrl}
                 title={p.titleEs}
-                propertyType={p.typeEs}
-                opText="Venta"
-                location={`${p.neighborhood}, ${p.city}`}
-                bedroomsLabel={`${p.bedrooms} dorm.`}
-                bathroomsLabel={`${p.bathrooms} bañ.`}
-                surfaceLabel={`${p.surfaceM2} m²`}
                 priceLabel={p.priceLabel}
+                location={`${p.neighborhood}, ${p.city}`}
+                badgeLabel="Venta"
+                organizationName="Inmobiliaria Demo"
+                surfaceLabel={`${p.surfaceM2}m²`}
+                bedroomsLabel={`${p.bedrooms}`}
+                bathroomsLabel={`${p.bathrooms}`}
+                readOnly
               />
             ))}
           </div>
