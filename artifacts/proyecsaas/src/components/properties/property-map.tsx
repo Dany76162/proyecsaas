@@ -250,6 +250,10 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
   // fetchRef mantiene la función de fetch actualizada sin re-inicializar el mapa
   const fetchRef = useRef<(boundsStr?: string, isInitial?: boolean) => void>(null!);
   const hasMapLoadedRef = useRef(false);
+  // Encuadre inicial: ajustar el viewport a TODOS los marcadores (propiedades + desarrollos)
+  // una sola vez, cuando llegan los primeros datos. Las búsquedas posteriores
+  // ("Buscar en esta zona", cambios de filtro) NO reencuadran para no robarle la vista al usuario.
+  const shouldFitInitialRef = useRef(true);
 
   const [markersData, setMarkersData] = useState<MarkerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);    // overlay de primera carga
@@ -400,6 +404,11 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
     markersRef.current = [];
     activeMarkerRef.current = null;
 
+    // Acumular los límites de TODOS los marcadores válidos (propiedades + desarrollos)
+    // para el encuadre inicial.
+    const fitBoundsAcc = new maplibregl.LngLatBounds();
+    let validMarkerCount = 0;
+
     markersData.forEach((marker) => {
       const lat = Number(marker.latitude ?? marker.lat);
       const lng = Number(marker.longitude ?? marker.lng);
@@ -411,6 +420,9 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
         console.warn("[PropertyMap] Ignorando marker con coordenadas inválidas:", marker.id, lat, lng);
         return;
       }
+
+      fitBoundsAcc.extend([lng, lat]);
+      validMarkerCount++;
 
       const isDevMarker = marker.markerKind === "development";
       const priceCents = normalizeToCents(marker);
@@ -504,6 +516,25 @@ export default function PropertyMap({ filters, onBoundsChange, mapClassName }: P
 
       markersRef.current.push(m);
     });
+
+    // ── Encuadre inicial ──────────────────────────────────────────────────────
+    // Una sola vez, cuando llegan los primeros marcadores, ajustar el viewport para
+    // que entren TODOS (propiedades + desarrollos). Sin esto, un desarrollo con
+    // ubicación lejana al cluster de propiedades quedaba fuera de la vista inicial
+    // y parecía "no aparecer" en el mapa.
+    if (shouldFitInitialRef.current && validMarkerCount > 0) {
+      shouldFitInitialRef.current = false;
+      try {
+        map.fitBounds(fitBoundsAcc, {
+          padding: 72,
+          // Cap de zoom: con un solo marcador (bounds degenerado) evita un acercamiento extremo.
+          maxZoom: 14,
+          duration: 0,
+        });
+      } catch (err) {
+        console.warn("[PropertyMap] fitBounds inicial falló:", err);
+      }
+    }
   }, [markersData]);
 
   return (

@@ -247,6 +247,7 @@ export async function GET(request: Request) {
         longitude: true,
         mapCenterLat: true,
         mapCenterLng: true,
+        coverImageUrl: true,
         logoUrl: true,
         Organization: { select: { slug: true, name: true } },
       },
@@ -286,7 +287,8 @@ export async function GET(request: Request) {
           latitude: Number(lat.toFixed(6)),
           longitude: Number(lng.toFixed(6)),
           locationLabel,
-          imageUrl: dev.logoUrl ?? null,
+          // Portada (foto/render) primero; logo como fallback — consistente con la tarjeta del portal.
+          imageUrl: dev.coverImageUrl ?? dev.logoUrl ?? null,
           url: `/cat/${dev.Organization.slug}/developments/${dev.id}`,
           markerKind: "development" as const,
         };
