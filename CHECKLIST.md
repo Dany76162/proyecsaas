@@ -652,7 +652,17 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **QA visual:** Confirmado en producción por el usuario — `/demo` carga, las 3 tarjetas muestran imágenes comerciales (no rotas) con el diseño del FullCard real; banner read-only presente; sin errores bloqueantes.
 * **Seguridad:** `/demo` sigue read-only (`readOnly`); CTAs como spans no-clickables, sin escritura, sin WhatsApp real, sin DB, sin pagos/reservas.
 * **No tocado:** `public-map-wrapper.tsx`, `/cat/[orgSlug]`, catálogo público real, `demo-content.ts`, Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
-* **Pendiente técnico (follow-up separado):** Deduplicar el diseño público real — extraer/usar `PublicPropertyCard` (o `FullCard`) como única fuente en `public-map-wrapper.tsx` y `/cat/[orgSlug]`, con rama propia y validación cuidadosa.
+* **Follow-up técnico:** ✅ **HECHO** — ver "Dedup tarjeta pública" abajo.
+
+### Demo.1 — ✅ Dedup tarjeta pública: `PublicPropertyCard` como fuente única (QA 2026-06-23)
+* **Commits:** `a634245` (refactor) + `da93df9` (limpieza de imports). Main: `da93df9`.
+* **Estado:** ✅ Producción validada visualmente en las 3 rutas (`/demo`, `/propiedades`, `/cat/[orgSlug]`).
+* **Alcance:** `PublicPropertyCard` quedó como **única fuente visual** de la tarjeta de propiedad pública (diseño `FullCard` real). Lo usan: (1) `/demo`, (2) `/propiedades` vía `FullCard` en `public-map-wrapper.tsx` (reemplazó su JSX inline), (3) `/cat/[orgSlug]` (reemplazó su tarjeta inline, que adoptó el diseño FullCard; conserva expensas vía `expensesLabel` opcional). Fin de la duplicación y del drift de diseño.
+* **Intacto:** `MediumCard` y las tarjetas de desarrollos/masterplans NO se tocaron. WhatsApp, Ver ficha y Tour 360° se mantienen. `/demo` sigue read-only.
+* **Cambio visual real:** el catálogo `/cat` pasó del diseño viejo (4/3, "Valor de publicación") al diseño `FullCard` (16/10, "Ofrecido por", precio bajo título, Consultar oscuro) — decisión aprobada por el usuario.
+* **Limpieza:** removidos imports sin uso tras el refactor (`Car` en public-map-wrapper; `ChevronRight`/`BedDouble`/`Bath`/`Maximize2`/`Share2` en `/cat`).
+* **Validaciones:** `git diff --check` · `tsc --noEmit` · `next build` · guard tour360 · `git status` — todo OK.
+* **No tocado:** Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS, landing.
 
 ## 32. AUDITORÍA DE CONSISTENCIA VISUAL — 🟡 (unificación en curso)
 - ☑ Auditoría de colores/botones/badges/tipografías/espaciados/iconografía completada · duplicados identificados.
