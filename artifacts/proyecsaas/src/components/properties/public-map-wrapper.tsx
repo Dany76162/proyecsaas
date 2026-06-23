@@ -223,6 +223,7 @@ function MoreFiltersDropdown({ filters, activeOrgs, onClose }: { filters: any; a
   const [accesible,       setAccesible]       = useState((filters.amenities || "").toLowerCase().includes("acceso reducida"));
   const [hasVideo,        setHasVideo]        = useState(filters.hasVideo === "true");
   const [hasFloorPlan,    setHasFloorPlan]    = useState(filters.hasFloorPlan === "true");
+  const [tour360,         setTour360]         = useState(filters.tour360 === "true");
   const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(
     new Set((filters.amenities || "").split(",").map((s: string) => s.trim().toLowerCase()).filter(Boolean))
   );
@@ -245,7 +246,7 @@ function MoreFiltersDropdown({ filters, activeOrgs, onClose }: { filters: any; a
     if (filters.maxPrice)   p.set("maxPrice",  filters.maxPrice);
     if (filters.bedrooms)   p.set("bedrooms",  filters.bedrooms);
     if (filters.currency)   p.set("currency",  filters.currency);
-    if (filters.tour360 === "true") p.set("tour360", "true");
+    if (tour360) p.set("tour360", "true");
     if (bathrooms)       p.set("bathrooms",       bathrooms);
     if (minSurface)      p.set("minSurface",      minSurface);
     if (maxSurface)      p.set("maxSurface",      maxSurface);
@@ -444,7 +445,7 @@ function MoreFiltersDropdown({ filters, activeOrgs, onClose }: { filters: any; a
         <section>
           <p className={mfTitle}>Multimedia</p>
           <div className="space-y-0.5">
-            <Check label="Recorrido 360°" checked={filters.tour360 === "true"} onChange={() => {}} />
+            <Check label="Recorrido 360°" checked={tour360} onChange={() => setTour360(!tour360)} />
             <Check label="Video"          checked={hasVideo}     onChange={() => setHasVideo(!hasVideo)} />
             <Check label="Planos"         checked={hasFloorPlan} onChange={() => setHasFloorPlan(!hasFloorPlan)} />
           </div>

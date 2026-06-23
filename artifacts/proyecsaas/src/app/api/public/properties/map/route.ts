@@ -39,7 +39,10 @@ function buildFilters(searchParams: URLSearchParams) {
   }
 
   // Property Type
-  const propertyType = searchParams.get("propertyType");
+  // El portal usa la convención `type` (formularios + página de listado). Aceptamos
+  // también `propertyType` por compatibilidad. Antes solo se leía `propertyType`, por lo
+  // que el filtro de tipo enviado como `type` desde el mapa nunca se aplicaba.
+  const propertyType = searchParams.get("propertyType") ?? searchParams.get("type");
   if (propertyType) {
     filters.propertyType = {
       contains: propertyType,
