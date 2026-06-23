@@ -15,6 +15,8 @@ export type PublicPropertyCardProps = {
   /** Badge oscuro de operación (ej. "Venta", "Alquiler", "Propiedad"). */
   badgeLabel?: string;
   organizationName: string;
+  /** Línea opcional de expensas bajo el precio (ej. "+ expensas USD 120"). */
+  expensesLabel?: string | null;
   /** Ya formateado, ej. "84m²" o "–". */
   surfaceLabel: string;
   /** Ya formateado, ej. "2" o "–". */
@@ -45,6 +47,7 @@ export function PublicPropertyCard(props: PublicPropertyCardProps) {
     location,
     badgeLabel = "Propiedad",
     organizationName,
+    expensesLabel,
     surfaceLabel,
     bedroomsLabel,
     bathroomsLabel,
@@ -103,6 +106,9 @@ export function PublicPropertyCard(props: PublicPropertyCardProps) {
           </div>
           <h3 className="line-clamp-2 font-bold text-slate-950 group-hover:text-brand-600 transition leading-snug">{title}</h3>
           <p className="mt-1.5 text-xl font-extrabold text-slate-900 tracking-tight">{priceLabel}</p>
+          {expensesLabel ? (
+            <p className="mt-0.5 text-[11px] font-semibold text-slate-400">{expensesLabel}</p>
+          ) : null}
           <div className="mt-2 flex items-center gap-1 text-slate-500">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
             <span className="truncate text-xs">{location}</span>
