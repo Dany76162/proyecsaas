@@ -947,27 +947,62 @@ export default function DevelopmentWizardClient({
           {/* PASO 5: MAPA INTERACTIVO */}
           {activeTab === "mapa" && (
             <div className="flex-1 flex flex-col h-full min-h-[640px] overflow-hidden">
-              {!step3Done && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 mb-3">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  Primero sincronizá los lotes en el{" "}
-                  <Link href="?tab=masterplan" className="underline font-bold">
-                    Paso 3 — Masterplan
-                  </Link>{" "}
-                  para verlos en el mapa.
+              {!step2Done ? (
+                /* Sin plano base no hay imagen de masterplan que georreferenciar:
+                   mostramos un empty state claro en vez de un mapa vacío. */
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="max-w-md px-6 py-10 text-center">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+                      <Globe className="h-7 w-7 text-slate-400" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      Todavía no hay un plano para posicionar
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                      Primero cargá el plano del proyecto y generá el masterplan. Después vas a poder
+                      calibrar el plano sobre el mapa real: moverlo, escalarlo y rotarlo.
+                    </p>
+                    <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                      <Link
+                        href="?tab=blueprint"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-white transition"
+                      >
+                        <LayoutDashboard className="h-3.5 w-3.5" /> Ir al Paso 2 — Plano del Proyecto
+                      </Link>
+                      <Link
+                        href="?tab=masterplan"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        <Layers className="h-3.5 w-3.5" /> Paso 3 — Masterplan
+                      </Link>
+                    </div>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {!step3Done && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 mb-3">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      Primero sincronizá los lotes en el{" "}
+                      <Link href="?tab=masterplan" className="underline font-bold">
+                        Paso 3 — Masterplan
+                      </Link>{" "}
+                      para verlos en el mapa.
+                    </div>
+                  )}
+                  <div className="flex-1 min-h-0 w-full overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                    <MasterplanMap
+                      proyectoId={development.id}
+                      modo="admin"
+                      canEdit={true}
+                      variant="editor"
+                      centerLat={development.mapCenterLat ?? undefined}
+                      centerLng={development.mapCenterLng ?? undefined}
+                      mapZoom={development.mapZoom ?? undefined}
+                    />
+                  </div>
+                </>
               )}
-              <div className="flex-1 min-h-0 w-full overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-                <MasterplanMap
-                  proyectoId={development.id}
-                  modo="admin"
-                  canEdit={true}
-                  variant="editor"
-                  centerLat={development.mapCenterLat ?? undefined}
-                  centerLng={development.mapCenterLng ?? undefined}
-                  mapZoom={development.mapZoom ?? undefined}
-                />
-              </div>
             </div>
           )}
         </div>
