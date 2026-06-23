@@ -8,8 +8,26 @@ import {
   Ruler, Maximize, ArrowLeft, Tag,
 } from "lucide-react";
 import { LotStatusBadge, type LotStatus } from "@/components/developments/lot-status-badge";
+import LotPublicCTA from "./lot-public-cta";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+// Currencies stored as whole units (no decimals) — mirror of the reserve route.
+const NO_DECIMAL_CURRENCIES = new Set(["CLP", "PYG"]);
+
+/** Resolve stage number (1-5) from a free-form stage name. Mirror of reserve route. */
+function getStageNumber(etapaNombre: string | null | undefined): number | null {
+  if (!etapaNombre) return null;
+  const matchDigit = etapaNombre.match(/[1-5]/);
+  if (matchDigit) return parseInt(matchDigit[0], 10);
+  const clean = etapaNombre.toUpperCase();
+  if (/\bV\b/.test(clean)) return 5;
+  if (/\bIV\b/.test(clean)) return 4;
+  if (/\bIII\b/.test(clean)) return 3;
+  if (/\bII\b/.test(clean)) return 2;
+  if (/\bI\b/.test(clean)) return 1;
+  return null;
+}
 
 const formatNum = (n: number | null | undefined) =>
   n != null ? n.toLocaleString("es-AR") : "—";
@@ -212,6 +230,12 @@ export default async function PublicLotFichaPage({
       logoUrl: true, companyLogoUrl: true, themeColor: true,
       contactPhone: true, contactWeb: true, contactAddress: true,
       services: true, overlayRotation: true, brochurePlanUrl: true,
+      reservationCurrency: true,
+      reservationAmountStage1Cents: true,
+      reservationAmountStage2Cents: true,
+      reservationAmountStage3Cents: true,
+      reservationAmountStage4Cents: true,
+      reservationAmountStage5Cents: true,
     },
   });
   if (!dev) notFound();
@@ -244,6 +268,25 @@ export default async function PublicLotFichaPage({
     ? lot.etapaColor! : themeColor;
 
   const price = formatPrice(lot.priceCents, lot.currency);
+
+  // ── Seña de reserva: resolver la etapa del lote → monto configurado ──────
+  // Mirror de /api/developments/lots/[id]/reserve: el monto vive en el Development por etapa.
+  const senaStageMap: Record<number, number | null | undefined> = {
+    1: dev.reservationAmountStage1Cents,
+    2: dev.reservationAmountStage2Cents,
+    3: dev.reservationAmountStage3Cents,
+    4: dev.reservationAmountStage4Cents,
+    5: dev.reservationAmountStage5Cents,
+  };
+  const senaStageNumber = getStageNumber(lot.etapaNombre);
+  const senaRaw = senaStageNumber != null ? senaStageMap[senaStageNumber] : null;
+  const senaCurrency = dev.reservationCurrency ?? null;
+  const senaAmount =
+    senaRaw != null && senaRaw > 0 && senaCurrency
+      ? NO_DECIMAL_CURRENCIES.has(senaCurrency.toUpperCase())
+        ? senaRaw
+        : senaRaw / 100
+      : null;
 
   // ── Mini-plan ────────────────────────────────────────────────────────────
   const lotsWithPath = siblingLots.filter((l) => !!l.pathData);
@@ -534,6 +577,18 @@ export default async function PublicLotFichaPage({
                 {lot.currency && <p className="text-[10px] opacity-70 mt-0.5">{lot.currency}</p>}
               </div>
             )}
+
+            {/* CTA: reserva online + contacto por WhatsApp */}
+            <LotPublicCTA
+              lotId={lot.id}
+              lotNumber={lot.lotNumber}
+              lotLabel={lotLabel}
+              developmentName={dev.name}
+              status={lot.status}
+              contactPhone={dev.contactPhone}
+              senaAmount={senaAmount}
+              senaCurrency={senaCurrency}
+            />
 
             {/* Servicios */}
             {dev.services && dev.services.length > 0 && (
