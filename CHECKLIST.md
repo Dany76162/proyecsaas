@@ -642,6 +642,17 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **No tocado:** Código funcional, `/demo`, `demo-content.ts`, Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
 * **Pendiente:** Validar visualmente `/demo` en producción tras el deploy y reemplazar cualquier imagen que no encaje comercialmente con su tarjeta (mismo nombre de archivo).
 
+### Demo.1 — ✅ Tarjetas de propiedades alineadas al catálogo público (QA 2026-06-23)
+* **Commit:** `e6b356d`
+* **Estado:** ✅ Producción validada visualmente.
+* **Alcance:** Las tarjetas de propiedades del modo demo `/demo` fueron unificadas visualmente con el sistema de tarjetas públicas reales mediante `PublicPropertyCard` (componente presentacional extraído del markup exacto del catálogo `/cat`).
+* **Archivos:** `src/app/demo/page.tsx`, `src/components/properties/public-property-card.tsx` (nuevo).
+* **Resultado comercial:** La demo se ve más profesional y consistente con el catálogo público real, elevando la calidad visual de la preventa.
+* **QA visual:** Confirmado en producción — `/demo` carga, las 3 tarjetas muestran imágenes comerciales (no rotas) y respetan el lenguaje visual del catálogo; banner read-only presente; sin errores bloqueantes.
+* **Seguridad:** `/demo` sigue read-only; CTAs demo sin escritura, sin WhatsApp real, sin DB, sin pagos/reservas.
+* **No tocado:** `/cat/[orgSlug]`, catálogo público real, `demo-content.ts`, Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
+* **Pendiente técnico (follow-up separado):** Refactorizar `/cat/[orgSlug]` para usar `PublicPropertyCard` y deduplicar el diseño del catálogo real (rama propia + reescritura controlada del bloque inline).
+
 ## 32. AUDITORÍA DE CONSISTENCIA VISUAL — 🟡 (unificación en curso)
 - ☑ Auditoría de colores/botones/badges/tipografías/espaciados/iconografía completada · duplicados identificados.
 - ✔️ **Badge de lote público unificado** (`f794c9a`) — 1ª divergencia cerrada.
