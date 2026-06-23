@@ -1008,6 +1008,17 @@ Canal oficial: recepción/envío/webhooks/historial ✅. IA: respuesta automáti
 - ✅ Creado: idempotente, **dry-run por defecto**, `--execute` para persistir.
 - ✅ Reutiliza `encryptToken` real del sistema (no imprime tokens/secretos).
 - ✅ Corregido: el dry-run soporta org `raicespilot-demo` inexistente usando placeholder `DRY_RUN_ORG_ID_raicespilot-demo` solo para reporte/plan, sin writes y sin mezclar con soporte.
+- ✅ Seed real ejecutado el 2026-06-23 con autorización explícita: org `raicespilot-demo`, admin/membership, suscripción `growth` y canal demo creados.
+- ✅ Soporte/productivo intacto: validación productiva OK para `org_north`; no se usó `WHATSAPP_ORGANIZATION_ID` como org demo.
+- ⚠️ Validación demo bloqueada: el resolver rechaza `PHONE_NUMBER_ID` `1138155372723730` con `channel-not-active` porque el canal quedó con `status=INACTIVE` aunque `isActive=true`.
+- 🟠 Pendiente: fix mínimo del estado del canal demo (`status` esperado por resolver) y revalidación del resolver demo.
+- 🚫 Pendiente: no enviar mensajes reales al número demo hasta resolver `channel-not-active` y validar Inbox IA demo end-to-end.
+- 🟡 Fix en preparación: actualizar `scripts/seed-demo-org.ts` para que el canal demo quede con `status=ACTIVE` manteniendo `isActive=true`, provider `WHATSAPP_CLOUD`, `PHONE_NUMBER_ID` demo y sin relajar el resolver.
+- 🔒 Routing demo pendiente hasta corregir `status` y revalidar; prohibido enviar mensajes al demo o activar IA/prompts hasta estado operativo aprobado.
+- ✅ Fix acotado aplicado el 2026-06-23: canal demo actualizado a `status=ACTIVE`; `isActive=true`, provider `WHATSAPP_CLOUD`, `PHONE_NUMBER_ID=1138155372723730`, display `+5491166037971`.
+- ✅ Resolver demo OK: `1138155372723730` resuelve por DB a `raicespilot-demo`; productivo/global sigue OK por soporte (`org_north`).
+- 🟠 Pendiente: org demo aún sin agente IA (`aiAgents=[]`); configurar prompt dedicado `[[MODO_RECEPCION]]` antes de operar públicamente.
+- 🚫 Pendiente: no enviar mensajes reales ni operar demo públicamente hasta aprobar prompt/agente demo y validar Inbox IA end-to-end.
 - 🟠 **Pendiente:** dry-run real con `.env` completo (requiere `WHATSAPP_TOKEN_ENCRYPTION_KEY`).
 - 🟠 **Pendiente:** ejecución `--execute` **solo con autorización explícita**.
 

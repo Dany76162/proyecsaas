@@ -272,6 +272,9 @@ async function ensureWhatsAppChannel(
       provider: true,
       isPrimary: true,
       isActive: true,
+      status: true,
+      verificationStatus: true,
+      webhookSubscribed: true,
       displayPhoneNumber: true,
       verifiedDisplayName: true,
       accessTokenEncrypted: true,
@@ -284,6 +287,7 @@ async function ensureWhatsAppChannel(
     provider: DEMO_PROVIDER,
     isPrimary: true,
     isActive: true,
+    status: "ACTIVE" as const,
     displayPhoneNumber: DEMO_DISPLAY_PHONE,
     verifiedDisplayName: DEMO_NAME,
     accessTokenEncrypted: encrypted,
@@ -304,6 +308,7 @@ async function ensureWhatsAppChannel(
     existing.provider !== desired.provider ||
     existing.isPrimary !== desired.isPrimary ||
     existing.isActive !== desired.isActive ||
+    existing.status !== desired.status ||
     existing.displayPhoneNumber !== desired.displayPhoneNumber ||
     existing.verifiedDisplayName !== desired.verifiedDisplayName ||
     existing.accessTokenEncrypted !== desired.accessTokenEncrypted;
