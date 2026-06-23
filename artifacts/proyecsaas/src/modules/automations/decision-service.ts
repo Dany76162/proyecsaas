@@ -598,6 +598,63 @@ function getDecisionModel() {
 }
 
 function buildPrompt(context: PreparedConversationContext) {
+  if (context.aiAgent?.mode === "RECEPTION") {
+    return buildPromptReceptionStub(context);
+  }
+  return buildPromptRealEstate(context);
+}
+
+function buildPromptReceptionStub(context: PreparedConversationContext) {
+  const agent = context.aiAgent;
+
+  const identityLine = agent?.name
+    ? `Tu nombre es "${agent.name}" y sos la recepción comercial de Raíces Pilot. Atendés por WhatsApp a inmobiliarias, desarrolladoras, loteadoras, brokers, comercializadoras, constructoras y equipos comerciales interesados en conocer o probar la plataforma.`
+    : "Sos la recepción comercial de Raíces Pilot. Atendés por WhatsApp a inmobiliarias, desarrolladoras, loteadoras, brokers, comercializadoras, constructoras y equipos comerciales interesados en conocer o probar la plataforma.";
+
+  const toneLine = "Escribí siempre en español de Argentina, con tono cordial, claro, comercial y profesional.";
+
+  const systemInstructions = [
+    identityLine,
+    toneLine,
+    "FUNCION: Recibir, calificar y ordenar consultas comerciales B2B. No sos una inmobiliaria, no vendés propiedades, no atendés compradores finales, no buscás inmuebles, no coordinás visitas, no tomás reservas ni pagos y no activás cuentas automáticamente.",
+    "REGLAS:",
+    "- Respondé SIEMPRE al último mensaje del contacto.",
+    "- Hacé como máximo UNA pregunta por mensaje, con naturalidad.",
+    "- Capturá datos comerciales mínimos: nombre, empresa, rol, ciudad/país, tipo de negocio, uso de WhatsApp para ventas, problema principal e interés declarado (demo, precios, CRM, integración WhatsApp, masterplan/lotes, reservas).",
+    "- NO inventes datos. Si un dato no fue dicho, no lo completes.",
+    "- NO ofrezcas propiedades, lotes, desarrollos, visitas, precios de inmuebles, reservas, señas, financiación ni activación inmediata.",
+    "- Derivá a una persona del equipo cuando el contacto pida hablar con alguien, soporte técnico, condiciones comerciales, propuesta, cuenta estratégica, urgencia, reclamo o caso sensible.",
+    "- Si el contacto es un comprador final que busca propiedad, aclarale amablemente que este canal es para empresas interesadas en la plataforma.",
+    "- Devolvé SOLO JSON válido con esta forma exacta:",
+    '  "message": string,',
+    '  "intent": string,',
+    '  "shouldScheduleVisit": false,',
+    '  "proposedVisitDate": null,',
+    '  "needsHumanHandoff": boolean,',
+    '  "confidence": number,',
+    '  "leadTemperature": "hot" | "warm" | "cold" | "unclear",',
+    '  "extractedPreferences": { budget: null, zones: [], rooms: null, purpose: null },',
+    '  "nextBestAction": string,',
+    '  "requiresFollowUp": boolean,',
+    '  "followUpReason": string | null',
+  ] as string[];
+
+  return {
+    system: systemInstructions.join("\n"),
+    user: JSON.stringify(
+      {
+        conversation: context.conversation,
+        recentMessages: context.recentMessages,
+        lead: context.lead,
+        nowIso: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+  };
+}
+
+function buildPromptRealEstate(context: PreparedConversationContext) {
   const availabilitySummary = getAvailabilitySummary(context);
   const doubleOptionSummary = getDoubleOptionVisitSummary(context);
   const agent = context.aiAgent;
@@ -811,6 +868,56 @@ function buildDeterministicFallback(
   context: PreparedConversationContext,
   reason: string,
 ): AutomationDecision {
+  const mode = context.aiAgent?.mode;
+
+  if (mode === "RECEPTION") {
+    const latestInbound = getLatestInboundMessage(context);
+    const latestBody = latestInbound?.body.trim().toLowerCase() ?? "";
+    const isHumanRequest =
+      latestBody.includes("hablar") ||
+      latestBody.includes("persona") ||
+      latestBody.includes("asesor") ||
+      latestBody.includes("soporte") ||
+      latestBody.includes("reclamo") ||
+      latestBody.includes("urgente");
+
+    if (isHumanRequest) {
+      return enrichDecisionWithContext({
+        responseText: applyToneToFallbackResponse(
+          "Perfecto, te derivo con una persona del equipo comercial para que pueda ayudarte.",
+          context,
+        ),
+        qualificationDecision: null,
+        visitIntent: null,
+        ...buildCommercialSignalDefaults(context, {
+          leadTemperature: "warm",
+          nextBestAction: "derivar-a-humano-comercial",
+          requiresFollowUp: true,
+          followUpReason: "Solicitud de contacto humano en canal de recepción B2B.",
+        }),
+        visitProposal: null,
+        internalNotes: `Fallback RECEPTION activado (${reason}). Contacto solicita persona/humano.`,
+      }, context);
+    }
+
+    return enrichDecisionWithContext({
+      responseText: applyToneToFallbackResponse(
+        "Hola, soy la recepción comercial de Raíces Pilot. Para orientarte bien: ¿de qué empresa sos y qué te gustaría resolver con nuestra plataforma?",
+        context,
+      ),
+      qualificationDecision: null,
+      visitIntent: null,
+      ...buildCommercialSignalDefaults(context, {
+        leadTemperature: "cold",
+        nextBestAction: "captar-datos-comerciales-b2b",
+        requiresFollowUp: true,
+        followUpReason: "Lead B2B: falta empresa e interés declarado.",
+      }),
+      visitProposal: null,
+      internalNotes: `Fallback RECEPTION activado (${reason}). Se solicitan datos comerciales mínimos.`,
+    }, context);
+  }
+
   const latestInbound = getLatestInboundMessage(context);
   const latestBody = latestInbound?.body.trim() ?? "";
   const visitRequested = latestBody ? hasVisitIntentFallback(latestBody) : false;
