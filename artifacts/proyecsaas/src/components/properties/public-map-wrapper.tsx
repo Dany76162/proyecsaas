@@ -558,7 +558,13 @@ function ImageCarousel({ images, alt }: { images: { url: string }[], alt: string
 }
 
 function DevelopmentFullCard({ dev }: { dev: any }) {
-  const images = dev.images || (dev.logoUrl ? [{ url: dev.logoUrl }] : []);
+  // Imagen de tarjeta del desarrollo: portada (foto/render) primero, logo como fallback.
+  // Development no tiene relación `images`; coverImageUrl es la "Imagen de portada" del wizard.
+  const images = dev.coverImageUrl
+    ? [{ url: dev.coverImageUrl }]
+    : dev.logoUrl
+      ? [{ url: dev.logoUrl }]
+      : [];
   const detail = `/cat/${dev.organization?.slug}/developments/${dev.id}`;
   const total = dev.lots?.length || 0;
   const available = (dev.lots || []).filter((l: any) => l.status === "AVAILABLE").length;
@@ -620,7 +626,13 @@ function DevelopmentFullCard({ dev }: { dev: any }) {
 }
 
 function DevelopmentMediumCard({ dev }: { dev: any }) {
-  const images = dev.images || (dev.logoUrl ? [{ url: dev.logoUrl }] : []);
+  // Imagen de tarjeta del desarrollo: portada (foto/render) primero, logo como fallback.
+  // Development no tiene relación `images`; coverImageUrl es la "Imagen de portada" del wizard.
+  const images = dev.coverImageUrl
+    ? [{ url: dev.coverImageUrl }]
+    : dev.logoUrl
+      ? [{ url: dev.logoUrl }]
+      : [];
   const detail = `/cat/${dev.organization?.slug}/developments/${dev.id}`;
   const total = dev.lots?.length || 0;
   const available = (dev.lots || []).filter((l: any) => l.status === "AVAILABLE").length;
