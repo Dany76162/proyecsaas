@@ -423,6 +423,11 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 
 ## 14. MAPA INTERACTIVO — 🟡 Beta
 - ☑ **Persistencia validada** (🟢). Overlay/escala/rotación ✅.
+- **Fase 1 estabilizada (2026-06-23, `7c6e0b2`) — ✅ Implementado técnicamente / 🟡 pendiente QA visual en navegador.**
+  - El Paso 5 del wizard renderizaba el mapa aun sin plano base (mapa vacío sin guía). Ahora, si falta el masterplan/plano (`step2`: sin `masterplanSVG`), muestra un **empty state claro** ("Primero cargá el plano del proyecto y generá el masterplan") con accesos al Paso 2 (Plano) y Paso 3 (Masterplan).
+  - Con plano cargado: se mantiene el mapa + aviso de sincronizar lotes (`step3`) + editor de overlay (mover/escalar/rotar/guardar) ya funcional. Persistencia confirmada con datos reales locales (`overlayBounds` + `overlayRotation` guardados/recuperados vía `/api/developments/[id]/overlay`).
+  - **Archivo tocado**: `development-wizard-client.tsx` (solo el bloque del Paso 5). **No se tocó** Editor Plano Pro ni Tour 360; sin cambios de Prisma/DB/migraciones.
+  - **Validado**: `tsc --noEmit` limpio + `next build` OK + `check-tour360-invariants.mjs` OK + smoke server (Paso 5 y `/overlay` → 307 auth, sin 500). QA interactiva en navegador (mover/rotar/guardar/recargar) **pendiente** (workspace auth-gated + Leaflet/tiles no renderizan fiable en headless).
 
 ## 15. TOUR 360 DESARROLLOS — 🟠 Próximamente — ⛔
 
