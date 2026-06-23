@@ -601,6 +601,17 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Pendiente:** Validación visual en prod + decisión de agregar link público en la landing (hoy `/demo` queda sin link, no reemplaza el CTA "Solicitar demo").
 * **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
 
+### Demo.1 — ✅ Producción validada / Modo demo poblado read-only cerrado (QA 2026-06-22)
+* **Estado:** ✅ Producción validada.
+* **Ruta probada:** `/demo`.
+* **Evidencia visual:** La ruta carga correctamente en producción, muestra el banner `Modo demo — Datos de ejemplo` y permite recorrer KPIs, CRM/Oportunidades, Inbox IA, Propiedades, Desarrollo demo y Catálogo público demo. En español LATAM, sin login.
+* **Resultado comercial:** La demo permite mostrar valor en frío sin configurar WhatsApp, sin cargar datos reales y sin depender de actividad real del tenant.
+* **Arquitectura validada:** Experiencia read-only basada en `src/server/demo/workspace-store.ts` mediante adaptador `src/server/demo/demo-content.ts`.
+* **Seguridad:** Sin login obligatorio, sin escrituras en DB, sin worker, sin WhatsApp/envíos, sin pagos/reservas y sin datos reales.
+* **Pendiente posterior:** Decidir si se agrega link público `Ver demo` en la landing o si se mantiene acceso por URL directa.
+* **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
+* **Estado final:** Demo.1 cerrada como herramienta comercial read-only para preventa.
+
 ## 32. AUDITORÍA DE CONSISTENCIA VISUAL — 🟡 (unificación en curso)
 - ☑ Auditoría de colores/botones/badges/tipografías/espaciados/iconografía completada · duplicados identificados.
 - ✔️ **Badge de lote público unificado** (`f794c9a`) — 1ª divergencia cerrada.
