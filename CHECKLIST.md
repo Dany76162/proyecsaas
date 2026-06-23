@@ -47,6 +47,35 @@
 
 ---
 
+## 🗺️ PORTAL PÚBLICO + FICHA DE LOTE — IMÁGENES, MAPA Y CTA (2026-06-23, commits locales sin push)
+
+> Trabajo de Claude Code. **Commits en `main` local, NO pusheados a producción.** Validado con `tsc --noEmit` limpio + `npx next build` OK + `check-tour360-invariants.mjs` OK. El QA visual en navegador real / producción queda pendiente donde se indica (no se marca "validado en prod" sin validación visual real).
+
+| Commit | Qué | Secciones |
+|---|---|---|
+| `06af210` | **#3 — Imágenes de desarrollos en portal `/propiedades`** | 9 |
+| `db81732` | **#4 — Desarrollos visibles en modo mapa** | 9 · 10 · 14 |
+| `1a39244` | **Bloque 1 — CTA público de reserva/contacto en ficha de lote** | 8 · 16 |
+
+**#3 — Imágenes de desarrollos en el portal `/propiedades` (`06af210`) — ✅ Implementado / 🟡 pendiente QA visual en prod**
+- Las tarjetas de desarrollo (`DevelopmentFullCard` + `DevelopmentMediumCard` en `public-map-wrapper.tsx`) usaban `dev.images` (relación inexistente) y caían siempre al `logoUrl`, ignorando `coverImageUrl` (la "Imagen de portada" del wizard). Ahora priorizan **`coverImageUrl ?? logoUrl`**, mostrando la portada real.
+- **Sin tocar** DB, Prisma ni lógica comercial. La query ya traía los escalares vía `include`.
+- Verificado en sesión: DOM hidratado (Chrome headless) renderiza el `<img>` con la portada cuando hay `coverImageUrl`, y cae al logo como fallback.
+
+**#4 — Desarrollos visibles en modo mapa (`db81732`) — ✅ Implementado técnicamente / 🟡 pendiente QA visual manual del mapa**
+- El endpoint `/api/public/properties/map` devuelve marcadores de desarrollo (`markerKind: "development"`) junto a las propiedades; el popup del marcador prioriza **`coverImageUrl ?? logoUrl`** (consistente con la tarjeta).
+- **`fitBounds` inicial** ahora encuadra **propiedades + desarrollos** (una sola vez, al llegar los primeros marcadores; las búsquedas posteriores no reencuadran). Antes, un desarrollo con ubicación lejana al cluster quedaba fuera del viewport inicial y parecía "no aparecer".
+- Verificado en sesión: el endpoint responde HTTP 200 con propiedades + 1 desarrollo (`markerKind:"development"`, coords/URL válidas) y el código extiende los bounds sobre cada marcador válido. **Pendiente:** captura visual del encuadre en navegador real (Chrome headless no carga los tiles + WebGL, así que el mapa no se pudo screenshotear).
+- **#5 (filtro "Recorrido 360°" + mismatch `type`/`propertyType` en el fetch del mapa) queda PENDIENTE — no tocado, solo anotado.**
+
+**Bloque 1 — CTA público de reserva/contacto en la ficha de lote (`1a39244`) — 🟡 Implementado / pendiente QA navegador del flujo real**
+- Nuevo `lot-public-cta.tsx`: reserva online con seña que redirige a Mercado Pago (usa el `POST /reserve` existente) + botón de WhatsApp con mensaje pre-cargado + mensajes por estado del lote (AVAILABLE / RESERVED / SOLD / sin seña).
+- `page.tsx` resuelve el monto de seña por etapa (espejo de la lógica de `/reserve`) agregando los campos al `select` de lectura y monta el CTA.
+- **Sin tocar** schema/DB/migraciones; **sin tocar** el webhook de MP ni la lógica de pagos/reservas más allá del CTA visual/form esperado.
+- Verificado en sesión: render SSR por estado correcto, validación del form (400 sin campos), y el flujo de reserva arranca hasta MP (503 local por falta de `MERCADO_PAGO_ACCESS_TOKEN`, manejado con elegancia — lote queda AVAILABLE). **Pendiente:** click-through completo en navegador y redirección real a MP con token.
+
+---
+
 ## 🔌 WHATSAPP + AGENTE IA — PUESTA EN MARCHA REAL END-TO-END (2026-06-17, cuenta SevenToop)
 
 Sesión larga destrabando el flujo real de WhatsApp por QR (Evolution API v2) hasta que el agente recibe, entiende, ofrece inventario real y responde por WhatsApp. **Cadena completa funcionando, verificada con charla real.**
