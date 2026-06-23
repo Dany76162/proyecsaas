@@ -433,6 +433,13 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
   - **Modo rendimiento**: en `variant="editor"`, si el proyecto supera **300 lotes** (`LARGE_PROJECT_LOT_THRESHOLD`), los lotes **no se dibujan por defecto**. Toggle **"Mostrar/Ocultar lotes"** en el toolbar + aviso ("Proyecto grande: ocultamos los lotes mientras calibrás el plano para que el mapa sea más fluido"). Con lotes ocultos, el mapa y la imagen del overlay se mueven fluidos y no hay recálculo de polígonos.
   - **Sin cambios** en el modelo de datos, la carga ni el guardado del overlay (`overlayBounds`/rotación intactos). No toca el viewer público (`variant != "editor"`), Editor Plano Pro, Tour 360, Prisma/DB ni migraciones. Renderer Leaflet ya era Canvas (`preferCanvas: true`).
   - **Archivo tocado**: `masterplan-map.tsx`. **Validado**: `tsc --noEmit` limpio + `next build` OK + `check-tour360-invariants.mjs` OK. QA visual del usuario en navegador autenticado **pendiente**.
+- **Fase A — culling por viewport + gate de zoom (2026-06-23, `5566e4e`) — ✅ Implementado técnicamente / 🟡 pendiente QA visual del usuario en navegador autenticado.**
+  - **Motivo**: al "Mostrar lotes" en proyectos grandes (~2079) reaparecía la pesadez/pixelación (canvas rasteriza miles de polígonos y tarda en redibujar al zoom/pan).
+  - **Gate de zoom**: en `variant="editor"` y proyectos > 300 lotes, por debajo de `MIN_LOT_RENDER_ZOOM` (16) no se dibujan lotes; aviso **"Acercá el mapa para ver los lotes."**
+  - **Culling por viewport**: por encima del zoom mínimo, solo se instancian los polígonos que intersecan el viewport actual (margen 25%). Los de fuera de pantalla no se crean como capas Leaflet. Re-culling en `moveend`/`zoomend` (no por frame); sin auto-`fitBounds` con culling activo.
+  - **Proyectos chicos (≤300)**: comportamiento sin cambios (se dibujan todos).
+  - **Sin tocar** persistencia/overlay (`overlayBounds`/rotación), API `/overlay`, guardado, Editor Plano Pro, Tour 360, Prisma/DB ni migraciones. **No** se implementó aún Fase B/C ni pipeline de raster (SVG→PNG/WebP).
+  - **Archivo tocado**: `masterplan-map.tsx`. **Validado**: `tsc --noEmit` limpio + `next build` OK + `check-tour360-invariants.mjs` OK (en worktree aislado). QA visual del usuario **pendiente**.
 
 ## 15. TOUR 360 DESARROLLOS — 🟠 Próximamente — ⛔
 
