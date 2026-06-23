@@ -630,6 +630,18 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **No tocado:** `/demo`, dataset demo, Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
 * **Estado final:** Link público a Demo.1 cerrado y validado en producción.
 
+### Demo.1 — Imágenes de propiedades demo integradas (2026-06-23)
+* **Commit:** `18cd118`
+* **Estado:** ✅ Integrado en main / 🟡 pendiente validación visual en producción.
+* **Alcance:** Se agregaron imágenes JPG reales/renders para las tarjetas de propiedades del modo demo `/demo`.
+* **Archivos agregados:** `public/demo/departamento.jpg`, `public/demo/duplex.jpg`, `public/demo/monoambiente.jpg`.
+* **Resultado:** Las rutas que `/demo` (vía `demo-content.ts`, commit `ed66537`) ya esperaba existen ahora en el repo → las tarjetas renderizan imágenes en vez de mostrar imagen rota/fallback.
+* **Origen:** `departamento.jpg` ← `ChatGPT Image 16 jun 2026, 10_04_22.png`; `duplex.jpg` ← `geodevia_render_1779297209332.jpg`; `monoambiente.jpg` ← `ChatGPT Image 20 may 2026, 11_44_50.png`.
+* **Conversión:** Los PNG de origen fueron convertidos a JPG real con `sharp` (flatten fondo blanco + resize ≤1280px + JPEG q82); los 3 assets verificados como formato `jpeg`. Commit con solo las 3 imágenes; sin reescribir historia; rama `feat/demo-add-property-photos` archivada.
+* **Seguridad:** Solo assets estáticos. Sin DB, sin worker, sin WhatsApp, sin pagos/reservas.
+* **No tocado:** Código funcional, `/demo`, `demo-content.ts`, Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
+* **Pendiente:** Validar visualmente `/demo` en producción tras el deploy y reemplazar cualquier imagen que no encaje comercialmente con su tarjeta (mismo nombre de archivo).
+
 ## 32. AUDITORÍA DE CONSISTENCIA VISUAL — 🟡 (unificación en curso)
 - ☑ Auditoría de colores/botones/badges/tipografías/espaciados/iconografía completada · duplicados identificados.
 - ✔️ **Badge de lote público unificado** (`f794c9a`) — 1ª divergencia cerrada.
