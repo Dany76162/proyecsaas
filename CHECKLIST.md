@@ -428,6 +428,11 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
   - Con plano cargado: se mantiene el mapa + aviso de sincronizar lotes (`step3`) + editor de overlay (mover/escalar/rotar/guardar) ya funcional. Persistencia confirmada con datos reales locales (`overlayBounds` + `overlayRotation` guardados/recuperados vía `/api/developments/[id]/overlay`).
   - **Archivo tocado**: `development-wizard-client.tsx` (solo el bloque del Paso 5). **No se tocó** Editor Plano Pro ni Tour 360; sin cambios de Prisma/DB/migraciones.
   - **Validado**: `tsc --noEmit` limpio + `next build` OK + `check-tour360-invariants.mjs` OK + smoke server (Paso 5 y `/overlay` → 307 auth, sin 500). QA interactiva en navegador (mover/rotar/guardar/recargar) **pendiente** (workspace auth-gated + Leaflet/tiles no renderizan fiable en headless).
+- **Hotfix de rendimiento (2026-06-23, `a2f957c`) — ✅ Implementado técnicamente / 🟡 pendiente QA visual del usuario en navegador autenticado.**
+  - **Motivo**: QA visual del usuario detectó que el Paso 5 se tildaba y no permitía mover el mapa en proyectos grandes (~2079 lotes). Causa: se dibujaban miles de polígonos Leaflet con tooltip sticky + handlers y se recalculaban en cada frame al mover el overlay (`updatePolygonPositionsLive`).
+  - **Modo rendimiento**: en `variant="editor"`, si el proyecto supera **300 lotes** (`LARGE_PROJECT_LOT_THRESHOLD`), los lotes **no se dibujan por defecto**. Toggle **"Mostrar/Ocultar lotes"** en el toolbar + aviso ("Proyecto grande: ocultamos los lotes mientras calibrás el plano para que el mapa sea más fluido"). Con lotes ocultos, el mapa y la imagen del overlay se mueven fluidos y no hay recálculo de polígonos.
+  - **Sin cambios** en el modelo de datos, la carga ni el guardado del overlay (`overlayBounds`/rotación intactos). No toca el viewer público (`variant != "editor"`), Editor Plano Pro, Tour 360, Prisma/DB ni migraciones. Renderer Leaflet ya era Canvas (`preferCanvas: true`).
+  - **Archivo tocado**: `masterplan-map.tsx`. **Validado**: `tsc --noEmit` limpio + `next build` OK + `check-tour360-invariants.mjs` OK. QA visual del usuario en navegador autenticado **pendiente**.
 
 ## 15. TOUR 360 DESARROLLOS — 🟠 Próximamente — ⛔
 
