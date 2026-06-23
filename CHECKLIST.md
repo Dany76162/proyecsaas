@@ -620,6 +620,16 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 * **Seguridad:** Solo navegación hacia ruta read-only `/demo`. Sin DB, sin worker, sin WhatsApp, sin pagos/reservas.
 * **No tocado:** `/demo` y su dataset, Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
 
+### Demo.1 — ✅ Link "Ver demo interactiva" validado en landing (QA 2026-06-22)
+* **Estado:** ✅ Producción validada. (main `fca0993`)
+* **Ruta origen:** Landing pública `/`. **Ruta destino:** `/demo`.
+* **Evidencia visual:** El hero de la landing muestra `Solicitar demo` como CTA principal, `Ver demo interactiva` como CTA secundario y `Acceder al sistema` como acceso secundario. `Ver demo interactiva` abre el modo demo poblado read-only.
+* **Resultado comercial:** La landing permite que un visitante o vendedor acceda al modo demo poblado read-only sin quitar prioridad al contacto comercial.
+* **Regla comercial validada:** `Solicitar demo` sigue siendo el CTA principal; `Ver demo interactiva` funciona como apoyo de preventa.
+* **Seguridad:** Solo navegación hacia `/demo`; sin DB, sin worker, sin WhatsApp, sin pagos/reservas.
+* **No tocado:** `/demo`, dataset demo, Prisma/schema, DB, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
+* **Estado final:** Link público a Demo.1 cerrado y validado en producción.
+
 ## 32. AUDITORÍA DE CONSISTENCIA VISUAL — 🟡 (unificación en curso)
 - ☑ Auditoría de colores/botones/badges/tipografías/espaciados/iconografía completada · duplicados identificados.
 - ✔️ **Badge de lote público unificado** (`f794c9a`) — 1ª divergencia cerrada.
