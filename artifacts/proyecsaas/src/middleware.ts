@@ -14,6 +14,8 @@ const PUBLIC_PATHS: Array<string | RegExp> = [
   "/terminos",
   "/propiedades",
   "/app-movil",
+  "/demo",
+  /^\/demo(\/|$)/,
   "/manifest.json",
   "/manifest-b2c.json",
   "/sw.js",

@@ -589,6 +589,18 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
 4. Mantener todo sin escrituras reales, sin worker, sin WhatsApp, sin pagos y sin reservas reales.
 5. Validar que sirva para demo comercial de inmobiliaria y desarrolladora.
 
+### Demo.1 — Modo demo poblado read-only (IMPLEMENTADA 2026-06-22)
+* **Commit:** `<pendiente>` (rama `feat/demo-mode-readonly-demo1`)
+* **Estado:** 🟡 Beta / listo para validación.
+* **Ruta:** `/demo` (pública, sin login, `force-static`, metadata `noindex`).
+* **Alcance:** Página demo read-only en español LATAM con banner "Modo demo — Datos de ejemplo", KPIs, CRM/Oportunidades, Inbox IA, Propiedades, Desarrollo demo y Catálogo público demo.
+* **Dataset:** reusa `src/server/demo/workspace-store.ts` (solo getters de lectura) vía adaptador nuevo `src/server/demo/demo-content.ts` que mapea el contenido (inglés→español) y agrega los bloques que el store no tiene (Inbox IA y un desarrollo) como ejemplo claramente ficticio.
+* **Objetivo comercial:** que un vendedor muestre valor en frío en menos de 2 minutos sin configurar WhatsApp ni cargar datos reales.
+* **Seguridad:** SIN escrituras en DB (no usa los mutadores `createDemoLead`/`updateDemoLead`/`createDemoVisit`), sin worker, sin WhatsApp/envíos, sin pagos/reservas, sin datos reales. Botones "Ver ficha (demo)" no ejecutan nada.
+* **Middleware:** `/demo` agregado a `PUBLIC_PATHS` (additivo; invariantes del Tour 360° intactos).
+* **Pendiente:** Validación visual en prod + decisión de agregar link público en la landing (hoy `/demo` queda sin link, no reemplaza el CTA "Solicitar demo").
+* **No tocado:** Prisma/schema, DB estructural, migraciones, Railway, worker, WhatsApp/webhooks, pagos/reservas, AgentOS.
+
 ## 32. AUDITORÍA DE CONSISTENCIA VISUAL — 🟡 (unificación en curso)
 - ☑ Auditoría de colores/botones/badges/tipografías/espaciados/iconografía completada · duplicados identificados.
 - ✔️ **Badge de lote público unificado** (`f794c9a`) — 1ª divergencia cerrada.
