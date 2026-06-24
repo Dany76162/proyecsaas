@@ -1,18 +1,22 @@
 /**
  * Static HTML parsing strategy — last resort fallback.
  *
- * Works for sites that render property listings server-side (no JS rendering).
- * Two passes:
- *   1. Repeating card/article containers (clases comunes inmobiliarias).
- *   2. Fallback: links candidatos a fichas de propiedad + parseo del contexto
- *      alrededor del link (para sitios con markup/clases no estándar).
+ * SOLO detecta propiedades dentro de contenedores/cards CLARAMENTE DELIMITADOS
+ * (article / div|li|section con clase de listado). Cada propiedad se extrae de
+ * UN bloque delimitado → nunca se mezclan datos entre cards vecinas.
  *
- * No reemplaza el comportamiento seguro: el endpoint sigue creando todo como
+ * P0 integridad: se ELIMINÓ el fallback por "ventana de HTML alrededor del link"
+ * (±N chars) porque capturaba texto de cards vecinas y mezclaba precio/título/IDs
+ * de otra propiedad. Mejor no importar que importar mal (fail-closed).
+ *
+ * No cambia el comportamiento seguro: el endpoint sigue creando todo como
  * DRAFT + publicVisible:false. Esta estrategia solo DETECTA y extrae campos.
  */
 
 import type { SyncProperty } from "../types";
 import {
+  countDistinctPrices,
+  isCleanTitle,
   parseBathrooms,
   parseBedrooms,
   parseOperationType,
@@ -29,17 +33,10 @@ const FETCH_HEADERS = {
   "Accept-Language": "es-AR,es;q=0.9",
 };
 
-/** Diagnóstico seguro (sin HTML ni datos sensibles) para los logs del orquestador. */
-export interface HtmlStaticDiagnostics {
-  containerBlocks: number;
-  candidateLinks: number;
-  fallbackUsed: boolean;
-  imported: number;
-}
-
 /**
- * Extrae bloques tipo "card" por contenedores repetidos. Lista de clases ampliada
- * para cubrir más temas (aviso/resultado/item/ficha/result/grid-item, etc.).
+ * Extrae bloques tipo "card" por contenedores repetidos. Cada match es UN
+ * contenedor delimitado (no una ventana arbitraria), así que su contenido
+ * pertenece a una sola propiedad. Lista de clases ampliada para más temas.
  */
 function extractPropertyBlocks(html: string): string[] {
   const classWords =
@@ -57,7 +54,7 @@ function extractPropertyBlocks(html: string): string[] {
     pattern.lastIndex = 0;
     while ((match = pattern.exec(html)) !== null) {
       const text = stripHtml(match[0]).trim();
-      if (text.length > 50) found.push(match[0]); // guardamos el HTML del bloque (para link/imagen)
+      if (text.length > 50) found.push(match[0]); // HTML del bloque (para link/imagen)
     }
     if (found.length >= 3) return found;
   }
@@ -65,7 +62,7 @@ function extractPropertyBlocks(html: string): string[] {
   return [];
 }
 
-/** Extrae la mejor imagen absoluta de un bloque HTML (src → data-src → srcset). */
+/** Mejor imagen absoluta de un bloque (src → data-src → srcset). Misma card. */
 function extractImageFromBlock(block: string): string | null {
   const srcMatch = block.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i);
   if (srcMatch) return srcMatch[1];
@@ -89,16 +86,34 @@ function extractLinkFromBlock(block: string, sourceUrl: string): string | null {
   }
 }
 
-/** Convierte texto de un bloque/contexto en SyncProperty. Requiere precio o superficie. */
-function textBlockToProperty(text: string, link: string | null, sourceUrl: string): SyncProperty | null {
-  const priceData = parsePrice(text);
-  const surfaceM2 = parseSurfaceM2(text);
-  // Necesita al menos precio o superficie para considerarse una propiedad (evita basura/nav).
-  if (!priceData && !surfaceM2) return null;
+/** Razón por la que un bloque se omitió (para diagnóstico). */
+type SkipReason = "sin-precio-ni-superficie" | "titulo-sucio";
 
+/**
+ * Convierte un bloque DELIMITADO en SyncProperty con criterio conservador:
+ *  - título debe ser "limpio" (si no, se omite: baja confianza).
+ *  - requiere precio o superficie.
+ *  - si hay MÁS de un precio distinto en el bloque, no se puede asociar con
+ *    seguridad → precio vacío ("A consultar"), no se adivina.
+ * Devuelve { prop } o { skip } con la razón.
+ */
+function textBlockToProperty(
+  rawBlock: string,
+  sourceUrl: string,
+): { prop: SyncProperty } | { skip: SkipReason } {
+  const text = stripHtml(rawBlock);
+
+  // Título: primera línea con sentido. Debe ser limpio (evita datos mezclados).
   const lines = text.split(/\n|\./).map((l) => l.trim()).filter((l) => l.length > 10);
-  const title = lines[0]?.slice(0, 200) ?? text.slice(0, 80);
+  const title = lines[0]?.slice(0, 200) ?? text.slice(0, 120);
+  if (!isCleanTitle(title)) return { skip: "titulo-sucio" };
 
+  const surfaceM2 = parseSurfaceM2(text);
+  // Precio: solo si NO es ambiguo (un único importe en el bloque).
+  const priceData = countDistinctPrices(text) <= 1 ? parsePrice(text) : null;
+  if (!priceData && !surfaceM2) return { skip: "sin-precio-ni-superficie" };
+
+  const link = extractLinkFromBlock(rawBlock, sourceUrl);
   const propertyType = parsePropertyType(text);
   const operationType = parseOperationType(text);
   const rooms = parseRooms(text);
@@ -111,77 +126,29 @@ function textBlockToProperty(text: string, link: string | null, sourceUrl: strin
     : `html-${title.slice(0, 40).toLowerCase().replace(/\s+/g, "-")}`;
 
   return {
-    title,
-    description: text.slice(0, 300) || null,
-    address: null,
-    neighborhood: null,
-    city: null,
-    propertyType,
-    operationType,
-    priceCents: priceData?.cents ?? null,
-    currency: priceData?.currency ?? "USD",
-    bedrooms,
-    bathrooms,
-    surfaceM2,
-    externalLink,
-    imageUrl: null,
-    externalId,
+    prop: {
+      title,
+      description: text.slice(0, 300) || null,
+      address: null,
+      neighborhood: null,
+      city: null,
+      propertyType,
+      operationType,
+      priceCents: priceData?.cents ?? null,
+      currency: priceData?.currency ?? "USD",
+      bedrooms,
+      bathrooms,
+      surfaceM2,
+      externalLink,
+      imageUrl: extractImageFromBlock(rawBlock),
+      externalId,
+    },
   };
 }
 
-/** Patrón de href que parece una ficha de propiedad. */
-const PROPERTY_HREF_RE =
-  /(propiedad|propiedades|inmueble|inmuebles|ficha|aviso|avisos|emprendimiento|venta|alquiler|listing|\/\d{4,})/i;
-
 /**
- * Fallback: detecta links candidatos a fichas y parsea una ventana de HTML
- * alrededor de cada uno (≈1200 chars a cada lado). Sirve para listados con
- * markup/clases no estándar donde los contenedores no se reconocen.
- */
-function extractByCandidateLinks(
-  html: string,
-  sourceUrl: string,
-): { properties: SyncProperty[]; candidateLinks: number } {
-  const origin = new URL(sourceUrl).origin;
-  const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi;
-  const candidates: Array<{ href: string; index: number }> = [];
-  const seenPath = new Set<string>();
-  let m: RegExpExecArray | null;
-
-  while ((m = anchorRe.exec(html)) !== null) {
-    let href = m[1];
-    if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) continue;
-    let abs: URL;
-    try {
-      abs = new URL(href, sourceUrl);
-    } catch {
-      continue;
-    }
-    if (abs.origin !== origin) continue; // solo mismo dominio
-    if (!PROPERTY_HREF_RE.test(abs.pathname)) continue;
-    if (seenPath.has(abs.pathname)) continue;
-    seenPath.add(abs.pathname);
-    candidates.push({ href: abs.href, index: m.index });
-  }
-
-  const properties: SyncProperty[] = [];
-  const seenId = new Set<string>();
-  for (const c of candidates) {
-    const win = html.slice(Math.max(0, c.index - 1200), c.index + 1200);
-    const text = stripHtml(win);
-    const prop = textBlockToProperty(text, c.href, sourceUrl);
-    if (!prop) continue;
-    if (seenId.has(prop.externalId)) continue;
-    seenId.add(prop.externalId);
-    properties.push({ ...prop, imageUrl: extractImageFromBlock(win) });
-  }
-
-  return { properties, candidateLinks: candidates.length };
-}
-
-/**
- * Extrae propiedades desde HTML estático. Devuelve null si no detecta al menos
- * 3 propiedades (ni por contenedores ni por links candidatos).
+ * Extrae propiedades desde HTML estático SOLO por contenedores delimitados.
+ * Devuelve null si no detecta al menos 3 propiedades de alta/media confianza.
  */
 export async function extractFromHtmlStatic(
   sourceUrl: string,
@@ -207,37 +174,29 @@ export async function extractFromHtmlStatic(
     return null;
   }
 
-  // ── Pase 1: contenedores tipo card ──
+  const blocks = extractPropertyBlocks(html);
   const seen = new Set<string>();
   const properties: SyncProperty[] = [];
-  const blocks = extractPropertyBlocks(html);
+  let skippedDirty = 0;
+  let skippedEmpty = 0;
+
   for (const block of blocks) {
-    const link = extractLinkFromBlock(block, sourceUrl);
-    const imageUrl = extractImageFromBlock(block);
-    const prop = textBlockToProperty(stripHtml(block), link, sourceUrl);
-    if (!prop) continue;
+    const result = textBlockToProperty(block, sourceUrl);
+    if ("skip" in result) {
+      if (result.skip === "titulo-sucio") skippedDirty++;
+      else skippedEmpty++;
+      continue;
+    }
+    const prop = result.prop;
     if (seen.has(prop.externalId)) continue;
     seen.add(prop.externalId);
-    properties.push({ ...prop, imageUrl });
-  }
-
-  let fallbackUsed = false;
-  let candidateLinks = 0;
-  // ── Pase 2: fallback por links candidatos (si los contenedores no alcanzaron) ──
-  if (properties.length < 3) {
-    fallbackUsed = true;
-    const fb = extractByCandidateLinks(html, sourceUrl);
-    candidateLinks = fb.candidateLinks;
-    for (const prop of fb.properties) {
-      if (seen.has(prop.externalId)) continue;
-      seen.add(prop.externalId);
-      properties.push(prop);
-    }
+    properties.push(prop);
   }
 
   const withPrice = properties.filter((p) => p.priceCents != null).length;
   console.info(
-    `[property-sync][html-static] ${domain}: containerBlocks=${blocks.length} candidateLinks=${candidateLinks} fallback=${fallbackUsed} detected=${properties.length} withPrice=${withPrice} withoutPrice=${properties.length - withPrice}`,
+    `[property-sync][html-static] ${domain}: containerBlocks=${blocks.length} importadas=${properties.length} ` +
+      `omitidasTituloSucio=${skippedDirty} omitidasSinDatos=${skippedEmpty} conPrecio=${withPrice} sinPrecio=${properties.length - withPrice}`,
   );
 
   return properties.length >= 3 ? properties : null;

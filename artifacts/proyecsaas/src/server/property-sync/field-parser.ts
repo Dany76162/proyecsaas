@@ -180,3 +180,39 @@ export function stripHtml(html: string): string {
     .replace(/\s{2,}/g, " ")
     .trim();
 }
+
+// ─── Confianza / sanitización (P0 integridad: mejor no importar que importar mal) ──
+
+/**
+ * ¿Es un título "limpio" de propiedad? Rechaza títulos sucios: HTML/entidades
+ * residuales, IDs concatenados (ej. "ZP-M-...", "6450169::"), separadores raros,
+ * o demasiados símbolos/números en proporción a letras. Evita guardar fichas
+ * con datos mezclados de otra propiedad.
+ */
+export function isCleanTitle(text: string | null | undefined): boolean {
+  if (!text) return false;
+  const t = text.trim();
+  if (t.length < 8 || t.length > 200) return false;
+  if (/[<>]|::|\{\{|\}\}|&[a-z]+;/i.test(t)) return false; // HTML/entidades/códigos
+  if (/[A-Z0-9]{6,}[-_:][A-Z0-9]/i.test(t)) return false; // IDs tipo ZP-M-..., 6450169::ZP
+  const letters = (t.match(/[a-záéíóúñü]/gi) || []).length;
+  if (letters < 6) return false; // casi sin letras
+  if (letters / t.length < 0.45) return false; // mayoría símbolos/números → sospechoso
+  return true;
+}
+
+/**
+ * Cuenta importes de precio DISTINTOS en el texto. Si hay más de uno, no se puede
+ * asociar el precio a la propiedad con seguridad → el llamador debe dejarlo vacío
+ * ("A consultar") en vez de adivinar y arriesgar mezclar precios de otra ficha.
+ */
+export function countDistinctPrices(text: string): number {
+  if (!text) return 0;
+  const t = text.replace(/\s+/g, " ");
+  const matches =
+    t.match(/(?:USD?\s*\$?|U\$S|u\$s|US\$|ARS|AR\$|d[óo]lar(?:es)?|\$)\s*[\d.,]{2,}/gi) || [];
+  const norm = new Set(
+    matches.map((m) => m.replace(/\D/g, "")).filter((d) => d.length >= 2),
+  );
+  return norm.size;
+}
