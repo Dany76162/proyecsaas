@@ -51,14 +51,14 @@ export default async function HomePage() {
   //   - suscripción activa
   //   - titular con acceso ya creado (passwordHash != null) → excluye invitaciones
   //     pendientes/expiradas que nunca se activaron
-  //   - al menos un canal de WhatsApp activo (señal de operación real)
+  // Nota: NO se exige canal de WhatsApp activo: un cliente real puede estar activado
+  // aunque todavía no haya conectado WhatsApp; no queremos ocultarlo por eso.
   const operationalOrgWhere: Prisma.OrganizationWhereInput = {
     isActive: true,
     deletedAt: null,
     slug: { notIn: INTERNAL_SLUGS },
     subscription: { status: "ACTIVE" },
     memberships: { some: { user: { passwordHash: { not: null } } } },
-    whatsappChannels: { some: { status: "ACTIVE" } },
   };
 
   const [totalClients, dbOrgs] = await Promise.all([
