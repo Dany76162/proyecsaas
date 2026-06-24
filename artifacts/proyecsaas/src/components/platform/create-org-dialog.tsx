@@ -55,7 +55,7 @@ export function CreateOrgDialog() {
 Podés ingresar desde este link:
 ${url}
 
-Con este acceso vas a poder entrar al panel, cargar la información inicial de tu inmobiliaria o desarrollo, y ver cómo se organiza el flujo de WhatsApp, oportunidades, propiedades/desarrollos y seguimiento comercial.
+Con este acceso vas a poder entrar al panel, cargar la información inicial de tu empresa y ver cómo se organiza el flujo de WhatsApp, oportunidades, propiedades/desarrollos y seguimiento comercial.
 
 Cuando ingreses, avisame y te acompaño con la configuración inicial.`;
   };
@@ -113,7 +113,7 @@ Cuando ingreses, avisame y te acompaño con la configuración inicial.`;
         className="w-full sm:w-auto"
       >
         <Building2 className="mr-2 h-4 w-4" />
-        Nueva Inmobiliaria
+        Nueva cuenta demo
       </Button>
 
       <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
@@ -122,9 +122,9 @@ Cuando ingreses, avisame y te acompaño con la configuración inicial.`;
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 border border-brand-100 mb-2">
               <Building2 className="h-5 w-5 text-brand-600" />
             </div>
-            <DialogTitle>Nueva Inmobiliaria</DialogTitle>
+            <DialogTitle>Nueva cuenta demo</DialogTitle>
             <DialogDescription>
-              Se genera el acceso automáticamente y el link de invitación.
+              Creá el acceso para una inmobiliaria, desarrolladora o equipo comercial.
             </DialogDescription>
           </DialogHeader>
 
@@ -133,13 +133,13 @@ Cuando ingreses, avisame y te acompaño con la configuración inicial.`;
             <form onSubmit={handleSubmit} className="space-y-4 py-2">
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700">
-                  Nombre de la inmobiliaria <span className="text-red-500">*</span>
+                  Nombre de la empresa <span className="text-red-500">*</span>
                 </label>
                 <Input
                   required
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
-                  placeholder="Ej: Raíces Pilar"
+                  placeholder="Ej: Valles del Pino, Raíces Pilar o Constructora Norte"
                 />
               </div>
 
@@ -211,7 +211,7 @@ Cuando ingreses, avisame y te acompaño con la configuración inicial.`;
             <div className="space-y-5 py-2">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <p className="text-sm font-bold text-emerald-800">
-                  ¡Listo! Inmobiliaria creada.
+                  ¡Listo! Cuenta demo creada.
                 </p>
                 <p className="mt-0.5 text-xs text-emerald-700">
                   Válido por 7 días. El titular crea su contraseña al entrar.
