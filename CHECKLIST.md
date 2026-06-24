@@ -63,6 +63,14 @@
 | `28e00d7` · `62c3322` · `4c11509` | **"Nueva cuenta demo"**: copy generalizado (inmobiliarias/desarrolladoras/equipos) + compartir link por WhatsApp (mensaje **editable, manual**, sin backend de envío) + ejemplos neutralizados (sin nombres/proyectos reales) | 🟢 en main |
 | `c2aefd3` | **(Antigravity) Sync web de propiedades**: nuevas importadas entran como **DRAFT + `publicVisible:false`**; las existentes conservan estado/visibilidad. **Sin geocoding ni panel de revisión todavía** | 🟢 en main |
 | `b40ad50` | **Sync web — detección + precios + logs**: precios ARS/US$/u$s/USD$ + "A consultar"; tipos (Lote≠Terreno, Local/Galpón); `html-static` con clases ampliadas + fallback por links candidatos; WordPress incluye excerpt; logs seguros (dominio/estrategia/con-sin precio); mensaje de error honesto. **Mantiene DRAFT+publicVisible:false**; sin migraciones | 🟢 en main / 🟡 QA prod pendiente |
+| `d073351` | **P0 hotfix sync web integridad aplicado en main — pendiente QA producción** (NO cerrado definitivo) | 🟡 aplicado / QA prod pendiente |
+
+> **P0 — Integridad del sync web (`d073351`, aplicado en `main`, PENDIENTE QA producción — no cerrado definitivo):**
+> - **Causa raíz:** el fallback por **ventana de HTML alrededor del link** mezclaba datos de cards vecinas (precio/título/IDs de otra propiedad).
+> - **Corrección:** se **eliminó el fallback de ventana**; ahora **fail-closed** (solo importa desde cards delimitadas; rechaza títulos sucios; precio ambiguo → "A consultar").
+> - **Seguridad:** mantiene **DRAFT + `publicVisible:false`** (nada se publica automáticamente).
+> - **Validaciones:** `tsc` OK, `build` OK. **Sin migraciones, sin Railway, sin DB, sin env.**
+> - **Pendiente QA real post-deploy:** **Mele** (precio/moneda correctos por card) y **Malito Hermanos** (detección segura o error honesto, sin fichas mezcladas).
 
 **Demo / recepción comercial (WhatsApp Cloud) — 🟢 operativo / 🟡 QA visual del flujo completo pendiente:**
 - Número demo **separado del soporte**: +54 9 11 6603-7971 (PHONE_NUMBER_ID `1138155372723730`, org `raicespilot-demo`). Registrado `CLOUD_API` / `CONNECTED`; envío de mensaje de sesión verificado end-to-end.
