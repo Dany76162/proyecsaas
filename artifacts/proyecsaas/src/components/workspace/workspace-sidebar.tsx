@@ -20,6 +20,7 @@ import {
   Settings,
   Smartphone,
   LandPlot,
+  ArrowLeft,
 } from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
@@ -35,6 +36,8 @@ type WorkspaceSidebarProps = {
   onboardingComplete?: boolean;
   isOpen: boolean;
   onClose: () => void;
+  /** Solo true para Superadmin/platform admin: muestra "Volver al Superadmin". */
+  isPlatformAdmin?: boolean;
 };
 
 const OPERATION_NAV = [
@@ -83,6 +86,7 @@ export function WorkspaceSidebar({
   onboardingComplete = false,
   isOpen,
   onClose,
+  isPlatformAdmin = false,
 }: WorkspaceSidebarProps) {
   const currentPath = usePathname();
 
@@ -139,6 +143,19 @@ export function WorkspaceSidebar({
           </h2>
         </div>
       </Link>
+
+      {/* Volver al Superadmin — solo para platform admin (acceso sintético o membership).
+          No se renderiza para usuarios comunes de una inmobiliaria. */}
+      {isPlatformAdmin && (
+        <Link
+          href="/platform"
+          onClick={onClose}
+          className="mx-3 mb-1 flex shrink-0 items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3.5 py-2 text-xs font-semibold text-amber-300 transition-colors duration-150 hover:bg-amber-400/20"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
+          Volver al Superadmin
+        </Link>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 pb-3 space-y-5">

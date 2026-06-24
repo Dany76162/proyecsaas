@@ -15,6 +15,7 @@ export function WorkspaceShell({
   userName,
   userEmail,
   onboardingComplete = false,
+  isPlatformAdmin = false,
   children,
 }: {
   organization: OrganizationSummary;
@@ -22,6 +23,7 @@ export function WorkspaceShell({
   userName: string;
   userEmail: string;
   onboardingComplete?: boolean;
+  isPlatformAdmin?: boolean;
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -61,6 +63,7 @@ export function WorkspaceShell({
         role={role}
         userName={userName}
         onboardingComplete={onboardingComplete}
+        isPlatformAdmin={isPlatformAdmin}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

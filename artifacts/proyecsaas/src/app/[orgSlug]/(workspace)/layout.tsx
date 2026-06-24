@@ -30,6 +30,7 @@ export default async function OrganizationLayout({
       userName={user.fullName}
       userEmail={user.email}
       onboardingComplete={setupStatus.isComplete}
+      isPlatformAdmin={user.isPlatformAdmin}
     >
       {children}
     </WorkspaceShell>
