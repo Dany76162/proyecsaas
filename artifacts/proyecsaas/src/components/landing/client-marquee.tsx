@@ -13,13 +13,6 @@ interface ClientMarqueeProps {
   dynamicClients?: ClientItem[];
 }
 
-const DEFAULT_CLIENTS: ClientItem[] = [
-  { main: "MelePropiedades", sub: "Inmobiliaria" },
-  { main: "Alberto Capelli", sub: "Martillero" },
-  { main: "SevenToop", sub: "Marketing Digital" },
-  { main: "Raíces Pilot", sub: "Tecnología Inmobiliaria" },
-];
-
 export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientMarqueeProps) {
   const [currentDateStr, setCurrentDateStr] = useState<string>("");
   const [mounted, setMounted] = useState(false);
@@ -37,22 +30,13 @@ export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientM
     setCurrentDateStr(formatted.charAt(0).toUpperCase() + formatted.slice(1));
   }, []);
 
-  const cleanName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-  const uniqueDynamic = dynamicClients.filter(
-    (dc) => !DEFAULT_CLIENTS.some(
-      (bc) => cleanName(bc.main).includes(cleanName(dc.main)) || cleanName(dc.main).includes(cleanName(bc.main))
-    )
-  );
-
-  const filteredDefaults = DEFAULT_CLIENTS.filter(
-    (bc) => !dynamicClients.some(
-      (dc) => cleanName(bc.main).includes(cleanName(dc.main)) || cleanName(dc.main).includes(cleanName(bc.main))
-    )
-  );
-
-  const clientsList = [...uniqueDynamic, ...filteredDefaults];
-  const marqueeItems = [...clientsList, ...clientsList, ...clientsList, ...clientsList];
+  // Solo empresas operativas reales (vienen del server, ya filtradas). Sin nombres
+  // hardcodeados: si no hay ninguna, mostramos un mensaje honesto en vez de ejemplos falsos.
+  const clientsList = dynamicClients;
+  const hasClients = clientsList.length > 0;
+  const marqueeItems = hasClients
+    ? [...clientsList, ...clientsList, ...clientsList, ...clientsList]
+    : [];
 
   return (
     <section className="w-full py-16 bg-white dark:bg-slate-950 overflow-hidden border-y border-slate-100 dark:border-slate-900 relative text-slate-800 dark:text-slate-100 transition-colors duration-300">
@@ -73,7 +57,7 @@ export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientM
             Quienes ya usan <span className="text-brand-600 dark:text-brand-400">RAÍCES</span><span className="font-light text-slate-950 dark:text-slate-200">Pilot</span>
           </h2>
           <p className="mt-3 text-slate-500 dark:text-slate-400 max-w-xl mx-auto text-sm font-medium">
-            Nuestra red de inmobiliarias conectadas se actualiza automáticamente con cada nuevo miembro.
+            Nuestra red de empresas conectadas se actualiza automáticamente con cada nueva activación.
           </p>
         </div>
 
@@ -110,10 +94,10 @@ export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientM
               <Users className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase">Inmobiliarias en Red</p>
+              <p className="text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase">Empresas en Red</p>
               <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-0.5 flex items-center gap-1.5">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span>{totalClients > 0 ? `+${totalClients}` : "+4"} Conectadas</span>
+                <span>{totalClients > 0 ? `+${totalClients}` : "0"} Conectadas</span>
               </p>
             </div>
           </div>
@@ -122,7 +106,14 @@ export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientM
 
       </div>
 
-      {/* FULL WIDTH INFINITE SLIDER CAROUSEL */}
+      {/* FULL WIDTH INFINITE SLIDER CAROUSEL — solo si hay empresas operativas reales */}
+      {!hasClients ? (
+        <div className="mx-auto max-w-2xl px-6 py-8 text-center">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Las empresas verificadas aparecerán aquí cuando completen su activación.
+          </p>
+        </div>
+      ) : (
       <div className="relative flex overflow-x-hidden w-full border-y border-slate-100/80 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-950/40">
         <div className="flex animate-marquee whitespace-nowrap py-6">
           {marqueeItems.map((client, i) => (
@@ -144,6 +135,7 @@ export function ClientMarquee({ totalClients = 0, dynamicClients = [] }: ClientM
         <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white dark:from-slate-950 via-white/80 dark:via-slate-950/80 to-transparent z-10 pointer-events-none" />
         <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white dark:from-slate-950 via-white/80 dark:via-slate-950/80 to-transparent z-10 pointer-events-none" />
       </div>
+      )}
     </section>
   );
 }

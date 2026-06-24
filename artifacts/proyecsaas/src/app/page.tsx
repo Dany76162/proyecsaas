@@ -30,6 +30,7 @@ import { Tour360Section } from "@/components/landing/Tour360Section";
 import { DevelopersSection } from "@/components/landing/DevelopersSection";
 import Image from "next/image";
 import { prisma } from "@/server/db/prisma";
+import { Prisma } from "@prisma/client";
 import { Navbar } from "@/components/landing/Navbar";
 import { DEMO_WHATSAPP_URL } from "@/lib/constants";
 
@@ -40,26 +41,30 @@ export default async function HomePage() {
     redirect(await resolveSignedInHomePath(sessionUser));
   }
 
-  // Consulta dinámica en base de datos real (Prisma) para el contador y carrusel inteligente
-  // Filtrado estrictamente para clientes reales que pagaron su suscripción (estado ACTIVE)
+  // Red pública "Quiénes ya usan": SOLO empresas operativas reales.
+  // Slugs internos (demo / QA) que nunca deben aparecer públicamente.
+  const INTERNAL_SLUGS = ["raicespilot-demo", "raicespilot-qa-test"];
+
+  // Criterio de "empresa operativa real" (Fase A — landing honesta):
+  //   - activa y no eliminada
+  //   - no interna (demo/QA)
+  //   - suscripción activa
+  //   - titular con acceso ya creado (passwordHash != null) → excluye invitaciones
+  //     pendientes/expiradas que nunca se activaron
+  //   - al menos un canal de WhatsApp activo (señal de operación real)
+  const operationalOrgWhere: Prisma.OrganizationWhereInput = {
+    isActive: true,
+    deletedAt: null,
+    slug: { notIn: INTERNAL_SLUGS },
+    subscription: { status: "ACTIVE" },
+    memberships: { some: { user: { passwordHash: { not: null } } } },
+    whatsappChannels: { some: { status: "ACTIVE" } },
+  };
+
   const [totalClients, dbOrgs] = await Promise.all([
-    prisma.organization.count({
-      where: {
-        isActive: true,
-        deletedAt: null,
-        subscription: {
-          status: "ACTIVE",
-        },
-      },
-    }),
+    prisma.organization.count({ where: operationalOrgWhere }),
     prisma.organization.findMany({
-      where: {
-        isActive: true,
-        deletedAt: null,
-        subscription: {
-          status: "ACTIVE",
-        },
-      },
+      where: operationalOrgWhere,
       select: {
         name: true,
         city: true,
@@ -73,7 +78,7 @@ export default async function HomePage() {
 
   const dynamicClients = dbOrgs.map((org) => ({
     main: org.name,
-    sub: org.city || "Inmobiliaria",
+    sub: org.city || "Empresa",
   }));
 
   return (
