@@ -31,6 +31,9 @@ export function CreateOrgDialog() {
   // Result state
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // Mensaje prearmado, editable por el humano antes de enviar.
+  const [message, setMessage] = useState("");
+  const [copiedMsg, setCopiedMsg] = useState(false);
 
   const resetForm = () => {
     setOrgName("");
@@ -40,6 +43,21 @@ export function CreateOrgDialog() {
     setError("");
     setInviteUrl(null);
     setCopied(false);
+    setMessage("");
+    setCopiedMsg(false);
+  };
+
+  // Mensaje demo prearmado (editable). {nombre} → titular si lo hay; {link} → inviteUrl.
+  const buildMessage = (url: string) => {
+    const greeting = ownerName.trim() ? `Hola ${ownerName.trim()},` : "Hola,";
+    return `${greeting} ya preparamos tu acceso demo a Raíces Pilot.
+
+Podés ingresar desde este link:
+${url}
+
+Con este acceso vas a poder entrar al panel, cargar la información inicial de tu inmobiliaria o desarrollo, y ver cómo se organiza el flujo de WhatsApp, oportunidades, propiedades/desarrollos y seguimiento comercial.
+
+Cuando ingreses, avisame y te acompaño con la configuración inicial.`;
   };
 
   const handleClose = () => {
@@ -58,7 +76,9 @@ export function CreateOrgDialog() {
         ownerPhone: ownerPhone.trim() || undefined,
       });
       if (res.success && res.data?.inviteUrl) {
-        setInviteUrl(res.data.inviteUrl as string);
+        const url = res.data.inviteUrl as string;
+        setInviteUrl(url);
+        setMessage(buildMessage(url));
         router.refresh();
       } else {
         setError(res.message);
@@ -73,12 +93,17 @@ export function CreateOrgDialog() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const buildWhatsAppUrl = () => {
-    if (!inviteUrl) return "#";
-    const phone = ownerPhone.replace(/\D/g, "");
-    const text = `¡Hola! Te envío el acceso a tu panel de gestión en Raíces Pilot.\n\nIngresá con este link y creá tu contraseña:\n${inviteUrl}\n\nEl link es válido por 7 días.`;
-    const encoded = encodeURIComponent(text);
-    return phone ? `https://wa.me/${phone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+  // Solo devuelve URL si hay teléfono del titular; sin teléfono se deshabilita el botón.
+  const ownerDigits = ownerPhone.replace(/\D/g, "");
+  const whatsappUrl = ownerDigits
+    ? `https://wa.me/${ownerDigits}?text=${encodeURIComponent(message)}`
+    : null;
+
+  const handleCopyMessage = () => {
+    if (!message) return;
+    navigator.clipboard.writeText(message);
+    setCopiedMsg(true);
+    setTimeout(() => setCopiedMsg(false), 2000);
   };
 
   return (
@@ -212,16 +237,55 @@ export function CreateOrgDialog() {
                 </div>
               </div>
 
+              {/* Mensaje prearmado y editable — el humano puede ajustarlo antes de enviar. */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Mensaje para el titular
+                  </p>
+                  <Button
+                    variant={copiedMsg ? "success" : "secondary"}
+                    size="sm"
+                    onClick={handleCopyMessage}
+                    className="h-7 gap-1.5 px-2 text-xs"
+                  >
+                    {copiedMsg ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedMsg ? "Copiado" : "Copiar mensaje"}
+                  </Button>
+                </div>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={7}
+                  className="w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+
               <div className="flex flex-col gap-2">
-                <Button
-                  asChild
-                  className="bg-[#25D366] hover:bg-[#1ebe5c] text-white border-none shadow-none"
-                >
-                  <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Enviar por WhatsApp
-                  </a>
-                </Button>
+                {whatsappUrl ? (
+                  <Button
+                    asChild
+                    className="bg-[#25D366] hover:bg-[#1ebe5c] text-white border-none shadow-none"
+                  >
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Abrir WhatsApp
+                    </a>
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      disabled
+                      className="bg-[#25D366]/40 text-white border-none shadow-none cursor-not-allowed"
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Abrir WhatsApp
+                    </Button>
+                    <p className="text-[11px] text-slate-400 text-center">
+                      Sin WhatsApp del titular: copiá el mensaje y enviáselo manualmente.
+                    </p>
+                  </>
+                )}
                 <Button variant="outline" onClick={handleClose}>
                   Cerrar
                 </Button>
