@@ -3,6 +3,7 @@ import "server-only";
 import { prisma } from "@/server/db/prisma";
 import { BILLING_MODE_LABELS, resolveEffectiveCommercialState } from "@/server/billing/commercial-access";
 import type { OrgHealthStatus, OrgPlatformSummary, PlatformPlanOption } from "@/modules/platform/types";
+import { getOrgOnboardingStatus } from "@/modules/platform/org-lifecycle";
 
 export type WorkerStatus = "ok" | "stale" | "down";
 
@@ -96,6 +97,11 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
           take: 1,
           select: { lastMessageAt: true },
         },
+        inviteTokens: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { usedAt: true, expiresAt: true },
+        },
       },
     }),
     prisma.lead.groupBy({
@@ -128,6 +134,15 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
     const commercialState = resolveEffectiveCommercialState({
       isActive: org.isActive,
       subscription: org.subscription,
+    });
+    const onboarding = getOrgOnboardingStatus({
+      memberCount: org._count.memberships,
+      ownerHasPassword: Boolean(org.memberships[0]?.user.passwordHash),
+      latestInvite: org.inviteTokens[0]
+        ? { usedAt: org.inviteTokens[0].usedAt, expiresAt: org.inviteTokens[0].expiresAt }
+        : null,
+      isActive: org.isActive,
+      subscriptionActive: org.subscription?.status === "ACTIVE",
     });
 
     return {
@@ -167,14 +182,9 @@ export async function listOrganizationsForPlatform(): Promise<OrgPlatformSummary
       internalBillingNotes: org.subscription?.internalBillingNotes ?? null,
       planId: org.subscription?.planId ?? null,
       ownerEmail: org.memberships[0]?.user.email ?? null,
-      onboardingStatus:
-        org._count.memberships === 0
-          ? "Sin usuarios"
-          : org._count.memberships === 1
-            ? org.memberships[0]?.user.passwordHash
-              ? "Onboarding iniciado"
-              : "Invitación pendiente"
-            : "Operativa",
+      onboardingStatus: onboarding.label,
+      onboardingStatusKey: onboarding.key,
+      onboardingStatusTone: onboarding.tone,
       health: computeHealth({
         channel,
         recentFailedDeliveries,

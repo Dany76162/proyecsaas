@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { OrgPlatformSummary, PlatformPlanOption } from "@/modules/platform/types";
+import { ONBOARDING_TONE_TEXT_CLASS, isOnboardingActivated } from "@/modules/platform/org-lifecycle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -257,7 +258,13 @@ export function OrgTable({
                   </TableCell>
 
                   <TableCell className="px-5 py-4 align-top">
-                    <HealthBadge status={org.health} />
+                    {isOnboardingActivated(org.onboardingStatusKey) ? (
+                      <HealthBadge status={org.health} />
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+                        Pendiente de alta
+                      </span>
+                    )}
                   </TableCell>
 
                   <TableCell className="px-5 py-4 align-top">
@@ -295,11 +302,7 @@ export function OrgTable({
                       <span
                         className={cn(
                           "mb-1 text-xs font-bold leading-none",
-                          org.onboardingStatus === "Operativa"
-                            ? "text-emerald-700"
-                            : org.onboardingStatus === "Sin usuarios"
-                              ? "text-slate-400"
-                              : "text-amber-600"
+                          ONBOARDING_TONE_TEXT_CLASS[org.onboardingStatusTone],
                         )}
                       >
                         {org.onboardingStatus}

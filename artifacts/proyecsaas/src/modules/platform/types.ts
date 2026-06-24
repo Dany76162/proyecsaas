@@ -1,4 +1,6 @@
-﻿export type WhatsAppChannelHealth = {
+﻿import type { OnboardingStatusKey, OnboardingTone } from "./org-lifecycle";
+
+export type WhatsAppChannelHealth = {
   status: string;
   displayPhoneNumber: string | null;
   lastErrorAt: string | null;
@@ -25,7 +27,10 @@ export type OrgPlatformSummary = {
   lastActivityAt: string | null;
   whatsappChannel: WhatsAppChannelHealth | null;
   health: OrgHealthStatus;
-  onboardingStatus: "Sin usuarios" | "Invitación pendiente" | "Onboarding iniciado" | "Operativa";
+  /** Etiqueta de estado de alta unificada (ver org-lifecycle.ts). */
+  onboardingStatus: string;
+  onboardingStatusKey: OnboardingStatusKey;
+  onboardingStatusTone: OnboardingTone;
   maxAiAgents: number | null;
   aiAgentCount: number;
   agentQuotaNote: string | null;

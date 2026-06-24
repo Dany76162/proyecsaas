@@ -2,12 +2,12 @@ export const dynamic = "force-dynamic";
 
 import { requirePlatformAdmin } from "@/server/auth/access";
 import { prisma } from "@/server/db/prisma";
+import { getInviteStatus, ONBOARDING_TONE_CHIP_CLASS } from "@/modules/platform/org-lifecycle";
 
+// Misma fuente de verdad que Clientes (org-lifecycle): pendiente / expirada / activada.
 function statusChip(usedAt: Date | null, expiresAt: Date) {
-  const now = new Date();
-  if (usedAt) return { label: "Activada", cls: "bg-emerald-50 text-emerald-700" };
-  if (expiresAt < now) return { label: "Expirada", cls: "bg-slate-100 text-slate-400" };
-  return { label: "Pendiente", cls: "bg-amber-50 text-amber-700" };
+  const s = getInviteStatus(usedAt, expiresAt);
+  return { label: s.label, cls: ONBOARDING_TONE_CHIP_CLASS[s.tone] };
 }
 
 export default async function PlatformOnboardingPage() {
