@@ -139,7 +139,7 @@ Cuando ingreses, avisame y te acompaño con la configuración inicial.`;
                   required
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
-                  placeholder="Ej: Valles del Pino, Raíces Pilar o Constructora Norte"
+                  placeholder="Ej: Raíces Pilar, Urbania Desarrollos o Grupo Norte"
                 />
               </div>
 
