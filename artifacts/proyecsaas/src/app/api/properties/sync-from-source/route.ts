@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/server/db/prisma";
 import { syncPropertiesFromUrl } from "@/server/property-sync";
@@ -108,8 +108,6 @@ async function handleSync(req: NextRequest) {
         externalLink: prop.externalLink ?? sourceUrl,
         externalSourceUrl: sourceUrl,
         externalId,
-        status: "AVAILABLE" as const,
-        publicVisible: true,
       };
 
       // Build image payload if a new one was scraped
@@ -140,6 +138,8 @@ async function handleSync(req: NextRequest) {
         await prisma.property.create({
           data: {
             ...data,
+            status: "DRAFT",
+            publicVisible: false,
             images: imagePayload
               ? {
                   create: [imagePayload],
