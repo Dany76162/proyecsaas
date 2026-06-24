@@ -20,23 +20,34 @@ export function parsePrice(text: string): ParsedPrice | null {
 
   const t = text.replace(/\s+/g, " ");
 
-  // Pattern 1: Currency prefix â€” USD/U$S/u$s/DÓLARES followed by number
-  const usdPrefix = t.match(
-    /(?:USD?|U\$S|u\$s|dólar(?:es)?)\s*[:$]?\s*([\d.,]+)/i
-  );
-  if (usdPrefix) {
-    const cents = parseAmountToCents(usdPrefix[1]);
+  // "A consultar" / "Consultar" / "Precio a convenir" → no hay precio real (no inventar).
+  if (/(a\s*consultar|consultar\s*precio|precio\s*a\s*convenir|precio\s*:?\s*consultar)/i.test(t)) {
+    return null;
+  }
+
+  // ── USD ──────────────────────────────────────────────────────────────────
+  // Prefijos: USD, US$, USD$, U$S, u$s, dólares — con o sin espacio/$ entre medio.
+  // Cubre "USD$130.000", "USD 130.000", "USD139.000", "US$ 130.000", "u$s 54.900".
+  const usd =
+    t.match(/(?:USD?\s*\$?|U\$S|u\$s|US\$|d[óo]lar(?:es)?)\s*[:]?\s*([\d.,]+)/i) ??
+    t.match(/([\d.,]+)\s*(?:USD?|U\$S|u\$s|US\$|d[óo]lar(?:es)?)/i);
+  if (usd) {
+    const cents = parseAmountToCents(usd[1]);
     if (cents !== null) return { cents, currency: "USD" };
   }
 
-  // Pattern 2: Number followed by USD/U$S
-  const usdSuffix = t.match(/([\d.,]+)\s*(?:USD?|U\$S|u\$s|dólar(?:es)?)/i);
-  if (usdSuffix) {
-    const cents = parseAmountToCents(usdSuffix[1]);
-    if (cents !== null) return { cents, currency: "USD" };
+  // ── ARS literal ──────────────────────────────────────────────────────────
+  // Prefijo/sufijo ARS / AR$ / "pesos". Cubre "ARS 600.000", "600.000 pesos".
+  const ars =
+    t.match(/(?:ARS|AR\$|pesos?)\s*[:$]?\s*([\d.,]+)/i) ??
+    t.match(/([\d.,]+)\s*(?:ARS|pesos?)/i);
+  if (ars) {
+    const cents = parseAmountToCents(ars[1]);
+    if (cents !== null) return { cents, currency: "ARS" };
   }
 
-  // Pattern 3: $ prefix (ARS)
+  // ── $ suelto → ARS ─────────────────────────────────────────────────────────
+  // Convención local: un "$" sin moneda explícita se asume ARS (ambiguo pero razonable).
   const arsPrefix = t.match(/\$\s*([\d.,]+)/);
   if (arsPrefix) {
     const cents = parseAmountToCents(arsPrefix[1]);
@@ -133,15 +144,19 @@ export function parseOperationType(text: string): string | null {
 
 // â”€â”€â”€ Property type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+// Orden importante: los tipos más específicos primero, para que
+// "Local con vivienda" → Local (no Casa), "Galpón" → Galpón (no Departamento),
+// y "Lote" no termine como "Terreno" ni como "Casa".
 const PROPERTY_TYPE_MAP: Array<[RegExp, string]> = [
   [/departamento|depto|dpto|apartment/i, "Departamento"],
-  [/ph\b|p\.h\.|penthouse/i, "PH"],
-  [/casa(?:\s+quinta)?|chalet|villa/i, "Casa"],
-  [/terreno|lote|tierra/i, "Terreno"],
-  [/local\s*comercial|local/i, "Local"],
+  [/\bph\b|p\.h\.|penthouse/i, "PH"],
+  [/galp[óo]n|dep[óo]sito|bodega/i, "Galpón"],
+  [/local\s*comercial|\blocal\b/i, "Local"],
   [/oficina|consultorio/i, "Oficina"],
   [/cochera|garaje|garage/i, "Cochera"],
-  [/galpón|depósito|bodega/i, "Galpón"],
+  [/casa(?:\s+quinta)?|chalet|villa/i, "Casa"],
+  [/\blote\b|loteo/i, "Lote"],
+  [/terreno|tierra|fracci[óo]n/i, "Terreno"],
 ];
 
 /**

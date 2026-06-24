@@ -25,15 +25,19 @@ export type { SyncProperty, SyncResult };
  */
 export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResult> {
   // Validate URL
+  let domain = "(url-inválida)";
   try {
-    new URL(sourceUrl);
+    domain = new URL(sourceUrl).hostname;
   } catch {
     throw new Error(`URL inválida: "${sourceUrl}"`);
   }
 
+  console.info(`[property-sync] inicio dominio=${domain}`);
+
   // â”€â”€ Strategy 1: WordPress REST API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const wpResult = await extractFromWordPressApi(sourceUrl);
   if (wpResult && wpResult.properties.length > 0) {
+    console.info(`[property-sync] ${domain}: estrategia=wordpress-api propiedades=${wpResult.properties.length}`);
     return {
       strategy: "wordpress-api",
       properties: wpResult.properties,
@@ -44,6 +48,7 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
   // â”€â”€ Strategy 2: JSON-LD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const jsonLdProperties = await extractFromJsonLd(sourceUrl);
   if (jsonLdProperties && jsonLdProperties.length > 0) {
+    console.info(`[property-sync] ${domain}: estrategia=json-ld propiedades=${jsonLdProperties.length}`);
     return {
       strategy: "json-ld",
       properties: jsonLdProperties,
@@ -54,6 +59,7 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
   // â”€â”€ Strategy 3: Static HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const htmlProperties = await extractFromHtmlStatic(sourceUrl);
   if (htmlProperties && htmlProperties.length > 0) {
+    console.info(`[property-sync] ${domain}: estrategia=html-static propiedades=${htmlProperties.length}`);
     return {
       strategy: "html-static",
       properties: htmlProperties,
@@ -61,8 +67,9 @@ export async function syncPropertiesFromUrl(sourceUrl: string): Promise<SyncResu
     };
   }
 
+  console.warn(`[property-sync] ${domain}: ninguna estrategia detectó propiedades (wp/json-ld/html-static)`);
   throw new Error(
-    "No se pudieron detectar propiedades en el sitio. " +
-      "Verificá que la URL apunte a la página del listado de propiedades y que sea accesible públicamente."
+    "No pudimos detectar propiedades con el conector actual. " +
+      "Probá una URL de listado pública o solicitá soporte para adaptar este sitio."
   );
 }

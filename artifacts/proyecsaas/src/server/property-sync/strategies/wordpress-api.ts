@@ -150,8 +150,12 @@ function wpPostToProperty(post: WpPost, sourceUrl: string): SyncProperty | null 
   const textContent = stripHtml(rawContent);
   const excerpt = stripHtml(post.excerpt?.rendered ?? "");
 
-  // Combine title + content for field extraction
-  const allText = `${title} ${textContent}`;
+  // Combine title + content + excerpt for field extraction.
+  // (Muchos temas inmobiliarios muestran el precio en el resumen/excerpt; incluirlo
+  //  ayuda a recuperar precios que no están en el cuerpo del post. Nota: si el precio
+  //  vive solo en un meta/custom field del theme, no llega por la REST API estándar
+  //  → queda "A consultar". Eso requiere un conector por-sitio (pendiente).)
+  const allText = `${title} ${textContent} ${excerpt}`;
 
   // Taxonomy terms
   const termGroups = post._embedded?.["wp:term"] ?? [];

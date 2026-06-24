@@ -159,6 +159,13 @@ async function handleSync(req: NextRequest) {
       },
     });
 
+    // Diagnóstico seguro (sin datos sensibles): dominio, estrategia y cobertura de precio.
+    const syncDomain = (() => { try { return new URL(sourceUrl).hostname; } catch { return "(url-inválida)"; } })();
+    const withPrice = properties.filter((p) => p.priceCents != null).length;
+    console.info(
+      `[sync-from-source] ${syncDomain}: estrategia=${strategy} detectadas=${properties.length} nuevas=${created} actualizadas=${updated} conPrecio=${withPrice} sinPrecio=${properties.length - withPrice}`,
+    );
+
     return NextResponse.json({
       success: true,
       created,
