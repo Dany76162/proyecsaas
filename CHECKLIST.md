@@ -2,7 +2,7 @@
 
 > Auditoría + Estado del Producto + Roadmap — Versión Base Operativa 2026
 > Documento fiel del CHECKLIST MAESTRO con **preguntas de auditoría respondidas** y estado de implementación.
-> **Última actualización:** 2026-06-17
+> **Última actualización:** 2026-06-24
 
 ## Leyenda
 **Estado oficial:** 🟢 Producción · 🟡 Beta · 🟠 Próximamente · 🔴 Oculto/Legacy · ⚪ Futuro
@@ -47,7 +47,34 @@
 
 ---
 
-## 🗺️ PORTAL PÚBLICO + FICHA DE LOTE — IMÁGENES, MAPA Y CTA (2026-06-23, commits locales sin push)
+## 🟢 BLOQUE COMERCIAL/DEMO + LANDING HONESTA + ESTADOS (2026-06-24, en `main`)
+
+> Trabajo de Claude Code, validado (`tsc --noEmit` + `next build`) y en `origin/main`.
+> Cada commit fue pusheado con FF y verificado. La rama de sync web de Antigravity se
+> integró aparte como `c2aefd3` (ver más abajo).
+
+| Commit | Qué | Estado |
+|---|---|---|
+| `0d7ef51` | **Landing honesta**: "Quiénes ya usan" muestra solo orgs operativas reales; **sin clientes hardcodeados** (se eliminaron MelePropiedades/Alberto Capelli/SevenToop); **sin "+4" falso**; excluye demo/QA; **fallback honesto** si no hay verificadas | 🟢 en main |
+| `497a5c2` | Landing: **no exige** canal WhatsApp ACTIVE para listar (no oculta clientes reales sin WhatsApp aún) | 🟢 en main |
+| `bfda66b` | **Estados de alta unificados** (`src/modules/platform/org-lifecycle.ts`): Clientes + Onboarding coherentes; "Salud" ya **no** dice "Saludable" si el alta no está activada (muestra "Pendiente de alta"); Onboarding distingue **Pendiente / Expirada / Activada** | 🟢 en main |
+| `528bed9` | **Copy público generalizado**: "inmobiliaria" → "negocio inmobiliario"; "prospectos" → "interesados / oportunidades / consultas" donde correspondía | 🟢 en main |
+| `a2f2e27` | Workspace: botón **"Volver al Superadmin"** (solo platform admin) | 🟢 en main |
+| `28e00d7` · `62c3322` · `4c11509` | **"Nueva cuenta demo"**: copy generalizado (inmobiliarias/desarrolladoras/equipos) + compartir link por WhatsApp (mensaje **editable, manual**, sin backend de envío) + ejemplos neutralizados (sin nombres/proyectos reales) | 🟢 en main |
+| `c2aefd3` | **(Antigravity) Sync web de propiedades**: nuevas importadas entran como **DRAFT + `publicVisible:false`**; las existentes conservan estado/visibilidad. **Sin geocoding ni panel de revisión todavía** | 🟢 en main |
+
+**Demo / recepción comercial (WhatsApp Cloud) — 🟢 operativo / 🟡 QA visual del flujo completo pendiente:**
+- Número demo **separado del soporte**: +54 9 11 6603-7971 (PHONE_NUMBER_ID `1138155372723730`, org `raicespilot-demo`). Registrado `CLOUD_API` / `CONNECTED`; envío de mensaje de sesión verificado end-to-end.
+- Agente demo en **modo RECEPTION** (recibe, califica y deriva a humano).
+- **"Atención Demo"** en el sidebar Superadmin → `/raicespilot-demo/conversations` (Bandeja IA del tenant demo). Tomar control humano (`isHumanControlled`) **pausa la IA** (no rompe RECEPTION).
+
+**Limpieza técnica (Fase C):** auditada — sin cambios seguros pendientes, no se borró código; ramas/worktree/stash propios limpiados (stashes ajenos intactos).
+
+**Pendiente conocido (NO implementado):** envío real del link demo por backend (hoy es manual vía `wa.me`); geocoding del sync web; **panel de revisión** de propiedades importadas en DRAFT antes de publicarlas.
+
+---
+
+## 🗺️ PORTAL PÚBLICO + FICHA DE LOTE — IMÁGENES, MAPA Y CTA (2026-06-23, en `main`)
 
 > Trabajo de Claude Code. **Commits en `main` local, NO pusheados a producción.** Validado con `tsc --noEmit` limpio + `npx next build` OK + `check-tour360-invariants.mjs` OK. El QA visual en navegador real / producción queda pendiente donde se indica (no se marca "validado en prod" sin validación visual real).
 
