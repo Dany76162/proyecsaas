@@ -11,6 +11,7 @@ import {
   BookOpen,
   CreditCard,
   MessageSquare,
+  MessageCircle,
   Settings,
   LogOut,
   X,
@@ -44,6 +45,9 @@ const PLATFORM_NAV_GROUPS = [
       { name: "Activación", href: "/platform/activation", icon: TrendingUp },
       { name: "Captación", href: "/platform/captacion", icon: Megaphone },
       { name: "Atención a Clientes", href: "/platform/support", icon: MessageSquare },
+      // Demo comercial: conversaciones del WhatsApp demo (+54 9 11 6603-7971, org raicespilot-demo).
+      // Es la Bandeja IA del tenant demo; NO es soporte técnico. Lleva al inbox tenant existente.
+      { name: "Atención Demo", href: "/raicespilot-demo/conversations", icon: MessageCircle },
     ],
   },
   {
