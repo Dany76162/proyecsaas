@@ -62,6 +62,7 @@
 | `a2f2e27` | Workspace: botón **"Volver al Superadmin"** (solo platform admin) | 🟢 en main |
 | `28e00d7` · `62c3322` · `4c11509` | **"Nueva cuenta demo"**: copy generalizado (inmobiliarias/desarrolladoras/equipos) + compartir link por WhatsApp (mensaje **editable, manual**, sin backend de envío) + ejemplos neutralizados (sin nombres/proyectos reales) | 🟢 en main |
 | `c2aefd3` | **(Antigravity) Sync web de propiedades**: nuevas importadas entran como **DRAFT + `publicVisible:false`**; las existentes conservan estado/visibilidad. **Sin geocoding ni panel de revisión todavía** | 🟢 en main |
+| `b40ad50` | **Sync web — detección + precios + logs**: precios ARS/US$/u$s/USD$ + "A consultar"; tipos (Lote≠Terreno, Local/Galpón); `html-static` con clases ampliadas + fallback por links candidatos; WordPress incluye excerpt; logs seguros (dominio/estrategia/con-sin precio); mensaje de error honesto. **Mantiene DRAFT+publicVisible:false**; sin migraciones | 🟢 en main / 🟡 QA prod pendiente |
 
 **Demo / recepción comercial (WhatsApp Cloud) — 🟢 operativo / 🟡 QA visual del flujo completo pendiente:**
 - Número demo **separado del soporte**: +54 9 11 6603-7971 (PHONE_NUMBER_ID `1138155372723730`, org `raicespilot-demo`). Registrado `CLOUD_API` / `CONNECTED`; envío de mensaje de sesión verificado end-to-end.
@@ -70,7 +71,11 @@
 
 **Limpieza técnica (Fase C):** auditada — sin cambios seguros pendientes, no se borró código; ramas/worktree/stash propios limpiados (stashes ajenos intactos).
 
-**Pendiente conocido (NO implementado):** envío real del link demo por backend (hoy es manual vía `wa.me`); geocoding del sync web; **panel de revisión** de propiedades importadas en DRAFT antes de publicarlas.
+**Pendiente conocido (NO implementado):** envío real del link demo por backend (hoy es manual vía `wa.me`); geocoding del sync web; **panel de revisión** de propiedades importadas en DRAFT antes de publicarlas; **dominio autorizado** en el sync (validar en `route.handleSync` antes de sincronizar — fase de seguridad siguiente, NO iniciada).
+
+> ⚠️ **Coordinación con Antigravity (sync web):** los archivos de `src/server/property-sync/*` y `api/properties/sync-from-source/route.ts` son territorio activo de Antigravity (rama `fix/property-sync-import-draft`). El commit `b40ad50` ya está en `main`; **ese frente debe rebasar su rama sobre `main`** antes de pushear para no pisar/duplicar estos cambios.
+
+> **QA controlado en producción (pendiente, tras deploy):** una sola sync de **Mele** (verificar precio/moneda), una sola de **Malito Hermanos** (verificar detección o nuevo mensaje de error honesto), confirmar que todo entra como **BORRADOR/Interno** y que **nada se publica automáticamente**.
 
 ---
 
