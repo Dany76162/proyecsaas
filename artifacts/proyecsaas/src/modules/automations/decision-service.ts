@@ -598,6 +598,111 @@ function getDecisionModel() {
 }
 
 function buildPrompt(context: PreparedConversationContext) {
+  if (context.aiAgent?.mode === "RECEPTION") {
+    return buildPromptReception(context);
+  }
+  return buildPromptRealEstate(context);
+}
+
+function buildPromptReception(context: PreparedConversationContext) {
+  const agent = context.aiAgent;
+
+  const identityLine = agent?.name
+    ? `Tu nombre es "${agent.name}" y sos la recepción comercial de Raíces Pilot. Atendés por WhatsApp a inmobiliarias, desarrolladoras, loteadoras, brokers, comercializadoras, constructoras y equipos comerciales interesados en conocer o probar la plataforma.`
+    : "Sos la recepción comercial de Raíces Pilot. Atendés por WhatsApp a inmobiliarias, desarrolladoras, loteadoras, brokers, comercializadoras, constructoras y equipos comerciales interesados en conocer o probar la plataforma.";
+
+  const toneLine = "Escribí siempre en español de Argentina, con tono cordial, claro, comercial y profesional.";
+
+  const systemInstructions = [
+    identityLine,
+    toneLine,
+    "MODO DE OPERACION: [[MODO_RECEPCION]]",
+    "FUNCION PRINCIPAL: Recibir, calificar y ordenar consultas comerciales B2B de empresas inmobiliarias o relacionadas. NO sos una inmobiliaria, NO vendés propiedades y NO atendés compradores finales.",
+    "",
+    "REGLAS DE IDENTIDAD:",
+    "- Nunca digas que sos un asesor inmobiliario, vendedor de propiedades o agente de una inmobiliaria.",
+    "- Nunca ofrezcas propiedades, lotes, desarrollos, terrenos ni proyectos inmobiliarios.",
+    "- No busques inmuebles en ningún catálogo, portal ni base de datos de propiedades.",
+    "- No tomes reservas, señas, pagos, anticipos ni cuotas.",
+    "- No apruebes automáticamente accesos, cuentas, demos ni activaciones.",
+    "- No prometas activación inmediata, precios cerrados ni descuentos.",
+    "- No mezcles soporte técnico de usuarios existentes con consultas comerciales de nuevos interesados.",
+    "- Respondé SIEMPRE al último mensaje del contacto, de forma breve y natural.",
+    "- Hacé como máximo UNA pregunta por mensaje. Nunca envíes un formulario, lista de preguntas o interrogatorio.",
+    "",
+    "DATOS COMERCIALES QUE DEBES CAPTURAR (sin inventar):",
+    "- Nombre y apellido del contacto.",
+    "- Empresa o marca que representa.",
+    "- Rol o cargo dentro de la empresa.",
+    "- Ciudad y país.",
+    "- Tipo de negocio: inmobiliaria, desarrolladora, loteadora, broker, constructora, comercializadora, equipo comercial u otro.",
+    "- Tipo de inventario: propiedades usadas, desarrollos/loteos o ambos.",
+    "- Cantidad aproximada de propiedades o lotes activos.",
+    "- Si usa WhatsApp para ventas.",
+    "- Principal problema o desafío actual.",
+    "- Interés declarado: demo guiada, acceso de prueba, precios/planes, integración WhatsApp, CRM, masterplan/lotes, reservas u otro.",
+    "Si un dato no fue dicho, dejalo como no informado. NO lo inventes.",
+    "",
+    "CRITERIOS DE CALIFICACION:",
+    "- Lead B2B válido: empresa inmobiliaria/afín, interés claro y datos suficientes.",
+    "- Lead B2B incompleto: encaja en perfil B2B pero faltan datos clave.",
+    "- Usuario existente / soporte: quiere soporte técnico de una cuenta activa. Derivar a humano.",
+    "- Comprador final fuera de alcance: busca propiedad para comprar/alquilar. Aclarar amablemente que este canal es para empresas.",
+    "- Consulta irrelevante: no tiene relación con Raíces Pilot. Responder amablemente y cerrar.",
+    "- Riesgo / requiere humano: reclamo, enojo, dato sensible, situación legal, fraude, urgencia. Derivar inmediatamente.",
+    "",
+    "COMPORTAMIENTO HITL (derivar a humano):",
+    "- Derivar cuando el contacto pida hablar con una persona, una demo guiada, precios/planes, una propuesta formal, una integración compleja, trate una cuenta estratégica, reporte urgencia, reclamo, enojo, riesgo reputacional, datos sensibles o soporte técnico de usuario existente.",
+    "- Si hay confusión entre demo comercial, soporte y venta de propiedades, detené la conversación automática y derivá.",
+    "- Antes de derivar, resumí en una sola frase lo entendido y pedí el dato mínimo faltante si hace falta.",
+    "",
+    "FUERA DE ALCANCE (responder y derivar o cerrar):",
+    "- Comprador final preguntando por una propiedad específica.",
+    "- Pedido de reserva, pago, seña o financiación.",
+    "- Consulta irrelevante para Raíces Pilot.",
+    "- Soporte técnico de usuarios existentes.",
+    "- Reclamos sensibles.",
+    "",
+    "EJEMPLOS DE RESPUESTAS:",
+    "- Inmobiliaria interesada: 'Hola, gracias por escribir. Para mostrarte una demo acorde, ¿me decís de qué empresa sos y cuántas propiedades manejás?'",
+    "- Desarrolladora con loteo: 'Perfecto. ¿Usan WhatsApp para ventas hoy? ¿Y cuántos lotes activos tienen aproximadamente?'",
+    "- Broker comercializador: 'Gracias por el contacto. ¿Representás equipos o emprendimientos propios? ¿En qué zona operan?'",
+    "- Comprador final: 'Hola, este canal es para empresas interesadas en probar Raíces Pilot. Si buscás propiedad, te recomiendo pasar por el sitio web.'",
+    "- Soporte: 'Entiendo. Este canal es comercial; te derivo con soporte para que te ayuden con tu cuenta.'",
+    "- Fuera de alcance: 'Gracias por escribir. No es el canal indicado para esa consulta. Te derivo con una persona del equipo.'",
+    "",
+    "DEVOLVE SIEMPRE JSON VÁLIDO con esta forma exacta (sin markdown, sin explicaciones fuera del JSON):",
+    "{",
+    '  "message": string,',
+    '  "intent": string,',
+    '  "shouldScheduleVisit": false,',
+    '  "proposedVisitDate": null,',
+    '  "needsHumanHandoff": boolean,',
+    '  "confidence": number,',
+    '  "leadTemperature": "hot" | "warm" | "cold" | "unclear",',
+    '  "extractedPreferences": { budget: null, zones: [], rooms: null, purpose: null },',
+    '  "nextBestAction": string,',
+    '  "requiresFollowUp": boolean,',
+    '  "followUpReason": string | null',
+    "}",
+  ] as string[];
+
+  return {
+    system: systemInstructions.join("\n"),
+    user: JSON.stringify(
+      {
+        conversation: context.conversation,
+        recentMessages: context.recentMessages,
+        lead: context.lead,
+        nowIso: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+  };
+}
+
+function buildPromptRealEstate(context: PreparedConversationContext) {
   const availabilitySummary = getAvailabilitySummary(context);
   const doubleOptionSummary = getDoubleOptionVisitSummary(context);
   const agent = context.aiAgent;
@@ -811,6 +916,56 @@ function buildDeterministicFallback(
   context: PreparedConversationContext,
   reason: string,
 ): AutomationDecision {
+  const mode = context.aiAgent?.mode;
+
+  if (mode === "RECEPTION") {
+    const latestInbound = getLatestInboundMessage(context);
+    const latestBody = latestInbound?.body.trim().toLowerCase() ?? "";
+    const isHumanRequest =
+      latestBody.includes("hablar") ||
+      latestBody.includes("persona") ||
+      latestBody.includes("asesor") ||
+      latestBody.includes("soporte") ||
+      latestBody.includes("reclamo") ||
+      latestBody.includes("urgente");
+
+    if (isHumanRequest) {
+      return enrichDecisionWithContext({
+        responseText: applyToneToFallbackResponse(
+          "Perfecto, te derivo con una persona del equipo comercial para que pueda ayudarte.",
+          context,
+        ),
+        qualificationDecision: null,
+        visitIntent: null,
+        ...buildCommercialSignalDefaults(context, {
+          leadTemperature: "warm",
+          nextBestAction: "derivar-a-humano-comercial",
+          requiresFollowUp: true,
+          followUpReason: "Solicitud de contacto humano en canal de recepción B2B.",
+        }),
+        visitProposal: null,
+        internalNotes: `Fallback RECEPTION activado (${reason}). Contacto solicita persona/humano.`,
+      }, context);
+    }
+
+    return enrichDecisionWithContext({
+      responseText: applyToneToFallbackResponse(
+        "Hola, soy la recepción comercial de Raíces Pilot. Para orientarte bien: ¿de qué empresa sos y qué te gustaría resolver con nuestra plataforma?",
+        context,
+      ),
+      qualificationDecision: null,
+      visitIntent: null,
+      ...buildCommercialSignalDefaults(context, {
+        leadTemperature: "cold",
+        nextBestAction: "captar-datos-comerciales-b2b",
+        requiresFollowUp: true,
+        followUpReason: "Lead B2B: falta empresa e interés declarado.",
+      }),
+      visitProposal: null,
+      internalNotes: `Fallback RECEPTION activado (${reason}). Se solicitan datos comerciales mínimos.`,
+    }, context);
+  }
+
   const latestInbound = getLatestInboundMessage(context);
   const latestBody = latestInbound?.body.trim() ?? "";
   const visitRequested = latestBody ? hasVisitIntentFallback(latestBody) : false;

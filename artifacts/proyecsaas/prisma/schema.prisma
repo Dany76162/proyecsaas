@@ -697,12 +697,18 @@ enum AiAgentTone {
   NEUTRAL
 }
 
+enum AiAgentMode {
+  REAL_ESTATE
+  RECEPTION
+}
+
 model AiAgent {
   id             String       @id @default(cuid())
   organizationId String       @unique // restored @unique for upsert
   whatsappChannelId String?
   name           String       @default("Asistente IA")
   status         String       @default("ACTIVE")
+  mode           AiAgentMode  @default(REAL_ESTATE)
   tone           AiAgentTone  @default(FRIENDLY)
   persona        String?      @db.Text
   language       String       @default("Spanish")

@@ -75,6 +75,7 @@ export type PreparedConversationContext = {
   aiAgent?: {
     name: string;
     tone: "FORMAL" | "FRIENDLY" | "NEUTRAL";
+    mode?: "REAL_ESTATE" | "RECEPTION";
     persona: string | null;
     zoneFilters: string[];
     propertyTypes: string[];

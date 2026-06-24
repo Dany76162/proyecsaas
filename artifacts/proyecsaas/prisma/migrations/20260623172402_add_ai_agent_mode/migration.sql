@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "AiAgentMode" AS ENUM ('REAL_ESTATE', 'RECEPTION');
+
+-- AlterTable
+ALTER TABLE "AiAgent" ADD COLUMN "mode" "AiAgentMode" NOT NULL DEFAULT 'REAL_ESTATE';

@@ -941,3 +941,16 @@ Riesgo principal = confianza, no precio. Mensajes oficiales: "Tus datos son tuyo
 2. ✔️ ~~Unificación de badges (§32/41)~~ → divergencias estáticas de estado de lote **cerradas** (`d4233a5`).
 3. ✔️ ~~Onboarding First-WOW §46 completo~~ → Fases A·B·C + gate de prueba **hechos y en prod** (`4dff3f1` · `96ca822` · `18b28c2` · `ace4c06`, verificados runtime).
 4. — sin pendientes abiertos de mi lado; a tu decisión qué priorizar (otra sección del checklist).
+
+
+## 🎯 PRÓXIMO PASO (AgentOS Demo Reception)
+- A1 Prisma AiAgent.mode completado localmente.
+- A2.1 branch REAL_ESTATE / RECEPTION completado localmente.
+- A2.2 prompt [[MODO_RECEPCION]] completado localmente.
+- A3 conversation-worker propaga mode completado localmente.
+- A4 seed preparado para agente demo RECEPTION.
+- Migración AiAgent.mode pendiente de aplicar en entorno autorizado.
+- Seed real pendiente de ejecutar después de migración.
+- Agente IA demo real todavía NO creado.
+- Mensajes reales al demo todavía prohibidos.
+- Push pendiente de aprobación.

@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, MembershipRole, SubscriptionStatus, WhatsAppProvider } from "@prisma/client";
+import { Prisma, PrismaClient, MembershipRole, SubscriptionStatus, WhatsAppProvider, AiAgentMode, AiAgentTone } from "@prisma/client";
 import { encryptToken, isEncryptedToken } from "../src/server/security/token-encryption";
 import { resolveInboundByPhoneNumberId } from "../src/server/whatsapp/channel-resolver";
 
@@ -15,6 +15,7 @@ const DRY_RUN_ORGANIZATION_ID = `DRY_RUN_ORG_ID_${DEMO_SLUG}`;
 type SummaryState = {
   org: "created" | "updated" | "existing" | "planned-create" | "planned-update";
   channel: "created" | "updated" | "existing" | "planned-create" | "planned-update";
+  aiAgent: "created" | "updated" | "existing" | "planned-create" | "planned-update";
   validations: Array<{ name: string; status: "passed" | "failed" | "warning"; detail: string }>;
 };
 
@@ -328,6 +329,79 @@ async function ensureWhatsAppChannel(
   return { status: "updated" as const, encrypted, desired };
 }
 
+async function ensureDemoAiAgent(
+  tx: Prisma.TransactionClient,
+  organizationId: string,
+  execute: boolean,
+) {
+  const desired = {
+    organizationId,
+    name: "Asistente de Recepción Raíces Pilot",
+    status: "ACTIVE",
+    mode: AiAgentMode.RECEPTION,
+    tone: AiAgentTone.FRIENDLY,
+    persona: "[[MODO_RECEPCION]]",
+    language: "Spanish",
+    escalateOnKeywords: [],
+    humanHandoffMessage: null,
+    escalateAfterMessages: 5,
+    zoneFilters: [],
+    propertyTypes: [],
+    minBudget: null,
+    maxBudget: null,
+    isActive: true,
+    whatsappChannelId: null,
+  };
+
+  if (!execute && organizationId === DRY_RUN_ORGANIZATION_ID) {
+    return { status: "planned-create" as const, desired };
+  }
+
+  const existing = await tx.aiAgent.findUnique({
+    where: { organizationId },
+  });
+
+  if (!existing) {
+    if (!execute) {
+      return { status: "planned-create" as const, desired };
+    }
+    await tx.aiAgent.create({ data: desired });
+    return { status: "created" as const, desired };
+  }
+
+  const needsUpdate =
+    existing.name !== desired.name ||
+    existing.status !== desired.status ||
+    existing.mode !== desired.mode ||
+    existing.tone !== desired.tone ||
+    existing.persona !== desired.persona ||
+    existing.language !== desired.language ||
+    JSON.stringify(existing.escalateOnKeywords) !== JSON.stringify(desired.escalateOnKeywords) ||
+    existing.humanHandoffMessage !== desired.humanHandoffMessage ||
+    existing.escalateAfterMessages !== desired.escalateAfterMessages ||
+    JSON.stringify(existing.zoneFilters) !== JSON.stringify(desired.zoneFilters) ||
+    JSON.stringify(existing.propertyTypes) !== JSON.stringify(desired.propertyTypes) ||
+    existing.minBudget !== desired.minBudget ||
+    existing.maxBudget !== desired.maxBudget ||
+    existing.isActive !== desired.isActive ||
+    existing.whatsappChannelId !== desired.whatsappChannelId;
+
+  if (!needsUpdate) {
+    return { status: "existing" as const, desired };
+  }
+
+  if (!execute) {
+    return { status: "planned-update" as const, desired };
+  }
+
+  await tx.aiAgent.update({
+    where: { organizationId },
+    data: desired,
+  });
+  return { status: "updated" as const, desired };
+}
+
+
 async function validateDemoResolver(summary: SummaryState, execute: boolean) {
   const resolved = await resolveInboundByPhoneNumberId(prisma, DEMO_PHONE_NUMBER_ID);
   if (resolved?.organizationId && resolved.phoneNumberId === DEMO_PHONE_NUMBER_ID) {
@@ -433,6 +507,7 @@ async function main() {
   const summary: SummaryState = {
     org: "existing",
     channel: "existing",
+    aiAgent: "existing",
     validations: [],
   };
 
@@ -453,12 +528,14 @@ async function main() {
         const adminResult = await ensureAdminAndMembership(tx, DRY_RUN_ORGANIZATION_ID, execute);
         const subscriptionResult = await ensureSubscription(tx, DRY_RUN_ORGANIZATION_ID, execute);
         const channelResult = await ensureWhatsAppChannel(tx, DRY_RUN_ORGANIZATION_ID, execute);
+        const aiAgentResult = await ensureDemoAiAgent(tx, DRY_RUN_ORGANIZATION_ID, execute);
 
         return {
           orgResult,
           adminResult,
           subscriptionResult,
           channelResult,
+          aiAgentResult,
           organizationId: DRY_RUN_ORGANIZATION_ID,
         };
       }
@@ -469,18 +546,21 @@ async function main() {
     const adminResult = await ensureAdminAndMembership(tx, organizationId, execute);
     const subscriptionResult = await ensureSubscription(tx, organizationId, execute);
     const channelResult = await ensureWhatsAppChannel(tx, organizationId, execute);
+    const aiAgentResult = await ensureDemoAiAgent(tx, organizationId, execute);
 
     return {
       orgResult,
       adminResult,
       subscriptionResult,
       channelResult,
+      aiAgentResult,
       organizationId,
     };
   });
 
   summary.org = result.orgResult.status;
   summary.channel = result.channelResult.status;
+  summary.aiAgent = result.aiAgentResult.status;
 
   logInfo(`Org demo: ${result.orgResult.status}`);
   logInfo(`Admin demo: user=${result.adminResult.userStatus}, membership=${result.adminResult.membershipStatus}`);
@@ -489,6 +569,7 @@ async function main() {
   logInfo(
     `Canal demo plan: slug=${DEMO_SLUG}, phone=${DEMO_DISPLAY_PHONE}, phoneNumberId=${DEMO_PHONE_NUMBER_ID}, provider=${DEMO_PROVIDER}, isPrimary=${result.channelResult.desired.isPrimary}, isActive=${result.channelResult.desired.isActive}`,
   );
+  logInfo(`Agente IA demo: ${result.aiAgentResult.status}`);
 
   await validateDemoResolver(summary, execute);
   await validateProdResolver(summary);
@@ -502,6 +583,7 @@ async function main() {
   console.log("=== RESUMEN ===");
   console.log(`org: ${summary.org}`);
   console.log(`canal: ${summary.channel}`);
+  console.log(`agente IA: ${summary.aiAgent}`);
   console.log(`validaciones: passed=${passed}, failed=${failed}, warnings=${warnings}`);
 
   if (failed > 0) {
