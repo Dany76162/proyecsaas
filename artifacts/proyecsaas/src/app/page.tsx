@@ -97,13 +97,13 @@ export default async function HomePage() {
               Infraestructura Comercial
             </span>
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-6xl leading-tight">
-              Tu inmobiliaria en{" "}
+              Tu negocio inmobiliario en{" "}
               <span className="bg-gradient-to-r from-brand-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
                 Piloto Automático.
               </span>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-slate-600 dark:text-slate-350 max-w-3xl mx-auto font-medium">
-              La plataforma operativa que atiende a tus prospectos por WhatsApp las <strong>24 horas, los 7 días de la semana</strong>. La IA califica el interés de cada uno, les recomienda propiedades y lotes de tu catálogo en tiempo real y <strong>coordina las visitas según tu disponibilidad</strong> — siempre con tu confirmación. La IA te ayuda a vender; <strong>vos tomás el control</strong> en el momento del cierre.
+              La plataforma operativa que atiende a tus interesados por WhatsApp las <strong>24 horas, los 7 días de la semana</strong>. La IA califica el interés de cada uno, les recomienda propiedades y lotes de tu catálogo en tiempo real y <strong>coordina las visitas según tu disponibilidad</strong> — siempre con tu confirmación. La IA te ayuda a vender; <strong>vos tomás el control</strong> en el momento del cierre.
             </p>
             
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -189,7 +189,7 @@ export default async function HomePage() {
                   {[
                     {
                       num: "01",
-                      title: "El prospecto escribe por WhatsApp",
+                      title: "El interesado escribe por WhatsApp",
                       desc: "Cualquier consulta nueva ingresa inmediatamente al sistema sin demoras."
                     },
                     {
@@ -276,7 +276,7 @@ export default async function HomePage() {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
                   <Laptop className="h-6 w-6" />
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-white mb-1">App para tu inmobiliaria</h3>
+                <h3 className="font-bold text-slate-900 dark:text-white mb-1">App para tu negocio inmobiliario</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">El panel de gestión, instalable en compu o celular: IA, CRM, visitas y catálogo.</p>
               </div>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
@@ -296,7 +296,7 @@ export default async function HomePage() {
             <div className="mb-16 text-center">
               <span className="text-brand-400 font-bold tracking-widest uppercase text-xs mb-2 block">Infraestructura</span>
               <h2 className="text-3xl font-bold tracking-tight text-white mb-4">Todo lo que necesitas en un solo lugar</h2>
-              <p className="text-slate-400 max-w-2xl mx-auto">Un entorno operativo profesional, diseñado para escalar la gestión de tu inmobiliaria sin perder el control.</p>
+              <p className="text-slate-400 max-w-2xl mx-auto">Un entorno operativo profesional, diseñado para escalar la gestión de tu negocio inmobiliario sin perder el control.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -325,11 +325,11 @@ export default async function HomePage() {
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <div className="text-xl font-bold text-brand-600 dark:text-brand-500 mb-2">Más velocidad</div>
-                <div className="text-sm font-medium text-brand-800 dark:text-brand-300">Diseñado para minimizar prospectos perdidos por falta de respuesta.</div>
+                <div className="text-sm font-medium text-brand-800 dark:text-brand-300">Diseñado para minimizar consultas perdidas por falta de respuesta.</div>
               </div>
               <div>
                 <div className="text-xl font-bold text-brand-600 dark:text-brand-500 mb-2">Más agilidad</div>
-                <div className="text-sm font-medium text-brand-800 dark:text-brand-300">En la calificación inicial y perfilado de prospectos.</div>
+                <div className="text-sm font-medium text-brand-800 dark:text-brand-300">En la calificación inicial y perfilado de interesados.</div>
               </div>
               <div>
                 <div className="text-xl font-bold text-brand-600 dark:text-brand-500 mb-2">Visibilidad total</div>
@@ -358,10 +358,10 @@ export default async function HomePage() {
                   Empezá hoy
                 </div>
                 <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl lg:text-5xl mb-6 leading-tight">
-                  ¿Estás listo para modernizar tu inmobiliaria?
+                  ¿Estás listo para modernizar tu negocio inmobiliario?
                 </h2>
                 <p className="text-lg text-slate-600 dark:text-slate-350 mb-10 leading-relaxed">
-                  Completá el formulario y coordinamos una demo. Te mostramos cómo Raíces Pilot puede ayudarte a organizar tus prospectos, automatizar el seguimiento y cerrar más ventas sin complicaciones técnicas.
+                  Completá el formulario y coordinamos una demo. Te mostramos cómo Raíces Pilot puede ayudarte a organizar tus oportunidades, automatizar el seguimiento y cerrar más ventas sin complicaciones técnicas.
                 </p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-700 dark:text-slate-300">
@@ -389,7 +389,7 @@ export default async function HomePage() {
                     </div>
                     <div>
                       <div className="font-bold text-sm text-slate-900 dark:text-white">Configuración de IA</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ajustamos los agentes a las respuestas ideales de tu inmobiliaria.</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ajustamos los agentes a las respuestas ideales de tu negocio inmobiliario.</div>
                     </div>
                   </div>
                 </div>
