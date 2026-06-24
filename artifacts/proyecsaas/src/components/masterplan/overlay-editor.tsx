@@ -351,6 +351,8 @@ export default function OverlayEditor({
     const dragStateRef = useRef<DragState | null>(null);
     const cornersRef = useRef<QuadCorners>(corners);
     const opacityRef = useRef<number>(opacity);
+    // Últimos bounds/rotación/corners calculados, para hacer un único commit al soltar.
+    const latestBoundsRef = useRef<{ bounds: [LatLngTuple, LatLngTuple]; rotation: number; corners: QuadCorners } | null>(null);
     const imageUrlRef = useRef<string | null>(existingConfig?.imageUrl ?? null);
 
     useEffect(() => {
@@ -436,6 +438,11 @@ export default function OverlayEditor({
     const rotation = useMemo(() => deriveRotationFromCorners(corners), [corners]);
 
     useEffect(() => {
+        latestBoundsRef.current = { bounds, rotation, corners };
+        // Mientras se arrastra NO notificamos al padre: reproyectar los lotes en cada frame
+        // es lo que trababa el movimiento. La imagen se mueve sola por su transform local.
+        // Al soltar (pointerup) se hace un único commit con la posición final (ver handleUp).
+        if (dragStateRef.current) return;
         onBoundsChange?.(bounds, rotation, corners);
     }, [bounds, corners, onBoundsChange, rotation]);
 
@@ -519,7 +526,14 @@ export default function OverlayEditor({
         };
 
         const handleUp = () => {
+            const wasDragging = dragStateRef.current !== null;
             dragStateRef.current = null;
+            // Commit final: al soltar, reposicionamos los lotes UNA sola vez con la
+            // posición definitiva (durante el arrastre se omitió para no trabar).
+            if (wasDragging && latestBoundsRef.current) {
+                const { bounds, rotation, corners } = latestBoundsRef.current;
+                onBoundsChange?.(bounds, rotation, corners);
+            }
         };
 
         window.addEventListener("pointermove", handleMove);
@@ -528,7 +542,7 @@ export default function OverlayEditor({
             window.removeEventListener("pointermove", handleMove);
             window.removeEventListener("pointerup", handleUp);
         };
-    }, [applyScreenCorners, containerRect.screenLeft, containerRect.screenTop]);
+    }, [applyScreenCorners, containerRect.screenLeft, containerRect.screenTop, onBoundsChange]);
 
     const updateByTransform = useCallback((transform: (points: ScreenCorners) => ScreenCorners) => {
         applyScreenCorners(transform(screenCorners));

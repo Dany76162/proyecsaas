@@ -1289,6 +1289,9 @@ export default function MasterplanMap({
         corners?: OverlayCorners | null,
     ) => {
         if (!svgViewBox) return;
+        // Si no hay polígonos dibujados (lotes ocultos o fuera de viewport por culling),
+        // no hay nada que reposicionar: evitamos recorrer los miles de lotes en vano.
+        if (polygonsRef.current.size === 0) return;
 
         units.forEach(unit => {
             const polygon = polygonsRef.current.get(unit.id);

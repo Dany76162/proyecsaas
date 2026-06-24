@@ -440,6 +440,11 @@ Gestión (crear/editar/publicar/ocultar/multimedia) ✅. Multimedia (imágenes/v
   - **Proyectos chicos (≤300)**: comportamiento sin cambios (se dibujan todos).
   - **Sin tocar** persistencia/overlay (`overlayBounds`/rotación), API `/overlay`, guardado, Editor Plano Pro, Tour 360, Prisma/DB ni migraciones. **No** se implementó aún Fase B/C ni pipeline de raster (SVG→PNG/WebP).
   - **Archivo tocado**: `masterplan-map.tsx`. **Validado**: `tsc --noEmit` limpio + `next build` OK + `check-tour360-invariants.mjs` OK (en worktree aislado). QA visual del usuario **pendiente**.
+- **Fix arrastre del plano (2026-06-23, `7ee41d9`) — ✅ Implementado técnicamente / 🟡 pendiente QA visual del usuario en navegador autenticado.**
+  - **Problema real (QA visual del usuario)**: en "Ajustar Plano", mover la imagen del plano se trababa/no fluía. Causa: cada `pointermove` disparaba `onBoundsChange` → `updatePolygonPositionsLive`, que **reproyectaba los miles de lotes en cada frame** del arrastre.
+  - **Cambio**: durante el arrastre se actualiza solo el transform de la imagen (fluido) y se **omite** la notificación al padre; al **soltar** (`pointerup`) se hace un **único commit** que reposiciona los lotes con la posición final. Botones (nudge/escala/rotación) y carga inicial notifican al instante (no son arrastre). `updatePolygonPositionsLive` hace early-return si no hay polígonos dibujados.
+  - **Sin tocar** guardado ni persistencia (`overlayBounds`/`overlayRotation`), Editor Plano Pro, Tour 360, Prisma/DB ni migraciones.
+  - **Archivos tocados**: `overlay-editor.tsx`, `masterplan-map.tsx`. **Validado**: `tsc --noEmit` limpio + `next build` OK + `check-tour360-invariants.mjs` OK (worktree aislado). QA visual del usuario **pendiente**.
 
 ## 15. TOUR 360 DESARROLLOS — 🟠 Próximamente — ⛔
 
