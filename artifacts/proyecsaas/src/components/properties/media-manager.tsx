@@ -190,17 +190,17 @@ export function MediaManager({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-[#0A0A12] shadow-soft">
-      <div className="flex min-h-[calc(100vh-8rem)] flex-col lg:flex-row">
-        <div id="property-media-viewer" className="relative min-h-[520px] flex-1 bg-[#0A0A12] lg:min-h-0">
+      <div className="flex min-h-[380px] flex-col lg:h-[58vh] lg:max-h-[600px] lg:min-h-[420px] lg:flex-row">
+        <div id="property-media-viewer" className="relative min-h-[360px] flex-1 bg-[#0A0A12] lg:min-h-0">
           {showFloorPlan && floorPlanUrl ? (
-            <div className="relative h-full min-h-[520px] w-full bg-white lg:min-h-0">
+            <div className="relative h-full min-h-[360px] w-full bg-white lg:min-h-0">
               {floorPlanIsPdf ? (
                 <object
                   data={`${floorPlanUrl}#toolbar=0&navpanes=0&scrollbar=0`}
                   type="application/pdf"
-                  className="h-full min-h-[520px] w-full bg-white lg:min-h-0"
+                  className="h-full min-h-[360px] w-full bg-white lg:min-h-0"
                 >
-                  <div className="flex h-full min-h-[520px] flex-col items-center justify-center gap-3 p-6 text-center text-slate-600">
+                  <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-3 p-6 text-center text-slate-600">
                     <p className="text-sm font-semibold">No se pudo previsualizar el PDF.</p>
                     <a href={floorPlanUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-600 hover:underline">
                       Abrir plano en nueva pestaña
@@ -211,7 +211,7 @@ export function MediaManager({
                 <img
                   src={floorPlanUrl}
                   alt="Plano técnico de la propiedad"
-                  className="h-full min-h-[520px] w-full object-contain lg:min-h-0"
+                  className="h-full min-h-[360px] w-full object-contain lg:min-h-0"
                 />
               )}
             </div>
@@ -263,10 +263,10 @@ export function MediaManager({
             <img
               src={primaryImage.url}
               alt={primaryImage.altText ?? "Imagen principal de la propiedad"}
-              className="h-full min-h-[520px] w-full object-cover lg:min-h-0"
+              className="h-full min-h-[360px] w-full object-contain lg:min-h-0"
             />
           ) : (
-            <div className="flex h-full min-h-[520px] flex-col items-center justify-center gap-3 text-white/55 lg:min-h-0">
+            <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-3 text-white/55 lg:min-h-0">
               <ImageOff className="h-12 w-12 text-white/25" />
               <p className="text-sm font-medium">Sin medios todavía</p>
             </div>

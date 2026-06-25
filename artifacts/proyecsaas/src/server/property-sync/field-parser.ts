@@ -97,7 +97,10 @@ export function parseSurfaceM2(text: string): number | null {
 export function parseRooms(text: string): number | null {
   if (!text) return null;
   if (/monoambiente/i.test(text)) return 1;
-  const match = text.match(/(\d+)\s*(?:ambientes?|amb\.?)/i);
+  // Soporta "2 ambientes" / "3 amb." y también "Ambientes: 3" / "Ambientes 3".
+  const match =
+    text.match(/(\d+)\s*(?:ambientes?|amb\.?)/i) ??
+    text.match(/ambientes?\s*:?\s*(\d+)/i);
   if (!match) return null;
   const val = parseInt(match[1], 10);
   return isNaN(val) ? null : val;
@@ -105,11 +108,14 @@ export function parseRooms(text: string): number | null {
 
 /**
  * Extracts bedrooms from text.
- * "3 dormitorios" → 3, "2 habitaciones" → 2, "2 dorm." → 2
+ * "3 dormitorios" → 3, "2 habitaciones" → 2, "2 dorm." → 2, "Dormitorios: 2"
  */
 export function parseBedrooms(text: string): number | null {
   if (!text) return null;
-  const match = text.match(/(\d+)\s*(?:dormitorios?|habitaciones?|dorm\.?|cuartos?)/i);
+  // Soporta "3 dormitorios" / "2 dorm." y también "Dormitorios: 2".
+  const match =
+    text.match(/(\d+)\s*(?:dormitorios?|habitaciones?|dorm\.?|cuartos?)/i) ??
+    text.match(/(?:dormitorios?|habitaciones?|cuartos?)\s*:?\s*(\d+)/i);
   if (!match) return null;
   const val = parseInt(match[1], 10);
   return isNaN(val) ? null : val;
@@ -121,7 +127,10 @@ export function parseBedrooms(text: string): number | null {
  */
 export function parseBathrooms(text: string): number | null {
   if (!text) return null;
-  const match = text.match(/(\d+)\s*(?:baños?|baths?)/i);
+  // Soporta "2 baños" / "1 baño" y también "Baños: 1".
+  const match =
+    text.match(/(\d+)\s*(?:baños?|baths?)/i) ??
+    text.match(/(?:baños?|baths?)\s*:?\s*(\d+)/i);
   if (!match) return null;
   const val = parseInt(match[1], 10);
   return isNaN(val) ? null : val;
