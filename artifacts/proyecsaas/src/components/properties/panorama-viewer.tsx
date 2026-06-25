@@ -1,11 +1,16 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 
-type Scene = { 
-  url: string; 
+type Scene = {
+  id?: string;
+  url: string;
   label: string;
   hotspotPitch?: number | null;
   hotspotYaw?: number | null;
+  // Posición en el PLANO del tour y grafo de conexiones (para hotspots dinámicos).
+  positionX?: number | null;
+  positionY?: number | null;
+  connections?: string[] | null;
 }
 
 type PanoramaViewerProps = {
@@ -387,33 +392,80 @@ export function PanoramaViewer({
           refreshViewerLayout(viewerRef.current)
         } else {
           const scenesConfig: Record<string, any> = {}
+
+          // Mapa id de panorama → índice de escena (para resolver connections del plano).
+          const idToIndex = new Map<string, number>()
+          viewerScenes.forEach((s, i) => { if (s.id) idToIndex.set(s.id, i) })
+
+          // Yaw (grados) desde la escena origen hacia la destino según su posición en
+          // el PLANO. Convención: "arriba" del plano (−Y) = yaw 0, derecha (+X) = yaw 90.
+          // Es una APROXIMACIÓN: cada panorama tiene su propio "norte" según cómo se
+          // tomó la foto, así que la dirección puede no coincidir exactamente con la
+          // imagen. La navegación (sceneId) siempre es correcta; para el caso de una
+          // sola conexión se respeta el hotspot calibrado a mano si existe.
+          const computeYaw = (src: Scene, dst: Scene): number | null => {
+            if (src.positionX == null || src.positionY == null || dst.positionX == null || dst.positionY == null) return null
+            const dx = dst.positionX - src.positionX
+            const dy = dst.positionY - src.positionY
+            if (dx === 0 && dy === 0) return null
+            return (Math.atan2(dx, -dy) * 180) / Math.PI
+          }
+
           viewerScenes.forEach((scene, i) => {
-            const hotSpots = []
+            const hotSpots: any[] = []
 
-            // Hotspot hacia la escena siguiente (en el piso, usando pitch/yaw guardados o por defecto)
-            if (i < safeScenes.length - 1) {
-              const customPitch = typeof scene.hotspotPitch === 'number' ? scene.hotspotPitch : -30;
-              const customYaw = typeof scene.hotspotYaw === 'number' ? scene.hotspotYaw : 0;
-              hotSpots.push({
-                pitch: customPitch,
-                yaw: customYaw,
-                type: 'scene',
-                text: safeScenes[i + 1].label,
-                sceneId: `scene-${i + 1}`,
-                cssClass: 'pv-hotspot-scene',
-              })
-            }
+            const targets = Array.from(
+              new Set(
+                (scene.connections ?? [])
+                  .map((cid) => idToIndex.get(cid))
+                  .filter((idx): idx is number => typeof idx === 'number' && idx !== i),
+              ),
+            )
 
-            // Hotspot hacia la escena anterior (en el piso, mirando atrás)
-            if (i > 0) {
-              hotSpots.push({
-                pitch: -30,
-                yaw: 180,
-                type: 'scene',
-                text: safeScenes[i - 1].label,
-                sceneId: `scene-${i - 1}`,
-                cssClass: 'pv-hotspot-scene',
+            if (targets.length > 0) {
+              // Hotspots DINÁMICOS: uno por cada escena conectada en el plano.
+              const singleManual =
+                targets.length === 1 &&
+                typeof scene.hotspotPitch === 'number' &&
+                typeof scene.hotspotYaw === 'number'
+              targets.forEach((targetIdx) => {
+                const computedYaw = computeYaw(scene, viewerScenes[targetIdx])
+                const pitch = singleManual ? (scene.hotspotPitch as number) : -30
+                const yaw = singleManual ? (scene.hotspotYaw as number) : (computedYaw ?? 0)
+                hotSpots.push({
+                  pitch,
+                  yaw,
+                  type: 'scene',
+                  text: safeScenes[targetIdx].label,
+                  sceneId: `scene-${targetIdx}`,
+                  cssClass: 'pv-hotspot-scene',
+                })
               })
+            } else {
+              // Fallback (sin conexiones definidas): comportamiento lineal anterior
+              // (siguiente/anterior por orden del array) para no romper tours existentes.
+              if (i < safeScenes.length - 1) {
+                const customPitch = typeof scene.hotspotPitch === 'number' ? scene.hotspotPitch : -30;
+                const customYaw = typeof scene.hotspotYaw === 'number' ? scene.hotspotYaw : 0;
+                hotSpots.push({
+                  pitch: customPitch,
+                  yaw: customYaw,
+                  type: 'scene',
+                  text: safeScenes[i + 1].label,
+                  sceneId: `scene-${i + 1}`,
+                  cssClass: 'pv-hotspot-scene',
+                })
+              }
+              if (i > 0) {
+                hotSpots.push({
+                  pitch: -30,
+                  yaw: 180,
+                  type: 'scene',
+                  text: safeScenes[i - 1].label,
+                  sceneId: `scene-${i - 1}`,
+                  cssClass: 'pv-hotspot-scene',
+                })
+              }
             }
 
             scenesConfig[`scene-${i}`] = {

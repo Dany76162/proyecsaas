@@ -264,10 +264,14 @@ export function MediaManager({
             <>
               <PanoramaViewer
                 scenes={orderedPanoramas.map((p) => ({
+                  id: p.id,
                   url: p.url,
                   label: p.label ?? p.roomName ?? "Escena",
                   hotspotPitch: p.hotspotPitch,
                   hotspotYaw: p.hotspotYaw,
+                  positionX: p.positionX,
+                  positionY: p.positionY,
+                  connections: p.connections,
                 }))}
                 isEditingHotspot={isEditingHotspot}
                 onCoordsSelected={handleCoordsSelected}
