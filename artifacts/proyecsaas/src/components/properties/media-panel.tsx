@@ -730,9 +730,15 @@ export function MediaPanel({
                   )}
                 </div>
               )}
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:24px_24px]" />
-              <div className="absolute inset-x-4 top-1/2 h-px bg-white/15" />
-              <div className="absolute inset-y-4 left-1/2 w-px bg-white/15" />
+              {/* Grilla + cruz de referencia: solo cuando NO hay plano cargado.
+                  Con plano, el plano real es el fondo (no la grilla gris). */}
+              {!floorPlanUrl && (
+                <>
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:24px_24px]" />
+                  <div className="absolute inset-x-4 top-1/2 h-px bg-white/15" />
+                  <div className="absolute inset-y-4 left-1/2 w-px bg-white/15" />
+                </>
+              )}
 
               {panoramas.map((panorama) => {
                 const isActive = panorama.id === activePanorama.id;
