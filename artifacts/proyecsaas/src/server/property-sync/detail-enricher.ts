@@ -12,6 +12,7 @@ import {
   stripHtml,
 } from "./field-parser";
 import type { SyncProperty } from "./types";
+import { isPublicHttpUrl } from "./url-guard";
 
 const FETCH_HEADERS = {
   "User-Agent": "Mozilla/5.0 (compatible; RaicesBot/1.0; +https://raicespilot.com/bot)",
@@ -51,6 +52,8 @@ function isPropertyType(type: unknown): boolean {
  * Nunca lanza (el llamador sigue con los datos del listado).
  */
 export async function enrichFromDetailPage(detailUrl: string): Promise<DetailEnrichment | null> {
+  if (!(await isPublicHttpUrl(detailUrl))) return null;
+
   let html: string;
   try {
     const res = await fetch(detailUrl, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(12000) });
@@ -137,6 +140,8 @@ export async function enrichFromDetailPage(detailUrl: string): Promise<DetailEnr
  * Conservador: si no hay título limpio, devuelve null (no inventa).
  */
 export async function extractPropertyFromDetailUrl(detailUrl: string): Promise<SyncProperty | null> {
+  if (!(await isPublicHttpUrl(detailUrl))) return null;
+
   let html: string;
   try {
     const res = await fetch(detailUrl, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(12000) });

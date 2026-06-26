@@ -7,6 +7,7 @@
  */
 import type { SyncProperty } from "../types";
 import { extractPropertyFromDetailUrl } from "../detail-enricher";
+import { isPublicHttpUrl } from "../url-guard";
 
 const FETCH_HEADERS = {
   "User-Agent": "Mozilla/5.0 (compatible; RaicesBot/1.0; +https://raicespilot.com/bot)",
@@ -26,6 +27,7 @@ function delay(ms: number) {
 }
 
 async function fetchXml(url: string): Promise<string | null> {
+  if (!(await isPublicHttpUrl(url))) return null; // anti-SSRF
   try {
     const res = await fetch(url, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(15000) });
     if (!res.ok) return null;

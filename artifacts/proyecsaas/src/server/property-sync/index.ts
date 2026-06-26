@@ -20,6 +20,7 @@ import { extractFromHtmlStatic } from "./strategies/html-static";
 import { extractFromSitemap, looksLikeSitemap } from "./strategies/sitemap";
 import { getAdapterForUrl } from "./adapters/portal-adapter";
 import { enrichFromDetailPage } from "./detail-enricher";
+import { isPublicHttpUrl } from "./url-guard";
 
 export type { SyncProperty, SyncResult };
 
@@ -75,6 +76,14 @@ export async function syncPropertiesFromUrl(
     domain = new URL(sourceUrl).hostname;
   } catch {
     throw new Error(`URL inválida: "${sourceUrl}"`);
+  }
+
+  // Anti-SSRF: solo URLs públicas http/https (cubre wordpress/json-ld/html-static,
+  // que hacen fetch de esta URL o de su mismo origin).
+  if (!(await isPublicHttpUrl(sourceUrl))) {
+    throw new Error(
+      "URL no permitida: debe ser una URL pública http(s). Se bloquean direcciones internas/privadas.",
+    );
   }
 
   console.info(`[property-sync] inicio dominio=${domain}`);
