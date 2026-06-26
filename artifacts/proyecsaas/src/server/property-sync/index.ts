@@ -97,7 +97,7 @@ export async function syncPropertiesFromUrl(
     if (props && props.length > 0) {
       await enrichListingProperties(props, sourceUrl);
       console.info(`[property-sync] ${domain}: estrategia=adapter:${adapter.id} propiedades=${props.length}`);
-      return { strategy: "json-ld", properties: props, totalFetched: props.length };
+      return { strategy: `adapter:${adapter.id}`, properties: props, totalFetched: props.length };
     }
   }
 

@@ -25,7 +25,8 @@ export interface SyncProperty {
 export type SyncStrategy = "wordpress-api" | "json-ld" | "html-static" | "sitemap";
 
 export interface SyncResult {
-  strategy: SyncStrategy;
+  /** Estrategia/origen efectivo: SyncStrategy o `adapter:<id>` para adaptadores. */
+  strategy: SyncStrategy | string;
   properties: SyncProperty[];
   totalFetched: number;
 }

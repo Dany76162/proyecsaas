@@ -38,6 +38,7 @@ export default async function OrganizationSettingsPage({
         propertySourceStatus: true,
         propertySourceSyncedAt: true,
         propertySourceErrorMessage: true,
+        propertySourceAttemptCount: true,
       },
     }),
   ]);
@@ -117,6 +118,7 @@ export default async function OrganizationSettingsPage({
             propertySourceStatus: orgProfile.propertySourceStatus,
             propertySourceSyncedAt: orgProfile.propertySourceSyncedAt?.toISOString() ?? null,
             propertySourceErrorMessage: orgProfile.propertySourceErrorMessage,
+            propertySourceAttemptCount: orgProfile.propertySourceAttemptCount,
             websiteFallback: orgProfile.website,
           }}
         />
