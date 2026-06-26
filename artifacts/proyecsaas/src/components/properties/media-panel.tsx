@@ -48,39 +48,8 @@ const categories: { value: MediaCategory; label: string }[] = [
   { value: "PROGRESS", label: "Avance de obra" },
 ];
 
-function sceneToPlane(positionX: number, positionY: number) {
-  return {
-    left: Math.max(8, Math.min(92, 50 + positionX * 6)),
-    top: Math.max(8, Math.min(92, 50 + positionY * 6)),
-  };
-}
-
-function planeToScene(left: number, top: number) {
-  return {
-    positionX: Number(((left - 50) / 6).toFixed(2)),
-    positionY: Number(((top - 50) / 6).toFixed(2)),
-  };
-}
-
-function getDemoScenePosition(index: number, total: number) {
-  const columns = Math.min(3, Math.max(2, Math.ceil(Math.sqrt(total))));
-  const row = Math.floor(index / columns);
-  const column = index % columns;
-
-  return {
-    positionX: (column - (columns - 1) / 2) * 3,
-    positionY: (row - 0.5) * 2.4,
-    positionZ: 0,
-    floor: 0,
-  };
-}
-
 function numberOrZero(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function isPdfUrl(url: string | null) {
-  return Boolean(url?.toLowerCase().split("?")[0]?.endsWith(".pdf"));
 }
 
 export function MediaPanel({
@@ -312,48 +281,6 @@ export function MediaPanel({
       if (result.success) onSaveChanges();
     });
   }
-
-  function updatePositionFromPointer(target: HTMLElement, event: React.PointerEvent) {
-    const rect = target.getBoundingClientRect();
-    const left = ((event.clientX - rect.left) / rect.width) * 100;
-    const top = ((event.clientY - rect.top) / rect.height) * 100;
-    const nextPosition = planeToScene(left, top);
-    setSpatialDraft((current) => ({ ...current, ...nextPosition }));
-  }
-
-  function applyDemoLayout() {
-    if (panoramas.length === 0) return;
-    setSpatialMessage(null);
-
-    startSpatialTransition(async () => {
-      const results = await Promise.all(
-        panoramas.map((panorama, index) => {
-          const position = getDemoScenePosition(index, panoramas.length);
-          const connections = [
-            panoramas[index - 1]?.id,
-            panoramas[index + 1]?.id,
-          ].filter((id): id is string => Boolean(id));
-
-          return updatePanoramaSettingsAction(orgSlug, {
-            propertyId,
-            panoramaId: panorama.id,
-            label: panorama.label ?? `Escena ${index + 1}`,
-            roomName: panorama.roomName ?? panorama.label ?? `Ambiente ${index + 1}`,
-            floor: position.floor,
-            positionX: position.positionX,
-            positionY: position.positionY,
-            positionZ: position.positionZ,
-            connections,
-          });
-        }),
-      );
-
-      const failed = results.find((result) => !result.success);
-      setSpatialMessage(failed ? failed.message ?? "No se pudo crear el plano demo." : "Plano demo aplicado.");
-      if (!failed) onSaveChanges();
-    });
-  }
-
 
   return (
     <aside
@@ -701,120 +628,29 @@ export function MediaPanel({
           </div>
 
           <div className="space-y-3">
-            <div
-              data-spatial-plane
-              className="relative h-44 overflow-hidden rounded-lg border border-white/10 bg-[#080b12]"
-              onPointerDown={(event) => {
-                if (event.target !== event.currentTarget) return;
-                updatePositionFromPointer(event.currentTarget, event);
-              }}
-              onPointerMove={(event) => {
-                if (event.buttons !== 1) return;
-                updatePositionFromPointer(event.currentTarget, event);
-              }}
-            >
-              {floorPlanUrl && (
-                <div className="pointer-events-none absolute inset-0 bg-white">
-                  {isPdfUrl(floorPlanUrl) ? (
-                    <object
-                      data={`${floorPlanUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                      type="application/pdf"
-                      className="h-full w-full opacity-45"
-                    />
-                  ) : (
-                    <img
-                      src={floorPlanUrl}
-                      alt="Plano de la propiedad"
-                      className="h-full w-full object-contain opacity-55"
-                    />
-                  )}
-                </div>
-              )}
-              {/* Grilla + cruz de referencia: solo cuando NO hay plano cargado.
-                  Con plano, el plano real es el fondo (no la grilla gris). */}
-              {!floorPlanUrl && (
-                <>
-                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:24px_24px]" />
-                  <div className="absolute inset-x-4 top-1/2 h-px bg-white/15" />
-                  <div className="absolute inset-y-4 left-1/2 w-px bg-white/15" />
-                </>
-              )}
-
-              {panoramas.map((panorama) => {
+            {/* Lista de escenas por ambiente (reemplaza el plano visual con puntos).
+                Clic selecciona la escena activa; el resto de la lógica (posición
+                X/Y/Z por campos, conexiones y hotspots dinámicos) se conserva. */}
+            <div className="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto rounded-lg border border-white/10 bg-[#080b12] p-2">
+              {panoramas.map((panorama, index) => {
                 const isActive = panorama.id === activePanorama.id;
-                const position = isActive
-                  ? sceneToPlane(spatialDraft.positionX, spatialDraft.positionY)
-                  : sceneToPlane(panorama.positionX, panorama.positionY);
-                const connections = isActive ? spatialDraft.connections : panorama.connections;
-
+                const label = panorama.roomName ?? panorama.label ?? `Escena ${index + 1}`;
                 return (
-                  <div key={panorama.id}>
-                    {connections.map((connectionId) => {
-                      const connected = panoramas.find((item) => item.id === connectionId);
-                      if (!connected) return null;
-
-                      const connectedPosition = connected.id === activePanorama.id
-                        ? sceneToPlane(spatialDraft.positionX, spatialDraft.positionY)
-                        : sceneToPlane(connected.positionX, connected.positionY);
-                      const x1 = position.left;
-                      const y1 = position.top;
-                      const x2 = connectedPosition.left;
-                      const y2 = connectedPosition.top;
-                      const length = Math.hypot(x2 - x1, y2 - y1);
-                      const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
-
-                      return (
-                        <span
-                          key={`${panorama.id}-${connectionId}`}
-                          className="absolute h-px origin-left bg-cyan-300/45"
-                          style={{
-                            left: `${x1}%`,
-                            top: `${y1}%`,
-                            width: `${length}%`,
-                            transform: `rotate(${angle}deg)`,
-                          }}
-                        />
-                      );
-                    })}
-
-                    <button
-                      type="button"
-                      onClick={() => onPanoramaSelect(panorama.id)}
-                      onPointerDown={(event) => {
-                        if (!isActive) return;
-                        event.preventDefault();
-                        event.stopPropagation();
-                        event.currentTarget.setPointerCapture(event.pointerId);
-                        const plane = event.currentTarget.closest("[data-spatial-plane]");
-                        if (plane instanceof HTMLElement) updatePositionFromPointer(plane, event);
-                      }}
-                      onPointerMove={(event) => {
-                        if (!isActive || event.buttons !== 1) return;
-                        const plane = event.currentTarget.closest("[data-spatial-plane]");
-                        if (!(plane instanceof HTMLElement)) return;
-                        updatePositionFromPointer(plane, event);
-                      }}
-                      className={`absolute z-10 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[10px] font-bold transition hover:scale-110 ${
-                        isActive
-                          ? "border-white bg-brand-500 text-white shadow-[0_0_18px_rgba(59,130,246,0.85)]"
-                          : "border-white/30 bg-white/15 text-white/70"
-                      }`}
-                      style={{ left: `${position.left}%`, top: `${position.top}%` }}
-                      title={panorama.roomName ?? panorama.label ?? "Escena"}
-                    >
-                      {panoramas.findIndex((item) => item.id === panorama.id) + 1}
-                    </button>
-                  </div>
+                  <button
+                    key={panorama.id}
+                    type="button"
+                    onClick={() => onPanoramaSelect(panorama.id)}
+                    title={label}
+                    className={`max-w-full shrink-0 truncate rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                      isActive
+                        ? "bg-brand-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.55)]"
+                        : "bg-white/[0.06] text-white/70 hover:bg-white/[0.12] hover:text-white"
+                    }`}
+                  >
+                    {label}
+                  </button>
                 );
               })}
-
-              <div
-                className="pointer-events-none absolute inset-0"
-                onPointerMove={(event) => {
-                  if (event.buttons !== 1) return;
-                  updatePositionFromPointer(event.currentTarget, event);
-                }}
-              />
             </div>
 
             <div className="space-y-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
@@ -905,16 +741,6 @@ export function MediaPanel({
                 </Button>
               </div>
             </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={applyDemoLayout}
-              disabled={isSpatialPending}
-              className="w-full bg-white/[0.04] text-xs text-white/75 hover:bg-white/[0.08] hover:text-white"
-            >
-              Crear plano demo con escenas actuales
-            </Button>
 
             <input
               value={spatialDraft.roomName}
