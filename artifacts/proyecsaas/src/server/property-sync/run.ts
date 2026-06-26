@@ -6,6 +6,7 @@ import { syncPropertiesFromUrl } from "@/server/property-sync";
 export type RunPropertySyncResult = {
   created: number;
   updated: number;
+  skipped: number;
   detected: number;
   withPrice: number;
   strategy: string;
@@ -38,6 +39,7 @@ export async function syncOrganizationProperties(params: {
 
     let created = 0;
     let updated = 0;
+    let skipped = 0;
 
     for (const prop of properties) {
       if (!prop.title) continue;
@@ -46,7 +48,12 @@ export async function syncOrganizationProperties(params: {
 
       const existingProp = await prisma.property.findFirst({
         where: { organizationId: orgId, externalId },
-        select: { id: true },
+        select: {
+          id: true,
+          status: true,
+          publicVisible: true,
+          images: { select: { url: true } },
+        },
       });
 
       const data = {
@@ -75,22 +82,41 @@ export async function syncOrganizationProperties(params: {
           : prop.imageUrl
             ? [prop.imageUrl]
             : [];
-      const imageCreates = galleryUrls
-        .slice(0, 20)
-        .map((url, idx) => ({ url, isPrimary: idx === 0, sortOrder: idx }));
 
       if (existingProp) {
+        // Proteger el trabajo del operador: si ya fue revisada/publicada
+        // (status != DRAFT o publicVisible), NO la re-pisamos.
+        if (existingProp.status !== "DRAFT" || existingProp.publicVisible) {
+          skipped++;
+          continue;
+        }
+
+        // DRAFT interno: refrescar datos + MERGE de imágenes por URL (no borrar las
+        // ya cargadas; agregar solo nuevas, respetando el tope total de 20).
+        const existingUrls = new Set(existingProp.images.map((img) => img.url));
+        const hadImages = existingProp.images.length > 0;
+        const remainingSlots = Math.max(0, 20 - existingProp.images.length);
+        const newImages = galleryUrls
+          .filter((url) => !existingUrls.has(url))
+          .slice(0, remainingSlots)
+          .map((url, idx) => ({
+            url,
+            isPrimary: !hadImages && idx === 0,
+            sortOrder: existingProp.images.length + idx,
+          }));
+
         await prisma.property.update({
           where: { id: existingProp.id },
           data: {
             ...data,
-            images: imageCreates.length > 0
-              ? { deleteMany: {}, create: imageCreates }
-              : undefined,
+            images: newImages.length > 0 ? { create: newImages } : undefined,
           },
         });
         updated++;
       } else {
+        const imageCreates = galleryUrls
+          .slice(0, 20)
+          .map((url, idx) => ({ url, isPrimary: idx === 0, sortOrder: idx }));
         await prisma.property.create({
           data: {
             ...data,
@@ -122,12 +148,13 @@ export async function syncOrganizationProperties(params: {
     })();
     const withPrice = properties.filter((p) => p.priceCents != null).length;
     console.info(
-      `[property-sync] ${domain}: estrategia=${strategy} detectadas=${properties.length} nuevas=${created} actualizadas=${updated} conPrecio=${withPrice} sinPrecio=${properties.length - withPrice}`,
+      `[property-sync] ${domain}: estrategia=${strategy} detectadas=${properties.length} nuevas=${created} actualizadas=${updated} preservadas=${skipped} conPrecio=${withPrice} sinPrecio=${properties.length - withPrice}`,
     );
 
     return {
       created,
       updated,
+      skipped,
       detected: properties.length,
       withPrice,
       strategy,

@@ -92,10 +92,11 @@ async function handleSync(req: NextRequest) {
       success: true,
       created: result.created,
       updated: result.updated,
+      skipped: result.skipped,
       total: result.created + result.updated,
       strategy: result.strategy,
       totalFetched: result.totalFetched,
-      message: `Sync completo (${result.strategy}): ${result.created} propiedades nuevas, ${result.updated} actualizadas.`,
+      message: `Sync completo (${result.strategy}): ${result.created} nuevas, ${result.updated} actualizadas, ${result.skipped} preservadas (ya revisadas/publicadas).`,
     });
   } catch (err) {
     console.error("[sync-from-source] error:", err);

@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         sourceUrl: org.propertySourceUrl,
         sourceType: org.propertySourceType,
       });
-      results.push({ org: org.slug, ok: true, created: r.created, updated: r.updated, detected: r.detected });
+      results.push({ org: org.slug, ok: true, created: r.created, updated: r.updated, preserved: r.skipped, detected: r.detected });
     } catch (err) {
       // El status ya quedó en ERROR (+errorMessage +attemptCount) dentro de syncOrganizationProperties.
       console.error(`[cron/sync-properties] ${org.slug} falló:`, err);
