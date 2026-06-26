@@ -251,13 +251,11 @@ export function MediaPanel({
     toast.success(`${selectedCount} medio${plural} eliminado${plural}.`);
   }
 
-  function toggleConnection(panoramaId: string) {
-    setSpatialDraft((current) => ({
-      ...current,
-      connections: current.connections.includes(panoramaId)
-        ? current.connections.filter((id) => id !== panoramaId)
-        : [...current.connections, panoramaId],
-    }));
+  // Conexiones automáticas por orden: cada escena se enlaza con su anterior y siguiente.
+  function autoConnectionsFor(index: number): string[] {
+    return [panoramas[index - 1]?.id, panoramas[index + 1]?.id].filter(
+      (id): id is string => Boolean(id),
+    );
   }
 
   function saveSpatialSettings() {
@@ -265,20 +263,31 @@ export function MediaPanel({
     setSpatialMessage(null);
 
     startSpatialTransition(async () => {
-      const result = await updatePanoramaSettingsAction(orgSlug, {
-        propertyId,
-        panoramaId: activePanorama.id,
-        label: activePanorama.label ?? spatialDraft.roomName,
-        roomName: spatialDraft.roomName.trim() || null,
-        floor: spatialDraft.floor,
-        positionX: spatialDraft.positionX,
-        positionY: spatialDraft.positionY,
-        positionZ: spatialDraft.positionZ,
-        connections: spatialDraft.connections,
-      });
+      // Persiste el orden + las conexiones automáticas de TODAS las escenas.
+      // El nombre editable (roomName) solo cambia para la escena activa.
+      const results = await Promise.all(
+        panoramas.map((panorama, index) => {
+          const roomName =
+            panorama.id === activePanorama.id
+              ? spatialDraft.roomName.trim() || null
+              : panorama.roomName ?? null;
+          return updatePanoramaSettingsAction(orgSlug, {
+            propertyId,
+            panoramaId: panorama.id,
+            label: panorama.label ?? roomName ?? `Escena ${index + 1}`,
+            roomName,
+            floor: panorama.floor,
+            positionX: panorama.positionX,
+            positionY: panorama.positionY,
+            positionZ: panorama.positionZ,
+            connections: autoConnectionsFor(index),
+          });
+        }),
+      );
 
-      setSpatialMessage(result.success ? "Escena espacial guardada." : result.message ?? "No se pudo guardar.");
-      if (result.success) onSaveChanges();
+      const failed = results.find((result) => !result.success);
+      setSpatialMessage(failed ? failed.message ?? "No se pudo guardar." : "Tour guardado.");
+      if (!failed) onSaveChanges();
     });
   }
 
@@ -749,64 +758,10 @@ export function MediaPanel({
               placeholder="Ambiente, ej. Living"
             />
 
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                ["Piso", "floor"],
-                ["X", "positionX"],
-                ["Y", "positionY"],
-              ].map(([label, key]) => (
-                <label key={key} className="text-[10px] font-semibold uppercase tracking-wide text-white/45">
-                  {label}
-                  <input
-                    type="number"
-                    step={key === "floor" ? 1 : 0.5}
-                    value={spatialDraft[key as "floor" | "positionX" | "positionY"]}
-                    onChange={(event) =>
-                      setSpatialDraft((current) => ({
-                        ...current,
-                        [key]: Number(event.target.value),
-                      }))
-                    }
-                    className="mt-1 w-full rounded-md border border-white/10 bg-white/[0.06] px-2 py-1.5 text-xs text-white outline-none focus:border-brand-400"
-                  />
-                </label>
-              ))}
-            </div>
-
-            <label className="block text-[10px] font-semibold uppercase tracking-wide text-white/45">
-              Altura Z
-              <input
-                type="number"
-                step={0.5}
-                value={spatialDraft.positionZ}
-                onChange={(event) => setSpatialDraft((current) => ({ ...current, positionZ: Number(event.target.value) }))}
-                className="mt-1 w-full rounded-md border border-white/10 bg-white/[0.06] px-2 py-1.5 text-xs text-white outline-none focus:border-brand-400"
-              />
-            </label>
-
-            {panoramas.length > 1 && (
-              <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/45">Conecta con</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {panoramas
-                    .filter((panorama) => panorama.id !== activePanorama.id)
-                    .map((panorama) => (
-                      <button
-                        key={panorama.id}
-                        type="button"
-                        onClick={() => toggleConnection(panorama.id)}
-                        className={`rounded-full border px-2 py-1 text-[10px] font-semibold transition ${
-                          spatialDraft.connections.includes(panorama.id)
-                            ? "border-brand-300 bg-brand-500 text-white"
-                            : "border-white/10 bg-white/[0.04] text-white/55 hover:text-white"
-                        }`}
-                      >
-                        {panorama.roomName ?? panorama.label ?? "Escena"}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            )}
+            <p className="text-[10px] leading-relaxed text-white/40">
+              Las escenas se conectan automáticamente en el orden de la lista. Usá
+              “Mover atrás / Mover adelante” para cambiar el recorrido; se guarda al tocar “Guardar”.
+            </p>
 
             {spatialMessage && <p className="text-xs text-white/55">{spatialMessage}</p>}
           </div>

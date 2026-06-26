@@ -393,23 +393,9 @@ export function PanoramaViewer({
         } else {
           const scenesConfig: Record<string, any> = {}
 
-          // Mapa id de panorama → índice de escena (para resolver connections del plano).
+          // Mapa id de panorama → índice de escena (para resolver connections por orden).
           const idToIndex = new Map<string, number>()
           viewerScenes.forEach((s, i) => { if (s.id) idToIndex.set(s.id, i) })
-
-          // Yaw (grados) desde la escena origen hacia la destino según su posición en
-          // el PLANO. Convención: "arriba" del plano (−Y) = yaw 0, derecha (+X) = yaw 90.
-          // Es una APROXIMACIÓN: cada panorama tiene su propio "norte" según cómo se
-          // tomó la foto, así que la dirección puede no coincidir exactamente con la
-          // imagen. La navegación (sceneId) siempre es correcta; para el caso de una
-          // sola conexión se respeta el hotspot calibrado a mano si existe.
-          const computeYaw = (src: Scene, dst: Scene): number | null => {
-            if (src.positionX == null || src.positionY == null || dst.positionX == null || dst.positionY == null) return null
-            const dx = dst.positionX - src.positionX
-            const dy = dst.positionY - src.positionY
-            if (dx === 0 && dy === 0) return null
-            return (Math.atan2(dx, -dy) * 180) / Math.PI
-          }
 
           viewerScenes.forEach((scene, i) => {
             const hotSpots: any[] = []
@@ -422,16 +408,18 @@ export function PanoramaViewer({
               ),
             )
 
+            // Hotspot manual (hotspotPitch/hotspotYaw) tiene prioridad como override.
+            const hasManual =
+              typeof scene.hotspotPitch === 'number' && typeof scene.hotspotYaw === 'number'
+
             if (targets.length > 0) {
-              // Hotspots DINÁMICOS: uno por cada escena conectada en el plano.
-              const singleManual =
-                targets.length === 1 &&
-                typeof scene.hotspotPitch === 'number' &&
-                typeof scene.hotspotYaw === 'number'
+              // Hotspots por connections con ángulo fijo simple: la escena SIGUIENTE
+              // (índice mayor) = yaw 0; la ANTERIOR (índice menor) = yaw 180.
+              // Si hay una sola conexión y existe hotspot manual, se respeta el manual.
+              const singleManual = targets.length === 1 && hasManual
               targets.forEach((targetIdx) => {
-                const computedYaw = computeYaw(scene, viewerScenes[targetIdx])
                 const pitch = singleManual ? (scene.hotspotPitch as number) : -30
-                const yaw = singleManual ? (scene.hotspotYaw as number) : (computedYaw ?? 0)
+                const yaw = singleManual ? (scene.hotspotYaw as number) : targetIdx > i ? 0 : 180
                 hotSpots.push({
                   pitch,
                   yaw,
@@ -442,14 +430,11 @@ export function PanoramaViewer({
                 })
               })
             } else {
-              // Fallback (sin conexiones definidas): comportamiento lineal anterior
-              // (siguiente/anterior por orden del array) para no romper tours existentes.
+              // Fallback (sin conexiones definidas): siguiente/anterior por orden del array.
               if (i < safeScenes.length - 1) {
-                const customPitch = typeof scene.hotspotPitch === 'number' ? scene.hotspotPitch : -30;
-                const customYaw = typeof scene.hotspotYaw === 'number' ? scene.hotspotYaw : 0;
                 hotSpots.push({
-                  pitch: customPitch,
-                  yaw: customYaw,
+                  pitch: hasManual ? (scene.hotspotPitch as number) : -30,
+                  yaw: hasManual ? (scene.hotspotYaw as number) : 0,
                   type: 'scene',
                   text: safeScenes[i + 1].label,
                   sceneId: `scene-${i + 1}`,
