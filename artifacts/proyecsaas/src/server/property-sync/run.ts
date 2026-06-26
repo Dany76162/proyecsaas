@@ -62,7 +62,7 @@ export async function syncOrganizationProperties(params: {
         currency: prop.currency ?? "USD",
         bedrooms: prop.bedrooms ?? null,
         bathrooms: prop.bathrooms ?? null,
-        surfaceM2: prop.surfaceM2 ?? null,
+        surfaceM2: prop.surfaceM2 != null ? Math.round(prop.surfaceM2) : null,
         externalLink: prop.externalLink ?? sourceUrl,
         externalSourceUrl: sourceUrl,
         externalId,
