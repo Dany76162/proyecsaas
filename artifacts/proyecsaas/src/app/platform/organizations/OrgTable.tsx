@@ -73,6 +73,10 @@ function translateCommercialStatus(label: string | null) {
   if (upper === "CANCELLED") return "Cancelada";
   if (upper === "EXPIRED") return "Vencida";
   if (upper === "SUSPENDED") return "Suspendida";
+  // El summary de estados sin suscripción/desactivación llega como frase larga:
+  // lo acortamos para que el badge no quede gigante (solo display, no cambia lógica).
+  if (upper.includes("LEGAD") || upper.includes("LEGACY")) return "Acceso legado";
+  if (upper.includes("DESACTIVAD")) return "Suspendida";
   return label;
 }
 
@@ -314,9 +318,10 @@ export function OrgTable({
                   </TableCell>
 
                   <TableCell className="px-5 py-4 align-top">
-                    <div className="flex min-w-[180px] flex-col gap-1">
+                    <div className="flex min-w-[180px] max-w-[240px] flex-col gap-1">
                       <Badge
                         variant={org.commercialAccess === "allowed" ? "success" : "danger"}
+                        className="max-w-full items-start whitespace-normal break-words text-left leading-snug"
                       >
                         {translateCommercialStatus(org.commercialStatusLabel)}
                       </Badge>
