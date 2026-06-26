@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/server/db/prisma";
-import { syncPropertiesFromUrl } from "@/server/property-sync";
+import { syncOrganizationProperties } from "@/server/property-sync/run";
 
 const SyncSchema = z.object({
   orgSlug: z.string().min(1),
@@ -41,11 +41,24 @@ async function handleSync(req: NextRequest) {
       propertySourceUrl: true,
       propertySourceType: true,
       website: true,
+      subscription: { select: { plan: { select: { canUsePropertySync: true } } } },
     },
   });
 
   if (!org) {
     return NextResponse.json({ error: "Organización no encontrada" }, { status: 404 });
+  }
+
+  // Gate por plan: la sincronización de propiedades requiere un plan habilitado.
+  if (!org.subscription?.plan?.canUsePropertySync) {
+    console.warn(`[sync-from-source] ${orgSlug}: bloqueado (canUsePropertySync=false)`);
+    return NextResponse.json(
+      {
+        error:
+          "Tu plan no incluye la sincronización de propiedades. Contactá a soporte para habilitarla.",
+      },
+      { status: 403 }
+    );
   }
 
   // Use propertySourceUrl first; fall back to the org website URL if not set.
@@ -69,118 +82,19 @@ async function handleSync(req: NextRequest) {
     });
   }
 
-  await prisma.organization.update({
-    where: { id: org.id },
-    data: { propertySourceStatus: "SYNCING" },
-  });
-
   try {
-    const syncResult = await syncPropertiesFromUrl(sourceUrl);
-    const { properties, strategy, totalFetched } = syncResult;
-
-    let created = 0;
-    let updated = 0;
-
-    for (const prop of properties) {
-      if (!prop.title) continue;
-
-      const externalId = prop.externalId;
-
-      const existingProp = await prisma.property.findFirst({
-        where: { organizationId: org.id, externalId },
-        select: { id: true },
-      });
-
-      const data = {
-        organizationId: org.id,
-        title: prop.title.slice(0, 200),
-        description: prop.description?.slice(0, 500) ?? null,
-        address: prop.address ?? null,
-        neighborhood: prop.neighborhood ?? null,
-        city: prop.city ?? null,
-        propertyType: prop.propertyType ?? null,
-        operationType: prop.operationType ?? null,
-        priceCents: prop.priceCents ?? null,
-        currency: prop.currency ?? "USD",
-        bedrooms: prop.bedrooms ?? null,
-        bathrooms: prop.bathrooms ?? null,
-        surfaceM2: prop.surfaceM2 ?? null,
-        externalLink: prop.externalLink ?? sourceUrl,
-        externalSourceUrl: sourceUrl,
-        externalId,
-      };
-
-      // Build image payload if a new one was scraped
-      const imagePayload = prop.imageUrl
-        ? {
-            url: prop.imageUrl,
-            isPrimary: true,
-            sortOrder: 0,
-            // organizationId is handled automatically by the composite relation in schema.prisma
-          }
-        : null;
-
-      if (existingProp) {
-        await prisma.property.update({
-          where: { id: existingProp.id },
-          data: {
-            ...data,
-            images: imagePayload
-              ? {
-                  deleteMany: {}, // Only valid in update to replace existing images
-                  create: [imagePayload],
-                }
-              : undefined,
-          },
-        });
-        updated++;
-      } else {
-        await prisma.property.create({
-          data: {
-            ...data,
-            status: "DRAFT",
-            publicVisible: false,
-            images: imagePayload
-              ? {
-                  create: [imagePayload],
-                }
-              : undefined,
-          },
-        });
-        created++;
-      }
-    }
-
-    await prisma.organization.update({
-      where: { id: org.id },
-      data: {
-        propertySourceStatus: "OK",
-        propertySourceSyncedAt: new Date(),
-      },
-    });
-
-    // Diagnóstico seguro (sin datos sensibles): dominio, estrategia y cobertura de precio.
-    const syncDomain = (() => { try { return new URL(sourceUrl).hostname; } catch { return "(url-inválida)"; } })();
-    const withPrice = properties.filter((p) => p.priceCents != null).length;
-    console.info(
-      `[sync-from-source] ${syncDomain}: estrategia=${strategy} detectadas=${properties.length} nuevas=${created} actualizadas=${updated} conPrecio=${withPrice} sinPrecio=${properties.length - withPrice}`,
-    );
-
+    const result = await syncOrganizationProperties({ orgId: org.id, sourceUrl });
     return NextResponse.json({
       success: true,
-      created,
-      updated,
-      total: created + updated,
-      strategy,
-      totalFetched,
-      message: `Sync completo (${strategy}): ${created} propiedades nuevas, ${updated} actualizadas.`,
+      created: result.created,
+      updated: result.updated,
+      total: result.created + result.updated,
+      strategy: result.strategy,
+      totalFetched: result.totalFetched,
+      message: `Sync completo (${result.strategy}): ${result.created} propiedades nuevas, ${result.updated} actualizadas.`,
     });
   } catch (err) {
     console.error("[sync-from-source] error:", err);
-    await prisma.organization.update({
-      where: { id: org.id },
-      data: { propertySourceStatus: "ERROR" },
-    });
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error interno al sincronizar" },
       { status: 500 }
