@@ -82,9 +82,11 @@ function parseAmountToCents(raw: string): number | null {
  */
 export function parseSurfaceM2(text: string): number | null {
   if (!text) return null;
-  const match = text.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|mÂ²|mt2|mts2|metros?(?:\s*cuadrados?)?)/i);
+  // Acepta m², m2, mt2, mts2, mtrs2 y "metro(s) cuadrado(s)". Case-insensitive.
+  // Captura el número entero o decimal (separador . o ,) inmediatamente anterior.
+  const match = text.match(/(\d+(?:[.,]\d+)?)\s*(?:m²|m2|mt2|mts2|mtrs2|metros?\s*cuadrados?)/i);
   if (!match) return null;
-  const val = parseInt(match[1].replace(",", "."), 10);
+  const val = parseFloat(match[1].replace(",", "."));
   return isNaN(val) ? null : val;
 }
 

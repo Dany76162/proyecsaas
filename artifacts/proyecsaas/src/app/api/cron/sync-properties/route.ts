@@ -41,23 +41,57 @@ export async function POST(request: NextRequest) {
       propertySourceUrl: { not: null },
       subscription: { plan: { canUsePropertySync: true } },
     },
-    select: { id: true, slug: true, propertySourceUrl: true },
+    select: {
+      id: true,
+      slug: true,
+      propertySourceUrl: true,
+      propertySourceType: true,
+      propertySourceStatus: true,
+      propertySourceSyncedAt: true,
+      propertySourceAttemptCount: true,
+    },
   });
 
   const results: Array<Record<string, unknown>> = [];
+  let ran = 0;
+  let skipped = 0;
 
   for (const org of orgs) {
     if (!org.propertySourceUrl) continue;
+
+    // No pisar un sync en curso.
+    if (org.propertySourceStatus === "SYNCING") {
+      skipped++;
+      results.push({ org: org.slug, skipped: "en-curso" });
+      continue;
+    }
+
+    // Backoff exponencial tras error: min(2^intentos, 24) horas desde el último intento.
+    if (org.propertySourceStatus === "ERROR" && org.propertySourceSyncedAt) {
+      const backoffHours = Math.min(2 ** org.propertySourceAttemptCount, 24);
+      const dueAt = org.propertySourceSyncedAt.getTime() + backoffHours * 3600_000;
+      if (Date.now() < dueAt) {
+        skipped++;
+        results.push({ org: org.slug, skipped: `backoff ${backoffHours}h (intentos=${org.propertySourceAttemptCount})` });
+        continue;
+      }
+    }
+
+    ran++;
     try {
-      const r = await syncOrganizationProperties({ orgId: org.id, sourceUrl: org.propertySourceUrl });
+      const r = await syncOrganizationProperties({
+        orgId: org.id,
+        sourceUrl: org.propertySourceUrl,
+        sourceType: org.propertySourceType,
+      });
       results.push({ org: org.slug, ok: true, created: r.created, updated: r.updated, detected: r.detected });
     } catch (err) {
-      // El status de la org ya quedó en ERROR dentro de syncOrganizationProperties.
+      // El status ya quedó en ERROR (+errorMessage +attemptCount) dentro de syncOrganizationProperties.
       console.error(`[cron/sync-properties] ${org.slug} falló:`, err);
       results.push({ org: org.slug, ok: false, error: err instanceof Error ? err.message : "error" });
     }
   }
 
-  console.info(`[cron/sync-properties] procesadas=${orgs.length}`);
-  return NextResponse.json({ ok: true, processed: orgs.length, results });
+  console.info(`[cron/sync-properties] elegibles=${orgs.length} ejecutadas=${ran} omitidas=${skipped}`);
+  return NextResponse.json({ ok: true, eligible: orgs.length, ran, skipped, results });
 }

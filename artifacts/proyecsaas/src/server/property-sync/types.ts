@@ -17,13 +17,16 @@ export interface SyncProperty {
   surfaceM2?: number | null;
   externalLink?: string | null;
   imageUrl?: string | null;
+  /** Galería completa obtenida de la ficha detalle (hasta 20). Primera = portada. */
+  imageUrls?: string[] | null;
   externalId: string;
 }
 
-export type SyncStrategy = "wordpress-api" | "json-ld" | "html-static";
+export type SyncStrategy = "wordpress-api" | "json-ld" | "html-static" | "sitemap";
 
 export interface SyncResult {
-  strategy: SyncStrategy;
+  /** Estrategia/origen efectivo: SyncStrategy o `adapter:<id>` para adaptadores. */
+  strategy: SyncStrategy | string;
   properties: SyncProperty[];
   totalFetched: number;
 }

@@ -238,6 +238,8 @@ model Organization {
   propertySourceType     String?
   propertySourceStatus   String             @default("IDLE")
   propertySourceSyncedAt DateTime?
+  propertySourceErrorMessage String?
+  propertySourceAttemptCount Int            @default(0)
   isActive               Boolean            @default(true)
   deletedAt              DateTime?
   maxAiAgents            Int?

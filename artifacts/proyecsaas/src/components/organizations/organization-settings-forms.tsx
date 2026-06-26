@@ -247,6 +247,8 @@ export type PropertySourceInitial = {
   propertySourceType: string | null;
   propertySourceStatus: string;
   propertySourceSyncedAt: string | null;
+  propertySourceErrorMessage: string | null;
+  propertySourceAttemptCount: number;
   /** Website URL from the org profile â€” used as pre-fill when no source URL is set yet */
   websiteFallback: string | null;
 };
@@ -385,6 +387,14 @@ export function PropertySourceForm({
               Último: {formatDate(initial.propertySourceSyncedAt)}
             </span>
           </div>
+          {initial.propertySourceStatus === "ERROR" && initial.propertySourceErrorMessage && (
+            <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+              Último error: {initial.propertySourceErrorMessage}
+              {initial.propertySourceAttemptCount > 0 && (
+                <span className="font-semibold"> · intentos: {initial.propertySourceAttemptCount}</span>
+              )}
+            </p>
+          )}
         </div>
       </div>
 

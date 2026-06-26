@@ -24,8 +24,9 @@ export type RunPropertySyncResult = {
 export async function syncOrganizationProperties(params: {
   orgId: string;
   sourceUrl: string;
+  sourceType?: string | null;
 }): Promise<RunPropertySyncResult> {
-  const { orgId, sourceUrl } = params;
+  const { orgId, sourceUrl, sourceType } = params;
 
   await prisma.organization.update({
     where: { id: orgId },
@@ -33,7 +34,7 @@ export async function syncOrganizationProperties(params: {
   });
 
   try {
-    const { properties, strategy, totalFetched } = await syncPropertiesFromUrl(sourceUrl);
+    const { properties, strategy, totalFetched } = await syncPropertiesFromUrl(sourceUrl, { sourceType });
 
     let created = 0;
     let updated = 0;
@@ -61,23 +62,30 @@ export async function syncOrganizationProperties(params: {
         currency: prop.currency ?? "USD",
         bedrooms: prop.bedrooms ?? null,
         bathrooms: prop.bathrooms ?? null,
-        surfaceM2: prop.surfaceM2 ?? null,
+        surfaceM2: prop.surfaceM2 != null ? Math.round(prop.surfaceM2) : null,
         externalLink: prop.externalLink ?? sourceUrl,
         externalSourceUrl: sourceUrl,
         externalId,
       };
 
-      const imagePayload = prop.imageUrl
-        ? { url: prop.imageUrl, isPrimary: true, sortOrder: 0 }
-        : null;
+      // Galería: usar imageUrls (ficha detalle) si hay; si no, la portada del listado.
+      const galleryUrls =
+        prop.imageUrls && prop.imageUrls.length > 0
+          ? prop.imageUrls
+          : prop.imageUrl
+            ? [prop.imageUrl]
+            : [];
+      const imageCreates = galleryUrls
+        .slice(0, 20)
+        .map((url, idx) => ({ url, isPrimary: idx === 0, sortOrder: idx }));
 
       if (existingProp) {
         await prisma.property.update({
           where: { id: existingProp.id },
           data: {
             ...data,
-            images: imagePayload
-              ? { deleteMany: {}, create: [imagePayload] }
+            images: imageCreates.length > 0
+              ? { deleteMany: {}, create: imageCreates }
               : undefined,
           },
         });
@@ -88,7 +96,7 @@ export async function syncOrganizationProperties(params: {
             ...data,
             status: "DRAFT",
             publicVisible: false,
-            images: imagePayload ? { create: [imagePayload] } : undefined,
+            images: imageCreates.length > 0 ? { create: imageCreates } : undefined,
           },
         });
         created++;
@@ -97,7 +105,12 @@ export async function syncOrganizationProperties(params: {
 
     await prisma.organization.update({
       where: { id: orgId },
-      data: { propertySourceStatus: "OK", propertySourceSyncedAt: new Date() },
+      data: {
+        propertySourceStatus: "OK",
+        propertySourceSyncedAt: new Date(),
+        propertySourceErrorMessage: null,
+        propertySourceAttemptCount: 0,
+      },
     });
 
     const domain = (() => {
@@ -121,9 +134,15 @@ export async function syncOrganizationProperties(params: {
       totalFetched,
     };
   } catch (err) {
+    const message = (err instanceof Error ? err.message : "Error al sincronizar").slice(0, 300);
     await prisma.organization.update({
       where: { id: orgId },
-      data: { propertySourceStatus: "ERROR" },
+      data: {
+        propertySourceStatus: "ERROR",
+        propertySourceSyncedAt: new Date(),
+        propertySourceErrorMessage: message,
+        propertySourceAttemptCount: { increment: 1 },
+      },
     });
     throw err;
   }
