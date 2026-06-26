@@ -93,6 +93,10 @@ export const setPropertyVideoSchema = z.object({
   url: z.string().url().max(1000).nullable(),
 });
 
+export const reviewImportedPropertySchema = z.object({
+  propertyId: z.string().trim().min(1),
+});
+
 export const setPropertyFloorPlanSchema = z.object({
   propertyId: z.string().min(1),
   url: z.string().max(1000).nullable().refine((value) => {

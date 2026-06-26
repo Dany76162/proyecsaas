@@ -5,6 +5,7 @@ import { PropertyStatus } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 
 import type {
+  ImportedDraftProperty,
   PropertyDetail,
   PropertyListItem,
   PropertySummary,
@@ -98,6 +99,74 @@ export async function listOrganizationProperties(
     surfaceM2: property.surfaceM2,
     parkingSpots: property.parkingSpots,
   }));
+}
+
+const IMPORTED_DRAFT_WHERE = (orgSlug: string) => ({
+  organization: { slug: orgSlug },
+  status: PropertyStatus.DRAFT,
+  publicVisible: false,
+  // Solo las que entraron por el sync web (tienen origen externo).
+  externalSourceUrl: { not: null },
+});
+
+/**
+ * Lista propiedades IMPORTADAS por el sync web que siguen en borrador
+ * (status=DRAFT, publicVisible=false, externalSourceUrl != null), para el panel
+ * de revisión. Select explícito legacy-safe. Limitado a 50 para el MVP.
+ */
+export async function listImportedDraftProperties(
+  orgSlug: string,
+): Promise<ImportedDraftProperty[]> {
+  const properties = await prisma.property.findMany({
+    where: IMPORTED_DRAFT_WHERE(orgSlug),
+    select: {
+      id: true,
+      title: true,
+      propertyType: true,
+      operationType: true,
+      priceCents: true,
+      currency: true,
+      rooms: true,
+      bedrooms: true,
+      bathrooms: true,
+      surfaceM2: true,
+      externalLink: true,
+      externalSourceUrl: true,
+      createdAt: true,
+      images: {
+        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+        take: 1,
+        select: { url: true },
+      },
+      _count: { select: { images: true, panoramas: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  return properties.map((property) => ({
+    id: property.id,
+    title: property.title,
+    propertyType: property.propertyType,
+    operationType: property.operationType,
+    priceCents: property.priceCents,
+    currency: property.currency,
+    rooms: property.rooms,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    surfaceM2: property.surfaceM2,
+    externalLink: property.externalLink,
+    externalSourceUrl: property.externalSourceUrl,
+    imageUrl: property.images[0]?.url ?? null,
+    imageCount: property._count.images,
+    panoramaCount: property._count.panoramas,
+    createdAt: property.createdAt.toISOString(),
+  }));
+}
+
+/** Conteo de importadas pendientes de revisión (para el badge en /properties). */
+export async function countImportedDraftProperties(orgSlug: string): Promise<number> {
+  return prisma.property.count({ where: IMPORTED_DRAFT_WHERE(orgSlug) });
 }
 
 export async function getPropertySummary(

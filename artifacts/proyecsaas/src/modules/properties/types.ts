@@ -20,6 +20,26 @@ export type PropertyListItem = {
   parkingSpots: number | null;
 };
 
+/** Propiedad importada por el sync web que quedó en borrador, pendiente de revisión. */
+export type ImportedDraftProperty = {
+  id: string;
+  title: string;
+  propertyType: string | null;
+  operationType: string | null;
+  priceCents: number | null;
+  currency: string | null;
+  rooms: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  surfaceM2: number | null;
+  externalLink: string | null;
+  externalSourceUrl: string | null;
+  imageUrl: string | null;
+  imageCount: number;
+  panoramaCount: number;
+  createdAt: string;
+};
+
 export type PropertySummary = {
   total: number;
   availableCount: number;

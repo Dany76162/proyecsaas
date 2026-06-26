@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma, MembershipRole } from "@prisma/client";
+import { Prisma, MembershipRole, PropertyStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
@@ -12,6 +12,7 @@ import {
   deletePropertySchema,
   removePropertyImageSchema,
   removePropertyMediaBatchSchema,
+  reviewImportedPropertySchema,
   setPropertyFloorPlanSchema,
   setPropertyImagePrimarySchema,
   setPropertyVideoSchema,
@@ -415,6 +416,78 @@ export async function setPropertyFloorPlanAction(
   revalidatePath(`/${orgSlug}/properties/${property.id}`);
   revalidatePath(`/map/${property.id}`);
   return { success: true, message: parsed.data.url ? "Plano actualizado." : "Plano eliminado." };
+}
+
+/**
+ * Publica una propiedad IMPORTADA en borrador: status=AVAILABLE + publicVisible=true.
+ * Acción acotada (solo toca esos dos campos). Auth: membresía + rol AGENT.
+ */
+export async function publishImportedPropertyAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = reviewImportedPropertySchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Datos invalidos." };
+  }
+
+  const property = await prisma.property.findFirst({
+    where: { id: parsed.data.propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  await prisma.property.update({
+    where: { id: property.id },
+    data: { status: PropertyStatus.AVAILABLE, publicVisible: true },
+    select: { id: true },
+  });
+
+  revalidatePath(`/${orgSlug}/properties/review`);
+  revalidatePath(`/${orgSlug}/properties`);
+  revalidatePath(`/${orgSlug}/properties/${property.id}`);
+  return { success: true, message: "Propiedad publicada." };
+}
+
+/**
+ * Descarta una propiedad importada del panel de revisión SIN eliminarla:
+ * limpia externalSourceUrl (deja de matchear el filtro de revisión) y la mantiene
+ * en borrador/interno. Conserva externalId (dedup del sync) y externalLink (fuente).
+ */
+export async function dismissImportedPropertyAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const { membership } = await requireOrganizationMembership(orgSlug);
+  assertMinimumRole(membership.role, MembershipRole.AGENT);
+
+  const parsed = reviewImportedPropertySchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Datos invalidos." };
+  }
+
+  const property = await prisma.property.findFirst({
+    where: { id: parsed.data.propertyId, organizationId: membership.organization.id },
+    select: { id: true },
+  });
+  if (!property) {
+    return { success: false, message: "Propiedad no encontrada." };
+  }
+
+  await prisma.property.update({
+    where: { id: property.id },
+    data: { externalSourceUrl: null },
+    select: { id: true },
+  });
+
+  revalidatePath(`/${orgSlug}/properties/review`);
+  revalidatePath(`/${orgSlug}/properties`);
+  return { success: true, message: "Propiedad descartada de la revision (sigue en borrador)." };
 }
 
 export async function addPropertyImageAction(
