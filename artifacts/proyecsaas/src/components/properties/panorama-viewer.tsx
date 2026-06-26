@@ -343,20 +343,27 @@ export function PanoramaViewer({
       const hotspotStyle = document.createElement('style')
       hotspotStyle.textContent = `
         .pv-hotspot-scene {
-          width: 52px !important;
-          height: 26px !important;
-          border-radius: 50% !important;
-          background: rgba(255, 255, 255, 0.25) !important;
-          border: 2px solid rgba(255, 255, 255, 0.85) !important;
-          backdrop-filter: blur(4px) !important;
+          width: 34px !important;
+          height: 34px !important;
+          margin: -17px 0 0 -17px !important;
+          border-radius: 9999px !important;
+          background-color: rgba(59, 130, 246, 0.92) !important;
+          background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='white'%20stroke-width='3'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpolyline%20points='9%206%2015%2012%209%2018'/%3E%3C/svg%3E") !important;
+          background-repeat: no-repeat !important;
+          background-position: center !important;
+          background-size: 16px 16px !important;
+          border: 2px solid #ffffff !important;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
           cursor: pointer !important;
-          transition: all 0.2s ease !important;
-          box-shadow: 0 0 0 4px rgba(255,255,255,0.12) !important;
+          z-index: 5 !important;
+          transition: transform 0.15s ease, background-color 0.15s ease !important;
         }
         .pv-hotspot-scene:hover {
-          background: rgba(255, 255, 255, 0.45) !important;
-          box-shadow: 0 0 0 8px rgba(255,255,255,0.18) !important;
-          transform: scale(1.15) !important;
+          background-color: #2563eb !important;
+          transform: scale(1.12) !important;
+        }
+        .pv-hotspot-scene:active {
+          transform: scale(1.04) !important;
         }
         .pv-hotspot-scene .pnlm-tooltip span {
           background: rgba(0,0,0,0.75) !important;

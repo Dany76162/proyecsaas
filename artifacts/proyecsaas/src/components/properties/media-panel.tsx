@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Check, Compass, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
+import { Check, FileUp, ImagePlus, MapPinned, Save, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -560,24 +560,6 @@ export function MediaPanel({
                     </span>
                   ) : (
                     <>
-                      {(() => {
-                        const panIndex = panoramas.findIndex((p) => p.id === panorama.id);
-                        const hasNext = panIndex !== -1 && panIndex < panoramas.length - 1;
-                        if (!hasNext) return null;
-                        return (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onStartEditHotspot?.(panorama.id);
-                            }}
-                            className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded bg-brand-600 text-white opacity-0 shadow transition hover:bg-brand-700 group-hover:opacity-100"
-                            title="Posicionar hotspot"
-                          >
-                            <Compass className="h-3.5 w-3.5" />
-                          </button>
-                        );
-                      })()}
                       <button
                         type="button"
                         onClick={() => handleDeletePanorama(panorama)}
@@ -604,26 +586,6 @@ export function MediaPanel({
               Plano del tour
             </h3>
             <div className="flex items-center gap-1.5">
-              {(() => {
-                const activeIndex = panoramas.findIndex((p) => p.id === activePanorama.id);
-                const hasNextScene = activeIndex !== -1 && activeIndex < panoramas.length - 1;
-                if (!hasNextScene) return null;
-                return (
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => onStartEditHotspot?.(activePanorama.id)}
-                    className={`h-7 px-2.5 text-[10px] gap-1 font-medium transition duration-300 ${
-                      isEditingHotspot
-                        ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_0_12px_rgba(16,185,129,0.5)]"
-                        : "bg-brand-500 text-white hover:bg-brand-600 hover:shadow-[0_0_12px_rgba(59,130,246,0.45)]"
-                    }`}
-                  >
-                    <Compass className="h-3 w-3" />
-                    {isEditingHotspot ? "Editando..." : "Hotspot"}
-                  </Button>
-                );
-              })()}
               <Button
                 type="button"
                 size="sm"
