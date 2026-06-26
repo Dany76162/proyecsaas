@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, Globe, Lock, Building2 } from "lucide-react";
+import { ArrowUpRight, Globe, Lock, Building2, ClipboardCheck } from "lucide-react";
 
 import { CatalogSharingActions } from "@/components/properties/catalog-sharing-actions";
 import { CreatePropertyDialog } from "@/components/properties/create-property-dialog";
@@ -14,7 +14,11 @@ import { StatusBadge } from "@/components/workspace/status-badge";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { formatCurrency } from "@/lib/utils";
 import { getOrganizationWorkspace } from "@/modules/organizations/service";
-import { getPropertySummary, listOrganizationProperties } from "@/modules/properties/service";
+import {
+  countImportedDraftProperties,
+  getPropertySummary,
+  listOrganizationProperties,
+} from "@/modules/properties/service";
 import { cn } from "@/lib/utils";
 
 const PROPERTY_STATUS_CONFIG: Record<string, { label: string; tone: "neutral" | "success" | "warning" | "info" | "danger" }> = {
@@ -30,10 +34,11 @@ export default async function PropertiesPage({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  const [organization, properties, summary] = await Promise.all([
+  const [organization, properties, summary, importedPendingCount] = await Promise.all([
     getOrganizationWorkspace(orgSlug),
     listOrganizationProperties(orgSlug),
     getPropertySummary(orgSlug),
+    countImportedDraftProperties(orgSlug),
   ]);
 
   if (!organization) {
@@ -43,6 +48,15 @@ export default async function PropertiesPage({
   return (
     <>
       <WorkspaceHeader organization={organization}>
+        {importedPendingCount > 0 && (
+          <Link
+            href={`/${orgSlug}/properties/review`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 text-sm font-semibold text-amber-800 transition hover:bg-amber-100"
+          >
+            <ClipboardCheck className="h-4 w-4" />
+            Revisar importadas ({importedPendingCount})
+          </Link>
+        )}
         <CatalogSharingActions orgSlug={orgSlug} orgName={organization.name} />
         <CreatePropertyDialog orgSlug={orgSlug} />
       </WorkspaceHeader>
