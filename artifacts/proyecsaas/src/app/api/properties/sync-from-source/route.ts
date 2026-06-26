@@ -83,7 +83,11 @@ async function handleSync(req: NextRequest) {
   }
 
   try {
-    const result = await syncOrganizationProperties({ orgId: org.id, sourceUrl });
+    const result = await syncOrganizationProperties({
+      orgId: org.id,
+      sourceUrl,
+      sourceType: org.propertySourceType,
+    });
     return NextResponse.json({
       success: true,
       created: result.created,
