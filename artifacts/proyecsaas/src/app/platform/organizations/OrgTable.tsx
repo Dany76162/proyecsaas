@@ -216,6 +216,7 @@ export function OrgTable({
       </div>
 
       <Card variant="elevated" className="overflow-hidden">
+        <div className="overflow-x-auto">
         <Table className="min-w-[1100px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -404,6 +405,7 @@ export function OrgTable({
               ) : null}
           </TableBody>
         </Table>
+        </div>
       </Card>
     </div>
   );
