@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { CreditCard, X } from "lucide-react";
 
@@ -58,8 +59,14 @@ export function CommercialControls({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // El modal se renderiza vía portal a document.body para escapar el
+  // overflow:hidden / overflow-x:auto del contenedor de la tabla (mismo patrón
+  // que OnboardingControls). Sin esto el modal queda recortado dentro de la celda.
+  useEffect(() => setMounted(true), []);
 
   const defaultPlanId = useMemo(
     () => currentPlanId ?? planOptions[0]?.id ?? "starter",
@@ -140,7 +147,7 @@ export function CommercialControls({
         Comercial
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
@@ -280,7 +287,8 @@ export function CommercialControls({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
