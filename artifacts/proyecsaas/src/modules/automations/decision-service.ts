@@ -616,8 +616,14 @@ function buildLearningsBlock(
   });
 
   return [
-    "APRENDIZAJES DEL EQUIPO (instrucciones basadas en experiencia real — seguí estas reglas con prioridad alta):",
+    "",
+    "=== APRENDIZAJES ACTIVOS DEL EQUIPO ===",
+    "Estas instrucciones tienen prioridad alta sobre los ejemplos genéricos.",
+    "Cuando un aprendizaje aplique a la consulta del usuario, incorporalo explícitamente en la respuesta.",
+    "Si el aprendizaje incluye una frase o beneficio concreto, mencionarlo de forma clara.",
     ...lines,
+    "=== FIN APRENDIZAJES ACTIVOS ===",
+    "",
   ].join("\n");
 }
 
@@ -725,7 +731,7 @@ function buildPromptReception(context: PreparedConversationContext) {
     '  "requiresFollowUp": boolean,',
     '  "followUpReason": string | null',
     "}",
-  ].filter(Boolean) as string[];
+  ].filter(line => line !== null && line !== undefined) as string[];
 
   return {
     system: systemInstructions.join("\n"),
@@ -856,7 +862,7 @@ function buildPromptRealEstate(context: PreparedConversationContext) {
     '  "requiresFollowUp": boolean,',
     '  "followUpReason": string | null',
     "}",
-  ].filter(Boolean) as string[];
+  ].filter(line => line !== null && line !== undefined) as string[];
 
   return {
     system: systemInstructions.join("\n"),
