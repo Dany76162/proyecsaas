@@ -597,6 +597,30 @@ function getDecisionModel() {
   return process.env.OPENAI_MODEL || "gpt-4.1-mini";
 }
 
+const LEARNING_TYPE_LABELS: Record<string, string> = {
+  CORRECCION_HUMANA: "Corrección",
+  PATRON_DE_EXITO: "Patrón exitoso",
+  OBJECION_FRECUENTE: "Objeción frecuente",
+  PREFERENCIA_COMERCIAL: "Preferencia",
+  REGLA_OPERATIVA: "Regla",
+};
+
+function buildLearningsBlock(
+  learnings: Array<{ type: string; title: string; content: string }> | null | undefined,
+): string | null {
+  if (!learnings || learnings.length === 0) return null;
+
+  const lines = learnings.map((l, i) => {
+    const label = LEARNING_TYPE_LABELS[l.type] ?? l.type;
+    return `${i + 1}. [${label}] ${l.title}: ${l.content}`;
+  });
+
+  return [
+    "APRENDIZAJES DEL EQUIPO (instrucciones basadas en experiencia real — seguí estas reglas con prioridad alta):",
+    ...lines,
+  ].join("\n");
+}
+
 function buildPrompt(context: PreparedConversationContext) {
   if (context.aiAgent?.mode === "RECEPTION") {
     return buildPromptReception(context);
@@ -685,6 +709,8 @@ function buildPromptReception(context: PreparedConversationContext) {
     "- Soporte de usuario existente: 'Entiendo. Este canal es comercial; te derivo con soporte para que te ayuden con tu cuenta.'",
     "- Fuera de alcance: 'Gracias por escribir. No es el canal indicado para esa consulta. Te derivo con una persona del equipo.'",
     "",
+    buildLearningsBlock(context.learnings),
+    "",
     "DEVOLVE SIEMPRE JSON VÁLIDO con esta forma exacta (sin markdown, sin explicaciones fuera del JSON):",
     "{",
     '  "message": string,',
@@ -699,7 +725,7 @@ function buildPromptReception(context: PreparedConversationContext) {
     '  "requiresFollowUp": boolean,',
     '  "followUpReason": string | null',
     "}",
-  ] as string[];
+  ].filter(Boolean) as string[];
 
   return {
     system: systemInstructions.join("\n"),
@@ -788,6 +814,7 @@ function buildPromptRealEstate(context: PreparedConversationContext) {
     typeLine,
     budgetLine,
     lotsSystemLine,
+    buildLearningsBlock(context.learnings),
     "Comportamiento comercial esperado:",
     "- HOT: empuja directo a coordinar visita.",
     "- WARM: responde y ancla hacia visita.",

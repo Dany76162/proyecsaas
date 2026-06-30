@@ -101,6 +101,11 @@ export type PreparedConversationContext = {
     backMeters?: number | null;
     publicUrl?: string | null;
   }> | null;
+  learnings?: Array<{
+    type: string;
+    title: string;
+    content: string;
+  }> | null;
 };
 
 export type AutomationDecision = {

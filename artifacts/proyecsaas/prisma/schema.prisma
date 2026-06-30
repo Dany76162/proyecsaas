@@ -152,6 +152,7 @@ model User {
   createdAgentTasks AgentTask[]        @relation("TaskCreatedBy")
   decidedApprovals  AgentApproval[]    @relation("ApprovalDecidedBy")
   automations      AgentAutomation[]
+  agentLearnings   AgentLearning[]
   inviteTokens      InviteToken[]
   passwordResetTokens PasswordResetToken[]
   pushSubscriptions PushSubscription[]
@@ -258,6 +259,7 @@ model Organization {
   whatsappConnectionRequests WhatsAppChannelConnectionRequest[]
   billingRecords         OrgBillingRecord[]
   aiAgents               AiAgent[]
+  agentLearnings         AgentLearning[]
   subscription           Subscription?
   financialVaults        DevelopmentFinancialVault[]
   createdAt              DateTime           @default(now())
@@ -728,6 +730,35 @@ model AiAgent {
   updatedAt      DateTime     @updatedAt
 }
 
+// ─── Agent Learnings ────────────────────────────────────────────────────────
+
+enum AgentLearningType {
+  CORRECCION_HUMANA
+  PATRON_DE_EXITO
+  OBJECION_FRECUENTE
+  PREFERENCIA_COMERCIAL
+  REGLA_OPERATIVA
+}
+
+model AgentLearning {
+  id                     String              @id @default(cuid())
+  organizationId         String
+  type                   AgentLearningType
+  title                  String
+  content                String              @db.Text
+  isActive               Boolean             @default(true)
+  priority               Int                 @default(0)
+  sourceConversationId   String?
+  metadata               Json?
+  createdById            String
+  createdBy              User                @relation(fields: [createdById], references: [id])
+  organization           Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  @@index([organizationId, isActive])
+}
+
 // ─── RaicesPilot AgentOS MVP 1 ───────────────────────────────────────────────
 
 enum AgentScope {
@@ -1158,6 +1189,8 @@ enum ProspectStatus {
   CONTACTED
   REPLIED
   DEMO_REQUESTED
+  DEMO_HANDOFF_READY
+  HANDED_TO_DEMO_AGENT
   CUSTOMER
   DO_NOT_CONTACT
   CONVERTED
@@ -1175,6 +1208,8 @@ enum ProspectActivityType {
   contact_marked_sent
   reply_logged
   demo_requested
+  demo_handoff_ready
+  handed_to_demo_agent
   note_added
   manual_rating_updated
   priority_updated
