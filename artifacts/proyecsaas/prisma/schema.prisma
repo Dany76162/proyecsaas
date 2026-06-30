@@ -1252,6 +1252,21 @@ enum ProspectDraftStatus {
   SENT_MANUALLY
 }
 
+enum ProspectSourceType {
+  MANUAL
+  GOOGLE_PLACES
+  CSV
+  WEB_SEARCH
+  API
+}
+
+enum DataValidationStatus {
+  VALIDATED
+  PENDING_ADDRESS
+  PENDING_CITY
+  AMBIGUOUS
+}
+
 model CommercialProspect {
   id               String              @id @default(cuid())
   companyName      String
@@ -1297,6 +1312,26 @@ model CommercialProspect {
   
   duplicateOfId    String?
   
+  countryCode      String?
+  stateProvince    String?
+  postalCode       String?
+  formattedAddress String?
+  latitude         Decimal?              @db.Decimal(10, 7)
+  longitude        Decimal?              @db.Decimal(10, 7)
+  placeId          String?
+  
+  sourceType       ProspectSourceType    @default(MANUAL)
+  rawSourceData    Json?
+  
+  addressVerified  Boolean               @default(false)
+  validationStatus DataValidationStatus?
+  importBatchId    String?
+  
+  isBranch         Boolean               @default(false)
+  parentCompanyId  String?
+  
+  scoreExplanation Json?
+  
   approvedAt       DateTime?
   approvedByUserId String?
   
@@ -1319,6 +1354,8 @@ model CommercialProspect {
   @@index([companyType])
   @@index([email])
   @@index([website])
+  @@index([placeId])
+  @@index([countryCode, stateProvince, city])
 }
 
 model CommercialProspectActivity {

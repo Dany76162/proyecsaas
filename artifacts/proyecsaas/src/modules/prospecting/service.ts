@@ -119,8 +119,21 @@ export async function logProspectActivity(
   });
 }
 
-export async function detectPotentialDuplicates(email?: string, website?: string, name?: string) {
+export async function detectPotentialDuplicates(
+  email?: string, 
+  website?: string, 
+  name?: string,
+  placeId?: string,
+  phone?: string
+) {
   const potential: any[] = [];
+
+  if (placeId) {
+    const byPlaceId = await prisma.commercialProspect.findMany({
+      where: { placeId }
+    });
+    potential.push(...byPlaceId);
+  }
 
   if (email) {
     const byEmail = await prisma.commercialProspect.findMany({
@@ -134,6 +147,28 @@ export async function detectPotentialDuplicates(email?: string, website?: string
       where: { website: { contains: website, mode: "insensitive" } }
     });
     potential.push(...byWeb);
+  }
+  
+  if (phone) {
+    const normalizedPhone = phone.replace(/\D/g, "");
+    if (normalizedPhone.length > 5) {
+      const byPhone = await prisma.commercialProspect.findMany({
+        where: { 
+          OR: [
+            { phone: { contains: normalizedPhone } },
+            { whatsapp: { contains: normalizedPhone } }
+          ]
+        }
+      });
+      potential.push(...byPhone);
+    }
+  }
+
+  if (name) {
+    const byName = await prisma.commercialProspect.findMany({
+      where: { companyName: { equals: name, mode: "insensitive" } }
+    });
+    potential.push(...byName);
   }
 
   // Deduplicate by ID

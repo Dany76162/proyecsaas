@@ -2,7 +2,8 @@ import {
   ProspectCompanyType, ProspectStatus, ProspectActivityType, 
   ProspectMessageChannel, ProspectDraftStatus,
   ManualRating, ProspectPriority, ManualProspectStatus,
-  CampaignStatus, CampaignRecipientStatus, SuppressionReason
+  CampaignStatus, CampaignRecipientStatus, SuppressionReason,
+  ProspectSourceType, DataValidationStatus
 } from "@prisma/client";
 
 export const PROSPECT_COMPANY_TYPE_LABELS: Record<ProspectCompanyType, string> = {
@@ -33,6 +34,21 @@ export const PROSPECT_STATUS_LABELS: Record<ProspectStatus, string> = {
   CONVERTED: "Convertido a Organización",
   DEMO_HANDOFF_READY: "Listo para Demo",
   HANDED_TO_DEMO_AGENT: "Derivado a Demo",
+};
+
+export const PROSPECT_SOURCE_LABELS: Record<ProspectSourceType, string> = {
+  MANUAL: "Manual",
+  GOOGLE_PLACES: "Google Places",
+  CSV: "CSV",
+  WEB_SEARCH: "Web Search (Auto)",
+  API: "API",
+};
+
+export const DATA_VALIDATION_LABELS: Record<DataValidationStatus, string> = {
+  VALIDATED: "Validado",
+  PENDING_ADDRESS: "Dirección a validar",
+  PENDING_CITY: "Ciudad a validar",
+  AMBIGUOUS: "Ambigüo",
 };
 
 export const PROSPECT_STATUS_COLORS: Record<ProspectStatus, string> = {
