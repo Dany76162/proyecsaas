@@ -31,6 +31,7 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
   const [countryCode, setCountryCode] = useState("ar");
   const [city, setCity] = useState("");
   const [limit, setLimit] = useState("20");
+  const [sourceType, setSourceType] = useState("GOOGLE_PLACES");
   
   const [isSearching, setIsSearching] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -38,8 +39,8 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
   const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
-    if (!topic || !city) {
-      setError("Rubro y ciudad son obligatorios.");
+    if (!topic || !city || !sourceType) {
+      setError("Rubro, ciudad y fuente son obligatorios.");
       return;
     }
     
@@ -52,7 +53,9 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
       const res = await searchPlacesAction({
         topic,
         country: countryName,
+        countryCode: countryCode.toUpperCase(),
         city,
+        sourceType: sourceType as any,
         limit: parseInt(limit, 10)
       });
       
@@ -126,8 +129,17 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
         </div>
       )}
 
-      <Card className="p-6 rounded-[2rem] border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end">
-        <div className="flex-1 space-y-2">
+      <Card className="p-6 rounded-[2rem] border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end flex-wrap">
+        <div className="flex-1 min-w-[200px] space-y-2">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fuente</label>
+          <Select value={sourceType} onChange={(e) => setSourceType(e.target.value)} className="h-12 rounded-xl bg-slate-50 border-slate-200">
+            <option value="GOOGLE_PLACES">Google Places</option>
+            <option value="GOOGLE_SEARCH" disabled>Google Search (Próximamente)</option>
+            <option value="OPEN_STREET_MAP" disabled>OpenStreetMap (Próximamente)</option>
+            <option value="CSV" disabled>Archivo CSV (Próximamente)</option>
+          </Select>
+        </div>
+        <div className="flex-1 min-w-[150px] space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">País</label>
           <Select value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className="h-12 rounded-xl bg-slate-50 border-slate-200">
             {LATAM_COUNTRIES.map(c => (
@@ -135,7 +147,7 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
             ))}
           </Select>
         </div>
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ciudad o Zona</label>
           <Input 
             value={city} 
@@ -145,7 +157,7 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Rubro</label>
           <Input 
             value={topic} 
