@@ -32,7 +32,7 @@ export function TerritoryExplorerForm({ placesConfigured, serperConfigured }: { 
   const [city, setCity] = useState("");
   const [limit, setLimit] = useState("20");
   
-  const initialSource = serperConfigured ? "WEB_SEARCH" : (placesConfigured ? "GOOGLE_PLACES" : "");
+  const initialSource = serperConfigured ? "WEB_SEARCH" : (placesConfigured ? "GOOGLE_PLACES" : "OPEN_STREET_MAP");
   const [sourceType, setSourceType] = useState(initialSource);
   
   const [isSearching, setIsSearching] = useState(false);
@@ -117,12 +117,7 @@ export function TerritoryExplorerForm({ placesConfigured, serperConfigured }: { 
         </div>
       </div>
 
-      {!placesConfigured && !serperConfigured && (
-        <div className="bg-red-50 text-red-800 p-4 rounded-2xl flex items-center gap-3 border border-red-200">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          <p className="text-sm font-medium">No hay fuentes de captación configuradas. Configurá SERPER_API_KEY o GOOGLE_PLACES_API_KEY.</p>
-        </div>
-      )}
+
 
       {error && (
         <div className="bg-red-50 text-red-800 p-4 rounded-2xl flex items-center gap-3 border border-red-200">
@@ -145,7 +140,7 @@ export function TerritoryExplorerForm({ placesConfigured, serperConfigured }: { 
             ) : (
               <option value="GOOGLE_PLACES" disabled>Google Places (No configurado)</option>
             )}
-            <option value="OPEN_STREET_MAP" disabled>OpenStreetMap (Próximamente)</option>
+            <option value="OPEN_STREET_MAP">OpenStreetMap</option>
             <option value="CSV" disabled>Archivo CSV (Próximamente)</option>
           </Select>
         </div>
@@ -215,7 +210,7 @@ export function TerritoryExplorerForm({ placesConfigured, serperConfigured }: { 
                 <tr>
                   <th className="px-6 py-4 w-12"></th>
                   <th className="px-6 py-4">Empresa</th>
-                  <th className="px-6 py-4">Dirección (Google)</th>
+                  <th className="px-6 py-4">Dirección</th>
                   <th className="px-6 py-4">Teléfono</th>
                   <th className="px-6 py-4">Web</th>
                   <th className="px-6 py-4">Estado</th>
