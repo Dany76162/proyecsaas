@@ -1,11 +1,13 @@
 import { ProspectSourceType } from "@prisma/client";
 import { ProspectSourceAdapter, ProspectSearchParams, NormalizedProspect } from "./types";
 import { GooglePlacesAdapter } from "./adapters/google-places";
+import { SerperAdapter } from "./adapters/serper";
 
 export class SourceEngine {
   // Registry de adaptadores
   private static readonly adapters: Partial<Record<ProspectSourceType, ProspectSourceAdapter>> = {
     [ProspectSourceType.GOOGLE_PLACES]: new GooglePlacesAdapter(),
+    [ProspectSourceType.WEB_SEARCH]: new SerperAdapter(),
   };
 
   static getAdapter(sourceType: ProspectSourceType): ProspectSourceAdapter {

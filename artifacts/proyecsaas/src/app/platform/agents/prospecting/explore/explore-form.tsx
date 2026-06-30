@@ -24,14 +24,16 @@ const LATAM_COUNTRIES = [
   { code: "br", name: "Brasil" },
 ];
 
-export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: boolean }) {
+export function TerritoryExplorerForm({ placesConfigured, serperConfigured }: { placesConfigured: boolean, serperConfigured: boolean }) {
   const router = useRouter();
   
   const [topic, setTopic] = useState("Inmobiliarias");
   const [countryCode, setCountryCode] = useState("ar");
   const [city, setCity] = useState("");
   const [limit, setLimit] = useState("20");
-  const [sourceType, setSourceType] = useState("GOOGLE_PLACES");
+  
+  const initialSource = serperConfigured ? "WEB_SEARCH" : (placesConfigured ? "GOOGLE_PLACES" : "");
+  const [sourceType, setSourceType] = useState(initialSource);
   
   const [isSearching, setIsSearching] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -111,14 +113,14 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
         </Button>
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Explorador Territorial</h1>
-          <p className="text-slate-500 font-medium mt-1">Busca e importa empresas del sector usando Google Places.</p>
+          <p className="text-slate-500 font-medium mt-1">Busca e importa empresas del sector.</p>
         </div>
       </div>
 
-      {!placesConfigured && (
-        <div className="bg-amber-50 text-amber-800 p-4 rounded-2xl flex items-center gap-3 border border-amber-200">
+      {!placesConfigured && !serperConfigured && (
+        <div className="bg-red-50 text-red-800 p-4 rounded-2xl flex items-center gap-3 border border-red-200">
           <AlertCircle className="h-5 w-5 shrink-0" />
-          <p className="text-sm font-medium">GOOGLE_PLACES_API_KEY no está configurada. La búsqueda no funcionará.</p>
+          <p className="text-sm font-medium">No hay fuentes de captación configuradas. Configurá SERPER_API_KEY o GOOGLE_PLACES_API_KEY.</p>
         </div>
       )}
 
@@ -133,8 +135,16 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
         <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fuente</label>
           <Select value={sourceType} onChange={(e) => setSourceType(e.target.value)} className="h-12 rounded-xl bg-slate-50 border-slate-200">
-            <option value="GOOGLE_PLACES">Google Places</option>
-            <option value="GOOGLE_SEARCH" disabled>Google Search (Próximamente)</option>
+            {serperConfigured ? (
+              <option value="WEB_SEARCH">Búsqueda Web</option>
+            ) : (
+              <option value="WEB_SEARCH" disabled>Búsqueda Web (No configurado)</option>
+            )}
+            {placesConfigured ? (
+              <option value="GOOGLE_PLACES">Google Places</option>
+            ) : (
+              <option value="GOOGLE_PLACES" disabled>Google Places (No configurado)</option>
+            )}
             <option value="OPEN_STREET_MAP" disabled>OpenStreetMap (Próximamente)</option>
             <option value="CSV" disabled>Archivo CSV (Próximamente)</option>
           </Select>
@@ -176,7 +186,7 @@ export function TerritoryExplorerForm({ placesConfigured }: { placesConfigured: 
         </div>
         <Button 
           onClick={handleSearch} 
-          disabled={isSearching || !city || !topic}
+          disabled={isSearching || !city || !topic || !sourceType}
           className="h-12 px-8 rounded-xl bg-slate-900 text-white font-bold"
         >
           {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5 mr-2" />}
