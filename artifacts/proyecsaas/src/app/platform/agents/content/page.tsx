@@ -45,7 +45,7 @@ export default async function PlatformAgentsContentPage() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-slate-400">
            <Terminal className="h-5 w-5" />
-           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Output Pipeline</span>
+           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Salida del Agente</span>
         </div>
         <h1 className="text-3xl font-black tracking-tight text-slate-950 uppercase">Borradores de Contenido</h1>
         <p className="text-sm font-medium text-slate-500">

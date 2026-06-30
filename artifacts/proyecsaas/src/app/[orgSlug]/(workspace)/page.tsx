@@ -161,7 +161,7 @@ export default async function OrganizationHomePage({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
         {/* Main Column */}
         <div className="space-y-5 lg:col-span-2">
-          {/* Pipeline Summary */}
+          {/* Embudo de Ventas */}
           <SectionCard
             eyebrow="Flujo"
             title="Embudo de Ventas"

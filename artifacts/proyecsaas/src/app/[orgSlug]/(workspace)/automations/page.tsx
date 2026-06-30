@@ -438,7 +438,7 @@ export default async function AutomationsPage({
         )}
       </SectionCard>
 
-      {/* Pipeline de leads y funnel de automatización */}
+      {/* Embudo de leads y automatización */}
       <section className="grid gap-6 lg:grid-cols-2">
         <SectionCard
           eyebrow="Embudo de prospectos"
