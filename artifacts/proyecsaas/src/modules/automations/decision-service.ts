@@ -731,7 +731,7 @@ function buildPromptReception(context: PreparedConversationContext) {
     '  "requiresFollowUp": boolean,',
     '  "followUpReason": string | null',
     "}",
-  ].filter(line => line !== null && line !== undefined) as string[];
+  ].filter(Boolean) as string[];
 
   return {
     system: systemInstructions.join("\n"),
