@@ -3,6 +3,6 @@
 export const leadsModule: AppModule = {
   key: "leads",
   label: "Leads",
-  description: "Lead pipeline and CRM data ownership.",
+  description: "Embudo de leads y gestión de datos CRM.",
   workspacePath: "/leads",
 };

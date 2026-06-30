@@ -581,7 +581,7 @@ Alertas del Sistema:
                   { title: "Inmobiliarias activas pagando (MRR)", desc: "Volumen total de ingresos recurrentes mensuales por país." },
                   { title: "Inmobiliarias lifetime con consumo", desc: "Cuentas vitalicias con facturación por uso de IA." },
                   { title: "Nuevos clientes por país", desc: "Tasa de captación mensual y efectividad comercial." },
-                  { title: "Demos agendadas por país", desc: "Monitoreo del embudo y pipeline comercial local." },
+                  { title: "Demos agendadas por país", desc: "Monitoreo del embudo comercial local." },
                   { title: "Tasa de cierre por país", desc: "Rendimiento y eficiencia del equipo comercial regional." },
                   { title: "Costo de Adquisición (CAC)", desc: "Monto invertido en marketing por cada nuevo cliente ganado." },
                   { title: "MRR por país", desc: "Desglose de facturación recurrente adaptado a tipo de cambio." },

@@ -164,7 +164,7 @@ export default async function LeadsPage({
         </SectionCard>
       </section>
 
-      {/* ── Pipeline Kanban ── */}
+      {/* ── Embudo Kanban ── */}
       <SectionCard eyebrow="Embudo" title="Embudo comercial" description="Estado de cada oportunidad desde el primer contacto hasta el cierre.">
         <div className="grid gap-3 xl:grid-cols-5">
           {stageOrder.map((stage) => {

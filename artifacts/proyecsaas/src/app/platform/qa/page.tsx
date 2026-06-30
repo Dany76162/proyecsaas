@@ -115,7 +115,7 @@ const INITIAL_SECTIONS: ChecklistSection[] = [
     items: [
       { id: "f1", label: "El código de la sección de Atención a Clientes / Centro de Soporte está preparado y listo para su uso.", status: "PENDIENTE", observation: "" },
       { id: "f2", label: "Las pruebas de recepción real de WhatsApp / Meta Business quedan marcadas correctamente como 'Pendiente Externo' hasta la aprobación final de Meta.", status: "PENDIENTE", observation: "" },
-      { id: "f3", label: "El pipeline de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PENDIENTE", observation: "" },
+      { id: "f3", label: "El embudo de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PENDIENTE", observation: "" },
       { id: "f4", label: "El sistema no promete ni asegura recepción de mensajes reales de producción hasta completar el onboarding de WhatsApp Business.", status: "PENDIENTE", observation: "" }
     ]
   },
@@ -191,7 +191,7 @@ const INITIAL_PRELOAD_SECTIONS: ChecklistSection[] = [
     items: [
       { id: "f1", label: "El código de la sección de Atención a Clientes / Centro de Soporte está preparado y listo para su uso.", status: "PASS", observation: "Centro de Soporte preparado en código, dependiente de Meta para producción." },
       { id: "f2", label: "Las pruebas de recepción real de WhatsApp / Meta Business quedan marcadas correctamente como 'Pendiente Externo' hasta la aprobación final de Meta.", status: "WARNING", observation: "Sujeto a aprobación y verificación externa avanzada de Meta." },
-      { id: "f3", label: "El pipeline de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PASS", observation: "Código de captación cerrado y validado." },
+      { id: "f3", label: "El embudo de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PASS", observation: "Código de captación cerrado y validado." },
       { id: "f4", label: "El sistema no promete ni asegura recepción de mensajes reales de producción hasta completar el onboarding de WhatsApp Business.", status: "PASS", observation: "El flujo de WhatsApp advierte que requiere configuración productiva." }
     ]
   },
@@ -267,7 +267,7 @@ const ORGANIZACION_VALIDADA_SECTIONS: ChecklistSection[] = [
     items: [
       { id: "f1", label: "El código de la sección de Atención a Clientes / Centro de Soporte está preparado y listo para su uso.", status: "PASS", observation: "Centro de Soporte preparado en código, dependiente de Meta para producción." },
       { id: "f2", label: "Las pruebas de recepción real de WhatsApp / Meta Business quedan marcadas correctamente como 'Pendiente Externo' hasta la aprobación final de Meta.", status: "WARNING", observation: "Sujeto a aprobación y verificación externa avanzada de Meta." },
-      { id: "f3", label: "El pipeline de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PASS", observation: "Código de captación cerrado y validado." },
+      { id: "f3", label: "El embudo de Captación está listo a nivel de base de datos y lógica de negocios.", status: "PASS", observation: "Código de captación cerrado y validado." },
       { id: "f4", label: "El sistema no promete ni asegura recepción de mensajes reales de producción hasta completar el onboarding de WhatsApp Business.", status: "PASS", observation: "El flujo de WhatsApp advierte que requiere configuración productiva." }
     ]
   },

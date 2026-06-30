@@ -72,7 +72,7 @@ export default async function PlatformAgentsTasksPage() {
                 <th className="px-8 py-5">Estado Operativo</th>
                 <th className="px-8 py-5">Prioridad</th>
                 <th className="px-8 py-5">Agente Asignado</th>
-                <th className="px-8 py-5">Pipeline</th>
+                <th className="px-8 py-5">Embudo</th>
                 <th className="px-8 py-5">Fecha</th>
               </tr>
             </thead>
