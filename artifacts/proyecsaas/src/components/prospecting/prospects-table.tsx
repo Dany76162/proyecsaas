@@ -39,6 +39,7 @@ type Prospect = {
   priority: string | null;
   manualStatus: string | null;
   sourceName?: string | null;
+  sourceType?: string | null;
 };
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -131,6 +132,11 @@ export function ProspectsTable({ prospects }: { prospects: Prospect[] }) {
                        {p.sourceName && (
                          <Badge variant="outline" className="text-[8px] h-3.5 px-1 bg-slate-50 text-slate-400 border-slate-200 font-bold">
                             {p.sourceName}
+                         </Badge>
+                       )}
+                       {p.sourceType === "GOOGLE_PLACES" && (
+                         <Badge variant="outline" className="text-[8px] h-3.5 px-1 bg-amber-50 text-amber-600 border-amber-200 font-bold ml-1">
+                            Places
                          </Badge>
                        )}
                     </div>
