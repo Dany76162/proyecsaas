@@ -126,6 +126,15 @@ export function TerritoryExplorerForm({ placesConfigured, serperConfigured }: { 
         </div>
       )}
 
+      {!error && candidates.length > 0 && candidates.length < 5 && sourceType === "OPEN_STREET_MAP" && (
+        <div className="bg-amber-50 text-amber-800 p-4 rounded-2xl flex items-center gap-3 border border-amber-200">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <p className="text-sm font-medium">
+            OpenStreetMap puede tener cobertura limitada. Probá una zona más amplia como CABA, Córdoba Capital o Buenos Aires.
+          </p>
+        </div>
+      )}
+
       <Card className="p-6 rounded-[2rem] border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end flex-wrap">
         <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fuente</label>

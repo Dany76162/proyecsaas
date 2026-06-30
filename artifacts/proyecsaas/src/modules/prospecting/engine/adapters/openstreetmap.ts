@@ -1,116 +1,145 @@
 import { ProspectSourceAdapter, ProspectSearchParams, NormalizedProspect } from "../types";
 
 export class OpenStreetMapAdapter implements ProspectSourceAdapter {
-  private readonly baseUrl = "https://nominatim.openstreetmap.org/search";
+  private readonly nominatimUrl = "https://nominatim.openstreetmap.org/search";
+  private readonly overpassUrl = "https://overpass-api.de/api/interpreter";
 
   async search(params: ProspectSearchParams): Promise<NormalizedProspect[]> {
-    if (!params.query || !params.city) {
-      throw new Error("Query y ciudad son obligatorios para OpenStreetMap.");
+    if (!params.city) {
+      throw new Error("La ciudad es obligatoria para OpenStreetMap.");
     }
 
     const maxLimit = Math.min(params.limit || 20, 20);
-    const q = `${params.query} en ${params.city}, ${params.country}`;
+    const q = `${params.city}, ${params.country}`;
 
-    const targetCity = params.city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    const url = new URL(this.baseUrl);
-    url.searchParams.append("q", q);
-    url.searchParams.append("format", "json");
-    url.searchParams.append("addressdetails", "1");
-    url.searchParams.append("extratags", "1");
-    // Pedir más límite inicial para poder filtrar localmente sin quedarnos cortos
-    url.searchParams.append("limit", "40");
-    
+    // Paso A: Resolver zona con Nominatim
+    const nominatimUrl = new URL(this.nominatimUrl);
+    nominatimUrl.searchParams.append("q", q);
+    nominatimUrl.searchParams.append("format", "json");
+    nominatimUrl.searchParams.append("limit", "1");
     if (params.countryCode) {
-      url.searchParams.append("countrycodes", params.countryCode.toLowerCase());
+      nominatimUrl.searchParams.append("countrycodes", params.countryCode.toLowerCase());
     }
 
+    let nominatimData: any = null;
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
-
-      const res = await fetch(url.toString(), {
+      const timeout = setTimeout(() => controller.abort(), 25000);
+      const res = await fetch(nominatimUrl.toString(), {
         headers: {
           "User-Agent": "ProyecsaasProspecting/1.0 (contact@proyecsaas.com)",
           "Accept-Language": "es"
         },
         signal: controller.signal
       });
+      clearTimeout(timeout);
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        return [];
+      }
+      nominatimData = data[0];
+    } catch (error: any) {
+      throw new Error(`Fallo al resolver zona con Nominatim: ${error.message}`);
+    }
 
+    if (!nominatimData || !nominatimData.boundingbox) {
+      return [];
+    }
+
+    // Nominatim boundingbox format: [latS, latN, lonW, lonE] (string[])
+    const [latS, latN, lonW, lonE] = nominatimData.boundingbox;
+    // Overpass boundingbox format: latS,lonW,latN,lonE
+    const overpassBbox = `${latS},${lonW},${latN},${lonE}`;
+
+    // Paso B: Consultar Overpass API
+    const overpassQuery = `
+[out:json][timeout:60];
+(
+  node["office"="estate_agent"](${overpassBbox});
+  way["office"="estate_agent"](${overpassBbox});
+  relation["office"="estate_agent"](${overpassBbox});
+  node["shop"="estate_agent"](${overpassBbox});
+  way["shop"="estate_agent"](${overpassBbox});
+  relation["shop"="estate_agent"](${overpassBbox});
+  node["name"~"inmobiliaria|propiedades|bienes raices|bienes raíces|real estate",i](${overpassBbox});
+  way["name"~"inmobiliaria|propiedades|bienes raices|bienes raíces|real estate",i](${overpassBbox});
+  relation["name"~"inmobiliaria|propiedades|bienes raices|bienes raíces|real estate",i](${overpassBbox});
+);
+out center;
+`;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+      const res = await fetch(this.overpassUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json",
+          "User-Agent": "ProyecsaasProspecting/1.0 (contact@proyecsaas.com)"
+        },
+        body: `data=${encodeURIComponent(overpassQuery)}`,
+        signal: controller.signal
+      });
       clearTimeout(timeout);
 
-      if (!res.ok) {
-        throw new Error(`Error HTTP en Nominatim/OSM: ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      
-      if (!Array.isArray(data)) {
+
+      if (!data.elements || !Array.isArray(data.elements)) {
         return [];
       }
 
-      // Filtrado estricto territorial
-      const validResults = data.filter((item: any) => {
-        const addr = item.address || {};
-        const searchCorpus = [addr.city, addr.town, addr.village, addr.state, addr.county, addr.region]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        
-        return searchCorpus.includes(targetCity);
-      });
+      // Filtrar resultados:
+      // - descartar los que no tengan nombre
+      const validResults = data.elements.filter((el: any) => el.tags && el.tags.name);
 
       return validResults.slice(0, maxLimit).map((item: any) => this.normalize({ raw: item, searchParams: params }));
     } catch (error: any) {
       if (error.name === "AbortError") {
-        throw new Error("Tiempo de espera agotado al consultar OpenStreetMap.");
+        throw new Error("Tiempo de espera agotado al consultar Overpass API.");
       }
-      throw new Error(`Fallo al consultar OpenStreetMap: ${error.message}`);
+      throw new Error(`Fallo al consultar Overpass API: ${error.message}`);
     }
   }
 
-
-
   async healthCheck(): Promise<boolean> {
-    try {
-      const res = await fetch(`${this.baseUrl}?q=test&format=json&limit=1`, {
-        headers: { "User-Agent": "ProyecsaasProspecting/1.0" }
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
+    return true;
   }
 
   normalize(data: any): NormalizedProspect {
-    const raw = data.raw || data;
+    const raw = data.raw;
     const searchParams = data.searchParams || {};
     
-    const address = raw.address || {};
-    const extratags = raw.extratags || {};
-
-    const companyName = raw.name || address.shop || address.office || "Empresa Desconocida";
+    const tags = raw.tags || {};
+    const companyName = tags.name || "Empresa Desconocida";
     
     // Website
-    const website = extratags.website || extratags["contact:website"] || null;
+    const website = tags.website || tags["contact:website"] || null;
     
     // Phone
-    const phone = extratags.phone || extratags["contact:phone"] || null;
+    const phone = tags.phone || tags["contact:phone"] || null;
     
     // Email
-    const email = extratags.email || extratags["contact:email"] || null;
+    const email = tags.email || tags["contact:email"] || null;
     
     // Address format
-    const street = address.road || "";
-    const houseNumber = address.house_number || "";
-    let formattedAddress = raw.display_name || "";
+    const street = tags["addr:street"] || "";
+    const houseNumber = tags["addr:housenumber"] || "";
+    const city = tags["addr:city"] || searchParams.city || null;
+    const state = tags["addr:state"] || null;
+    
+    let formattedAddress = "";
     if (street && houseNumber) {
-      formattedAddress = `${street} ${houseNumber}, ${address.city || address.town || address.village || ""}, ${address.state || ""}`;
+      formattedAddress = `${street} ${houseNumber}, ${city || ""}`;
+    } else {
+      formattedAddress = city || "";
     }
 
-    const lat = raw.lat ? parseFloat(raw.lat) : null;
-    const lng = raw.lon ? parseFloat(raw.lon) : null;
+    const lat = raw.lat || (raw.center && raw.center.lat) || null;
+    const lng = raw.lon || (raw.center && raw.center.lon) || null;
 
     // Evaluate confidence
     let confidenceScore = 0;
@@ -127,19 +156,19 @@ export class OpenStreetMapAdapter implements ProspectSourceAdapter {
     return {
       companyName,
       formattedAddress,
-      city: address.city || address.town || address.village || searchParams.city || null,
-      stateProvince: address.state || null,
-      country: address.country || searchParams.country || null,
-      countryCode: searchParams.countryCode || (address.country_code ? address.country_code.toUpperCase() : null),
-      latitude: isNaN(lat!) ? null : lat,
-      longitude: isNaN(lng!) ? null : lng,
+      city,
+      stateProvince: state,
+      country: searchParams.country || null,
+      countryCode: searchParams.countryCode || null,
+      latitude: lat ? parseFloat(lat) : null,
+      longitude: lng ? parseFloat(lng) : null,
       phone,
       website,
       email,
       sourceType: "API" as any,
       placeId: null,
-      externalId: `${raw.osm_type}/${raw.osm_id}`,
-      sourceUrl: `https://www.openstreetmap.org/${raw.osm_type}/${raw.osm_id}`,
+      externalId: `${raw.type}/${raw.id}`,
+      sourceUrl: `https://www.openstreetmap.org/${raw.type}/${raw.id}`,
       businessStatus: null,
       validationStatus: validationStatus as any,
       addressVerified: false,
@@ -148,3 +177,4 @@ export class OpenStreetMapAdapter implements ProspectSourceAdapter {
     };
   }
 }
+
