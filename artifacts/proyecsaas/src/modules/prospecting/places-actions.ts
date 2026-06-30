@@ -1,36 +1,46 @@
 "use server";
 
 import { requirePlatformAdmin } from "@/server/auth/access";
-import { searchPlacesByZone, GooglePlaceCandidate } from "./places-service";
+import { SourceEngine } from "./engine/source-engine";
 import { createProspect, detectPotentialDuplicates, calculateProspectScores } from "./service";
 import { revalidatePath } from "next/cache";
+import { ProspectSourceType } from "@prisma/client";
+import { NormalizedProspect } from "./engine/types";
 
 export async function searchPlacesAction(params: {
   topic: string;
   country: string;
+  countryCode: string;
   city: string;
+  sourceType: ProspectSourceType;
   limit?: number;
 }) {
   try {
     await requirePlatformAdmin();
-    const { topic, country, city, limit } = params;
+    const { topic, country, countryCode, city, sourceType, limit } = params;
     
-    if (!topic || !country || !city) {
-      throw new Error("Rubro, país y ciudad son obligatorios.");
+    if (!topic || !country || !city || !sourceType) {
+      throw new Error("Rubro, país, ciudad y fuente son obligatorios.");
     }
 
-    const places = await searchPlacesByZone(topic, country, city, limit);
+    const places = await SourceEngine.search({
+      query: topic,
+      country,
+      countryCode,
+      city,
+      sourceType,
+      limit,
+    });
 
     // Enrich with duplicate info
     const candidates = await Promise.all(
       places.map(async (place) => {
-        // Also check by placeId and phone in detectPotentialDuplicates (needs to be added in service)
         const duplicates = await detectPotentialDuplicates(
           place.website || undefined, 
           place.website || undefined, 
           place.companyName, 
-          place.placeId, 
-          place.phone || place.internationalPhone || undefined
+          place.placeId || undefined, 
+          place.phone || undefined
         );
         
         return {
@@ -45,11 +55,11 @@ export async function searchPlacesAction(params: {
     return { success: true, candidates };
   } catch (err: any) {
     console.error("Error in searchPlacesAction:", err);
-    return { success: false, error: err.message || "Error al buscar en Google Places." };
+    return { success: false, error: err.message || "Error al buscar en el motor de fuentes." };
   }
 }
 
-export async function importPlacesBatchAction(candidates: any[], countryCode: string, stateProvince: string, city: string) {
+export async function importPlacesBatchAction(candidates: (NormalizedProspect & { isDuplicate?: boolean, duplicateOfId?: string, selected?: boolean })[], countryCode: string, stateProvince: string, city: string) {
   try {
     const user = await requirePlatformAdmin();
     const results = [];
@@ -73,12 +83,12 @@ export async function importPlacesBatchAction(candidates: any[], countryCode: st
         placeId: c.placeId || null,
         
         website: c.website || null,
-        phone: c.phone || c.internationalPhone || null,
+        phone: c.phone || null,
         
-        sourceType: "GOOGLE_PLACES",
-        rawSourceData: c.rawSourceData || null,
-        addressVerified: false,
-        validationStatus: "PENDING_ADDRESS",
+        sourceType: c.sourceType,
+        rawSourceData: c.rawSourceData ? JSON.parse(JSON.stringify(c.rawSourceData)) : null,
+        addressVerified: c.addressVerified || false,
+        validationStatus: c.validationStatus || "PENDING_ADDRESS",
         importBatchId: importBatchId,
         
         duplicateOfId: c.duplicateOfId || null,
