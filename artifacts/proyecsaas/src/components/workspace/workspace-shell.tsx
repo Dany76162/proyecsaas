@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Menu } from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
+import { Badge } from "@/components/ui/badge";
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
 import type { OrganizationSummary } from "@/modules/organizations/types";
 import { MessageCircle } from "lucide-react";
@@ -80,9 +81,7 @@ export function WorkspaceShell({
             >
               <Menu className="h-4 w-4" />
             </button>
-            <span className="rounded-md border border-brand-100 bg-brand-50 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.12em] text-brand-600">
-              Panel de Inmobiliaria
-            </span>
+            <Badge variant="brand">Panel de Inmobiliaria</Badge>
           </div>
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="hidden sm:block text-sm font-bold text-slate-900 truncate max-w-[160px]">

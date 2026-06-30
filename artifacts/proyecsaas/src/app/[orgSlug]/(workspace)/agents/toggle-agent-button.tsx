@@ -1,6 +1,8 @@
 "use client";
 
 import { useTransition } from "react";
+
+import { Button } from "@/components/ui/button";
 import { toggleAgentStatus } from "@/modules/agents/actions";
 
 type AiAgentStatus = "ACTIVE" | "PAUSED" | "DRAFT";
@@ -19,17 +21,18 @@ export function ToggleAgentButton({
   const label = currentStatus === "ACTIVE" ? "Pausar" : "Activar";
 
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
+      size="sm"
       disabled={isPending}
       onClick={() =>
         startTransition(async () => {
           await toggleAgentStatus(orgSlug, agentId);
         })
       }
-      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {isPending ? "Guardando..." : label}
-    </button>
+    </Button>
   );
 }

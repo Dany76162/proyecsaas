@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { CheckCircle2, ChevronRight } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface Step {
@@ -163,7 +165,7 @@ export function OnboardingStepsList({ orgSlug: _orgSlug, steps }: OnboardingStep
                       )}>
                         {isCompleted ? "Paso completado" : `Paso ${step.number}`}
                       </span>
-                      {isNext && <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-600 uppercase">Recomendado</span>}
+                      {isNext && <Badge variant="brand">Recomendado</Badge>}
                     </div>
                     <h3 className="text-lg font-bold text-slate-900">{step.title}</h3>
                     <p className="max-w-xl text-sm font-medium leading-relaxed text-slate-500">

@@ -42,6 +42,7 @@ import {
   Network,
 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AgentCanvasData, AgentCanvasMetric, AgentCanvasNode } from "@/modules/agents/types";
 
@@ -106,9 +107,9 @@ function NodeRiskBadge({ node }: { node: CanvasNodeData }) {
   const hasWarning = node.metrics.some(m => m.tone === 'warning' && Number(m.value) > 0);
   const isOperational = node.status === 'Activo' || node.status === 'Con actividad' || node.status === 'Registrando eventos';
 
-  if (hasError) return <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-red-700"><AlertCircle className="h-2.5 w-2.5" /> Riesgo</span>;
-  if (hasWarning) return <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-700"><AlertTriangle className="h-2.5 w-2.5" /> Atención</span>;
-  if (isOperational) return <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-700"><ShieldCheck className="h-2.5 w-2.5" /> OK</span>;
+  if (hasError) return <Badge variant="danger" className="gap-1"><AlertCircle className="h-2.5 w-2.5" /> Riesgo</Badge>;
+  if (hasWarning) return <Badge variant="warning" className="gap-1"><AlertTriangle className="h-2.5 w-2.5" /> Atención</Badge>;
+  if (isOperational) return <Badge variant="success" className="gap-1"><ShieldCheck className="h-2.5 w-2.5" /> OK</Badge>;
   return null;
 }
 
@@ -347,9 +348,7 @@ function DetailPanel({ node }: { node: CanvasNodeData }) {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Actividad Reciente</h4>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-500">
-              Live Feed
-            </span>
+            <Badge variant="neutral">Live Feed</Badge>
           </div>
           
           <div className="space-y-3">

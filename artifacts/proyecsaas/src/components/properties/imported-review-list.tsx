@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, ExternalLink, ImageOff, Pencil } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -108,14 +109,10 @@ export function ImportedReviewList({ orgSlug, properties }: ImportedReviewListPr
               <div className="flex flex-wrap items-center gap-2">
                 <p className="truncate text-sm font-semibold text-slate-900">{property.title}</p>
                 {noPrice && (
-                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                    ⚠️ Sin precio
-                  </span>
+                  <Badge variant="warning">⚠️ Sin precio</Badge>
                 )}
                 {noImage && (
-                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                    ⚠️ Sin imagen
-                  </span>
+                  <Badge variant="warning">⚠️ Sin imagen</Badge>
                 )}
               </div>
               <p className="mt-0.5 text-sm font-bold tabular-nums text-slate-900">{priceLabel(property)}</p>
