@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Building2, Compass, MapPin, Maximize2, Bed, Bath, Car, ChevronRight, Phone } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+
 // Tarjeta visual ÚNICA de propiedad pública. Clona el subcomponente `FullCard`
 // del buscador global (`public-map-wrapper.tsx`, la tarjeta pública real) para
 // que el Modo Demo (/demo) use el mismo sistema visual sin duplicar diseño ni
@@ -100,9 +102,7 @@ export function PublicPropertyCard(props: PublicPropertyCardProps) {
         <div className="flex-1">
           <div className="mb-1.5 flex items-center gap-1">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Ofrecido por</span>
-            <span className="rounded-full bg-slate-50 border border-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-              {organizationName}
-            </span>
+            <Badge variant="neutral">{organizationName}</Badge>
           </div>
           <h3 className="line-clamp-2 font-bold text-slate-950 group-hover:text-brand-600 transition leading-snug">{title}</h3>
           <p className="mt-1.5 text-xl font-extrabold text-slate-900 tracking-tight">{priceLabel}</p>

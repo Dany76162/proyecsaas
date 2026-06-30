@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Camera, Globe, Users, MessageSquare, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, ThumbsUp, Share2, Globe2 } from "lucide-react";
 
@@ -60,9 +61,7 @@ export function PostPreview({ platform, content, hashtags = [], title, className
             ))}
           </div>
           <div className="flex items-center gap-2 mt-2">
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
-              Vista previa Instagram
-            </span>
+            <Badge variant="neutral">Vista previa Instagram</Badge>
           </div>
         </div>
       </div>
@@ -180,9 +179,7 @@ export function PostPreview({ platform, content, hashtags = [], title, className
               <Share2 className="h-4 w-4" /> Compartir
            </div>
            <div className="flex-1 text-right">
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-600">
-                LinkedIn Preview
-              </span>
+              <Badge variant="info">LinkedIn Preview</Badge>
            </div>
         </div>
       </div>

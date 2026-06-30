@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 import { TONE_LABELS, TONE_DESCRIPTIONS, PROPERTY_TYPE_LABELS } from "@/modules/agents/types";
 import type { AgentDetail } from "@/modules/agents/types";
 
@@ -289,9 +291,9 @@ export function AgentForm({
         <Link href={`/${orgSlug}/agents`} className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">
           Cancelar
         </Link>
-        <button type="submit" className="rounded-full bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600">
+        <Button type="submit" size="sm">
           {mode === "create" ? "Crear agente" : "Guardar cambios"}
-        </button>
+        </Button>
       </div>
     </form>
   );
