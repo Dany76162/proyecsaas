@@ -31,6 +31,8 @@ export const PROSPECT_STATUS_LABELS: Record<ProspectStatus, string> = {
   CUSTOMER: "Cliente actual",
   DO_NOT_CONTACT: "No contactar",
   CONVERTED: "Convertido a Organización",
+  DEMO_HANDOFF_READY: "Listo para Demo",
+  HANDED_TO_DEMO_AGENT: "Derivado a Demo",
 };
 
 export const PROSPECT_STATUS_COLORS: Record<ProspectStatus, string> = {
@@ -46,6 +48,8 @@ export const PROSPECT_STATUS_COLORS: Record<ProspectStatus, string> = {
   CUSTOMER: "bg-slate-900 text-white border-slate-800",
   DO_NOT_CONTACT: "bg-red-50 text-red-700 border-red-200",
   CONVERTED: "bg-brand-600 text-white border-brand-700",
+  DEMO_HANDOFF_READY: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  HANDED_TO_DEMO_AGENT: "bg-indigo-600 text-white border-indigo-700",
 };
 
 export const MANUAL_RATING_LABELS: Record<ManualRating, string> = {

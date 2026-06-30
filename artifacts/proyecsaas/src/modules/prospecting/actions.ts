@@ -212,6 +212,134 @@ export async function updateManualQualificationAction(formData: FormData) {
   revalidatePath(`/platform/agents/prospecting/${prospectId}`);
 }
 
+// ─── Demo Handoff ──────────────────────────────────────────────────────────
+
+export async function handoffToDemoAgentAction(prospectId: string, initialMessage: string) {
+  const user = await requirePlatformAdmin();
+  
+  const prospect = await prisma.commercialProspect.findUnique({ where: { id: prospectId } });
+  if (!prospect) throw new Error("Prospecto no encontrado");
+  if (!prospect.whatsapp && !prospect.phone) throw new Error("El prospecto no tiene número de teléfono para enviar WhatsApp");
+
+  const phoneToUse = (prospect.whatsapp || prospect.phone)!;
+  const cleanPhone = phoneToUse.replace(/\D/g, "");
+  
+  // 1. Find the raicespilot-demo organization
+  const org = await prisma.organization.findUnique({ where: { slug: "raicespilot-demo" } });
+  if (!org) throw new Error("Organización Demo no encontrada (slug: raicespilot-demo)");
+  
+  // 2. Prepare Lead notes with context
+  const contextNotes = `[B2B Prospecting Handoff]
+Origen: Prospección Superadmin
+Empresa: ${prospect.companyName}
+Tipo: ${prospect.companyType}
+País/Ciudad: ${prospect.country || "N/A"} / ${prospect.city || "N/A"}
+Website: ${prospect.website || "N/A"}
+Notas internas: ${prospect.notes || "Ninguna"}
+
+OBJETIVO DEL AGENTE:
+- Preguntar cantidad de propiedades/lotes.
+- Consultar uso actual de WhatsApp en ventas.
+- Identificar problema operativo principal.
+- Ofrecer o agendar demo si hay interés.`;
+
+  // 3. Find or create a Lead in raicespilot-demo
+  let lead = await prisma.lead.findFirst({
+    where: { organizationId: org.id, phone: cleanPhone }
+  });
+  
+  if (!lead) {
+    lead = await prisma.lead.create({
+      data: {
+        organizationId: org.id,
+        fullName: prospect.companyName,
+        phone: cleanPhone,
+        email: prospect.email,
+        source: "PROSPECTING_HANDOFF",
+        notes: contextNotes,
+      }
+    });
+  } else {
+    await prisma.lead.update({
+      where: { id: lead.id },
+      data: { notes: contextNotes }
+    });
+  }
+  
+  // 4. Find or create a Conversation
+  let conversation = await prisma.conversation.findFirst({
+    where: { organizationId: org.id, leadId: lead.id, channel: "WHATSAPP" },
+    orderBy: { createdAt: 'desc' }
+  });
+  
+  if (!conversation) {
+    conversation = await prisma.conversation.create({
+      data: {
+        organizationId: org.id,
+        leadId: lead.id,
+        channel: "WHATSAPP",
+        status: "OPEN",
+        participantName: prospect.companyName,
+        participantPhone: cleanPhone,
+        isHumanControlled: false,
+      }
+    });
+  }
+
+  // 5. Save the outbound message in DB
+  const message = await prisma.message.create({
+    data: {
+      organizationId: org.id,
+      conversationId: conversation.id,
+      direction: "OUTBOUND",
+      deliveryStatus: "PENDING",
+      body: initialMessage,
+      senderName: user.fullName || "Admin",
+    }
+  });
+
+  // 6. Send via WhatsApp (Evolution)
+  const channel = await prisma.whatsAppChannel.findFirst({
+    where: { organizationId: org.id, status: "ACTIVE" }
+  });
+
+  if (!channel) throw new Error("No hay un canal de WhatsApp activo para la Demo");
+
+  if (channel.provider === "EVOLUTION_API" && channel.instanceName) {
+    const { sendEvolutionMessage } = await import("@/server/whatsapp/evolution");
+    try {
+      await sendEvolutionMessage(channel.instanceName, cleanPhone, initialMessage);
+      await prisma.message.update({
+        where: { id: message.id },
+        data: { deliveryStatus: "SENT", sentAt: new Date() }
+      });
+    } catch (e: any) {
+      await prisma.message.update({
+        where: { id: message.id },
+        data: { deliveryStatus: "FAILED", deliveryError: e.message }
+      });
+      throw new Error(`Error enviando WhatsApp: ${e.message}`);
+    }
+  } else {
+    // If it uses WhatsApp Cloud, we mark as pending and normally an outbound worker or direct API would send.
+    // For Demo we assume Evolution or we at least leave it pending.
+    console.warn("Canal no es Evolution o no tiene instanceName", channel);
+  }
+
+  // 7. Update Prospect
+  await prisma.commercialProspect.update({
+    where: { id: prospectId },
+    data: { status: "HANDED_TO_DEMO_AGENT" }
+  });
+  
+  await logProspectActivity(prospectId, "handed_to_demo_agent" as any, "Prospecto derivado a Agente Demo y primer mensaje enviado", user.id);
+
+  revalidatePath("/platform/agents/prospecting");
+  revalidatePath(`/platform/agents/prospecting/${prospectId}`);
+  
+  return { success: true };
+}
+
 // ─── Email Generation (with eligibility check) ─────────────────────────────
 
 export async function generateProspectingEmailAction(prospectId: string) {

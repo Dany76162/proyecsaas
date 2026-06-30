@@ -44,6 +44,7 @@ import {
   convertToOrganizationAction
 } from "@/modules/prospecting/actions";
 import { Card } from "@/components/ui/card";
+import { HandoffDemoModal } from "./handoff-demo-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -350,6 +351,12 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
                     🚀 Convertir en Organización
                   </Button>
                 </form>
+              )}
+              
+              <div className="w-full h-px bg-slate-200 my-2" />
+
+              {(prospect.whatsapp || prospect.phone) && prospect.status !== "CONVERTED" && prospect.status !== "HANDED_TO_DEMO_AGENT" && (
+                <HandoffDemoModal prospectId={prospect.id} phone={(prospect.whatsapp || prospect.phone)!} />
               )}
               
               <div className="w-full h-px bg-slate-200 my-2" />
