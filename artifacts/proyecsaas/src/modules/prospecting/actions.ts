@@ -260,9 +260,12 @@ OBJETIVO DEL AGENTE:
       }
     });
   } else {
+    const dateStr = new Date().toLocaleDateString("es-AR");
+    const previousNotes = lead.notes ? `\n\n--- Historial Anterior (${dateStr}) ---\n${lead.notes}` : "";
+    
     await prisma.lead.update({
       where: { id: lead.id },
-      data: { notes: contextNotes }
+      data: { notes: `${contextNotes}${previousNotes}` }
     });
   }
   
@@ -282,6 +285,14 @@ OBJETIVO DEL AGENTE:
         participantName: prospect.companyName,
         participantPhone: cleanPhone,
         isHumanControlled: false,
+      }
+    });
+  } else {
+    conversation = await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { 
+        isHumanControlled: false,
+        lastMessageAt: new Date(),
       }
     });
   }
@@ -321,9 +332,7 @@ OBJETIVO DEL AGENTE:
       throw new Error(`Error enviando WhatsApp: ${e.message}`);
     }
   } else {
-    // If it uses WhatsApp Cloud, we mark as pending and normally an outbound worker or direct API would send.
-    // For Demo we assume Evolution or we at least leave it pending.
-    console.warn("Canal no es Evolution o no tiene instanceName", channel);
+    throw new Error("El canal de envío no es Evolution o no tiene instanceName configurado. No se puede derivar.");
   }
 
   // 7. Update Prospect
