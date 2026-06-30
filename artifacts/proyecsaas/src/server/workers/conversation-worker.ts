@@ -573,7 +573,7 @@ export async function processWhatsAppInboundJob(
     result.conversation.propertyId = propertyMatch.property.id;
   }
 
-  const [recentMessages, aiAgent, availableLots, orgRecord, propertyDetail] = await Promise.all([
+  const [recentMessages, aiAgent, availableLots, orgRecord, propertyDetail, agentLearnings] = await Promise.all([
     prisma.message.findMany({
       where: {
         organizationId: targetOrgId,
@@ -656,6 +656,12 @@ export async function processWhatsAppInboundJob(
           })
           .catch(() => null)
       : Promise.resolve(null),
+    prisma.agentLearning.findMany({
+      where: { organizationId: targetOrgId, isActive: true },
+      select: { type: true, title: true, content: true },
+      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+      take: 10,
+    }).catch(() => []),
   ]);
 
   // Horarios para proponer visitas. Se traen: (a) los GENERALES de la org
@@ -849,6 +855,7 @@ export async function processWhatsAppInboundJob(
       backMeters: roundM(lot.backMeters),
       publicUrl: absUrl(orgRecord?.slug ? `/cat/${orgRecord.slug}/developments/${lot.developmentId}/lots/${lot.id}` : null),
     })),
+    learnings: agentLearnings.length > 0 ? agentLearnings : null,
   }, { organizationId: targetOrgId, db: prisma });
   } // end else (no escalation keyword)
 

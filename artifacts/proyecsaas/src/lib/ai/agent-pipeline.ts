@@ -9,6 +9,32 @@ const TONE_DESCRIPTION: Record<AiAgentTone, string> = {
   NEUTRAL: "neutral y conciso, sin excesos de formalidad ni informalidad",
 };
 
+const LEARNING_TYPE_LABELS: Record<string, string> = {
+  CORRECCION_HUMANA: "Corrección",
+  PATRON_DE_EXITO: "Patrón exitoso",
+  OBJECION_FRECUENTE: "Objeción frecuente",
+  PREFERENCIA_COMERCIAL: "Preferencia",
+  REGLA_OPERATIVA: "Regla",
+};
+
+function buildLearningsBlock(
+  learnings: Array<{ type: string; title: string; content: string }> | null | undefined,
+): string {
+  if (!learnings || learnings.length === 0) return "";
+
+  const lines = learnings.map((l, i) => {
+    const label = LEARNING_TYPE_LABELS[l.type] ?? l.type;
+    return `${i + 1}. [${label}] ${l.title}: ${l.content}`;
+  });
+
+  return [
+    "",
+    "APRENDIZAJES DEL EQUIPO (instrucciones basadas en experiencia real — seguí estas reglas con prioridad alta):",
+    ...lines,
+    "",
+  ].join("\n");
+}
+
 const SYSTEM_PROMPT_TEMPLATE = (params: {
   orgName: string;
   agentName: string;
@@ -32,6 +58,7 @@ const SYSTEM_PROMPT_TEMPLATE = (params: {
   }>;
   escalateOnKeywords: string[];
   humanHandoffMessage: string | null;
+  learnings?: Array<{ type: string; title: string; content: string }> | null;
 }) => {
   const { orgName, agentName, tone, persona, language, properties, escalateOnKeywords, humanHandoffMessage } = params;
 
@@ -73,7 +100,7 @@ ${propsText}
 
 CONTEXTO DEL MERCADO INMOBILIARIO:
 Operás en el mercado inmobiliario argentino. Manejá con naturalidad la terminología local: departamento, PH, monoambiente, cochera, expensas, baulera, amenities, escritura, boleto, seña, reserva, crédito UVA, tasación, comisión, matrícula. Si el cliente pregunta por financiación, créditos UVA o temas legales (escritura, boleto, posesión), respondé que lo mejor es coordinar con un asesor del equipo para ese tema puntual. Adaptá tu lenguaje al tipo de propiedad: para departamentos hablá de ambientes, piso, orientación y expensas; para terrenos/lotes hablá de superficie, frente, fondo, servicios disponibles y posibilidad de escriturar.
-
+${buildLearningsBlock(params.learnings)}
 INSTRUCCIONES CRÍTICAS:
 1. Solo ofrecé propiedades de la lista de arriba. NUNCA inventes propiedades.
 2. Si el cliente muestra interés concreto en una propiedad, incluí exactamente este marcador en tu respuesta: [LEAD_INTERESTED]
@@ -151,41 +178,49 @@ export async function runAgentPipeline(input: PipelineInput): Promise<PipelineRe
 
   if (!agent) throw new Error("Agent not found");
 
-  const properties = await prisma.property.findMany({
-    where: {
-      organizationId,
-      status: "AVAILABLE",
-      publicVisible: true,
-      ...(agent.zoneFilters.length > 0
-        ? {
-            OR: agent.zoneFilters.map((z) => ({
-              neighborhood: { contains: z, mode: "insensitive" as const },
-            })),
-          }
-        : {}),
-      ...(agent.propertyTypes.length > 0
-        ? { propertyType: { in: agent.propertyTypes } }
-        : {}),
-      ...(agent.minBudget != null ? { priceCents: { gte: agent.minBudget } } : {}),
-      ...(agent.maxBudget != null ? { priceCents: { lte: agent.maxBudget } } : {}),
-    },
-    select: {
-      id: true,
-      title: true,
-      address: true,
-      neighborhood: true,
-      city: true,
-      propertyType: true,
-      operationType: true,
-      priceCents: true,
-      currency: true,
-      bedrooms: true,
-      bathrooms: true,
-      surfaceM2: true,
-      description: true,
-    },
-    take: 10,
-  });
+  const [properties, agentLearnings] = await Promise.all([
+    prisma.property.findMany({
+      where: {
+        organizationId,
+        status: "AVAILABLE",
+        publicVisible: true,
+        ...(agent.zoneFilters.length > 0
+          ? {
+              OR: agent.zoneFilters.map((z) => ({
+                neighborhood: { contains: z, mode: "insensitive" as const },
+              })),
+            }
+          : {}),
+        ...(agent.propertyTypes.length > 0
+          ? { propertyType: { in: agent.propertyTypes } }
+          : {}),
+        ...(agent.minBudget != null ? { priceCents: { gte: agent.minBudget } } : {}),
+        ...(agent.maxBudget != null ? { priceCents: { lte: agent.maxBudget } } : {}),
+      },
+      select: {
+        id: true,
+        title: true,
+        address: true,
+        neighborhood: true,
+        city: true,
+        propertyType: true,
+        operationType: true,
+        priceCents: true,
+        currency: true,
+        bedrooms: true,
+        bathrooms: true,
+        surfaceM2: true,
+        description: true,
+      },
+      take: 10,
+    }),
+    prisma.agentLearning.findMany({
+      where: { organizationId, isActive: true },
+      select: { type: true, title: true, content: true },
+      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+      take: 10,
+    }).catch(() => []),
+  ]);
 
   let createdFirstLead = false;
 
@@ -283,6 +318,7 @@ export async function runAgentPipeline(input: PipelineInput): Promise<PipelineRe
     properties,
     escalateOnKeywords: agent.escalateOnKeywords,
     humanHandoffMessage: agent.humanHandoffMessage,
+    learnings: agentLearnings.length > 0 ? agentLearnings : null,
   });
 
   const completion = await getOpenAIClient().chat.completions.create({

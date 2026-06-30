@@ -21,6 +21,7 @@ import {
   Smartphone,
   LandPlot,
   ArrowLeft,
+  Lightbulb,
 } from "lucide-react";
 import type { MembershipRole } from "@prisma/client";
 
@@ -53,6 +54,7 @@ const OPERATION_NAV = [
 
 const AUTOMATION_NAV = [
   { label: "Agentes IA",       path: "/agents",      icon: Bot },
+  { label: "Aprendizajes",     path: "/agents/learnings", icon: Lightbulb },
   { label: "Actividad automática", path: "/automations", icon: Zap },
 ] as const;
 
