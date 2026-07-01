@@ -36,6 +36,20 @@ export function LibraryClient({
   const [editingItem, setEditingItem] = useState<any>(null);
   const [formData, setFormData] = useState<any>({});
 
+  const isEmpty = initialMessages.length === 0 && initialMaterials.length === 0 && initialArguments.length === 0 && initialFaqs.length === 0 && initialObjections.length === 0;
+
+  const handleSeed = () => {
+    startTransition(async () => {
+      try {
+        await actions.seedSalesLibrary();
+        alert("Contenido oficial cargado correctamente.");
+      } catch (error) {
+        console.error(error);
+        alert("Error al cargar contenido.");
+      }
+    });
+  };
+
   const TABS = [
     { id: "mensajes", label: "Mensajes de WhatsApp", icon: MessageSquareText },
     { id: "materiales", label: "Materiales", icon: FileText },
@@ -112,6 +126,27 @@ export function LibraryClient({
 
   return (
     <div className="space-y-6 relative">
+      {isEmpty && (
+        <div className="bg-brand-50 border border-brand-200 rounded-xl p-6 text-center space-y-4">
+          <div className="mx-auto w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center">
+            <BrainCircuit className="h-6 w-6 text-brand-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-brand-900 text-lg">Biblioteca Comercial Vacía</h3>
+            <p className="text-sm text-brand-700 mt-1 max-w-md mx-auto">
+              Puedes cargar el Playbook Comercial Oficial de Raíces Pilot para tener mensajes, argumentos y respuestas listas para usar.
+            </p>
+          </div>
+          <button
+            onClick={handleSeed}
+            disabled={isPending}
+            className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-brand-500 disabled:opacity-50"
+          >
+            {isPending ? "Cargando..." : "Cargar contenido oficial inicial"}
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="border-b border-slate-200 flex-1 w-full">
           <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
