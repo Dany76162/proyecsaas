@@ -62,6 +62,12 @@ const PLATFORM_NAV_GROUPS = [
     ],
   },
   {
+    section: "Ventas",
+    items: [
+      { name: "Biblioteca Comercial", href: "/platform/ventas/biblioteca", icon: BookOpen },
+    ],
+  },
+  {
     section: "Observabilidad",
     items: [
       { name: "Salud del sistema", href: "/platform/health", icon: ActivitySquare },
